@@ -1,101 +1,146 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 80% 56%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 10% 95%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 84% 48%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --table-header: 210 20% 96%;
+    --table-cell: 0 0% 100%;
+    --table-row: 0 0% 100%;
+    --table-row-alt: 210 20% 98%;
+    --table-border: 214 32% 91%;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
+  }
+  
+  html, body {
+    @apply h-full w-full;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+  
+  ::selection {
+    @apply bg-primary/20;
+  }
+  
+  #root {
+    @apply h-full w-full;
+  }
+  
+  input, textarea {
+    @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+  
+  .glass-panel {
+    @apply bg-white/90 backdrop-blur-sm shadow-sm border border-white/40;
+  }
+  
+  .cell-input {
+    @apply w-full bg-transparent px-2 py-1 focus:outline-none text-sm transition-colors;
+  }
+  
+  .editable-cell {
+    @apply transition-all duration-150 border border-transparent hover:border-border focus-within:border-primary/40 focus-within:bg-white;
+  }
+}
+
+/* Workout table styling */
+@layer components {
+  .workout-table {
+    @apply w-full border-collapse overflow-hidden;
+  }
+  
+  .workout-table th {
+    @apply bg-table-header text-sm font-medium text-left px-3 py-2 border-b border-table-border sticky top-0;
+  }
+  
+  .workout-table td {
+    @apply px-1 py-1 border-b border-table-border bg-table-cell;
+  }
+  
+  .workout-table tr:nth-child(even) td {
+    @apply bg-table-row-alt;
+  }
+  
+  .workout-table tr:hover td {
+    @apply bg-secondary/50;
+  }
+  
+  .workout-table tr:focus-within td {
+    @apply bg-secondary;
+  }
+  
+  .workout-table .exercise-cell {
+    @apply min-w-[180px];
+  }
+  
+  .workout-table .numeric-cell {
+    @apply min-w-[60px] w-[80px];
+  }
+  
+  .workout-table .note-cell {
+    @apply min-w-[120px];
+  }
+  
+  .session-card {
+    @apply mb-8 bg-white rounded-xl shadow-sm border border-border overflow-hidden;
+  }
+  
+  .session-header {
+    @apply px-4 py-3 bg-secondary flex items-center justify-between;
   }
 }
