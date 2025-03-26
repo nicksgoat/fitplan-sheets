@@ -82,7 +82,7 @@ const WorkoutPreviewSettings: React.FC<WorkoutPreviewSettingsProps> = ({
 
   return (
     <div className="p-0">
-      <Tabs value={activeTab} onValueChange={onTabChange}>
+      <Tabs defaultValue="preview" value={activeTab} onValueChange={onTabChange}>
         <TabsList className="grid grid-cols-4 mb-4">
           <TabsTrigger value="preview">Preview</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>

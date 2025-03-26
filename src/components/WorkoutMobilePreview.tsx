@@ -1,10 +1,8 @@
-
 import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { ChevronRight, Settings } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import WorkoutPreviewSettings from "./WorkoutPreviewSettings";
 
 interface WorkoutMobilePreviewProps {
@@ -246,6 +244,27 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
               ))}
             </div>
           </div>
+        </div>
+      )}
+      
+      {activeTab === "settings" && (
+        <div className="p-4">
+          <h2 className="text-lg font-semibold mb-2">Settings Content</h2>
+          <p>Settings will be displayed here.</p>
+        </div>
+      )}
+      
+      {activeTab === "appearance" && (
+        <div className="p-4">
+          <h2 className="text-lg font-semibold mb-2">Appearance Content</h2>
+          <p>Appearance options will be displayed here.</p>
+        </div>
+      )}
+      
+      {activeTab === "guide" && (
+        <div className="p-4">
+          <h2 className="text-lg font-semibold mb-2">Guide Content</h2>
+          <p>Guide information will be displayed here.</p>
         </div>
       )}
     </div>
