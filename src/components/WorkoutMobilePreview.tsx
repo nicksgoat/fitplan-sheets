@@ -57,16 +57,16 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                       <ChevronRight className="h-5 w-5 text-gray-400" />
                     </div>
                     
-                    {exercise.sets > 0 && exercise.sets !== 1 && (
+                    {exercise.sets.length > 0 && exercise.sets.length !== 1 && (
                       <div className="text-sm text-gray-500 mt-1">
-                        {exercise.sets} sets
-                        {exercise.reps && `, ${exercise.reps} reps`}
+                        {exercise.sets.length} sets
+                        {exercise.sets[0]?.reps && `, ${exercise.sets[0].reps} reps`}
                       </div>
                     )}
                     
-                    {exercise.rest && (
+                    {exercise.sets[0]?.rest && (
                       <div className="text-sm text-gray-500 mt-1">
-                        {exercise.rest}
+                        {exercise.sets[0].rest}
                       </div>
                     )}
                     
@@ -89,8 +89,8 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                               <div>
                                 <div className="text-sm font-medium">{subExercise.name}</div>
                                 <div className="text-xs text-gray-500">
-                                  {subExercise.sets} x {subExercise.reps}
-                                  {subExercise.weight && ` @ ${subExercise.weight}`}
+                                  {subExercise.sets.length} x {subExercise.sets[0]?.reps || '-'}
+                                  {subExercise.sets[0]?.weight && ` @ ${subExercise.sets[0]?.weight}`}
                                 </div>
                               </div>
                             </div>
@@ -99,31 +99,33 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                     )}
                   </div>
                   
-                  {(exercise.sets > 0 && exercise.sets !== 1 && !exercise.isGroup) && (
+                  {(exercise.sets.length > 0 && exercise.sets.length !== 1 && !exercise.isGroup) && (
                     <div className="grid grid-cols-4 text-sm border-t border-gray-200">
                       <div className="p-2 font-medium text-center border-r border-gray-200">Set</div>
                       <div className="p-2 font-medium text-center border-r border-gray-200">Target</div>
-                      <div className="p-2 font-medium text-center border-r border-gray-200">{exercise.weight ? "Weight" : "—"}</div>
+                      <div className="p-2 font-medium text-center border-r border-gray-200">
+                        {exercise.sets[0]?.weight ? "Weight" : "—"}
+                      </div>
                       <div className="p-2 font-medium text-center">Reps</div>
                       
-                      {Array.from({ length: exercise.sets }).map((_, idx) => (
+                      {Array.from({ length: exercise.sets.length }).map((_, idx) => (
                         <React.Fragment key={idx}>
                           <div className="p-2 text-center border-t border-r border-gray-200">{idx + 1}</div>
                           <div className="p-2 text-center border-t border-r border-gray-200">
-                            {exercise.rpe || "—"}
+                            {exercise.sets[idx]?.rpe || "—"}
                           </div>
                           <div className="p-2 text-center border-t border-r border-gray-200">
-                            {exercise.weight ? (
-                              Array.isArray(exercise.weight.split(',')) && exercise.weight.split(',')[idx]
-                                ? exercise.weight.split(',')[idx].trim()
-                                : exercise.weight
+                            {exercise.sets[idx]?.weight ? (
+                              Array.isArray(exercise.sets[idx]?.weight.split(',')) && exercise.sets[idx]?.weight.split(',')[idx]
+                                ? exercise.sets[idx]?.weight.split(',')[idx].trim()
+                                : exercise.sets[idx]?.weight
                             ) : "—"}
                           </div>
                           <div className="p-2 text-center border-t border-gray-200">
-                            {exercise.reps ? (
-                              Array.isArray(exercise.reps.split(',')) && exercise.reps.split(',')[idx]
-                                ? exercise.reps.split(',')[idx].trim()
-                                : exercise.reps
+                            {exercise.sets[idx]?.reps ? (
+                              Array.isArray(exercise.sets[idx]?.reps.split(',')) && exercise.sets[idx]?.reps.split(',')[idx]
+                                ? exercise.sets[idx]?.reps.split(',')[idx].trim()
+                                : exercise.sets[idx]?.reps
                             ) : "—"}
                           </div>
                         </React.Fragment>
