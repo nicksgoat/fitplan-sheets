@@ -3,9 +3,11 @@ import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { Plus } from "lucide-react";
 
 const WeekTabs: React.FC = () => {
-  const { program, activeWeekId, setActiveWeekId, setActiveSessionId } = useWorkout();
+  const { program, activeWeekId, setActiveWeekId, setActiveSessionId, addWeek } = useWorkout();
   
   // If we don't have a weeks structure, don't render anything
   if (!program.weeks || program.weeks.length === 0) {
@@ -49,6 +51,15 @@ const WeekTabs: React.FC = () => {
             )}
           </button>
         ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs ml-2"
+          onClick={() => addWeek()}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Week
+        </Button>
       </div>
     </div>
   );

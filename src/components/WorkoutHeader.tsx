@@ -3,21 +3,16 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { 
-  PlusCircle, 
   RefreshCw, 
   Layers, 
   Save, 
   Library, 
-  FolderDown,
-  CalendarDays,
-  Calendar
+  FolderDown
 } from "lucide-react";
 import WorkoutLibraryDialog from "./WorkoutLibraryDialog";
 
 const WorkoutHeader: React.FC = () => {
   const { 
-    addSession, 
-    addWeek,
     resetProgram, 
     loadSampleProgram, 
     saveToLibrary,
@@ -97,28 +92,6 @@ const WorkoutHeader: React.FC = () => {
         >
           <RefreshCw className="h-4 w-4" />
           <span className="hidden sm:inline">Reset</span>
-        </Button>
-        
-        <Button
-          variant="default"
-          size="sm"
-          className="flex items-center gap-1 mr-1"
-          onClick={() => addSession()}
-        >
-          <CalendarDays className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Session</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
-        
-        <Button
-          variant="default"
-          size="sm"
-          className="flex items-center gap-1"
-          onClick={() => addWeek()}
-        >
-          <Calendar className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Week</span>
-          <span className="sm:hidden">Week</span>
         </Button>
       </div>
     </header>

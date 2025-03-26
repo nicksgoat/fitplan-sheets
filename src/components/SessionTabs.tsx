@@ -3,15 +3,17 @@ import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { Plus } from "lucide-react";
 
 const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, setActiveSessionId, activeWeekId } = useWorkout();
+  const { program, activeSessionId, setActiveSessionId, activeWeekId, addSession } = useWorkout();
   
   // Get sessions from the active week
   const activeWeek = program.weeks?.find(week => week.id === activeWeekId);
   const sessions = activeWeek?.sessions || [];
   
-  if (sessions.length <= 1) {
+  if (sessions.length === 0) {
     return null;
   }
   
@@ -42,6 +44,15 @@ const SessionTabs: React.FC = () => {
             )}
           </button>
         ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs ml-2"
+          onClick={() => addSession()}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Session
+        </Button>
       </div>
     </div>
   );
