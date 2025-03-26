@@ -5,6 +5,7 @@ export interface CellCoordinate {
   rowIndex: number;
   columnName: string;
   exerciseId: string;
+  setIndex?: number;
 }
 
 export function useCellNavigation() {
@@ -18,13 +19,26 @@ export function useCellNavigation() {
     setFocusedCell(null);
   }, []);
 
-  const isCellFocused = useCallback((rowIndex: number, columnName: string, exerciseId: string) => {
+  const isCellFocused = useCallback((rowIndex: number, columnName: string, exerciseId: string, setIndex?: number) => {
     if (!focusedCell) return false;
-    return (
+    
+    const baseMatch = (
       focusedCell.rowIndex === rowIndex &&
       focusedCell.columnName === columnName &&
       focusedCell.exerciseId === exerciseId
     );
+    
+    // If setIndex is provided, check it as well
+    if (setIndex !== undefined) {
+      return baseMatch && focusedCell.setIndex === setIndex;
+    }
+    
+    // If no setIndex provided but focusedCell has one, they don't match
+    if (focusedCell.setIndex !== undefined && setIndex === undefined) {
+      return false;
+    }
+    
+    return baseMatch;
   }, [focusedCell]);
 
   return {

@@ -1,10 +1,13 @@
 
 import React, { createContext, useContext, useState } from "react";
-import { Exercise, WorkoutProgram, WorkoutSession } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
 import { 
   createEmptyProgram, 
   addExerciseToSession, 
-  updateExerciseInSession, 
+  updateExerciseInSession,
+  updateSetInExercise,
+  addSetToExercise,
+  deleteSetFromExercise,
   deleteExerciseFromSession,
   addSessionToProgram,
   updateSessionInProgram,
@@ -19,7 +22,10 @@ interface WorkoutContextType {
   setActiveSessionId: (id: string | null) => void;
   updateSessionName: (sessionId: string, name: string) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
+  updateSet: (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
   addExercise: (sessionId: string, afterExerciseId?: string) => void;
+  addSet: (sessionId: string, exerciseId: string) => void;
+  deleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
   deleteExercise: (sessionId: string, exerciseId: string) => void;
   addSession: (afterSessionId?: string) => void;
   deleteSession: (sessionId: string) => void;
@@ -52,6 +58,16 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const updateSet = (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => {
+    setProgram((prevProgram) => {
+      const updatedSessions = prevProgram.sessions.map((session) => {
+        if (session.id !== sessionId) return session;
+        return updateSetInExercise(session, exerciseId, setId, updates);
+      });
+      return { ...prevProgram, sessions: updatedSessions };
+    });
+  };
+
   const addExercise = (sessionId: string, afterExerciseId?: string) => {
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
@@ -61,6 +77,28 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       return { ...prevProgram, sessions: updatedSessions };
     });
     toast.success("Exercise added");
+  };
+
+  const addSet = (sessionId: string, exerciseId: string) => {
+    setProgram((prevProgram) => {
+      const updatedSessions = prevProgram.sessions.map((session) => {
+        if (session.id !== sessionId) return session;
+        return addSetToExercise(session, exerciseId);
+      });
+      return { ...prevProgram, sessions: updatedSessions };
+    });
+    toast.success("Set added");
+  };
+
+  const deleteSet = (sessionId: string, exerciseId: string, setId: string) => {
+    setProgram((prevProgram) => {
+      const updatedSessions = prevProgram.sessions.map((session) => {
+        if (session.id !== sessionId) return session;
+        return deleteSetFromExercise(session, exerciseId, setId);
+      });
+      return { ...prevProgram, sessions: updatedSessions };
+    });
+    toast.success("Set deleted");
   };
 
   const deleteExercise = (sessionId: string, exerciseId: string) => {
@@ -130,7 +168,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         setActiveSessionId,
         updateSessionName,
         updateExercise,
+        updateSet,
         addExercise,
+        addSet,
+        deleteSet,
         deleteExercise,
         addSession,
         deleteSession,

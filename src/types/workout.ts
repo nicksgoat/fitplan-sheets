@@ -1,12 +1,16 @@
 
-export interface Exercise {
+export interface Set {
   id: string;
-  name: string;
-  sets: number;
   reps: string;
   weight: string;
   rpe: string;
   rest: string;
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  sets: Set[];
   notes: string;
   isGroup?: boolean;
   groupId?: string;
@@ -26,3 +30,5 @@ export interface WorkoutProgram {
 }
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';
+export type ExerciseCellType = 'name' | 'notes';
+export type SetCellType = 'reps' | 'weight' | 'rpe' | 'rest';

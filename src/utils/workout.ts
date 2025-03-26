@@ -1,19 +1,24 @@
-
-import { Exercise, WorkoutProgram, WorkoutSession } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
 
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
+}
+
+export function createEmptySet(): Set {
+  return {
+    id: generateId(),
+    reps: "",
+    weight: "",
+    rpe: "",
+    rest: "",
+  };
 }
 
 export function createEmptyExercise(): Exercise {
   return {
     id: generateId(),
     name: "",
-    sets: 3,
-    reps: "",
-    weight: "",
-    rpe: "",
-    rest: "",
+    sets: [createEmptySet()],
     notes: "",
   };
 }
@@ -78,6 +83,65 @@ export function updateExerciseInSession(
         ? { ...exercise, ...updates }
         : exercise
     ),
+  };
+}
+
+export function updateSetInExercise(
+  session: WorkoutSession,
+  exerciseId: string,
+  setId: string,
+  updates: Partial<Set>
+): WorkoutSession {
+  return {
+    ...session,
+    exercises: session.exercises.map(exercise => {
+      if (exercise.id !== exerciseId) return exercise;
+      
+      return {
+        ...exercise,
+        sets: exercise.sets.map(set =>
+          set.id === setId ? { ...set, ...updates } : set
+        )
+      };
+    }),
+  };
+}
+
+export function addSetToExercise(
+  session: WorkoutSession,
+  exerciseId: string
+): WorkoutSession {
+  return {
+    ...session,
+    exercises: session.exercises.map(exercise => {
+      if (exercise.id !== exerciseId) return exercise;
+      
+      return {
+        ...exercise,
+        sets: [...exercise.sets, createEmptySet()]
+      };
+    }),
+  };
+}
+
+export function deleteSetFromExercise(
+  session: WorkoutSession,
+  exerciseId: string,
+  setId: string
+): WorkoutSession {
+  return {
+    ...session,
+    exercises: session.exercises.map(exercise => {
+      if (exercise.id !== exerciseId) return exercise;
+      
+      // Don't allow deleting the last set
+      if (exercise.sets.length <= 1) return exercise;
+      
+      return {
+        ...exercise,
+        sets: exercise.sets.filter(set => set.id !== setId)
+      };
+    }),
   };
 }
 
@@ -182,114 +246,270 @@ export const sampleProgram: WorkoutProgram = {
         {
           id: "ex1",
           name: "Barbell Bench Press",
-          sets: 3,
-          reps: "12, 10, 8",
-          weight: "",
-          rpe: "80%",
-          rest: "1-3-1 tempo",
+          sets: [
+            {
+              id: "set1-1",
+              reps: "12",
+              weight: "135",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set1-2",
+              reps: "10",
+              weight: "155",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set1-3",
+              reps: "8",
+              weight: "175",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex2",
           name: "Back Squat",
-          sets: 3,
-          reps: "12",
-          weight: "95, 115",
-          rpe: "",
-          rest: "60s",
+          sets: [
+            {
+              id: "set2-1",
+              reps: "12",
+              weight: "95",
+              rpe: "",
+              rest: "60s",
+            },
+            {
+              id: "set2-2",
+              reps: "12",
+              weight: "115",
+              rpe: "",
+              rest: "60s",
+            },
+            {
+              id: "set2-3",
+              reps: "12",
+              weight: "115",
+              rpe: "",
+              rest: "60s",
+            }
+          ],
           notes: "Keep your heels down and drive your knees out over your toes",
         },
         {
           id: "ex3",
           name: "Circuit A",
-          sets: 3,
-          reps: "",
-          weight: "",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set3-1",
+              reps: "",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
           isGroup: true,
         },
         {
           id: "ex4",
           name: "Kettlebell Swing",
-          sets: 3,
-          reps: "20s",
-          weight: "40",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set4-1",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set4-2",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set4-3",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
           groupId: "ex3",
         },
         {
           id: "ex5",
           name: "Hanging Leg Raise",
-          sets: 3,
-          reps: "AMRAP",
-          weight: "BW",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set5-1",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set5-2",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set5-3",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
           groupId: "ex3",
         },
         {
           id: "ex6",
           name: "Finisher",
-          sets: 1,
-          reps: "-",
-          weight: "",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set6-1",
+              reps: "-",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex7",
           name: "Tricep Pushdowns",
-          sets: 3,
-          reps: "8-12",
-          weight: "50",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set7-1",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set7-2",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set7-3",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex8",
           name: "Hammer Curl",
-          sets: 3,
-          reps: "8-12",
-          weight: "30",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set8-1",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set8-2",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set8-3",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex9",
           name: "Cool down",
-          sets: 1,
-          reps: "-",
-          weight: "",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set9-1",
+              reps: "-",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex10",
           name: "Cat Cows",
-          sets: 3,
-          reps: "5",
-          weight: "",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set10-1",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set10-2",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set10-3",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex11",
           name: "Butterfly Stretch",
-          sets: 3,
-          reps: "20s",
-          weight: "",
-          rpe: "",
-          rest: "",
+          sets: [
+            {
+              id: "set11-1",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set11-2",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set11-3",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
           notes: "",
         },
       ],
@@ -302,21 +522,57 @@ export const sampleProgram: WorkoutProgram = {
         {
           id: "ex12",
           name: "Bench Press",
-          sets: 3,
-          reps: "12, 10, 8",
-          weight: "",
-          rpe: "80%",
-          rest: "1-3-1 tempo",
+          sets: [
+            {
+              id: "set12-1",
+              reps: "12",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set12-2",
+              reps: "10",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set12-3",
+              reps: "8",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            }
+          ],
           notes: "",
         },
         {
           id: "ex13",
           name: "Romanian Deadlift",
-          sets: 3,
-          reps: "10",
-          weight: "135, 155",
-          rpe: "",
-          rest: "90s",
+          sets: [
+            {
+              id: "set13-1",
+              reps: "10",
+              weight: "135",
+              rpe: "",
+              rest: "90s",
+            },
+            {
+              id: "set13-2",
+              reps: "10",
+              weight: "155",
+              rpe: "",
+              rest: "90s",
+            },
+            {
+              id: "set13-3",
+              reps: "10",
+              weight: "155",
+              rpe: "",
+              rest: "90s",
+            }
+          ],
           notes: "Keep back flat, hinge at hips",
         },
       ],

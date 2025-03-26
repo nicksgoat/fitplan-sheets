@@ -96,7 +96,37 @@
   @apply w-[20%];
 }
 
+/* Exercise and Set Rows */
+.exercise-row {
+  @apply border-t border-muted/50;
+}
+
+.exercise-row:first-child {
+  @apply border-t-0;
+}
+
+.set-row {
+  @apply bg-muted/5;
+}
+
+.set-row td {
+  @apply border-b-0;
+}
+
+.set-row:last-child td {
+  @apply border-b border-muted/30;
+}
+
+.set-number {
+  @apply text-xs text-muted-foreground pl-8;
+}
+
 /* Add styles for focused cells */
 .editable-cell:focus-within {
   @apply ring-2 ring-primary ring-offset-1;
+}
+
+/* Add/Remove Set buttons */
+.set-actions {
+  @apply flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity;
 }
