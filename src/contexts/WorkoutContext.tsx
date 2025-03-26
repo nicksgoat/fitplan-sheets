@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { 
   WorkoutProgram, 
@@ -9,6 +9,7 @@ import {
   WorkoutSettings
 } from "@/types/workout"; 
 import { createEmptyProgram, sampleProgram } from "@/utils/workout";
+import { toast } from "@/components/ui/use-toast";
 
 // Define the shape of our context
 interface WorkoutContextType {
@@ -46,7 +47,20 @@ interface WorkoutContextType {
   createEMOM: (sessionId: string) => void;
   createAMRAP: (sessionId: string) => void;
   createTabata: (sessionId: string) => void;
+  
+  workoutLibrary: Array<{
+    id: string;
+    name: string;
+    type: "program" | "session";
+    data: WorkoutProgram | WorkoutSession;
+  }>;
+  saveToLibrary: (type: "program" | "session", id?: string) => void;
+  importSession: (session: WorkoutSession) => void;
+  importProgram: (program: WorkoutProgram) => void;
 }
+
+// Local storage key for workout library
+const WORKOUT_LIBRARY_KEY = "workout_library";
 
 // Create the context with a default value
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -57,6 +71,31 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
     program.sessions.length > 0 ? program.sessions[0].id : null
   );
+  
+  // Workout library state
+  const [workoutLibrary, setWorkoutLibrary] = useState<Array<{
+    id: string;
+    name: string;
+    type: "program" | "session";
+    data: WorkoutProgram | WorkoutSession;
+  }>>([]);
+  
+  // Load workout library from local storage
+  useEffect(() => {
+    const savedLibrary = localStorage.getItem(WORKOUT_LIBRARY_KEY);
+    if (savedLibrary) {
+      try {
+        setWorkoutLibrary(JSON.parse(savedLibrary));
+      } catch (error) {
+        console.error("Failed to load workout library:", error);
+      }
+    }
+  }, []);
+  
+  // Save workout library to local storage when it changes
+  useEffect(() => {
+    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(workoutLibrary));
+  }, [workoutLibrary]);
 
   // Reset to empty program
   const resetProgram = () => {
@@ -462,6 +501,114 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
+  // Library operations
+  const saveToLibrary = (type: "program" | "session", id?: string) => {
+    if (type === "program") {
+      // Save current program to library
+      const newLibraryItem = {
+        id: uuidv4(),
+        name: program.name,
+        type: "program" as const,
+        data: { ...program }
+      };
+      
+      setWorkoutLibrary(prev => [...prev, newLibraryItem]);
+      toast({
+        title: "Program Saved",
+        description: `"${program.name}" has been added to your library.`
+      });
+    } else if (type === "session") {
+      // Save specific session to library
+      const sessionId = id || activeSessionId;
+      if (!sessionId) return;
+      
+      const session = program.sessions.find(s => s.id === sessionId);
+      if (!session) return;
+      
+      const newLibraryItem = {
+        id: uuidv4(),
+        name: session.name,
+        type: "session" as const,
+        data: { ...session }
+      };
+      
+      setWorkoutLibrary(prev => [...prev, newLibraryItem]);
+      toast({
+        title: "Session Saved",
+        description: `"${session.name}" has been added to your library.`
+      });
+    }
+  };
+  
+  const importSession = (sessionToImport: WorkoutSession) => {
+    // Create a copy of the session with new IDs to avoid conflicts
+    const newSession: WorkoutSession = {
+      ...sessionToImport,
+      id: uuidv4(),
+      day: program.sessions.length + 1,
+      exercises: sessionToImport.exercises.map(exercise => ({
+        ...exercise,
+        id: uuidv4(),
+        sets: exercise.sets.map(set => ({
+          ...set,
+          id: uuidv4()
+        }))
+      })),
+      circuits: sessionToImport.circuits.map(circuit => ({
+        ...circuit,
+        id: uuidv4()
+      }))
+    };
+    
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      sessions: [...prevProgram.sessions, newSession]
+    }));
+    
+    setActiveSessionId(newSession.id);
+    
+    toast({
+      title: "Session Imported",
+      description: `"${newSession.name}" has been added to your program.`
+    });
+  };
+  
+  const importProgram = (programToImport: WorkoutProgram) => {
+    // Create a copy of the program with new IDs to avoid conflicts
+    const newProgram: WorkoutProgram = {
+      ...programToImport,
+      id: uuidv4(),
+      sessions: programToImport.sessions.map((session, index) => ({
+        ...session,
+        id: uuidv4(),
+        day: index + 1,
+        exercises: session.exercises.map(exercise => ({
+          ...exercise,
+          id: uuidv4(),
+          sets: exercise.sets.map(set => ({
+            ...set,
+            id: uuidv4()
+          }))
+        })),
+        circuits: session.circuits.map(circuit => ({
+          ...circuit,
+          id: uuidv4()
+        }))
+      }))
+    };
+    
+    setProgram(newProgram);
+    
+    if (newProgram.sessions.length > 0) {
+      setActiveSessionId(newProgram.sessions[0].id);
+    }
+    
+    toast({
+      title: "Program Imported",
+      description: `"${newProgram.name}" has been loaded.`
+    });
+  };
+
   // Provide the context value
   const contextValue: WorkoutContextType = {
     program,
@@ -497,7 +644,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     createSuperset,
     createEMOM,
     createAMRAP,
-    createTabata
+    createTabata,
+    
+    workoutLibrary,
+    saveToLibrary,
+    importSession,
+    importProgram
   };
 
   return (
