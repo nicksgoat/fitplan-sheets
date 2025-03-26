@@ -29,19 +29,28 @@ export interface Circuit {
   restBetweenRounds?: string;
 }
 
+export interface WorkoutWeek {
+  id: string;
+  weekNumber: number;
+  name: string;
+  sessions: WorkoutSession[];
+}
+
 export interface WorkoutSession {
   id: string;
   name: string;
   day: number;
   exercises: Exercise[];
   circuits: Circuit[];
+  weekId?: string; // Reference to parent week
 }
 
 export interface WorkoutProgram {
   id: string;
   name: string;
   image?: string;
-  sessions: WorkoutSession[];
+  weeks: WorkoutWeek[]; // Instead of sessions directly
+  sessions: WorkoutSession[]; // Keep for backward compatibility
   // Add settings
   settings?: WorkoutSettings;
 }

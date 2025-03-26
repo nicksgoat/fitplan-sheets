@@ -6,7 +6,8 @@ import {
   Exercise,
   Set, 
   Circuit,
-  WorkoutSettings
+  WorkoutSettings,
+  WorkoutWeek
 } from "@/types/workout"; 
 import { createEmptyProgram, sampleProgram } from "@/utils/workout";
 import { toast } from "@/components/ui/use-toast";
@@ -15,12 +16,19 @@ import { toast } from "@/components/ui/use-toast";
 interface WorkoutContextType {
   program: WorkoutProgram;
   activeSessionId: string | null;
+  activeWeekId: string | null;
   setActiveSessionId: (id: string) => void;
+  setActiveWeekId: (id: string) => void;
   
-  addSession: (name?: string) => void;
+  addSession: (name?: string, weekId?: string) => void;
   updateSession: (sessionId: string, updates: Partial<WorkoutSession>) => void;
   deleteSession: (sessionId: string) => void;
   updateSessionName: (sessionId: string, name: string) => void;
+  
+  addWeek: (name?: string) => void;
+  updateWeek: (weekId: string, updates: Partial<WorkoutWeek>) => void;
+  deleteWeek: (weekId: string) => void;
+  updateWeekName: (weekId: string, name: string) => void;
   
   addExercise: (sessionId: string, exercise?: Partial<Exercise>) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
@@ -71,6 +79,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
     program.sessions.length > 0 ? program.sessions[0].id : null
   );
+  const [activeWeekId, setActiveWeekId] = useState<string | null>(
+    program.weeks && program.weeks.length > 0 ? program.weeks[0].id : null
+  );
   
   // Workout library state
   const [workoutLibrary, setWorkoutLibrary] = useState<Array<{
@@ -101,17 +112,141 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const resetProgram = () => {
     const newProgram = createEmptyProgram();
     setProgram(newProgram);
-    setActiveSessionId(newProgram.sessions[0].id);
+    
+    if (newProgram.weeks && newProgram.weeks.length > 0) {
+      setActiveWeekId(newProgram.weeks[0].id);
+      
+      // Set active session from the first week
+      if (newProgram.weeks[0].sessions.length > 0) {
+        setActiveSessionId(newProgram.weeks[0].sessions[0].id);
+      } else {
+        setActiveSessionId(null);
+      }
+    } else if (newProgram.sessions.length > 0) {
+      // Fallback to old structure if needed
+      setActiveSessionId(newProgram.sessions[0].id);
+    }
   };
   
   // Load sample program
   const loadSampleProgram = () => {
     setProgram(sampleProgram);
-    setActiveSessionId(sampleProgram.sessions[0].id);
+    
+    if (sampleProgram.weeks && sampleProgram.weeks.length > 0) {
+      setActiveWeekId(sampleProgram.weeks[0].id);
+      
+      // Set active session from the first week
+      if (sampleProgram.weeks[0].sessions.length > 0) {
+        setActiveSessionId(sampleProgram.weeks[0].sessions[0].id);
+      } else {
+        setActiveSessionId(null);
+      }
+    } else if (sampleProgram.sessions.length > 0) {
+      // Fallback to old structure
+      setActiveSessionId(sampleProgram.sessions[0].id);
+    }
+  };
+
+  // Week operations
+  const addWeek = (name?: string) => {
+    const newWeek: WorkoutWeek = {
+      id: uuidv4(),
+      weekNumber: program.weeks?.length + 1 || 1,
+      name: name || `Week ${program.weeks?.length + 1 || 1}`,
+      sessions: []
+    };
+    
+    // Create a default session in the new week
+    const newSession: WorkoutSession = {
+      id: uuidv4(),
+      name: `Day 1`,
+      day: 1,
+      exercises: [],
+      circuits: [],
+      weekId: newWeek.id
+    };
+    
+    newWeek.sessions.push(newSession);
+    
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      weeks: [...(prevProgram.weeks || []), newWeek]
+    }));
+    
+    // Set this week as active if we don't have an active week
+    if (!activeWeekId) {
+      setActiveWeekId(newWeek.id);
+    }
+    
+    // Set the new session as active
+    setActiveSessionId(newSession.id);
+  };
+  
+  const updateWeek = (weekId: string, updates: Partial<WorkoutWeek>) => {
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      weeks: (prevProgram.weeks || []).map(week => 
+        week.id === weekId ? { ...week, ...updates } : week
+      )
+    }));
+  };
+  
+  const updateWeekName = (weekId: string, name: string) => {
+    updateWeek(weekId, { name });
+  };
+  
+  const deleteWeek = (weekId: string) => {
+    // Check if there's at least one week
+    if (!program.weeks || program.weeks.length <= 1) {
+      toast({
+        title: "Cannot Delete Week",
+        description: "A program must have at least one week.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setProgram(prevProgram => {
+      // Filter out the week to delete
+      const updatedWeeks = (prevProgram.weeks || [])
+        .filter(week => week.id !== weekId)
+        .map((week, index) => ({
+          ...week,
+          weekNumber: index + 1 // Update week numbers
+        }));
+      
+      // Update the program
+      return {
+        ...prevProgram,
+        weeks: updatedWeeks
+      };
+    });
+    
+    // If the deleted week was active, set another week as active
+    if (activeWeekId === weekId) {
+      // Find a new week to set as active
+      const newActiveWeekId = program.weeks.find(week => week.id !== weekId)?.id;
+      setActiveWeekId(newActiveWeekId || null);
+      
+      // Set a session from the new active week as active
+      if (newActiveWeekId) {
+        const week = program.weeks.find(week => week.id === newActiveWeekId);
+        if (week && week.sessions.length > 0) {
+          setActiveSessionId(week.sessions[0].id);
+        } else {
+          setActiveSessionId(null);
+        }
+      }
+    }
   };
 
   // Session operations
-  const addSession = (name?: string) => {
+  const addSession = (name?: string, weekId?: string) => {
+    // If weekId is provided, add the session to that week
+    // Otherwise, if we have an active week, add it there
+    // If we don't have weeks structure yet, add it to the flat sessions array
+    const targetWeekId = weekId || activeWeekId;
+    
     const newSession: WorkoutSession = {
       id: uuidv4(),
       name: name || `Day ${program.sessions.length + 1}`,
@@ -120,23 +255,82 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       circuits: []
     };
     
-    setProgram(prevProgram => ({
-      ...prevProgram,
-      sessions: [...prevProgram.sessions, newSession]
-    }));
-    
-    if (!activeSessionId) {
-      setActiveSessionId(newSession.id);
+    if (targetWeekId && program.weeks) {
+      // Add to a specific week
+      newSession.weekId = targetWeekId;
+      
+      setProgram(prevProgram => {
+        const updatedWeeks = (prevProgram.weeks || []).map(week => {
+          if (week.id === targetWeekId) {
+            // Add the session to this week
+            const updatedSessions = [...week.sessions, {
+              ...newSession,
+              day: week.sessions.length + 1,
+              name: name || `Day ${week.sessions.length + 1}`
+            }];
+            
+            return {
+              ...week,
+              sessions: updatedSessions
+            };
+          }
+          return week;
+        });
+        
+        return {
+          ...prevProgram,
+          weeks: updatedWeeks
+        };
+      });
+    } else {
+      // Add to the flat sessions array (backward compatibility)
+      setProgram(prevProgram => ({
+        ...prevProgram,
+        sessions: [...prevProgram.sessions, newSession]
+      }));
     }
+    
+    // Set the new session as active
+    setActiveSessionId(newSession.id);
   };
   
   const updateSession = (sessionId: string, updates: Partial<WorkoutSession>) => {
-    setProgram(prevProgram => ({
-      ...prevProgram,
-      sessions: prevProgram.sessions.map(session => 
-        session.id === sessionId ? { ...session, ...updates } : session
-      )
-    }));
+    // Check if we have a weeks structure
+    if (program.weeks && program.weeks.length > 0) {
+      setProgram(prevProgram => {
+        const updatedWeeks = prevProgram.weeks.map(week => {
+          // Check if this session is in this week
+          const sessionIndex = week.sessions.findIndex(session => session.id === sessionId);
+          
+          if (sessionIndex >= 0) {
+            // Update the session in this week
+            const updatedSessions = week.sessions.map(session => 
+              session.id === sessionId ? { ...session, ...updates } : session
+            );
+            
+            return {
+              ...week,
+              sessions: updatedSessions
+            };
+          }
+          
+          return week;
+        });
+        
+        return {
+          ...prevProgram,
+          weeks: updatedWeeks
+        };
+      });
+    } else {
+      // Update in the flat sessions array
+      setProgram(prevProgram => ({
+        ...prevProgram,
+        sessions: prevProgram.sessions.map(session => 
+          session.id === sessionId ? { ...session, ...updates } : session
+        )
+      }));
+    }
   };
   
   const updateSessionName = (sessionId: string, name: string) => {
@@ -144,13 +338,89 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   const deleteSession = (sessionId: string) => {
-    setProgram(prevProgram => ({
-      ...prevProgram,
-      sessions: prevProgram.sessions.filter(session => session.id !== sessionId)
-    }));
-    
-    if (activeSessionId === sessionId) {
-      setActiveSessionId(program.sessions[0]?.id || null);
+    // Check if we have a weeks structure
+    if (program.weeks && program.weeks.length > 0) {
+      let weekHasOnlyOneSession = false;
+      let weekWithSession: WorkoutWeek | null = null;
+      
+      // Find the week that contains this session
+      program.weeks.forEach(week => {
+        if (week.sessions.some(session => session.id === sessionId)) {
+          weekWithSession = week;
+          weekHasOnlyOneSession = week.sessions.length <= 1;
+        }
+      });
+      
+      // Don't allow deleting the last session in a week
+      if (weekHasOnlyOneSession && weekWithSession) {
+        toast({
+          title: "Cannot Delete Session",
+          description: "A week must have at least one session.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setProgram(prevProgram => {
+        const updatedWeeks = prevProgram.weeks.map(week => {
+          // Check if this session is in this week
+          if (week.sessions.some(session => session.id === sessionId)) {
+            // Remove the session from this week
+            const updatedSessions = week.sessions
+              .filter(session => session.id !== sessionId)
+              .map((session, index) => ({
+                ...session,
+                day: index + 1 // Update day numbers
+              }));
+            
+            return {
+              ...week,
+              sessions: updatedSessions
+            };
+          }
+          
+          return week;
+        });
+        
+        return {
+          ...prevProgram,
+          weeks: updatedWeeks
+        };
+      });
+      
+      // If the deleted session was active, set another session as active
+      if (activeSessionId === sessionId && weekWithSession) {
+        // Find a new session in the same week to set as active
+        const newActiveSessionId = weekWithSession.sessions.find(session => session.id !== sessionId)?.id;
+        setActiveSessionId(newActiveSessionId || null);
+      }
+    } else {
+      // Don't allow deleting the last session
+      if (program.sessions.length <= 1) {
+        toast({
+          title: "Cannot Delete Session",
+          description: "A program must have at least one session.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Delete from the flat sessions array
+      setProgram(prevProgram => ({
+        ...prevProgram,
+        sessions: prevProgram.sessions
+          .filter(session => session.id !== sessionId)
+          .map((session, index) => ({
+            ...session,
+            day: index + 1 // Update day numbers
+          }))
+      }));
+      
+      // If the deleted session was active, set another session as active
+      if (activeSessionId === sessionId) {
+        const newActiveSessionId = program.sessions.find(session => session.id !== sessionId)?.id;
+        setActiveSessionId(newActiveSessionId || null);
+      }
     }
   };
 
@@ -613,12 +883,19 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const contextValue: WorkoutContextType = {
     program,
     activeSessionId,
+    activeWeekId,
     setActiveSessionId,
+    setActiveWeekId,
     
     addSession,
     updateSession,
     deleteSession,
     updateSessionName,
+    
+    addWeek,
+    updateWeek,
+    deleteWeek,
+    updateWeekName,
     
     addExercise,
     updateExercise,

@@ -8,13 +8,16 @@ import {
   Layers, 
   Save, 
   Library, 
-  FolderDown 
+  FolderDown,
+  CalendarDays,
+  CalendarWeek
 } from "lucide-react";
 import WorkoutLibraryDialog from "./WorkoutLibraryDialog";
 
 const WorkoutHeader: React.FC = () => {
   const { 
     addSession, 
+    addWeek,
     resetProgram, 
     loadSampleProgram, 
     saveToLibrary,
@@ -99,12 +102,23 @@ const WorkoutHeader: React.FC = () => {
         <Button
           variant="default"
           size="sm"
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 mr-1"
           onClick={() => addSession()}
         >
-          <PlusCircle className="h-4 w-4" />
+          <CalendarDays className="h-4 w-4" />
           <span className="hidden sm:inline">Add Session</span>
           <span className="sm:hidden">Add</span>
+        </Button>
+        
+        <Button
+          variant="default"
+          size="sm"
+          className="flex items-center gap-1"
+          onClick={() => addWeek()}
+        >
+          <CalendarWeek className="h-4 w-4" />
+          <span className="hidden sm:inline">Add Week</span>
+          <span className="sm:hidden">Week</span>
         </Button>
       </div>
     </header>
