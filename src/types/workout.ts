@@ -18,6 +18,7 @@ export interface Exercise {
   circuitOrder?: number;
   isGroup?: boolean;
   groupId?: string;
+  repType?: RepType;
 }
 
 export interface Circuit {
@@ -57,3 +58,12 @@ export type ExerciseCellType = 'name' | 'notes';
 export type SetCellType = 'reps' | 'weight' | 'rpe' | 'rest';
 
 export type WorkoutType = 'standard' | 'circuit' | 'superset' | 'emom' | 'amrap' | 'tabata';
+
+// New rep types
+export type RepType = 
+  | 'fixed'        // Standard fixed reps (e.g., "12")
+  | 'range'        // Rep range (e.g., "8-12")
+  | 'descending'   // Decreasing reps (e.g., "12, 10, 8")
+  | 'time'         // Time-based (e.g., "30s" or "1m")
+  | 'each-side'    // Each side (e.g., "12e/s")
+  | 'amrap';       // As many reps as possible

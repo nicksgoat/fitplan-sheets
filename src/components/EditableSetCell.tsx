@@ -2,6 +2,8 @@
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
+import { RepType } from "@/types/workout";
+import RepInput from "./RepInput";
 
 interface EditableSetCellProps {
   value: string;
@@ -13,6 +15,9 @@ interface EditableSetCellProps {
   isFocused: boolean;
   onFocus: (coordinate: CellCoordinate) => void;
   onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
+  columnName?: string;
+  repType?: RepType;
+  onRepTypeChange?: (type: RepType) => void;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -25,6 +30,9 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   isFocused,
   onFocus,
   onNavigate,
+  columnName,
+  repType = "fixed",
+  onRepTypeChange,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -73,10 +81,39 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
     }
   };
   
+  // Special rendering for reps column with RepType support
+  if (columnName === "reps" && onRepTypeChange) {
+    return (
+      <div 
+        className={cn(
+          "editable-cell h-full flex items-center",
+          isFocused && "ring-2 ring-primary ring-offset-1",
+          className
+        )}
+        onClick={handleClick}
+      >
+        {isFocused ? (
+          <RepInput
+            value={value}
+            repType={repType}
+            onChange={onChange}
+            onRepTypeChange={onRepTypeChange}
+            placeholder={placeholder}
+            isFocused={isFocused}
+          />
+        ) : (
+          <div className="cell-input w-full h-full px-2 py-1 flex items-center">
+            {value || placeholder}
+          </div>
+        )}
+      </div>
+    );
+  }
+  
   return (
     <div 
       className={cn(
-        "editable-cell rounded-md h-full flex items-center",
+        "editable-cell h-full flex items-center",
         isFocused && "ring-2 ring-primary ring-offset-1",
         className
       )}
@@ -85,7 +122,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
       <input
         ref={inputRef}
         type={type}
-        className="cell-input w-full h-full bg-transparent outline-none px-2"
+        className="cell-input w-full h-full bg-transparent outline-none px-2 py-1"
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}

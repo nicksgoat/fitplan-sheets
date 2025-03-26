@@ -1,135 +1,131 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --foreground: 0 0% 3.9%;
+ 
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+ 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 0 0% 3.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+ 
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+ 
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+ 
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+ 
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+ 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --ring: 0 0% 63.9%;
+ 
     --radius: 0.5rem;
   }
-
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+ 
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+ 
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+ 
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+ 
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+ 
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+ 
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+ 
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+ 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --destructive-foreground: 0 85.7% 97.3%;
+ 
+    --ring: 0 0% 14.9%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Workout Table Styles */
+/* New table styling */
 .workout-table {
-  @apply w-full border-collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 .workout-table th {
-  @apply p-2 text-sm font-medium text-muted-foreground text-left border-b border-border;
+  text-align: left;
+  font-weight: 500;
 }
 
-.workout-table td {
-  @apply p-2 border-b border-border/50 transition-colors;
+.workout-table .exercise-cell {
+  min-width: 200px;
 }
 
-.workout-table tr {
-  @apply border-b border-border/20 hover:bg-muted/10;
+.workout-table .numeric-cell {
+  min-width: 70px;
+  width: 80px;
 }
 
-.workout-table tr:last-child {
-  @apply border-b-0;
+.workout-table .note-cell {
+  min-width: 150px;
+}
+
+.workout-table .set-number {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  padding-left: 1.5rem;
+}
+
+.workout-table .cell-input {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Add Excel-like styling to cells */
+.workout-table td, .workout-table th {
+  padding: 0.5rem;
 }
 
 .editable-cell {
-  @apply min-h-[2.25rem] px-2 transition-all duration-150 ease-in-out;
+  position: relative;
+  min-height: 38px;
+  width: 100%;
 }
 
-.cell-input {
-  @apply w-full h-full bg-transparent outline-none;
-}
-
-.exercise-cell {
-  @apply w-[30%];
-}
-
-.numeric-cell {
-  @apply w-[10%];
-}
-
-.note-cell {
-  @apply w-[20%];
-}
-
-/* Exercise and Set Rows */
-.exercise-row {
-  @apply border-t border-border/30;
-}
-
-.exercise-row:first-child {
-  @apply border-t-0;
-}
-
-.set-row {
-  @apply bg-muted/5 border-t border-border/20;
-}
-
-.set-row td {
-  @apply border-b-0;
-}
-
-.set-row:last-child td {
-  @apply border-b border-border/30;
-}
-
-.set-number {
-  @apply text-xs text-muted-foreground pl-8;
-}
-
-/* Add styles for focused cells */
 .editable-cell:focus-within {
-  @apply ring-2 ring-primary ring-offset-1;
-}
-
-/* Add/Remove Set buttons */
-.set-actions {
-  @apply flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity;
+  outline: 2px solid hsl(var(--primary));
 }

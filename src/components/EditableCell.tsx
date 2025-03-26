@@ -88,7 +88,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   return (
     <div 
       className={cn(
-        "editable-cell rounded-md h-full flex items-center",
+        "editable-cell h-full flex items-center",
         isFocused && "ring-2 ring-primary ring-offset-1",
         className
       )}
@@ -97,7 +97,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
       <input
         ref={inputRef}
         type={type}
-        className="cell-input w-full h-full bg-transparent outline-none px-2"
+        className="cell-input w-full h-full bg-transparent outline-none px-2 py-1"
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
