@@ -71,6 +71,10 @@ const RepInput: React.FC<RepInputProps> = ({
     }
   };
   
+  const handleCloseSelector = () => {
+    setShowSelector(false);
+  };
+  
   return (
     <div className={cn("relative", className)}>
       <div className="flex items-center gap-1">
@@ -101,7 +105,7 @@ const RepInput: React.FC<RepInputProps> = ({
           <RepTypeSelector
             value={repType}
             onChange={onRepTypeChange}
-            onClose={() => setShowSelector(false)}
+            onClose={handleCloseSelector}
           />
         </div>
       )}
