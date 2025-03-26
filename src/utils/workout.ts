@@ -1,3 +1,4 @@
+
 import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
 
 export function generateId(): string {
@@ -29,6 +30,7 @@ export function createEmptySession(day: number): WorkoutSession {
     name: `Day ${day} Session`,
     day,
     exercises: [createEmptyExercise()],
+    circuits: []
   };
 }
 
@@ -513,6 +515,7 @@ export const sampleProgram: WorkoutProgram = {
           notes: "",
         },
       ],
+      circuits: [],
     },
     {
       id: "day2",
@@ -576,6 +579,7 @@ export const sampleProgram: WorkoutProgram = {
           notes: "Keep back flat, hinge at hips",
         },
       ],
+      circuits: [],
     },
   ],
 };

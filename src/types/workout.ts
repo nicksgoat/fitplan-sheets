@@ -16,6 +16,8 @@ export interface Exercise {
   isInCircuit?: boolean;
   circuitId?: string;
   circuitOrder?: number;
+  isGroup?: boolean;
+  groupId?: string;
 }
 
 export interface Circuit {
