@@ -86,26 +86,20 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
     return (
       <div 
         className={cn(
-          "editable-cell h-full flex items-center",
+          "editable-cell h-full",
           isFocused && "ring-2 ring-primary ring-offset-1",
           className
         )}
         onClick={handleClick}
       >
-        {isFocused ? (
-          <RepInput
-            value={value}
-            repType={repType}
-            onChange={onChange}
-            onRepTypeChange={onRepTypeChange}
-            placeholder={placeholder}
-            isFocused={isFocused}
-          />
-        ) : (
-          <div className="cell-input w-full h-full px-2 py-1 flex items-center">
-            {value || placeholder}
-          </div>
-        )}
+        <RepInput
+          value={value}
+          repType={repType}
+          onChange={onChange}
+          onRepTypeChange={onRepTypeChange}
+          placeholder={placeholder}
+          isFocused={isFocused}
+        />
       </div>
     );
   }

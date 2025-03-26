@@ -4,13 +4,14 @@ import { RepType } from "@/types/workout";
 import RepTypeSelector from "./RepTypeSelector";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { InfoIcon } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 interface RepInputProps {
   value: string;
@@ -31,6 +32,15 @@ const repTypePlaceholders: Record<RepType, string> = {
   'amrap': 'AMRAP'
 };
 
+const repTypeLabels: Record<RepType, string> = {
+  'fixed': 'Fixed',
+  'range': 'Range',
+  'descending': 'Descending',
+  'time': 'Time',
+  'each-side': 'Each Side',
+  'amrap': 'AMRAP'
+};
+
 const RepInput: React.FC<RepInputProps> = ({
   value,
   repType,
@@ -43,6 +53,7 @@ const RepInput: React.FC<RepInputProps> = ({
   const [showSelector, setShowSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,6 +72,12 @@ const RepInput: React.FC<RepInputProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isFocused]);
   
   const handleInputFocus = () => {
     if (!isFocused) {
@@ -95,37 +112,49 @@ const RepInput: React.FC<RepInputProps> = ({
     setShowSelector(false);
   };
   
-  const handleOpenSelector = () => {
-    setShowSelector(true);
+  const handleOpenSelector = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowSelector(!showSelector);
   };
   
   return (
     <div className={cn("relative", className)}>
       <div className="flex items-center gap-1">
-        <Input
-          value={value}
-          onChange={handleChange}
-          onFocus={handleInputFocus}
-          placeholder={repTypePlaceholders[repType] || placeholder}
-          className={cn(
-            "h-9",
-            repType === 'amrap' && "text-amber-600 font-medium"
-          )}
-        />
-        <div ref={triggerRef}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <InfoIcon 
-                  className="h-4 w-4 text-muted-foreground cursor-help"
-                  onClick={handleOpenSelector}
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{getHelpText()}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="relative flex-grow">
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={handleChange}
+            onFocus={handleInputFocus}
+            placeholder={repTypePlaceholders[repType] || placeholder}
+            className={cn(
+              "h-9 pr-20",
+              repType === 'amrap' && "text-amber-600 font-medium"
+            )}
+          />
+          <div 
+            ref={triggerRef}
+            className="absolute right-0 top-0 h-full flex items-center pr-2"
+          >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2 text-xs flex items-center gap-1"
+                    onClick={handleOpenSelector}
+                  >
+                    <span className="text-muted-foreground">{repTypeLabels[repType]}</span>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{getHelpText()}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
       

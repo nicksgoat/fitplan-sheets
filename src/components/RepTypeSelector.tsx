@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { CheckIcon, ChevronsUpDown, TargetIcon, ClockIcon, FlipHorizontalIcon, TimerIcon, ArrowDownIcon } from "lucide-react";
+import React from "react";
+import { CheckIcon, TargetIcon, ArrowDownIcon, ClockIcon, FlipHorizontalIcon, TimerIcon } from "lucide-react";
 import { RepType } from "@/types/workout";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,63 +67,53 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
   onChange,
   onClose
 }) => {
-  const [open, setOpen] = useState(false);
-  
   const handleSelect = (selectedValue: RepType) => {
     onChange(selectedValue);
-    setOpen(false);
     if (onClose) {
       onClose();
     }
   };
   
-  const selectedOption = repTypeOptions.find(option => option.value === value) || repTypeOptions[0];
-  
+  // Direct list mode (used in RepInput dropdown)
   if (onClose) {
-    // Direct list mode (used in RepInput dropdown)
     return (
       <div className="w-full p-2">
-        <div className="mb-2 text-sm font-medium">Select Rep Type</div>
-        <div className="space-y-1">
+        <CommandGroup className="mb-1">
+          <div className="px-2 mb-1 text-sm font-medium">Select Rep Type</div>
           {repTypeOptions.map((option) => (
-            <Button
+            <CommandItem
               key={option.value}
-              variant={value === option.value ? "secondary" : "ghost"}
-              className="w-full justify-start text-left"
-              onClick={() => handleSelect(option.value)}
+              onSelect={() => handleSelect(option.value)}
+              className="flex items-center gap-2 cursor-pointer py-2"
             >
-              <div className="flex items-center">
-                {option.icon}
-                <div className="ml-2">
-                  <p className="text-sm font-medium">{option.label}</p>
-                  <p className="text-xs text-muted-foreground">{option.description}</p>
-                </div>
-                {value === option.value && (
-                  <CheckIcon className="ml-auto h-4 w-4" />
-                )}
+              {option.icon}
+              <div className="ml-2 flex-1">
+                <p className="text-sm font-medium">{option.label}</p>
+                <p className="text-xs text-muted-foreground">{option.description}</p>
               </div>
-            </Button>
+              {value === option.value && (
+                <CheckIcon className="ml-auto h-4 w-4" />
+              )}
+            </CommandItem>
           ))}
-        </div>
+        </CommandGroup>
       </div>
     );
   }
   
   // Popover mode (used elsewhere)
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
           className="w-full justify-between border-dashed border-muted h-8"
         >
           <div className="flex items-center gap-2">
-            {selectedOption.icon}
-            <span className="text-xs">{selectedOption.label}</span>
+            {repTypeOptions.find(option => option.value === value)?.icon}
+            <span className="text-xs">{repTypeOptions.find(option => option.value === value)?.label}</span>
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[250px] p-0">
