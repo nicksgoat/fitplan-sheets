@@ -338,7 +338,9 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         <div className="ml-2 text-xs text-muted-foreground">
                           {circuit.rounds === "AMRAP" 
                             ? "AMRAP" 
-                            : `${circuit.rounds} rounds`}
+                            : circuit.rounds 
+                              ? `${circuit.rounds} rounds` 
+                              : "3 rounds"}
                         </div>
                       )}
                     </div>

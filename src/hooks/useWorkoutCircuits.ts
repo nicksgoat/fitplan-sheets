@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { WorkoutProgram, Circuit, Exercise } from "@/types/workout";
 import { v4 as uuidv4 } from "uuid";
@@ -27,11 +28,14 @@ export const useWorkoutCircuits = ({
       circuitId
     };
     
-    // Create the circuit
+    // Create the circuit with default rounds
     const newCircuit: Circuit = {
       id: circuitId,
       name: name || "Circuit",
-      exercises: []
+      exercises: [],
+      rounds: name.includes("AMRAP") ? "AMRAP" : "3", // Default to 3 rounds or AMRAP for AMRAP circuits
+      restBetweenExercises: "30s",
+      restBetweenRounds: "60s"
     };
     
     // Check if this session is in the weeks structure
@@ -46,7 +50,7 @@ export const useWorkoutCircuits = ({
                   return {
                     ...session,
                     exercises: [...session.exercises, circuitHeaderExercise],
-                    circuits: [...session.circuits, newCircuit]
+                    circuits: [...(session.circuits || []), newCircuit]
                   };
                 }
                 return session;
@@ -70,7 +74,7 @@ export const useWorkoutCircuits = ({
             return {
               ...session,
               exercises: [...session.exercises, circuitHeaderExercise],
-              circuits: [...session.circuits, newCircuit]
+              circuits: [...(session.circuits || []), newCircuit]
             };
           }
           return session;

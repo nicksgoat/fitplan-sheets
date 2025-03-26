@@ -21,10 +21,16 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   
   if (!session) return null;
   
+  // Make sure to initialize circuits array if it doesn't exist
+  const sessionWithCircuits = {
+    ...session,
+    circuits: session.circuits || []
+  };
+  
   return (
     <div className="space-y-6">
       <WorkoutSessionHeader sessionId={sessionId} />
-      <WorkoutTable session={session} />
+      <WorkoutTable session={sessionWithCircuits} />
     </div>
   );
 };
