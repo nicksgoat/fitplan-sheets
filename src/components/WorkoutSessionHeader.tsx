@@ -4,6 +4,7 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import CircuitControls from "./CircuitControls";
 
 interface WorkoutSessionHeaderProps {
   sessionId: string;
@@ -49,7 +50,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   if (!session) return null;
   
   return (
-    <div className="session-header">
+    <div className="session-header flex justify-between mb-4">
       <div className="flex items-center gap-2">
         {!isEditing ? (
           <h2 className="text-lg font-medium flex items-center">
@@ -88,6 +89,8 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
       </div>
       
       <div className="flex items-center gap-2">
+        <CircuitControls sessionId={sessionId} />
+        
         <Button
           variant="ghost"
           size="sm"

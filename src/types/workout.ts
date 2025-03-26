@@ -12,8 +12,19 @@ export interface Exercise {
   name: string;
   sets: Set[];
   notes: string;
-  isGroup?: boolean;
-  groupId?: string;
+  isCircuit?: boolean;
+  isInCircuit?: boolean;
+  circuitId?: string;
+  circuitOrder?: number;
+}
+
+export interface Circuit {
+  id: string;
+  name: string;
+  exercises: string[]; // Array of exercise IDs
+  rounds?: string;
+  restBetweenExercises?: string;
+  restBetweenRounds?: string;
 }
 
 export interface WorkoutSession {
@@ -21,6 +32,7 @@ export interface WorkoutSession {
   name: string;
   day: number;
   exercises: Exercise[];
+  circuits: Circuit[];
 }
 
 export interface WorkoutProgram {
@@ -32,3 +44,5 @@ export interface WorkoutProgram {
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';
 export type ExerciseCellType = 'name' | 'notes';
 export type SetCellType = 'reps' | 'weight' | 'rpe' | 'rest';
+
+export type WorkoutType = 'standard' | 'circuit' | 'superset' | 'emom' | 'amrap' | 'tabata';

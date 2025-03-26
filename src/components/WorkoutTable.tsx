@@ -1,6 +1,6 @@
 
 import React, { useRef } from "react";
-import { Trash2, ChevronRight, Plus, Minus } from "lucide-react";
+import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import EditableCell from "./EditableCell";
@@ -224,9 +224,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
         </thead>
         <tbody>
           {session.exercises.map((exercise, exerciseIndex) => {
-            // Calculate if this is the first exercise with this group ID
-            const isGroupHeader = exercise.isGroup;
-            const isGroupItem = Boolean(exercise.groupId);
+            // Calculate if this is a circuit exercise
+            const isCircuit = exercise.isCircuit;
+            const isInCircuit = exercise.isInCircuit;
+            const circuitId = exercise.circuitId;
+            
+            // Find the circuit if this exercise is in one
+            const circuit = circuitId 
+              ? (session.circuits || []).find(c => c.id === circuitId) 
+              : undefined;
             
             return (
               <React.Fragment key={exercise.id}>
@@ -237,11 +243,12 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   transition={{ duration: 0.2, delay: exerciseIndex * 0.03 }}
                   className={cn(
                     "group exercise-row",
-                    isGroupItem ? "bg-secondary/30" : ""
+                    isCircuit && "bg-primary/5 border-primary/20",
+                    isInCircuit && "bg-secondary/30"
                   )}
                 >
                   <td className="text-center text-muted-foreground text-sm">
-                    {isGroupItem ? (
+                    {isInCircuit ? (
                       <div className="flex justify-center items-center pl-2">
                         <ChevronRight className="h-3 w-3" />
                       </div>
@@ -250,70 +257,106 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     )}
                   </td>
                   
-                  <td className={cn(isGroupItem && "pl-4")} colSpan={5}>
-                    <EditableCell
-                      value={exercise.name}
-                      onChange={(value) => handleExerciseCellChange(exercise.id, "name", value)}
-                      placeholder="Exercise name"
-                      className={cn(
-                        isGroupHeader && "font-medium",
-                        exercise.name === "Finisher" && "font-medium text-orange-600",
-                        exercise.name === "Cool down" && "font-medium text-blue-600",
-                        exercise.name?.includes("Circuit") && "font-medium text-purple-600"
+                  <td className={cn(isInCircuit && "pl-4")} colSpan={isCircuit ? 5 : undefined}>
+                    <div className="flex items-center gap-2">
+                      {isCircuit && (
+                        <RotateCcw className="h-3.5 w-3.5 text-primary mr-1" />
                       )}
-                      coordinate={{ rowIndex: exerciseIndex, columnName: "name", exerciseId: exercise.id }}
-                      isFocused={isCellFocused(exerciseIndex, "name", exercise.id)}
-                      onFocus={handleCellFocus}
-                      onNavigate={(direction, shiftKey) => 
-                        handleExerciseCellNavigate(direction, shiftKey, { 
-                          rowIndex: exerciseIndex, 
-                          columnName: "name", 
-                          exerciseId: exercise.id 
-                        })
-                      }
-                    />
-                  </td>
-                  
-                  <td className="note-cell">
-                    <EditableCell
-                      value={exercise.notes}
-                      onChange={(value) => handleExerciseCellChange(exercise.id, "notes", value)}
-                      placeholder="Add notes..."
-                      coordinate={{ rowIndex: exerciseIndex, columnName: "notes", exerciseId: exercise.id }}
-                      isFocused={isCellFocused(exerciseIndex, "notes", exercise.id)}
-                      onFocus={handleCellFocus}
-                      onNavigate={(direction, shiftKey) => 
-                        handleExerciseCellNavigate(direction, shiftKey, { 
-                          rowIndex: exerciseIndex, 
-                          columnName: "notes", 
-                          exerciseId: exercise.id 
-                        })
-                      }
-                    />
-                  </td>
-                  
-                  <td>
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        className="p-1 rounded-full hover:bg-secondary transition-colors"
-                        onClick={() => addSet(session.id, exercise.id)}
-                        aria-label="Add set"
-                      >
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                      <button
-                        className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-                        onClick={() => deleteExercise(session.id, exercise.id)}
-                        aria-label="Delete exercise"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                      </button>
+                      <EditableCell
+                        value={exercise.name}
+                        onChange={(value) => handleExerciseCellChange(exercise.id, "name", value)}
+                        placeholder="Exercise name"
+                        className={cn(
+                          isCircuit && "font-medium text-primary",
+                          isInCircuit && circuit?.name === "Superset" && "font-medium text-indigo-600",
+                          isInCircuit && circuit?.name.includes("EMOM") && "font-medium text-green-600",
+                          isInCircuit && circuit?.name.includes("AMRAP") && "font-medium text-amber-600",
+                          isInCircuit && circuit?.name.includes("Tabata") && "font-medium text-rose-600",
+                          exercise.name === "Finisher" && "font-medium text-orange-600",
+                          exercise.name === "Cool down" && "font-medium text-blue-600"
+                        )}
+                        coordinate={{ rowIndex: exerciseIndex, columnName: "name", exerciseId: exercise.id }}
+                        isFocused={isCellFocused(exerciseIndex, "name", exercise.id)}
+                        onFocus={handleCellFocus}
+                        onNavigate={(direction, shiftKey) => 
+                          handleExerciseCellNavigate(direction, shiftKey, { 
+                            rowIndex: exerciseIndex, 
+                            columnName: "name", 
+                            exerciseId: exercise.id 
+                          })
+                        }
+                      />
+                      
+                      {isCircuit && circuit && (
+                        <div className="ml-2 text-xs text-muted-foreground">
+                          {circuit.rounds === "AMRAP" 
+                            ? "AMRAP" 
+                            : `${circuit.rounds} rounds`}
+                        </div>
+                      )}
                     </div>
                   </td>
+                  
+                  {!isCircuit && (
+                    <>
+                      <td className="note-cell">
+                        <EditableCell
+                          value={exercise.notes}
+                          onChange={(value) => handleExerciseCellChange(exercise.id, "notes", value)}
+                          placeholder="Add notes..."
+                          coordinate={{ rowIndex: exerciseIndex, columnName: "notes", exerciseId: exercise.id }}
+                          isFocused={isCellFocused(exerciseIndex, "notes", exercise.id)}
+                          onFocus={handleCellFocus}
+                          onNavigate={(direction, shiftKey) => 
+                            handleExerciseCellNavigate(direction, shiftKey, { 
+                              rowIndex: exerciseIndex, 
+                              columnName: "notes", 
+                              exerciseId: exercise.id 
+                            })
+                          }
+                        />
+                      </td>
+                    
+                      <td>
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            onClick={() => addSet(session.id, exercise.id)}
+                            aria-label="Add set"
+                          >
+                            <Plus className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                          <button
+                            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+                            onClick={() => deleteExercise(session.id, exercise.id)}
+                            aria-label="Delete exercise"
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                  
+                  {isCircuit && (
+                    <>
+                      <td colSpan={2}>
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+                            onClick={() => deleteExercise(session.id, exercise.id)}
+                            aria-label="Delete circuit"
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
                 </motion.tr>
                 
-                {/* Set rows */}
-                {exercise.sets.map((set, setIndex) => (
+                {/* Set rows (only show for non-circuit header rows) */}
+                {!isCircuit && exercise.sets.map((set, setIndex) => (
                   <motion.tr
                     key={`${exercise.id}-${set.id}`}
                     initial={{ opacity: 0 }}
