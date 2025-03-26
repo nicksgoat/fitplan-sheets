@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { PlusCircle, RefreshCw, Layers, Save, Database } from "lucide-react";
+import { PlusCircle, RefreshCw, Layers, Save, Database, Music, PlaySquare, Album } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,49 +27,49 @@ const WorkoutHeader: React.FC = () => {
     activeSessionId,
     resetProgram, 
     loadSampleProgram,
-    saveSessionAsPreset,
-    saveWeekAsPreset,
-    saveProgramAsPreset,
-    loadSessionPreset,
-    loadWeekPreset,
-    loadProgramPreset,
-    getSessionPresets,
-    getWeekPresets,
-    getProgramPresets,
-    deleteSessionPreset,
-    deleteWeekPreset,
-    deleteProgramPreset
+    saveSessionToLibrary,
+    saveWeekToLibrary,
+    saveProgramToLibrary,
+    loadSessionFromLibrary,
+    loadWeekFromLibrary,
+    loadProgramFromLibrary,
+    getSessionLibrary,
+    getWeekLibrary,
+    getProgramLibrary,
+    removeSessionFromLibrary,
+    removeWeekFromLibrary,
+    removeProgramFromLibrary
   } = useWorkout();
   
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
   const [isWeekDialogOpen, setIsWeekDialogOpen] = useState(false);
   const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
-  const [presetName, setPresetName] = useState("");
+  const [libraryItemName, setLibraryItemName] = useState("");
   
-  const sessionPresets = getSessionPresets();
-  const weekPresets = getWeekPresets();
-  const programPresets = getProgramPresets();
+  const sessionLibrary = getSessionLibrary();
+  const weekLibrary = getWeekLibrary();
+  const programLibrary = getProgramLibrary();
   
-  const handleSaveSessionPreset = () => {
-    if (activeSessionId && presetName) {
-      saveSessionAsPreset(activeSessionId, presetName);
-      setPresetName("");
+  const handleSaveSessionToLibrary = () => {
+    if (activeSessionId && libraryItemName) {
+      saveSessionToLibrary(activeSessionId, libraryItemName);
+      setLibraryItemName("");
       setIsSessionDialogOpen(false);
     }
   };
   
-  const handleSaveWeekPreset = () => {
-    if (activeWeekId && presetName) {
-      saveWeekAsPreset(activeWeekId, presetName);
-      setPresetName("");
+  const handleSaveWeekToLibrary = () => {
+    if (activeWeekId && libraryItemName) {
+      saveWeekToLibrary(activeWeekId, libraryItemName);
+      setLibraryItemName("");
       setIsWeekDialogOpen(false);
     }
   };
   
-  const handleSaveProgramPreset = () => {
-    if (presetName) {
-      saveProgramAsPreset(presetName);
-      setPresetName("");
+  const handleSaveProgramToLibrary = () => {
+    if (libraryItemName) {
+      saveProgramToLibrary(libraryItemName);
+      setLibraryItemName("");
       setIsProgramDialogOpen(false);
     }
   };
@@ -81,7 +81,7 @@ const WorkoutHeader: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Presets Dropdown */}
+        {/* Library Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -89,79 +89,82 @@ const WorkoutHeader: React.FC = () => {
               size="sm"
               className="flex items-center gap-1"
             >
-              <Database className="h-4 w-4" />
-              <span>Presets</span>
+              <Music className="h-4 w-4" />
+              <span>Library</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Load Presets</DropdownMenuLabel>
+            <DropdownMenuLabel>Your Library</DropdownMenuLabel>
             
-            {/* Session Presets */}
+            {/* Workout Playlists (Sessions) */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <span>Session Presets</span>
+                <PlaySquare className="h-4 w-4 mr-2" />
+                <span>Workout Playlists</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {sessionPresets.length > 0 ? (
-                  sessionPresets.map((preset: WorkoutSession) => (
+                {sessionLibrary.length > 0 ? (
+                  sessionLibrary.map((session: WorkoutSession) => (
                     <DropdownMenuItem 
-                      key={preset.id}
+                      key={session.id}
                       disabled={!activeWeekId}
-                      onClick={() => activeWeekId && loadSessionPreset(preset, activeWeekId)}
+                      onClick={() => activeWeekId && loadSessionFromLibrary(session, activeWeekId)}
                     >
-                      {preset.name}
+                      {session.name}
                     </DropdownMenuItem>
                   ))
                 ) : (
-                  <DropdownMenuItem disabled>No saved sessions</DropdownMenuItem>
+                  <DropdownMenuItem disabled>No saved workout playlists</DropdownMenuItem>
                 )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             
-            {/* Week Presets */}
+            {/* Training Weeks */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <span>Week Presets</span>
+                <PlaySquare className="h-4 w-4 mr-2" />
+                <span>Training Weeks</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {weekPresets.length > 0 ? (
-                  weekPresets.map((preset: WorkoutWeek) => (
+                {weekLibrary.length > 0 ? (
+                  weekLibrary.map((week: WorkoutWeek) => (
                     <DropdownMenuItem 
-                      key={preset.id}
-                      onClick={() => loadWeekPreset(preset)}
+                      key={week.id}
+                      onClick={() => loadWeekFromLibrary(week)}
                     >
-                      {preset.name}
+                      {week.name}
                     </DropdownMenuItem>
                   ))
                 ) : (
-                  <DropdownMenuItem disabled>No saved weeks</DropdownMenuItem>
+                  <DropdownMenuItem disabled>No saved training weeks</DropdownMenuItem>
                 )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             
-            {/* Program Presets */}
+            {/* Training Programs */}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <span>Program Presets</span>
+                <Album className="h-4 w-4 mr-2" />
+                <span>Training Albums</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {programPresets.length > 0 ? (
-                  programPresets.map((preset: WorkoutProgram) => (
+                {programLibrary.length > 0 ? (
+                  programLibrary.map((program: WorkoutProgram) => (
                     <DropdownMenuItem 
-                      key={preset.id}
-                      onClick={() => loadProgramPreset(preset)}
+                      key={program.id}
+                      onClick={() => loadProgramFromLibrary(program)}
                     >
-                      {preset.name}
+                      {program.name}
                     </DropdownMenuItem>
                   ))
                 ) : (
-                  <DropdownMenuItem disabled>No saved programs</DropdownMenuItem>
+                  <DropdownMenuItem disabled>No saved training albums</DropdownMenuItem>
                 )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Save Presets</DropdownMenuLabel>
+            <DropdownMenuLabel>Add to Library</DropdownMenuLabel>
             
             {/* Save Current Session */}
             <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
@@ -170,22 +173,23 @@ const WorkoutHeader: React.FC = () => {
                   onSelect={(e) => e.preventDefault()}
                   disabled={!activeSessionId}
                 >
-                  Save Current Session
+                  <PlaySquare className="h-4 w-4 mr-2" />
+                  Save Current Workout Playlist
                 </DropdownMenuItem>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Save Session as Preset</DialogTitle>
+                  <DialogTitle>Add Workout Playlist to Library</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="session-name" className="text-right">
-                      Name
+                      Playlist Name
                     </Label>
                     <Input
                       id="session-name"
-                      value={presetName}
-                      onChange={(e) => setPresetName(e.target.value)}
+                      value={libraryItemName}
+                      onChange={(e) => setLibraryItemName(e.target.value)}
                       className="col-span-3"
                     />
                   </div>
@@ -193,10 +197,10 @@ const WorkoutHeader: React.FC = () => {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    onClick={handleSaveSessionPreset}
-                    disabled={!presetName}
+                    onClick={handleSaveSessionToLibrary}
+                    disabled={!libraryItemName}
                   >
-                    Save
+                    Add to Library
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -209,22 +213,23 @@ const WorkoutHeader: React.FC = () => {
                   onSelect={(e) => e.preventDefault()}
                   disabled={!activeWeekId}
                 >
-                  Save Current Week
+                  <PlaySquare className="h-4 w-4 mr-2" />
+                  Save Current Training Week
                 </DropdownMenuItem>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Save Week as Preset</DialogTitle>
+                  <DialogTitle>Add Training Week to Library</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="week-name" className="text-right">
-                      Name
+                      Week Name
                     </Label>
                     <Input
                       id="week-name"
-                      value={presetName}
-                      onChange={(e) => setPresetName(e.target.value)}
+                      value={libraryItemName}
+                      onChange={(e) => setLibraryItemName(e.target.value)}
                       className="col-span-3"
                     />
                   </div>
@@ -232,10 +237,10 @@ const WorkoutHeader: React.FC = () => {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    onClick={handleSaveWeekPreset}
-                    disabled={!presetName}
+                    onClick={handleSaveWeekToLibrary}
+                    disabled={!libraryItemName}
                   >
-                    Save
+                    Add to Library
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -247,22 +252,23 @@ const WorkoutHeader: React.FC = () => {
                 <DropdownMenuItem 
                   onSelect={(e) => e.preventDefault()}
                 >
-                  Save Current Program
+                  <Album className="h-4 w-4 mr-2" />
+                  Save Current Training Album
                 </DropdownMenuItem>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Save Program as Preset</DialogTitle>
+                  <DialogTitle>Add Training Album to Library</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="program-name" className="text-right">
-                      Name
+                      Album Name
                     </Label>
                     <Input
                       id="program-name"
-                      value={presetName}
-                      onChange={(e) => setPresetName(e.target.value)}
+                      value={libraryItemName}
+                      onChange={(e) => setLibraryItemName(e.target.value)}
                       className="col-span-3"
                     />
                   </div>
@@ -270,10 +276,10 @@ const WorkoutHeader: React.FC = () => {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    onClick={handleSaveProgramPreset}
-                    disabled={!presetName}
+                    onClick={handleSaveProgramToLibrary}
+                    disabled={!libraryItemName}
                   >
-                    Save
+                    Add to Library
                   </Button>
                 </DialogFooter>
               </DialogContent>

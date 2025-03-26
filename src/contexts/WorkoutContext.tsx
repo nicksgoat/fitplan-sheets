@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
@@ -23,15 +22,15 @@ import {
   generateId
 } from "@/utils/workout";
 import {
-  saveSessionPreset,
-  saveWeekPreset,
-  saveProgramPreset,
-  getSessionPresets,
-  getWeekPresets,
-  getProgramPresets,
-  deleteSessionPreset,
-  deleteWeekPreset,
-  deleteProgramPreset
+  addSessionToLibrary,
+  addWeekToLibrary,
+  addProgramToLibrary,
+  getSessionLibrary,
+  getWeekLibrary,
+  getProgramLibrary,
+  removeSessionFromLibrary,
+  removeWeekFromLibrary,
+  removeProgramFromLibrary
 } from "@/utils/presets";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -77,6 +76,18 @@ interface WorkoutContextType {
   deleteSessionPreset: (presetId: string) => void;
   deleteWeekPreset: (presetId: string) => void;
   deleteProgramPreset: (presetId: string) => void;
+  saveSessionToLibrary: (sessionId: string, name: string) => void;
+  saveWeekToLibrary: (weekId: string, name: string) => void;
+  saveProgramToLibrary: (name: string) => void;
+  loadSessionFromLibrary: (session: WorkoutSession, weekId: string) => void;
+  loadWeekFromLibrary: (week: WorkoutWeek) => void;
+  loadProgramFromLibrary: (program: WorkoutProgram) => void;
+  getSessionLibrary: () => WorkoutSession[];
+  getWeekLibrary: () => WorkoutWeek[];
+  getProgramLibrary: () => WorkoutProgram[];
+  removeSessionFromLibrary: (sessionId: string) => void;
+  removeWeekFromLibrary: (weekId: string) => void;
+  removeProgramFromLibrary: (programId: string) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -791,6 +802,100 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Loaded program preset: ${preset.name}`);
   };
 
+  const saveSessionToLibrary = (sessionId: string, name: string) => {
+    const sessionPreset = saveCurrentSessionAsPreset(program, sessionId, name);
+    addSessionToLibrary(sessionPreset);
+    toast.success("Workout playlist added to library");
+  };
+
+  const saveWeekToLibrary = (weekId: string, name: string) => {
+    const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
+    addWeekToLibrary(weekPreset);
+    toast.success("Training week added to library");
+  };
+
+  const saveProgramToLibrary = (name: string) => {
+    const programPreset = copyProgramAsPreset(program, name);
+    addProgramToLibrary(programPreset);
+    toast.success("Training album added to library");
+  };
+
+  const loadSessionFromLibrary = (preset: WorkoutSession, weekId: string) => {
+    setProgram((prevProgram) => {
+      const newSession = cloneSession(preset, weekId);
+      
+      const updatedWeeks = prevProgram.weeks.map(week => {
+        if (week.id === weekId) {
+          return {
+            ...week,
+            sessions: [...week.sessions, newSession.id]
+          };
+        }
+        return week;
+      });
+      
+      const updatedProgram = {
+        ...prevProgram,
+        sessions: [...prevProgram.sessions, newSession],
+        weeks: updatedWeeks
+      };
+      
+      setActiveSessionId(newSession.id);
+      
+      return updatedProgram;
+    });
+    
+    toast.success(`Added "${preset.name}" to your program`);
+  };
+
+  const loadWeekFromLibrary = (preset: WorkoutWeek) => {
+    setProgram((prevProgram) => {
+      const newWeekId = generateId();
+      const newWeek = {
+        ...preset,
+        id: newWeekId,
+        order: prevProgram.weeks.length + 1,
+        sessions: []
+      };
+      
+      const sessionsToAdd: WorkoutSession[] = [];
+      const sessionIds: string[] = [];
+      
+      preset.sessions.forEach(originalSessionId => {
+        const originalSession = getSessionLibrary().find(s => s.id === originalSessionId);
+        if (originalSession) {
+          const newSession = cloneSession(originalSession, newWeekId);
+          sessionsToAdd.push(newSession);
+          sessionIds.push(newSession.id);
+        }
+      });
+      
+      newWeek.sessions = sessionIds;
+      
+      const updatedProgram = {
+        ...prevProgram,
+        weeks: [...prevProgram.weeks, newWeek],
+        sessions: [...prevProgram.sessions, ...sessionsToAdd]
+      };
+      
+      setActiveWeekId(newWeekId);
+      if (sessionIds.length > 0) {
+        setActiveSessionId(sessionIds[0]);
+      }
+      
+      return updatedProgram;
+    });
+    
+    toast.success(`Added training week "${preset.name}" to your program`);
+  };
+
+  const loadProgramFromLibrary = (preset: WorkoutProgram) => {
+    setProgram(preset);
+    setActiveWeekId(preset.weeks[0]?.id || null);
+    setActiveSessionId(preset.sessions[0]?.id || null);
+    toast.success(`Loaded training album: ${preset.name}`);
+  };
+
   return (
     <WorkoutContext.Provider
       value={{
@@ -834,6 +939,18 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         deleteSessionPreset,
         deleteWeekPreset,
         deleteProgramPreset,
+        saveSessionToLibrary,
+        saveWeekToLibrary,
+        saveProgramToLibrary,
+        loadSessionFromLibrary,
+        loadWeekFromLibrary,
+        loadProgramFromLibrary,
+        getSessionLibrary,
+        getWeekLibrary,
+        getProgramLibrary,
+        removeSessionFromLibrary,
+        removeWeekFromLibrary,
+        removeProgramFromLibrary,
       }}
     >
       {children}
