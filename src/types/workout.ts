@@ -35,12 +35,21 @@ export interface WorkoutSession {
   day: number;
   exercises: Exercise[];
   circuits: Circuit[];
+  weekId?: string; // New field to associate session with a week
+}
+
+export interface WorkoutWeek {
+  id: string;
+  name: string;
+  order: number;
+  sessions: string[]; // Array of session IDs
 }
 
 export interface WorkoutProgram {
   id: string;
   name: string;
   sessions: WorkoutSession[];
+  weeks: WorkoutWeek[]; // New weeks array
 }
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';

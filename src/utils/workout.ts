@@ -1,4 +1,4 @@
-import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession, WorkoutWeek } from "@/types/workout";
 
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -23,21 +23,37 @@ export function createEmptyExercise(): Exercise {
   };
 }
 
-export function createEmptySession(day: number): WorkoutSession {
+export function createEmptySession(day: number, weekId?: string): WorkoutSession {
   return {
     id: generateId(),
     name: `Day ${day} Session`,
     day,
     exercises: [createEmptyExercise()],
-    circuits: []
+    circuits: [],
+    weekId
+  };
+}
+
+export function createEmptyWeek(order: number): WorkoutWeek {
+  const sessionId = generateId();
+  
+  return {
+    id: generateId(),
+    name: `Week ${order}`,
+    order,
+    sessions: [sessionId]
   };
 }
 
 export function createEmptyProgram(): WorkoutProgram {
+  const week = createEmptyWeek(1);
+  const session = createEmptySession(1, week.id);
+  
   return {
     id: generateId(),
     name: "New Workout Program",
-    sessions: [createEmptySession(1)],
+    sessions: [session],
+    weeks: [week]
   };
 }
 
@@ -163,39 +179,96 @@ export function deleteExerciseFromSession(
 
 export function addSessionToProgram(
   program: WorkoutProgram,
+  weekId: string,
   afterSessionId?: string
 ): WorkoutProgram {
-  const newDay = program.sessions.length + 1;
-  const newSession = createEmptySession(newDay);
+  const week = program.weeks.find(w => w.id === weekId);
+  if (!week) return program;
+
+  const sessionsInWeek = week.sessions.length;
+  const newSession = createEmptySession(sessionsInWeek + 1, weekId);
+  
+  const updatedProgram = {
+    ...program,
+    sessions: [...program.sessions, newSession]
+  };
   
   if (!afterSessionId) {
     return {
-      ...program,
-      sessions: [...program.sessions, newSession],
+      ...updatedProgram,
+      weeks: program.weeks.map(w => 
+        w.id === weekId 
+          ? { ...w, sessions: [...w.sessions, newSession.id] }
+          : w
+      )
     };
   }
   
-  const sessionIndex = program.sessions.findIndex(s => s.id === afterSessionId);
+  const sessionIndex = week.sessions.findIndex(id => id === afterSessionId);
   
   if (sessionIndex === -1) {
     return {
-      ...program,
-      sessions: [...program.sessions, newSession],
+      ...updatedProgram,
+      weeks: program.weeks.map(w => 
+        w.id === weekId 
+          ? { ...w, sessions: [...w.sessions, newSession.id] }
+          : w
+      )
     };
   }
   
-  const updatedSessions = [...program.sessions];
-  updatedSessions.splice(sessionIndex + 1, 0, newSession);
+  const updatedSessions = [...week.sessions];
+  updatedSessions.splice(sessionIndex + 1, 0, newSession.id);
   
-  // Update day numbers
-  const reorderedSessions = updatedSessions.map((session, index) => ({
-    ...session,
-    day: index + 1,
+  return {
+    ...updatedProgram,
+    weeks: program.weeks.map(w => 
+      w.id === weekId 
+        ? { ...w, sessions: updatedSessions }
+        : w
+    )
+  };
+}
+
+export function addWeekToProgram(
+  program: WorkoutProgram,
+  afterWeekId?: string
+): WorkoutProgram {
+  const newWeekOrder = program.weeks.length + 1;
+  const newWeek = createEmptyWeek(newWeekOrder);
+  const newSession = createEmptySession(1, newWeek.id);
+  
+  if (!afterWeekId) {
+    return {
+      ...program,
+      weeks: [...program.weeks, newWeek],
+      sessions: [...program.sessions, newSession]
+    };
+  }
+  
+  const weekIndex = program.weeks.findIndex(w => w.id === afterWeekId);
+  
+  if (weekIndex === -1) {
+    return {
+      ...program,
+      weeks: [...program.weeks, newWeek],
+      sessions: [...program.sessions, newSession]
+    };
+  }
+  
+  const updatedWeeks = [...program.weeks];
+  updatedWeeks.splice(weekIndex + 1, 0, newWeek);
+  
+  // Update week order numbers
+  const reorderedWeeks = updatedWeeks.map((week, index) => ({
+    ...week,
+    order: index + 1,
   }));
   
   return {
     ...program,
-    sessions: reorderedSessions,
+    weeks: reorderedWeeks,
+    sessions: [...program.sessions, newSession]
   };
 }
 
@@ -208,7 +281,20 @@ export function updateSessionInProgram(
     ...program,
     sessions: program.sessions.map(session =>
       session.id === sessionId ? updatedSession : session
-    ),
+    )
+  };
+}
+
+export function updateWeekInProgram(
+  program: WorkoutProgram,
+  weekId: string,
+  updates: Partial<WorkoutWeek>
+): WorkoutProgram {
+  return {
+    ...program,
+    weeks: program.weeks.map(week =>
+      week.id === weekId ? { ...week, ...updates } : week
+    )
   };
 }
 
@@ -216,33 +302,97 @@ export function deleteSessionFromProgram(
   program: WorkoutProgram,
   sessionId: string
 ): WorkoutProgram {
-  // Don't allow deleting the last session
-  if (program.sessions.length <= 1) {
+  const sessionToDelete = program.sessions.find(s => s.id === sessionId);
+  if (!sessionToDelete) return program;
+  
+  const weekId = sessionToDelete.weekId;
+  if (!weekId) return program;
+  
+  const week = program.weeks.find(w => w.id === weekId);
+  if (!week) return program;
+  
+  // Don't allow deleting the last session in a week
+  if (week.sessions.length <= 1) {
     return program;
   }
   
-  // Filter out the session to delete
-  const updatedSessions = program.sessions
-    .filter(session => session.id !== sessionId)
-    .map((session, index) => ({
-      ...session,
-      day: index + 1, // Update day numbers
-    }));
+  // Filter out the session from the program
+  const updatedSessions = program.sessions.filter(
+    session => session.id !== sessionId
+  );
+  
+  // Filter out the session ID from the week
+  const updatedWeeks = program.weeks.map(week => {
+    if (week.id !== weekId) return week;
+    
+    return {
+      ...week,
+      sessions: week.sessions.filter(id => id !== sessionId)
+    };
+  });
   
   return {
     ...program,
     sessions: updatedSessions,
+    weeks: updatedWeeks
+  };
+}
+
+export function deleteWeekFromProgram(
+  program: WorkoutProgram,
+  weekId: string
+): WorkoutProgram {
+  // Don't allow deleting the last week
+  if (program.weeks.length <= 1) {
+    return program;
+  }
+  
+  const week = program.weeks.find(w => w.id === weekId);
+  if (!week) return program;
+  
+  // Filter out the week from the program
+  const updatedWeeks = program.weeks
+    .filter(week => week.id !== weekId)
+    .map((week, index) => ({
+      ...week,
+      order: index + 1 // Update order numbers
+    }));
+  
+  // Filter out the sessions that were in this week
+  const updatedSessions = program.sessions.filter(
+    session => session.weekId !== weekId
+  );
+  
+  return {
+    ...program,
+    sessions: updatedSessions,
+    weeks: updatedWeeks
   };
 }
 
 export const sampleProgram: WorkoutProgram = {
   id: "sample1",
   name: "Strength Building Program",
+  weeks: [
+    {
+      id: "week1",
+      name: "Week 1 - Foundation",
+      order: 1,
+      sessions: ["day1", "day2"]
+    },
+    {
+      id: "week2",
+      name: "Week 2 - Progress",
+      order: 2,
+      sessions: ["day3"]
+    }
+  ],
   sessions: [
     {
       id: "day1",
       name: "Monday Session",
       day: 1,
+      weekId: "week1",
       exercises: [
         {
           id: "ex1",
@@ -520,6 +670,7 @@ export const sampleProgram: WorkoutProgram = {
       id: "day2",
       name: "Wednesday Session",
       day: 2,
+      weekId: "week1",
       exercises: [
         {
           id: "ex12",
@@ -576,6 +727,43 @@ export const sampleProgram: WorkoutProgram = {
             }
           ],
           notes: "Keep back flat, hinge at hips",
+        },
+      ],
+      circuits: [],
+    },
+    {
+      id: "day3",
+      name: "Monday Session",
+      day: 1,
+      weekId: "week2",
+      exercises: [
+        {
+          id: "ex14",
+          name: "Squat",
+          sets: [
+            {
+              id: "set14-1",
+              reps: "8",
+              weight: "185",
+              rpe: "80%",
+              rest: "2 min",
+            },
+            {
+              id: "set14-2",
+              reps: "8",
+              weight: "205",
+              rpe: "80%",
+              rest: "2 min",
+            },
+            {
+              id: "set14-3",
+              reps: "8",
+              weight: "225",
+              rpe: "80%",
+              rest: "2 min",
+            }
+          ],
+          notes: "Focus on depth",
         },
       ],
       circuits: [],

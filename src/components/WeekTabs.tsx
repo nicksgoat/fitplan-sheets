@@ -3,42 +3,42 @@ import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, activeWeekId, setActiveSessionId, addSession } = useWorkout();
+const WeekTabs: React.FC = () => {
+  const { program, activeWeekId, setActiveWeekId, setActiveSessionId, addWeek } = useWorkout();
   
-  if (!activeWeekId) return null;
-  
-  const currentWeek = program.weeks.find(w => w.id === activeWeekId);
-  if (!currentWeek) return null;
-  
-  const sessionsInWeek = currentWeek.sessions
-    .map(sessionId => program.sessions.find(s => s.id === sessionId))
-    .filter(session => session !== undefined) as WorkoutSession[];
-  
-  if (sessionsInWeek.length <= 0) return null;
+  const handleWeekClick = (weekId: string) => {
+    setActiveWeekId(weekId);
+    
+    // Find the first session in this week and make it active
+    const week = program.weeks.find(w => w.id === weekId);
+    if (week && week.sessions.length > 0) {
+      setActiveSessionId(week.sessions[0]);
+    }
+  };
   
   return (
     <div className="mb-6 overflow-x-auto">
       <div className="flex items-center gap-1 border-b border-border pb-1">
-        {sessionsInWeek.map((session) => (
+        {program.weeks.map((week) => (
           <button
-            key={session.id}
+            key={week.id}
             className={cn(
               "px-4 py-2 rounded-t-lg text-sm font-medium relative",
-              "transition-colors duration-200 whitespace-nowrap",
-              activeSessionId === session.id
+              "transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5",
+              activeWeekId === week.id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
-            onClick={() => setActiveSessionId(session.id)}
+            onClick={() => handleWeekClick(week.id)}
           >
-            {session.name}
-            {activeSessionId === session.id && (
+            <Calendar className="h-4 w-4" />
+            {week.name}
+            {activeWeekId === week.id && (
               <motion.div
-                layoutId="activeTab"
+                layoutId="activeWeekTab"
                 className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -52,14 +52,14 @@ const SessionTabs: React.FC = () => {
           variant="ghost" 
           size="sm" 
           className="px-2 flex items-center gap-1 text-muted-foreground"
-          onClick={() => addSession(activeWeekId)}
+          onClick={() => addWeek()}
         >
           <Plus className="h-4 w-4" />
-          <span className="text-xs">Add Session</span>
+          <span className="text-xs">Add Week</span>
         </Button>
       </div>
     </div>
   );
 };
 
-export default SessionTabs;
+export default WeekTabs;

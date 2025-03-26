@@ -2,20 +2,35 @@
 import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
+import WeekTabs from "@/components/WeekTabs";
 import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 
 const WorkoutApp: React.FC = () => {
-  const { program, activeSessionId, setActiveSessionId } = useWorkout();
+  const { 
+    program, 
+    activeSessionId, 
+    activeWeekId, 
+    setActiveSessionId, 
+    setActiveWeekId 
+  } = useWorkout();
   
   useEffect(() => {
-    // Set the first session as active if none is selected
-    if (!activeSessionId && program.sessions.length > 0) {
-      setActiveSessionId(program.sessions[0].id);
+    // Set the first week as active if none is selected
+    if (!activeWeekId && program.weeks.length > 0) {
+      setActiveWeekId(program.weeks[0].id);
     }
-  }, [activeSessionId, program.sessions, setActiveSessionId]);
+    
+    // If a week is active but no session is selected, set the first session of that week
+    if (activeWeekId && !activeSessionId) {
+      const currentWeek = program.weeks.find(w => w.id === activeWeekId);
+      if (currentWeek && currentWeek.sessions.length > 0) {
+        setActiveSessionId(currentWeek.sessions[0]);
+      }
+    }
+  }, [activeWeekId, activeSessionId, program.weeks, program.sessions, setActiveWeekId, setActiveSessionId]);
   
   if (!activeSessionId) return null;
   
@@ -23,6 +38,7 @@ const WorkoutApp: React.FC = () => {
     <div className="w-full max-w-screen-2xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
+          <WeekTabs />
           <SessionTabs />
           <motion.div
             key={activeSessionId}
