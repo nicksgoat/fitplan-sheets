@@ -19,7 +19,7 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   
   return (
     <div className="space-y-6">
-      <WorkoutSessionHeader session={session} />
+      <WorkoutSessionHeader sessionId={sessionId} />
       <WorkoutTable session={session} />
     </div>
   );
