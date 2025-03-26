@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Pencil, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import CircuitControls from "./CircuitControls";
+import { WorkoutSession } from "@/types/workout";
 
 interface WorkoutSessionHeaderProps {
-  sessionId: string;
+  session: WorkoutSession;
 }
 
-const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, updateSessionName, addExercise, deleteSession } = useWorkout();
-  const session = program.sessions.find((s) => s.id === sessionId);
+const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ session }) => {
+  const { updateSessionName, addExercise, deleteSession } = useWorkout();
   
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(session?.name || "");
@@ -33,7 +33,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   
   const handleSave = () => {
     if (session && title.trim() !== "") {
-      updateSessionName(sessionId, title);
+      updateSessionName(session.id, title);
       setIsEditing(false);
     }
   };
@@ -89,13 +89,13 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
       </div>
       
       <div className="flex items-center gap-2">
-        <CircuitControls sessionId={sessionId} />
+        <CircuitControls sessionId={session.id} />
         
         <Button
           variant="ghost"
           size="sm"
           className="text-xs"
-          onClick={() => addExercise(sessionId)}
+          onClick={() => addExercise(session.id)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Exercise
@@ -105,7 +105,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
           variant="ghost"
           size="sm"
           className="text-destructive hover:text-destructive"
-          onClick={() => deleteSession(sessionId)}
+          onClick={() => deleteSession(session.id)}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
