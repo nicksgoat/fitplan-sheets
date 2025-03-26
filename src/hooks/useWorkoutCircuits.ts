@@ -83,24 +83,24 @@ export const useWorkoutCircuits = ({
   };
   
   // Shortcut functions for different circuit types
-  const createCircuit = (sessionId: string, rounds?: string) => {
-    addCircuit(sessionId, "Circuit", rounds);
+  const createCircuit = (sessionId: string) => {
+    addCircuit(sessionId, "Circuit", "3");
   };
   
-  const createSuperset = (sessionId: string, rounds?: string) => {
-    addCircuit(sessionId, "Superset", rounds);
+  const createSuperset = (sessionId: string) => {
+    addCircuit(sessionId, "Superset", "3");
   };
   
-  const createEMOM = (sessionId: string, rounds?: string) => {
-    addCircuit(sessionId, "EMOM", rounds);
+  const createEMOM = (sessionId: string) => {
+    addCircuit(sessionId, "EMOM", "3");
   };
   
   const createAMRAP = (sessionId: string) => {
     addCircuit(sessionId, "AMRAP", "AMRAP");
   };
   
-  const createTabata = (sessionId: string, rounds?: string) => {
-    addCircuit(sessionId, "Tabata", rounds);
+  const createTabata = (sessionId: string) => {
+    addCircuit(sessionId, "Tabata", "8");
   };
   
   // Update updateCircuit, deleteCircuit, and addExerciseToCircuit similarly to handle the weeks structure
