@@ -377,7 +377,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
   
-  const addExerciseToCircuit = (sessionId: string, circuitId: string, exercise?: Partial<Exercise> = {}) => {
+  const addExerciseToCircuit = (sessionId: string, circuitId: string, exercise: Partial<Exercise> = {}) => {
     const newExercise: Exercise = {
       id: uuidv4(),
       name: exercise.name || "New Exercise",
