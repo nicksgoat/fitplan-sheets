@@ -5,9 +5,17 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
+import EditableText from "./EditableText";
 
 const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, setActiveSessionId, activeWeekId, addSession } = useWorkout();
+  const { 
+    program, 
+    activeSessionId, 
+    setActiveSessionId, 
+    activeWeekId, 
+    addSession, 
+    updateSessionName 
+  } = useWorkout();
   
   // Get sessions from the active week
   const activeWeek = program.weeks?.find(week => week.id === activeWeekId);
@@ -32,7 +40,11 @@ const SessionTabs: React.FC = () => {
             )}
             onClick={() => setActiveSessionId(session.id)}
           >
-            {session.name}
+            <EditableText
+              value={session.name}
+              onSave={(newName) => updateSessionName(session.id, newName)}
+              isActive={activeSessionId === session.id}
+            />
             {activeSessionId === session.id && (
               <motion.div
                 layoutId="activeTab"
