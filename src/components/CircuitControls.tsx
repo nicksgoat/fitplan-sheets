@@ -73,19 +73,19 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
   const handleCreateCircuit = (type: WorkoutType) => {
     switch (type) {
       case 'circuit':
-        createCircuit(sessionId);
+        createCircuit(sessionId, rounds);
         break;
       case 'superset':
-        createSuperset(sessionId);
+        createSuperset(sessionId, rounds);
         break;
       case 'emom':
-        createEMOM(sessionId);
+        createEMOM(sessionId, rounds);
         break;
       case 'amrap':
         createAMRAP(sessionId);
         break;
       case 'tabata':
-        createTabata(sessionId);
+        createTabata(sessionId, rounds);
         break;
     }
     setSelectedType(null);

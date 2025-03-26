@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";

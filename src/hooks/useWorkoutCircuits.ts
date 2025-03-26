@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { WorkoutProgram, Circuit, Exercise } from "@/types/workout";
 import { v4 as uuidv4 } from "uuid";
@@ -15,7 +14,7 @@ export const useWorkoutCircuits = ({
   activeWeekId
 }: UseWorkoutCircuitsProps) => {
   // Circuit operations
-  const addCircuit = (sessionId: string, name: string) => {
+  const addCircuit = (sessionId: string, name: string, roundsValue?: string) => {
     const circuitId = uuidv4();
     
     // Create a circuit header exercise
@@ -33,7 +32,7 @@ export const useWorkoutCircuits = ({
       id: circuitId,
       name: name || "Circuit",
       exercises: [],
-      rounds: name.includes("AMRAP") ? "AMRAP" : "3", // Default to 3 rounds or AMRAP for AMRAP circuits
+      rounds: name.includes("AMRAP") ? "AMRAP" : roundsValue || "3", // Default to 3 rounds or AMRAP for AMRAP circuits
       restBetweenExercises: "30s",
       restBetweenRounds: "60s"
     };
@@ -84,24 +83,24 @@ export const useWorkoutCircuits = ({
   };
   
   // Shortcut functions for different circuit types
-  const createCircuit = (sessionId: string) => {
-    addCircuit(sessionId, "Circuit");
+  const createCircuit = (sessionId: string, rounds?: string) => {
+    addCircuit(sessionId, "Circuit", rounds);
   };
   
-  const createSuperset = (sessionId: string) => {
-    addCircuit(sessionId, "Superset");
+  const createSuperset = (sessionId: string, rounds?: string) => {
+    addCircuit(sessionId, "Superset", rounds);
   };
   
-  const createEMOM = (sessionId: string) => {
-    addCircuit(sessionId, "EMOM");
+  const createEMOM = (sessionId: string, rounds?: string) => {
+    addCircuit(sessionId, "EMOM", rounds);
   };
   
   const createAMRAP = (sessionId: string) => {
-    addCircuit(sessionId, "AMRAP");
+    addCircuit(sessionId, "AMRAP", "AMRAP");
   };
   
-  const createTabata = (sessionId: string) => {
-    addCircuit(sessionId, "Tabata");
+  const createTabata = (sessionId: string, rounds?: string) => {
+    addCircuit(sessionId, "Tabata", rounds);
   };
   
   // Update updateCircuit, deleteCircuit, and addExerciseToCircuit similarly to handle the weeks structure
@@ -253,8 +252,11 @@ export const useWorkoutCircuits = ({
               ...week,
               sessions: week.sessions.map(session => {
                 if (session.id === sessionId) {
+                  // Make sure circuits array exists
+                  const circuits = session.circuits || [];
+                  
                   // Find the circuit to update its exercises array
-                  const updatedCircuits = session.circuits.map(circuit => {
+                  const updatedCircuits = circuits.map(circuit => {
                     if (circuit.id === circuitId) {
                       return {
                         ...circuit,
@@ -313,7 +315,7 @@ export const useWorkoutCircuits = ({
         };
       });
     } else {
-      // Fallback to old sessions array - keep the original implementation
+      // Fallback to old sessions array
       setProgram(prevProgram => ({
         ...prevProgram,
         sessions: prevProgram.sessions.map(session => {
