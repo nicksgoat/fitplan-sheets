@@ -5,7 +5,7 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { PlusCircle, RefreshCw, Layers } from "lucide-react";
 
 const WorkoutHeader: React.FC = () => {
-  const { addSession, resetProgram, loadSampleProgram } = useWorkout();
+  const { addSession, activeWeekId, resetProgram, loadSampleProgram } = useWorkout();
   
   return (
     <header className="sticky top-0 z-10 glass-panel p-4 mb-6 flex items-center justify-between">
@@ -38,7 +38,7 @@ const WorkoutHeader: React.FC = () => {
           variant="default"
           size="sm"
           className="flex items-center gap-1"
-          onClick={() => addSession()}
+          onClick={() => activeWeekId ? addSession(activeWeekId) : null}
         >
           <PlusCircle className="h-4 w-4" />
           <span>Add Session</span>

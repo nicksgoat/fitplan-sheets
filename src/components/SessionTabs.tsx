@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WorkoutSession } from "@/types/workout";
 
 const SessionTabs: React.FC = () => {
   const { program, activeSessionId, activeWeekId, setActiveSessionId, addSession } = useWorkout();
