@@ -72,11 +72,44 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
   const handleSelect = (selectedValue: RepType) => {
     onChange(selectedValue);
     setOpen(false);
-    onClose?.();
+    if (onClose) {
+      onClose();
+    }
   };
   
-  const selectedOption = repTypeOptions.find(option => option.value === value);
+  const selectedOption = repTypeOptions.find(option => option.value === value) || repTypeOptions[0];
   
+  if (onClose) {
+    // Direct list mode (used in RepInput dropdown)
+    return (
+      <div className="w-full p-2">
+        <div className="mb-2 text-sm font-medium">Select Rep Type</div>
+        <div className="space-y-1">
+          {repTypeOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={value === option.value ? "secondary" : "ghost"}
+              className="w-full justify-start text-left"
+              onClick={() => handleSelect(option.value)}
+            >
+              <div className="flex items-center">
+                {option.icon}
+                <div className="ml-2">
+                  <p className="text-sm font-medium">{option.label}</p>
+                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                </div>
+                {value === option.value && (
+                  <CheckIcon className="ml-auto h-4 w-4" />
+                )}
+              </div>
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
+  // Popover mode (used elsewhere)
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -87,8 +120,8 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
           className="w-full justify-between border-dashed border-muted h-8"
         >
           <div className="flex items-center gap-2">
-            {selectedOption?.icon}
-            <span className="text-xs">{selectedOption?.label || "Select rep type"}</span>
+            {selectedOption.icon}
+            <span className="text-xs">{selectedOption.label}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

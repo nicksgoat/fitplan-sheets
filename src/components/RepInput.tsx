@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { RepType } from "@/types/workout";
 import RepTypeSelector from "./RepTypeSelector";
 import { Input } from "@/components/ui/input";
@@ -41,10 +41,30 @@ const RepInput: React.FC<RepInputProps> = ({
   isFocused
 }) => {
   const [showSelector, setShowSelector] = useState(false);
+  const selectorRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        selectorRef.current && 
+        !selectorRef.current.contains(event.target as Node) &&
+        triggerRef.current && 
+        !triggerRef.current.contains(event.target as Node)
+      ) {
+        setShowSelector(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   const handleInputFocus = () => {
     if (!isFocused) {
-      setShowSelector(true);
+      setShowSelector(false);
     }
   };
   
@@ -75,6 +95,10 @@ const RepInput: React.FC<RepInputProps> = ({
     setShowSelector(false);
   };
   
+  const handleOpenSelector = () => {
+    setShowSelector(true);
+  };
+  
   return (
     <div className={cn("relative", className)}>
       <div className="flex items-center gap-1">
@@ -88,20 +112,28 @@ const RepInput: React.FC<RepInputProps> = ({
             repType === 'amrap' && "text-amber-600 font-medium"
           )}
         />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" onClick={() => setShowSelector(true)} />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{getHelpText()}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div ref={triggerRef}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <InfoIcon 
+                  className="h-4 w-4 text-muted-foreground cursor-help"
+                  onClick={handleOpenSelector}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{getHelpText()}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
       
       {showSelector && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-background border rounded-md shadow-md p-2">
+        <div 
+          ref={selectorRef}
+          className="absolute top-full left-0 right-0 mt-1 z-10 bg-background border rounded-md shadow-md"
+        >
           <RepTypeSelector
             value={repType}
             onChange={onRepTypeChange}
