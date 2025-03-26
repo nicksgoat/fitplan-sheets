@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
@@ -33,26 +32,25 @@ const WorkoutApp: React.FC = () => {
           (!activeSessionId || !selectedWeek.sessions.some(s => s.id === activeSessionId))) {
         setActiveSessionId(selectedWeek.sessions[0].id);
       }
-    } else if (!activeSessionId && program.sessions.length > 0) {
-      // Fallback to old structure if needed
-      setActiveSessionId(program.sessions[0].id);
     }
   }, [
     activeSessionId, 
     activeWeekId, 
-    program.sessions, 
     program.weeks, 
     setActiveSessionId, 
     setActiveWeekId
   ]);
   
-  if (!activeSessionId) return null;
+  const currentSession = program.weeks
+    ?.find(week => week.id === activeWeekId)
+    ?.sessions.find(session => session.id === activeSessionId);
+  
+  if (!activeSessionId || !currentSession) return null;
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          {/* Show week tabs if we have a weeks structure */}
           {program.weeks && program.weeks.length > 0 && <WeekTabs />}
           <SessionTabs />
           <motion.div

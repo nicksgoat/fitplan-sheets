@@ -5,16 +5,20 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, setActiveSessionId } = useWorkout();
+  const { program, activeSessionId, setActiveSessionId, activeWeekId } = useWorkout();
   
-  if (program.sessions.length <= 1) {
+  // Get sessions from the active week
+  const activeWeek = program.weeks?.find(week => week.id === activeWeekId);
+  const sessions = activeWeek?.sessions || [];
+  
+  if (sessions.length <= 1) {
     return null;
   }
   
   return (
     <div className="mb-6 overflow-x-auto">
       <div className="flex items-center gap-1 border-b border-border pb-1">
-        {program.sessions.map((session) => (
+        {sessions.map((session) => (
           <button
             key={session.id}
             className={cn(

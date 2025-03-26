@@ -9,14 +9,17 @@ interface WorkoutSessionProps {
 }
 
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
-  const { program } = useWorkout();
-  const session = program.sessions.find((s) => s.id === sessionId);
+  const { program, activeWeekId } = useWorkout();
+  
+  // Find the session in the active week
+  const currentWeek = program.weeks?.find(week => week.id === activeWeekId);
+  const session = currentWeek?.sessions.find(s => s.id === sessionId);
   
   if (!session) return null;
   
   return (
-    <div className="session-card">
-      <WorkoutSessionHeader sessionId={sessionId} />
+    <div className="space-y-6">
+      <WorkoutSessionHeader session={session} />
       <WorkoutTable session={session} />
     </div>
   );
