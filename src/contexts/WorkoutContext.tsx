@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType } from "@/types/workout";
 import { 
@@ -182,6 +183,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           restBetweenRounds: "60"
         };
         
+        // Create the circuit header exercise
+        const circuitHeaderId = uuidv4();
+        const circuitHeader: Exercise = {
+          id: circuitHeaderId,
+          name: "Circuit",
+          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          notes: "",
+          isCircuit: true,
+          circuitId: circuitId
+        };
+        
         const exercise1Id = uuidv4();
         const exercise2Id = uuidv4();
         
@@ -210,7 +222,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         return {
           ...session,
           circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, exercise1, exercise2]
+          exercises: [...session.exercises, circuitHeader, exercise1, exercise2]
         };
       });
       
@@ -233,6 +245,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           rounds: "3",
           restBetweenExercises: "0",
           restBetweenRounds: "60"
+        };
+        
+        // Create the superset header exercise
+        const circuitHeaderId = uuidv4();
+        const circuitHeader: Exercise = {
+          id: circuitHeaderId,
+          name: "Superset",
+          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          notes: "",
+          isCircuit: true,
+          circuitId: circuitId
         };
         
         const exercise1Id = uuidv4();
@@ -263,7 +286,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         return {
           ...session,
           circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, exercise1, exercise2]
+          exercises: [...session.exercises, circuitHeader, exercise1, exercise2]
         };
       });
       
@@ -288,6 +311,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           restBetweenRounds: "0"
         };
         
+        // Create the EMOM header exercise
+        const circuitHeaderId = uuidv4();
+        const circuitHeader: Exercise = {
+          id: circuitHeaderId,
+          name: "EMOM - 10 min",
+          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          notes: "",
+          isCircuit: true,
+          circuitId: circuitId
+        };
+        
         const exerciseId = uuidv4();
         
         const exercise: Exercise = {
@@ -305,7 +339,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         return {
           ...session,
           circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, exercise]
+          exercises: [...session.exercises, circuitHeader, exercise]
         };
       });
       
@@ -328,6 +362,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           rounds: "AMRAP",
           restBetweenExercises: "0",
           restBetweenRounds: "0"
+        };
+        
+        // Create the AMRAP header exercise
+        const circuitHeaderId = uuidv4();
+        const circuitHeader: Exercise = {
+          id: circuitHeaderId,
+          name: "AMRAP - 10 min",
+          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          notes: "",
+          isCircuit: true,
+          circuitId: circuitId
         };
         
         const exercise1Id = uuidv4();
@@ -369,7 +414,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         return {
           ...session,
           circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, exercise1, exercise2, exercise3]
+          exercises: [...session.exercises, circuitHeader, exercise1, exercise2, exercise3]
         };
       });
       
@@ -394,6 +439,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           restBetweenRounds: "0"
         };
         
+        // Create the Tabata header exercise
+        const circuitHeaderId = uuidv4();
+        const circuitHeader: Exercise = {
+          id: circuitHeaderId,
+          name: "Tabata - 4 min",
+          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          notes: "",
+          isCircuit: true,
+          circuitId: circuitId
+        };
+        
         const exerciseId = uuidv4();
         
         const exercise: Exercise = {
@@ -411,7 +467,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         return {
           ...session,
           circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, exercise]
+          exercises: [...session.exercises, circuitHeader, exercise]
         };
       });
       

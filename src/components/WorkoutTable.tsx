@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
@@ -28,6 +27,53 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
+  
+  // Organize exercises by grouping circuits
+  const organizedExercises = React.useMemo(() => {
+    const result: Exercise[] = [];
+    const circuitMap = new Map<string, Exercise[]>();
+    
+    // First pass: identify circuit exercises and group them
+    session.exercises.forEach(exercise => {
+      if (exercise.isCircuit) {
+        // This is a circuit header
+        result.push(exercise);
+      } else if (exercise.isInCircuit && exercise.circuitId) {
+        // This is an exercise inside a circuit
+        const exercises = circuitMap.get(exercise.circuitId) || [];
+        exercises.push(exercise);
+        circuitMap.set(exercise.circuitId, exercises);
+      } else if (exercise.isGroup) {
+        // This is a group header
+        result.push(exercise);
+      } else if (!exercise.groupId && !exercise.isInCircuit) {
+        // This is a standalone exercise
+        result.push(exercise);
+      }
+    });
+    
+    // Second pass: insert grouped exercises after their headers
+    const finalResult: Exercise[] = [];
+    
+    for (const exercise of result) {
+      finalResult.push(exercise);
+      
+      if (exercise.isCircuit && exercise.circuitId) {
+        // Add all exercises that belong to this circuit
+        const circuitExercises = circuitMap.get(exercise.circuitId) || [];
+        circuitExercises
+          .sort((a, b) => (a.circuitOrder || 0) - (b.circuitOrder || 0))
+          .forEach(e => finalResult.push(e));
+      } else if (exercise.isGroup) {
+        // Add all exercises that belong to this group
+        session.exercises
+          .filter(e => e.groupId === exercise.id)
+          .forEach(e => finalResult.push(e));
+      }
+    }
+    
+    return finalResult;
+  }, [session.exercises]);
   
   const handleExerciseCellChange = (exerciseId: string, field: keyof Exercise, value: string) => {
     updateExercise(session.id, exerciseId, { [field]: value } as Partial<Exercise>);
@@ -223,7 +269,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
           </tr>
         </thead>
         <tbody>
-          {session.exercises.map((exercise, exerciseIndex) => {
+          {organizedExercises.map((exercise, exerciseIndex) => {
             // Calculate if this is a circuit exercise
             const isCircuit = exercise.isCircuit;
             const isInCircuit = exercise.isInCircuit;
@@ -299,6 +345,18 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   
                   {!isCircuit && (
                     <>
+                      <td className="numeric-cell">
+                        {exercise.sets[0]?.reps || ""}
+                      </td>
+                      <td className="numeric-cell">
+                        {exercise.sets[0]?.weight || ""}
+                      </td>
+                      <td className="numeric-cell">
+                        {exercise.sets[0]?.rpe || ""}
+                      </td>
+                      <td className="numeric-cell">
+                        {exercise.sets[0]?.rest || ""}
+                      </td>
                       <td className="note-cell">
                         <EditableCell
                           value={exercise.notes}
@@ -356,7 +414,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                 </motion.tr>
                 
                 {/* Set rows (only show for non-circuit header rows) */}
-                {!isCircuit && exercise.sets.map((set, setIndex) => (
+                {!isCircuit && !isInCircuit && exercise.sets.length > 0 && exercise.sets.map((set, setIndex) => (
                   <motion.tr
                     key={`${exercise.id}-${set.id}`}
                     initial={{ opacity: 0 }}
