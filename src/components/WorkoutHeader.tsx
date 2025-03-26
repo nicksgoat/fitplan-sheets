@@ -10,7 +10,7 @@ import {
   Library, 
   FolderDown,
   CalendarDays,
-  CalendarWeek
+  Calendar
 } from "lucide-react";
 import WorkoutLibraryDialog from "./WorkoutLibraryDialog";
 
@@ -116,7 +116,7 @@ const WorkoutHeader: React.FC = () => {
           className="flex items-center gap-1"
           onClick={() => addWeek()}
         >
-          <CalendarWeek className="h-4 w-4" />
+          <Calendar className="h-4 w-4" />
           <span className="hidden sm:inline">Add Week</span>
           <span className="sm:hidden">Week</span>
         </Button>
