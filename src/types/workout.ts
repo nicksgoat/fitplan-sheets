@@ -40,6 +40,7 @@ export interface WorkoutSession {
 export interface WorkoutProgram {
   id: string;
   name: string;
+  image?: string;
   sessions: WorkoutSession[];
 }
 

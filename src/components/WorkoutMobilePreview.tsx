@@ -1,9 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import WorkoutPreviewSettings from "./WorkoutPreviewSettings";
 
 interface WorkoutMobilePreviewProps {
   sessionId: string;
@@ -12,6 +14,7 @@ interface WorkoutMobilePreviewProps {
 const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }) => {
   const { program } = useWorkout();
   const session = program.sessions.find((s) => s.id === sessionId);
+  const [showSettings, setShowSettings] = useState(false);
   
   if (!session) return null;
   
@@ -58,10 +61,23 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   
   const { exercises, circuitMap } = getOrganizedExercises();
   
+  if (showSettings) {
+    return <WorkoutPreviewSettings onClose={() => setShowSettings(false)} />;
+  }
+  
   return (
     <div className="glass-panel rounded-xl overflow-hidden h-full">
-      <div className="bg-[#f8fafc] p-4 border-b border-border">
+      <div className="bg-[#f8fafc] p-4 border-b border-border flex justify-between items-center">
         <h2 className="text-lg font-semibold">Preview</h2>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setShowSettings(true)}
+          className="h-8 w-8 p-0"
+        >
+          <Settings className="h-4 w-4" />
+          <span className="sr-only">Settings</span>
+        </Button>
       </div>
       
       <div className="relative w-full p-4 flex justify-center">
