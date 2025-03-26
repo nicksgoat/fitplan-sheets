@@ -9,28 +9,15 @@ interface WorkoutSessionProps {
 }
 
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
-  const { program, activeWeekId } = useWorkout();
-  
-  // Find the session in the active week or in the old sessions array
-  const currentWeek = program.weeks?.find(week => week.id === activeWeekId);
-  const sessionFromWeek = currentWeek?.sessions.find(s => s.id === sessionId);
-  const sessionFromLegacy = program.sessions.find(s => s.id === sessionId);
-  
-  // Use whichever session we find
-  const session = sessionFromWeek || sessionFromLegacy;
+  const { program } = useWorkout();
+  const session = program.sessions.find((s) => s.id === sessionId);
   
   if (!session) return null;
   
-  // Make sure to initialize circuits array if it doesn't exist
-  const sessionWithCircuits = {
-    ...session,
-    circuits: session.circuits || []
-  };
-  
   return (
-    <div className="space-y-6">
+    <div className="session-card">
       <WorkoutSessionHeader sessionId={sessionId} />
-      <WorkoutTable session={sessionWithCircuits} />
+      <WorkoutTable session={session} />
     </div>
   );
 };

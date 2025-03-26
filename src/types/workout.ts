@@ -29,39 +29,18 @@ export interface Circuit {
   restBetweenRounds?: string;
 }
 
-export interface WorkoutWeek {
-  id: string;
-  weekNumber: number;
-  name: string;
-  sessions: WorkoutSession[];
-}
-
 export interface WorkoutSession {
   id: string;
   name: string;
   day: number;
   exercises: Exercise[];
   circuits: Circuit[];
-  weekId?: string; // Reference to parent week
 }
 
 export interface WorkoutProgram {
   id: string;
   name: string;
-  image?: string;
-  weeks: WorkoutWeek[]; // Instead of sessions directly
-  sessions: WorkoutSession[]; // Keep for backward compatibility
-  // Add settings
-  settings?: WorkoutSettings;
-}
-
-export interface WorkoutSettings {
-  weightUnit?: 'lbs' | 'kgs';
-  effortUnit?: 'rpe' | 'rir';
-  showWeight?: boolean;
-  showEffort?: boolean;
-  showRest?: boolean;
-  showNotes?: boolean;
+  sessions: WorkoutSession[];
 }
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';

@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
@@ -337,9 +338,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         <div className="ml-2 text-xs text-muted-foreground">
                           {circuit.rounds === "AMRAP" 
                             ? "AMRAP" 
-                            : circuit.rounds 
-                              ? `${circuit.rounds} rounds` 
-                              : "3 rounds"}
+                            : `${circuit.rounds} rounds`}
                         </div>
                       )}
                     </div>

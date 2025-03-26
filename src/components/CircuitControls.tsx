@@ -16,8 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Toggle } from "@/components/ui/toggle";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { WorkoutType } from "@/types/workout";
 import { cn } from "@/lib/utils";
 
@@ -31,11 +29,9 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
     createSuperset, 
     createEMOM, 
     createAMRAP, 
-    createTabata,
-    addCircuit
+    createTabata 
   } = useWorkout();
   const [selectedType, setSelectedType] = useState<WorkoutType | null>(null);
-  const [rounds, setRounds] = useState<string>("3");
 
   const workoutTypes: { type: WorkoutType; icon: React.ReactNode; label: string; description: string }[] = [
     { 
@@ -134,22 +130,6 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
                 </Toggle>
               ))}
             </div>
-            
-            {selectedType && selectedType !== 'amrap' && (
-              <div className="pt-2">
-                <Label htmlFor="rounds">Number of Rounds</Label>
-                <Input 
-                  id="rounds" 
-                  type="number" 
-                  value={rounds}
-                  onChange={(e) => setRounds(e.target.value)}
-                  min="1"
-                  max="20"
-                  className="mt-1"
-                />
-              </div>
-            )}
-            
             <div className="flex justify-end pt-2">
               <Button
                 size="sm"

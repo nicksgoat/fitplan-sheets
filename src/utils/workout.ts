@@ -1,4 +1,4 @@
-import { Exercise, Set, WorkoutProgram, WorkoutSession, WorkoutWeek } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
 
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -23,36 +23,21 @@ export function createEmptyExercise(): Exercise {
   };
 }
 
-export function createEmptySession(day: number, weekId?: string): WorkoutSession {
+export function createEmptySession(day: number): WorkoutSession {
   return {
     id: generateId(),
-    name: `Day ${day}`,
+    name: `Day ${day} Session`,
     day,
     exercises: [createEmptyExercise()],
-    circuits: [],
-    weekId
-  };
-}
-
-export function createEmptyWeek(weekNumber: number): WorkoutWeek {
-  const weekId = generateId();
-  return {
-    id: weekId,
-    weekNumber,
-    name: `Week ${weekNumber}`,
-    sessions: [createEmptySession(1, weekId)]
+    circuits: []
   };
 }
 
 export function createEmptyProgram(): WorkoutProgram {
-  // Create a program with a week structure
-  const week1 = createEmptyWeek(1);
-  
   return {
     id: generateId(),
     name: "New Workout Program",
-    weeks: [week1],
-    sessions: [], // Keep for backward compatibility
+    sessions: [createEmptySession(1)],
   };
 }
 
@@ -252,245 +237,33 @@ export function deleteSessionFromProgram(
 
 export const sampleProgram: WorkoutProgram = {
   id: "sample1",
-  name: "6-Week Strength Building Program",
-  weeks: [
-    {
-      id: "week1",
-      weekNumber: 1,
-      name: "Week 1: Foundation",
-      sessions: [
-        {
-          id: "w1day1",
-          name: "Day 1: Upper Body",
-          day: 1,
-          weekId: "week1",
-          exercises: [
-            {
-              id: "ex1",
-              name: "Barbell Bench Press",
-              sets: [
-                {
-                  id: "set1-1",
-                  reps: "12",
-                  weight: "135",
-                  rpe: "70%",
-                  rest: "90s",
-                },
-                {
-                  id: "set1-2",
-                  reps: "10",
-                  weight: "155",
-                  rpe: "75%",
-                  rest: "90s",
-                },
-                {
-                  id: "set1-3",
-                  reps: "8",
-                  weight: "175",
-                  rpe: "80%",
-                  rest: "90s",
-                }
-              ],
-              notes: "Focus on form, controlled tempo",
-            },
-            {
-              id: "ex2",
-              name: "Barbell Row",
-              sets: [
-                {
-                  id: "set2-1",
-                  reps: "12",
-                  weight: "95",
-                  rpe: "70%",
-                  rest: "90s",
-                },
-                {
-                  id: "set2-2",
-                  reps: "10",
-                  weight: "115",
-                  rpe: "75%",
-                  rest: "90s",
-                },
-                {
-                  id: "set2-3",
-                  reps: "8",
-                  weight: "135",
-                  rpe: "80%",
-                  rest: "90s",
-                }
-              ],
-              notes: "Keep core tight, pull to lower chest",
-            }
-          ],
-          circuits: []
-        },
-        {
-          id: "w1day2",
-          name: "Day 2: Lower Body",
-          day: 2,
-          weekId: "week1",
-          exercises: [
-            {
-              id: "ex3",
-              name: "Back Squat",
-              sets: [
-                {
-                  id: "set3-1",
-                  reps: "12",
-                  weight: "135",
-                  rpe: "70%",
-                  rest: "120s",
-                },
-                {
-                  id: "set3-2",
-                  reps: "10",
-                  weight: "155",
-                  rpe: "75%",
-                  rest: "120s",
-                },
-                {
-                  id: "set3-3",
-                  reps: "8",
-                  weight: "175",
-                  rpe: "80%",
-                  rest: "120s",
-                }
-              ],
-              notes: "Proper depth, knees tracking over toes",
-            },
-            {
-              id: "ex4",
-              name: "Romanian Deadlift",
-              sets: [
-                {
-                  id: "set4-1",
-                  reps: "12",
-                  weight: "155",
-                  rpe: "70%",
-                  rest: "120s",
-                },
-                {
-                  id: "set4-2",
-                  reps: "10",
-                  weight: "175",
-                  rpe: "75%",
-                  rest: "120s",
-                },
-                {
-                  id: "set4-3",
-                  reps: "8",
-                  weight: "195",
-                  rpe: "80%",
-                  rest: "120s",
-                }
-              ],
-              notes: "Hinge at hips, slight knee bend",
-            }
-          ],
-          circuits: []
-        }
-      ]
-    },
-    {
-      id: "week2",
-      weekNumber: 2,
-      name: "Week 2: Progressive Overload",
-      sessions: [
-        {
-          id: "w2day1",
-          name: "Day 1: Upper Body",
-          day: 1,
-          weekId: "week2",
-          exercises: [
-            {
-              id: "w2ex1",
-              name: "Incline Bench Press",
-              sets: [
-                {
-                  id: "w2set1-1",
-                  reps: "10",
-                  weight: "145",
-                  rpe: "75%",
-                  rest: "90s",
-                },
-                {
-                  id: "w2set1-2",
-                  reps: "8",
-                  weight: "165",
-                  rpe: "80%",
-                  rest: "90s",
-                },
-                {
-                  id: "w2set1-3",
-                  reps: "6",
-                  weight: "185",
-                  rpe: "85%",
-                  rest: "90s",
-                }
-              ],
-              notes: "Slight incline angle, shoulders back",
-            },
-            {
-              id: "w2ex2",
-              name: "Pull-Ups",
-              sets: [
-                {
-                  id: "w2set2-1",
-                  reps: "8",
-                  weight: "BW",
-                  rpe: "80%",
-                  rest: "90s",
-                },
-                {
-                  id: "w2set2-2",
-                  reps: "8",
-                  weight: "BW",
-                  rpe: "80%",
-                  rest: "90s",
-                },
-                {
-                  id: "w2set2-3",
-                  reps: "AMRAP",
-                  weight: "BW",
-                  rpe: "90%",
-                  rest: "90s",
-                }
-              ],
-              notes: "Full range of motion, controlled lowering",
-            }
-          ],
-          circuits: []
-        }
-      ]
-    }
-  ],
+  name: "Strength Building Program",
   sessions: [
-    // Keep original sample sessions for backward compatibility
     {
       id: "day1",
       name: "Monday Session",
       day: 1,
       exercises: [
         {
-          id: "ex1-old",
+          id: "ex1",
           name: "Barbell Bench Press",
           sets: [
             {
-              id: "set1-1-old",
+              id: "set1-1",
               reps: "12",
               weight: "135",
               rpe: "80%",
               rest: "1-3-1 tempo",
             },
             {
-              id: "set1-2-old",
+              id: "set1-2",
               reps: "10",
               weight: "155",
               rpe: "80%",
               rest: "1-3-1 tempo",
             },
             {
-              id: "set1-3-old",
+              id: "set1-3",
               reps: "8",
               weight: "175",
               rpe: "80%",
@@ -500,25 +273,25 @@ export const sampleProgram: WorkoutProgram = {
           notes: "",
         },
         {
-          id: "ex2-old",
+          id: "ex2",
           name: "Back Squat",
           sets: [
             {
-              id: "set2-1-old",
+              id: "set2-1",
               reps: "12",
               weight: "95",
               rpe: "",
               rest: "60s",
             },
             {
-              id: "set2-2-old",
+              id: "set2-2",
               reps: "12",
               weight: "115",
               rpe: "",
               rest: "60s",
             },
             {
-              id: "set2-3-old",
+              id: "set2-3",
               reps: "12",
               weight: "115",
               rpe: "",
@@ -526,9 +299,286 @@ export const sampleProgram: WorkoutProgram = {
             }
           ],
           notes: "Keep your heels down and drive your knees out over your toes",
-        }
+        },
+        {
+          id: "ex3",
+          name: "Circuit A",
+          sets: [
+            {
+              id: "set3-1",
+              reps: "",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+          isGroup: true,
+        },
+        {
+          id: "ex4",
+          name: "Kettlebell Swing",
+          sets: [
+            {
+              id: "set4-1",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set4-2",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set4-3",
+              reps: "20s",
+              weight: "40",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+          groupId: "ex3",
+        },
+        {
+          id: "ex5",
+          name: "Hanging Leg Raise",
+          sets: [
+            {
+              id: "set5-1",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set5-2",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set5-3",
+              reps: "AMRAP",
+              weight: "BW",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+          groupId: "ex3",
+        },
+        {
+          id: "ex6",
+          name: "Finisher",
+          sets: [
+            {
+              id: "set6-1",
+              reps: "-",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex7",
+          name: "Tricep Pushdowns",
+          sets: [
+            {
+              id: "set7-1",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set7-2",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set7-3",
+              reps: "8-12",
+              weight: "50",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex8",
+          name: "Hammer Curl",
+          sets: [
+            {
+              id: "set8-1",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set8-2",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set8-3",
+              reps: "8-12",
+              weight: "30",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex9",
+          name: "Cool down",
+          sets: [
+            {
+              id: "set9-1",
+              reps: "-",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex10",
+          name: "Cat Cows",
+          sets: [
+            {
+              id: "set10-1",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set10-2",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set10-3",
+              reps: "5",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex11",
+          name: "Butterfly Stretch",
+          sets: [
+            {
+              id: "set11-1",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set11-2",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            },
+            {
+              id: "set11-3",
+              reps: "20s",
+              weight: "",
+              rpe: "",
+              rest: "",
+            }
+          ],
+          notes: "",
+        },
       ],
       circuits: [],
-    }
-  ]
+    },
+    {
+      id: "day2",
+      name: "Wednesday Session",
+      day: 2,
+      exercises: [
+        {
+          id: "ex12",
+          name: "Bench Press",
+          sets: [
+            {
+              id: "set12-1",
+              reps: "12",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set12-2",
+              reps: "10",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            },
+            {
+              id: "set12-3",
+              reps: "8",
+              weight: "",
+              rpe: "80%",
+              rest: "1-3-1 tempo",
+            }
+          ],
+          notes: "",
+        },
+        {
+          id: "ex13",
+          name: "Romanian Deadlift",
+          sets: [
+            {
+              id: "set13-1",
+              reps: "10",
+              weight: "135",
+              rpe: "",
+              rest: "90s",
+            },
+            {
+              id: "set13-2",
+              reps: "10",
+              weight: "155",
+              rpe: "",
+              rest: "90s",
+            },
+            {
+              id: "set13-3",
+              reps: "10",
+              weight: "155",
+              rpe: "",
+              rest: "90s",
+            }
+          ],
+          notes: "Keep back flat, hinge at hips",
+        },
+      ],
+      circuits: [],
+    },
+  ],
 };
