@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
   createEmptyProgram, 
@@ -54,8 +54,24 @@ const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [program, setProgram] = useState<WorkoutProgram>(createEmptyProgram());
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(program.sessions[0]?.id || null);
-  const [activeWeekId, setActiveWeekId] = useState<string | null>(program.weeks[0]?.id || null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeWeekId && program.weeks.length > 0) {
+      setActiveWeekId(program.weeks[0].id);
+    }
+    
+    if (activeWeekId && (!activeSessionId || !program.sessions.some(s => s.id === activeSessionId))) {
+      const currentWeek = program.weeks.find(w => w.id === activeWeekId);
+      if (currentWeek && currentWeek.sessions.length > 0) {
+        const firstSessionId = currentWeek.sessions[0];
+        if (program.sessions.some(s => s.id === firstSessionId)) {
+          setActiveSessionId(firstSessionId);
+        }
+      }
+    }
+  }, [program, activeWeekId, activeSessionId]);
 
   const updateSessionName = (sessionId: string, name: string) => {
     setProgram((prevProgram) => {

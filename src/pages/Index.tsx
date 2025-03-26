@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
 import WeekTabs from "@/components/WeekTabs";
@@ -11,26 +11,8 @@ import { motion } from "framer-motion";
 const WorkoutApp: React.FC = () => {
   const { 
     program, 
-    activeSessionId, 
-    activeWeekId, 
-    setActiveSessionId, 
-    setActiveWeekId 
+    activeSessionId
   } = useWorkout();
-  
-  useEffect(() => {
-    // Set the first week as active if none is selected
-    if (!activeWeekId && program.weeks.length > 0) {
-      setActiveWeekId(program.weeks[0].id);
-    }
-    
-    // If a week is active but no session is selected, set the first session of that week
-    if (activeWeekId && !activeSessionId) {
-      const currentWeek = program.weeks.find(w => w.id === activeWeekId);
-      if (currentWeek && currentWeek.sessions.length > 0) {
-        setActiveSessionId(currentWeek.sessions[0]);
-      }
-    }
-  }, [activeWeekId, activeSessionId, program.weeks, program.sessions, setActiveWeekId, setActiveSessionId]);
   
   if (!activeSessionId) return null;
   
