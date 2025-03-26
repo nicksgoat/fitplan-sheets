@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { X } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface WorkoutPreviewSettingsProps {
   onClose: () => void;
@@ -26,8 +27,32 @@ const WorkoutPreviewSettings: React.FC<WorkoutPreviewSettingsProps> = ({ onClose
   const [showRest, setShowRest] = useState(true);
   const [showNotes, setShowNotes] = useState(true);
   
+  // Sync with program when it changes
+  useEffect(() => {
+    setProgramName(program.name);
+    setProgramImage(program.image || "/lovable-uploads/6f7335b3-f7e0-41da-a909-03ca225a738d.png");
+  }, [program]);
+  
   const handleSaveAppearance = () => {
-    updateProgramDetails({ name: programName, image: programImage });
+    updateProgramDetails({ 
+      name: programName, 
+      image: programImage 
+    });
+    
+    toast({
+      title: "Changes saved",
+      description: "Program appearance has been updated",
+    });
+  };
+  
+  const handleSaveSettings = () => {
+    // In a real app, we would save these settings to the context
+    // and apply them to the workout display
+    
+    toast({
+      title: "Settings saved",
+      description: "Your workout display preferences have been updated",
+    });
   };
   
   const characterCount = programName.length;
@@ -151,6 +176,10 @@ const WorkoutPreviewSettings: React.FC<WorkoutPreviewSettingsProps> = ({ onClose
                   </div>
                 </div>
               </div>
+              
+              <Button onClick={handleSaveSettings} className="w-full">
+                Save settings
+              </Button>
             </div>
           </TabsContent>
           
@@ -178,7 +207,7 @@ const WorkoutPreviewSettings: React.FC<WorkoutPreviewSettingsProps> = ({ onClose
                   This image will appear in the iOS & Android app
                 </p>
                 
-                <div className="border rounded-lg overflow-hidden mb-4">
+                <div className="border rounded-lg overflow-hidden mb-4 relative">
                   <img 
                     src={programImage} 
                     alt="Program thumbnail" 

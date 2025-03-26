@@ -42,6 +42,17 @@ export interface WorkoutProgram {
   name: string;
   image?: string;
   sessions: WorkoutSession[];
+  // Add settings
+  settings?: WorkoutSettings;
+}
+
+export interface WorkoutSettings {
+  weightUnit?: 'lbs' | 'kgs';
+  effortUnit?: 'rpe' | 'rir';
+  showWeight?: boolean;
+  showEffort?: boolean;
+  showRest?: boolean;
+  showNotes?: boolean;
 }
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';

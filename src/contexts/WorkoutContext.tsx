@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { 
@@ -8,7 +7,7 @@ import {
   Set, 
   Circuit
 } from "@/types/workout"; 
-import { createEmptyProgram } from "@/utils/workout";
+import { createEmptyProgram, sampleProgram } from "@/utils/workout";
 
 // Define the shape of our context
 interface WorkoutContextType {
@@ -16,15 +15,16 @@ interface WorkoutContextType {
   activeSessionId: string | null;
   setActiveSessionId: (id: string) => void;
   
-  addSession: (name: string) => void;
+  addSession: (name?: string) => void;
   updateSession: (sessionId: string, updates: Partial<WorkoutSession>) => void;
   deleteSession: (sessionId: string) => void;
+  updateSessionName: (sessionId: string, name: string) => void;
   
-  addExercise: (sessionId: string, exercise: Partial<Exercise>) => void;
+  addExercise: (sessionId: string, exercise?: Partial<Exercise>) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
   deleteExercise: (sessionId: string, exerciseId: string) => void;
   
-  addSet: (sessionId: string, exerciseId: string, set: Partial<Set>) => void;
+  addSet: (sessionId: string, exerciseId: string, set?: Partial<Set>) => void;
   updateSet: (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
   deleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
   
@@ -32,9 +32,18 @@ interface WorkoutContextType {
   updateCircuit: (sessionId: string, circuitId: string, updates: Partial<Circuit>) => void;
   deleteCircuit: (sessionId: string, circuitId: string) => void;
   
-  addExerciseToCircuit: (sessionId: string, circuitId: string, exercise: Partial<Exercise>) => void;
+  addExerciseToCircuit: (sessionId: string, circuitId: string, exercise?: Partial<Exercise>) => void;
   
   updateProgramDetails: (updates: { name?: string; image?: string }) => void;
+  
+  resetProgram: () => void;
+  loadSampleProgram: () => void;
+  
+  createCircuit: (sessionId: string) => void;
+  createSuperset: (sessionId: string) => void;
+  createEMOM: (sessionId: string) => void;
+  createAMRAP: (sessionId: string) => void;
+  createTabata: (sessionId: string) => void;
 }
 
 // Create the context with a default value
@@ -47,8 +56,21 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     program.sessions.length > 0 ? program.sessions[0].id : null
   );
 
+  // Reset to empty program
+  const resetProgram = () => {
+    const newProgram = createEmptyProgram();
+    setProgram(newProgram);
+    setActiveSessionId(newProgram.sessions[0].id);
+  };
+  
+  // Load sample program
+  const loadSampleProgram = () => {
+    setProgram(sampleProgram);
+    setActiveSessionId(sampleProgram.sessions[0].id);
+  };
+
   // Session operations
-  const addSession = (name: string) => {
+  const addSession = (name?: string) => {
     const newSession: WorkoutSession = {
       id: uuidv4(),
       name: name || `Day ${program.sessions.length + 1}`,
@@ -76,6 +98,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
   
+  const updateSessionName = (sessionId: string, name: string) => {
+    updateSession(sessionId, { name });
+  };
+  
   const deleteSession = (sessionId: string) => {
     setProgram(prevProgram => ({
       ...prevProgram,
@@ -88,7 +114,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Exercise operations
-  const addExercise = (sessionId: string, exercise: Partial<Exercise>) => {
+  const addExercise = (sessionId: string, exercise: Partial<Exercise> = {}) => {
     const newExercise: Exercise = {
       id: uuidv4(),
       name: exercise.name || "New Exercise",
@@ -166,7 +192,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Set operations
-  const addSet = (sessionId: string, exerciseId: string, set: Partial<Set> = {}) => {
+  const addSet = (sessionId: string, exerciseId: string, set?: Partial<Set>) => {
     const newSet: Set = {
       id: uuidv4(),
       reps: set.reps || "",
@@ -281,6 +307,26 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
   
+  const createCircuit = (sessionId: string) => {
+    addCircuit(sessionId, "Circuit");
+  };
+  
+  const createSuperset = (sessionId: string) => {
+    addCircuit(sessionId, "Superset");
+  };
+  
+  const createEMOM = (sessionId: string) => {
+    addCircuit(sessionId, "EMOM");
+  };
+  
+  const createAMRAP = (sessionId: string) => {
+    addCircuit(sessionId, "AMRAP");
+  };
+  
+  const createTabata = (sessionId: string) => {
+    addCircuit(sessionId, "Tabata");
+  };
+  
   const updateCircuit = (sessionId: string, circuitId: string, updates: Partial<Circuit>) => {
     setProgram(prevProgram => ({
       ...prevProgram,
@@ -331,7 +377,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
   
-  const addExerciseToCircuit = (sessionId: string, circuitId: string, exercise: Partial<Exercise> = {}) => {
+  const addExerciseToCircuit = (sessionId: string, circuitId: string, exercise?: Partial<Exercise> = {}) => {
     const newExercise: Exercise = {
       id: uuidv4(),
       name: exercise.name || "New Exercise",
@@ -415,6 +461,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addSession,
     updateSession,
     deleteSession,
+    updateSessionName,
     
     addExercise,
     updateExercise,
@@ -430,7 +477,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     addExerciseToCircuit,
     
-    updateProgramDetails
+    updateProgramDetails,
+    
+    resetProgram,
+    loadSampleProgram,
+    
+    createCircuit,
+    createSuperset,
+    createEMOM,
+    createAMRAP,
+    createTabata
   };
 
   return (
