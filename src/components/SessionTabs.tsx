@@ -1,63 +1,120 @@
 
 import React from "react";
-import { useWorkout } from "@/contexts/WorkoutContext";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WorkoutSession } from "@/types/workout";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useWorkout } from "@/contexts/WorkoutContext";
+import EditableTitle from "./EditableTitle";
 
 const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, activeWeekId, setActiveSessionId, addSession } = useWorkout();
-  
-  if (!activeWeekId) return null;
-  
-  const currentWeek = program.weeks.find(w => w.id === activeWeekId);
-  if (!currentWeek) return null;
-  
-  const sessionsInWeek = currentWeek.sessions
-    .map(sessionId => program.sessions.find(s => s.id === sessionId))
-    .filter(session => session !== undefined) as WorkoutSession[];
-  
-  if (sessionsInWeek.length <= 0) return null;
-  
+  const {
+    program,
+    activeSessionId,
+    activeWeekId,
+    setActiveSessionId,
+    addSession,
+    deleteSession,
+    updateSessionName
+  } = useWorkout();
+
+  // Handle editing session name
+  const handleSessionNameChange = (sessionId: string, newName: string) => {
+    updateSessionName(sessionId, newName);
+  };
+
+  // Get sessions for the active week
+  const getSessionsForActiveWeek = () => {
+    if (!activeWeekId) return [];
+
+    const activeWeek = program.weeks.find((week) => week.id === activeWeekId);
+    if (!activeWeek) return [];
+
+    return activeWeek.sessions
+      .map((sessionId) => {
+        const session = program.sessions.find((s) => s.id === sessionId);
+        return session || null;
+      })
+      .filter(Boolean);
+  };
+
+  const sessions = getSessionsForActiveWeek();
+
+  if (!activeWeekId || sessions.length === 0) return null;
+
   return (
-    <div className="mb-6 overflow-x-auto">
-      <div className="flex items-center gap-1 border-b border-border pb-1">
-        {sessionsInWeek.map((session) => (
-          <button
-            key={session.id}
-            className={cn(
-              "px-4 py-2 rounded-t-lg text-sm font-medium relative",
-              "transition-colors duration-200 whitespace-nowrap",
-              activeSessionId === session.id
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => setActiveSessionId(session.id)}
-          >
-            {session.name}
-            {activeSessionId === session.id && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            )}
-          </button>
-        ))}
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="px-2 flex items-center gap-1 text-muted-foreground"
-          onClick={() => addSession(activeWeekId)}
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-xs">Add Session</span>
-        </Button>
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-medium">Workouts</h2>
+      </div>
+
+      <div className="flex items-center mb-4">
+        <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+          <div className="flex p-1">
+            {sessions.map((session) => (
+              <Button
+                key={session.id}
+                variant={session.id === activeSessionId ? "default" : "outline"}
+                size="sm"
+                className="mr-1 px-3 relative group"
+                onClick={() => setActiveSessionId(session.id)}
+              >
+                <EditableTitle
+                  value={session.name}
+                  onSave={(newName) => handleSessionNameChange(session.id, newName)}
+                  className="max-w-[150px] truncate pr-2"
+                />
+                
+                {sessions.length > 1 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash className="h-3 w-3 text-red-500 hover:text-red-700" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Workout</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{session.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteSession(session.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => addSession(activeWeekId, sessions[sessions.length - 1]?.id)}
+              className="flex items-center px-2"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Workout
+            </Button>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     </div>
   );

@@ -1,62 +1,103 @@
 
 import React from "react";
-import { useWorkout } from "@/contexts/WorkoutContext";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useWorkout } from "@/contexts/WorkoutContext";
+import EditableTitle from "./EditableTitle";
 
 const WeekTabs: React.FC = () => {
-  const { program, activeWeekId, setActiveWeekId, setActiveSessionId, addWeek } = useWorkout();
-  
-  const handleWeekClick = (weekId: string) => {
-    setActiveWeekId(weekId);
-    
-    // Find the first session in this week and make it active
-    const week = program.weeks.find(w => w.id === weekId);
-    if (week && week.sessions.length > 0) {
-      setActiveSessionId(week.sessions[0]);
-    }
+  const {
+    program,
+    activeWeekId,
+    setActiveWeekId,
+    addWeek,
+    deleteWeek,
+    updateWeekName
+  } = useWorkout();
+
+  // Handle editing week name
+  const handleWeekNameChange = (weekId: string, newName: string) => {
+    updateWeekName(weekId, newName);
   };
-  
+
+  if (program.weeks.length === 0) return null;
+
   return (
-    <div className="mb-6 overflow-x-auto">
-      <div className="flex items-center gap-1 border-b border-border pb-1">
-        {program.weeks.map((week) => (
-          <button
-            key={week.id}
-            className={cn(
-              "px-4 py-2 rounded-t-lg text-sm font-medium relative",
-              "transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5",
-              activeWeekId === week.id
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => handleWeekClick(week.id)}
-          >
-            <Calendar className="h-4 w-4" />
-            {week.name}
-            {activeWeekId === week.id && (
-              <motion.div
-                layoutId="activeWeekTab"
-                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            )}
-          </button>
-        ))}
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="px-2 flex items-center gap-1 text-muted-foreground"
-          onClick={() => addWeek()}
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-xs">Add Week</span>
-        </Button>
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-medium">Weeks</h2>
+      </div>
+
+      <div className="flex items-center mb-6">
+        <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+          <div className="flex p-1">
+            {program.weeks.map((week) => (
+              <Button
+                key={week.id}
+                variant={week.id === activeWeekId ? "default" : "outline"}
+                size="sm"
+                className="mr-1 px-3 relative group"
+                onClick={() => setActiveWeekId(week.id)}
+              >
+                <EditableTitle
+                  value={week.name}
+                  onSave={(newName) => handleWeekNameChange(week.id, newName)}
+                  className="max-w-[150px] truncate pr-2"
+                />
+                
+                {program.weeks.length > 1 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash className="h-3 w-3 text-red-500 hover:text-red-700" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Week</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{week.name}"? All workouts in this week will also be deleted.
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteWeek(week.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => addWeek(program.weeks[program.weeks.length - 1]?.id)}
+              className="flex items-center px-2"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Week
+            </Button>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
     </div>
   );
