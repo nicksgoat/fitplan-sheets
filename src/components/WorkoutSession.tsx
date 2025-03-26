@@ -11,9 +11,13 @@ interface WorkoutSessionProps {
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   const { program, activeWeekId } = useWorkout();
   
-  // Find the session in the active week
+  // Find the session in the active week or in the old sessions array
   const currentWeek = program.weeks?.find(week => week.id === activeWeekId);
-  const session = currentWeek?.sessions.find(s => s.id === sessionId);
+  const sessionFromWeek = currentWeek?.sessions.find(s => s.id === sessionId);
+  const sessionFromLegacy = program.sessions.find(s => s.id === sessionId);
+  
+  // Use whichever session we find
+  const session = sessionFromWeek || sessionFromLegacy;
   
   if (!session) return null;
   

@@ -11,8 +11,18 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, updateSessionName, addExercise, deleteSession } = useWorkout();
-  const session = program.sessions.find((s) => s.id === sessionId);
+  const { 
+    program, 
+    activeWeekId,
+    updateSessionName, 
+    addExercise, 
+    deleteSession 
+  } = useWorkout();
+  
+  // Find the session either in the active week or in the legacy sessions array
+  const currentWeek = program.weeks?.find(week => week.id === activeWeekId);
+  const session = currentWeek?.sessions.find(s => s.id === sessionId) || 
+                  program.sessions.find(s => s.id === sessionId);
   
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(session?.name || "");

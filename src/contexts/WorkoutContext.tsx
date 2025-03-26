@@ -14,8 +14,8 @@ export interface WorkoutContextType {
   program: WorkoutProgram;
   activeSessionId: string | null;
   activeWeekId: string | null;
-  setActiveSessionId: (id: string) => void;
-  setActiveWeekId: (id: string) => void;
+  setActiveSessionId: (id: string | null) => void;
+  setActiveWeekId: (id: string | null) => void;
   
   // Session operations
   addSession: (name?: string, weekId?: string) => void;
@@ -84,12 +84,29 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
   
   // Import hooks with all the functionality
-  const weekHooks = useWorkoutWeeks({ program, setProgram, activeWeekId, setActiveWeekId, setActiveSessionId });
-  const sessionHooks = useWorkoutSessions({ program, setProgram, activeSessionId, setActiveSessionId, activeWeekId });
-  const exerciseHooks = useWorkoutExercises({ program, setProgram });
-  const circuitHooks = useWorkoutCircuits({ program, setProgram });
-  const libraryHooks = useWorkoutLibrary({ program, setProgram, setActiveSessionId });
-  const programHooks = useWorkoutProgram({ setProgram, setActiveWeekId, setActiveSessionId });
+  const weekHooks = useWorkoutWeeks({ 
+    program, setProgram, activeWeekId, setActiveWeekId, setActiveSessionId 
+  });
+  
+  const sessionHooks = useWorkoutSessions({ 
+    program, setProgram, activeSessionId, setActiveSessionId, activeWeekId 
+  });
+  
+  const exerciseHooks = useWorkoutExercises({ 
+    program, setProgram, activeWeekId 
+  });
+  
+  const circuitHooks = useWorkoutCircuits({ 
+    program, setProgram, activeWeekId 
+  });
+  
+  const libraryHooks = useWorkoutLibrary({ 
+    program, setProgram, setActiveSessionId 
+  });
+  
+  const programHooks = useWorkoutProgram({ 
+    setProgram, setActiveWeekId, setActiveSessionId 
+  });
   
   // Provide the context value
   const contextValue: WorkoutContextType = {
