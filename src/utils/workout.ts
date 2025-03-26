@@ -1,4 +1,3 @@
-
 import { Exercise, Set, WorkoutProgram, WorkoutSession } from "@/types/workout";
 
 export function generateId(): string {

@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
@@ -413,7 +414,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   )}
                 </motion.tr>
                 
-                {/* Set rows (only show for non-circuit header rows) */}
+                {/* Set rows for regular exercises */}
                 {!isCircuit && !isInCircuit && exercise.sets.length > 0 && exercise.sets.map((set, setIndex) => (
                   <motion.tr
                     key={`${exercise.id}-${set.id}`}
@@ -531,6 +532,139 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           aria-label="Delete set"
                         >
                           <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      )}
+                    </td>
+                  </motion.tr>
+                ))}
+                
+                {/* Set rows for exercises WITHIN circuits */}
+                {isInCircuit && exercise.sets.length > 0 && exercise.sets.map((set, setIndex) => (
+                  <motion.tr
+                    key={`${exercise.id}-${set.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.1, delay: 0.05 + setIndex * 0.02 }}
+                    className="set-row group bg-secondary/10"
+                  >
+                    <td></td>
+                    <td className="set-number pl-5">Set {setIndex + 1}</td>
+                    
+                    <td>
+                      <EditableSetCell
+                        value={set.reps}
+                        onChange={(value) => handleSetCellChange(exercise.id, set.id, "reps", value)}
+                        placeholder="10"
+                        coordinate={{ 
+                          rowIndex: exerciseIndex, 
+                          columnName: "reps", 
+                          exerciseId: exercise.id,
+                          setIndex: setIndex
+                        }}
+                        isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
+                        onFocus={handleCellFocus}
+                        onNavigate={(direction, shiftKey) => 
+                          handleSetCellNavigate(direction, shiftKey, { 
+                            rowIndex: exerciseIndex, 
+                            columnName: "reps", 
+                            exerciseId: exercise.id,
+                            setIndex: setIndex
+                          })
+                        }
+                      />
+                    </td>
+                    
+                    <td>
+                      <EditableSetCell
+                        value={set.weight}
+                        onChange={(value) => handleSetCellChange(exercise.id, set.id, "weight", value)}
+                        placeholder="lbs"
+                        coordinate={{ 
+                          rowIndex: exerciseIndex, 
+                          columnName: "weight", 
+                          exerciseId: exercise.id,
+                          setIndex: setIndex
+                        }}
+                        isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
+                        onFocus={handleCellFocus}
+                        onNavigate={(direction, shiftKey) => 
+                          handleSetCellNavigate(direction, shiftKey, { 
+                            rowIndex: exerciseIndex, 
+                            columnName: "weight", 
+                            exerciseId: exercise.id,
+                            setIndex: setIndex
+                          })
+                        }
+                      />
+                    </td>
+                    
+                    <td>
+                      <EditableSetCell
+                        value={set.rpe}
+                        onChange={(value) => handleSetCellChange(exercise.id, set.id, "rpe", value)}
+                        placeholder="%"
+                        coordinate={{ 
+                          rowIndex: exerciseIndex, 
+                          columnName: "rpe", 
+                          exerciseId: exercise.id,
+                          setIndex: setIndex
+                        }}
+                        isFocused={isCellFocused(exerciseIndex, "rpe", exercise.id, setIndex)}
+                        onFocus={handleCellFocus}
+                        onNavigate={(direction, shiftKey) => 
+                          handleSetCellNavigate(direction, shiftKey, { 
+                            rowIndex: exerciseIndex, 
+                            columnName: "rpe", 
+                            exerciseId: exercise.id,
+                            setIndex: setIndex
+                          })
+                        }
+                      />
+                    </td>
+                    
+                    <td>
+                      <EditableSetCell
+                        value={set.rest}
+                        onChange={(value) => handleSetCellChange(exercise.id, set.id, "rest", value)}
+                        placeholder="60s"
+                        coordinate={{ 
+                          rowIndex: exerciseIndex, 
+                          columnName: "rest", 
+                          exerciseId: exercise.id,
+                          setIndex: setIndex
+                        }}
+                        isFocused={isCellFocused(exerciseIndex, "rest", exercise.id, setIndex)}
+                        onFocus={handleCellFocus}
+                        onNavigate={(direction, shiftKey) => 
+                          handleSetCellNavigate(direction, shiftKey, { 
+                            rowIndex: exerciseIndex, 
+                            columnName: "rest", 
+                            exerciseId: exercise.id,
+                            setIndex: setIndex
+                          })
+                        }
+                      />
+                    </td>
+                    
+                    <td></td>
+                    
+                    <td>
+                      {exercise.sets.length > 1 && (
+                        <button
+                          className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                          onClick={() => deleteSet(session.id, exercise.id, set.id)}
+                          aria-label="Delete set"
+                        >
+                          <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      )}
+                      {exercise.sets.length === 1 && (
+                        <button
+                          className="p-1 rounded-full hover:bg-secondary transition-colors"
+                          onClick={() => addSet(session.id, exercise.id)}
+                          aria-label="Add set"
+                        >
+                          <Plus className="h-4 w-4 text-muted-foreground" />
                         </button>
                       )}
                     </td>

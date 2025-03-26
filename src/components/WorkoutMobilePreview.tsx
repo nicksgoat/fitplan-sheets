@@ -151,16 +151,25 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                       {circuitMap.get(exercise.circuitId)?.map((circuitExercise, idx) => (
                         <div
                           key={circuitExercise.id}
-                          className="pl-3 py-2 border-t border-gray-100 flex items-center"
+                          className="pl-3 py-2 border-t border-gray-100"
                         >
-                          <div className="h-1.5 w-1.5 rounded-full bg-gray-400 mr-2"></div>
-                          <div>
+                          <div className="flex items-center mb-1">
+                            <div className="h-1.5 w-1.5 rounded-full bg-gray-400 mr-2"></div>
                             <div className="text-sm font-medium">{circuitExercise.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {circuitExercise.sets[0]?.reps && `${circuitExercise.sets[0]?.reps}`}
-                              {circuitExercise.sets[0]?.weight && ` @ ${circuitExercise.sets[0]?.weight}`}
-                            </div>
                           </div>
+                          
+                          {/* Show sets for circuit exercises */}
+                          {circuitExercise.sets.length > 0 && (
+                            <div className="ml-4 text-xs text-gray-500">
+                              {circuitExercise.sets.map((set, setIdx) => (
+                                <div key={set.id} className="mb-1">
+                                  <span className="font-medium">Set {setIdx + 1}:</span> {set.reps || '-'} reps
+                                  {set.weight && ` @ ${set.weight}`}
+                                  {set.rest && `, rest ${set.rest}`}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
