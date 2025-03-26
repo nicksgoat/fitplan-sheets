@@ -792,7 +792,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setWorkoutLibrary(prev => [...prev, newLibraryItem]);
       toast({
         title: "Program Saved",
-        description: `"${program.name}" has been added to your library."
+        description: `"${program.name}" has been added to your library.`
       });
     } else if (type === "session") {
       const sessionId = id || activeSessionId;
@@ -811,7 +811,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setWorkoutLibrary(prev => [...prev, newLibraryItem]);
       toast({
         title: "Session Saved",
-        description: `"${session.name}" has been added to your library."
+        description: `"${session.name}" has been added to your library.`
       });
     }
   };
