@@ -5,7 +5,8 @@ import {
   WorkoutSession, 
   Exercise,
   Set, 
-  Circuit
+  Circuit,
+  WorkoutSettings
 } from "@/types/workout"; 
 import { createEmptyProgram, sampleProgram } from "@/utils/workout";
 
@@ -35,6 +36,7 @@ interface WorkoutContextType {
   addExerciseToCircuit: (sessionId: string, circuitId: string, exercise?: Partial<Exercise>) => void;
   
   updateProgramDetails: (updates: { name?: string; image?: string }) => void;
+  updateSettings: (settings: WorkoutSettings) => void;
   
   resetProgram: () => void;
   loadSampleProgram: () => void;
@@ -443,7 +445,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       })
     }));
   };
-  
+
+  // Add the updateSettings function
+  const updateSettings = (settings: WorkoutSettings) => {
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      settings
+    }));
+  };
+
   // Update program details
   const updateProgramDetails = (updates: { name?: string; image?: string }) => {
     setProgram(prevProgram => ({
@@ -478,6 +488,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addExerciseToCircuit,
     
     updateProgramDetails,
+    updateSettings,
     
     resetProgram,
     loadSampleProgram,
