@@ -7,9 +7,6 @@ import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 
-// Import required to use framer-motion
-<lov-add-dependency>framer-motion@^10.16.4</lov-add-dependency>
-
 const WorkoutApp: React.FC = () => {
   const { program, activeSessionId, setActiveSessionId } = useWorkout();
   
