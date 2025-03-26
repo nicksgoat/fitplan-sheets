@@ -12,6 +12,7 @@ import {
 import { createEmptyProgram, sampleProgram } from "@/utils/workout";
 import { toast } from "@/components/ui/use-toast";
 
+// Define the shape of our context
 interface WorkoutContextType {
   program: WorkoutProgram;
   activeSessionId: string | null;
@@ -66,10 +67,13 @@ interface WorkoutContextType {
   importProgram: (program: WorkoutProgram) => void;
 }
 
+// Local storage key for workout library
 const WORKOUT_LIBRARY_KEY = "workout_library";
 
+// Create the context with a default value
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
+// Create a provider component
 export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [program, setProgram] = useState<WorkoutProgram>(createEmptyProgram());
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
@@ -79,6 +83,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     program.weeks && program.weeks.length > 0 ? program.weeks[0].id : null
   );
   
+  // Workout library state
   const [workoutLibrary, setWorkoutLibrary] = useState<Array<{
     id: string;
     name: string;
@@ -86,6 +91,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     data: WorkoutProgram | WorkoutSession;
   }>>([]);
   
+  // Load workout library from local storage
   useEffect(() => {
     const savedLibrary = localStorage.getItem(WORKOUT_LIBRARY_KEY);
     if (savedLibrary) {
@@ -97,10 +103,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
   
+  // Save workout library to local storage when it changes
   useEffect(() => {
     localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(workoutLibrary));
   }, [workoutLibrary]);
 
+  // Reset to empty program
   const resetProgram = () => {
     const newProgram = createEmptyProgram();
     setProgram(newProgram);
@@ -108,32 +116,38 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (newProgram.weeks && newProgram.weeks.length > 0) {
       setActiveWeekId(newProgram.weeks[0].id);
       
+      // Set active session from the first week
       if (newProgram.weeks[0].sessions.length > 0) {
         setActiveSessionId(newProgram.weeks[0].sessions[0].id);
       } else {
         setActiveSessionId(null);
       }
     } else if (newProgram.sessions.length > 0) {
+      // Fallback to old structure if needed
       setActiveSessionId(newProgram.sessions[0].id);
     }
   };
   
+  // Load sample program
   const loadSampleProgram = () => {
     setProgram(sampleProgram);
     
     if (sampleProgram.weeks && sampleProgram.weeks.length > 0) {
       setActiveWeekId(sampleProgram.weeks[0].id);
       
+      // Set active session from the first week
       if (sampleProgram.weeks[0].sessions.length > 0) {
         setActiveSessionId(sampleProgram.weeks[0].sessions[0].id);
       } else {
         setActiveSessionId(null);
       }
     } else if (sampleProgram.sessions.length > 0) {
+      // Fallback to old structure
       setActiveSessionId(sampleProgram.sessions[0].id);
     }
   };
 
+  // Week operations
   const addWeek = (name?: string) => {
     const newWeek: WorkoutWeek = {
       id: uuidv4(),
@@ -142,6 +156,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sessions: []
     };
     
+    // Create a default session in the new week
     const newSession: WorkoutSession = {
       id: uuidv4(),
       name: `Day 1`,
@@ -158,10 +173,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       weeks: [...(prevProgram.weeks || []), newWeek]
     }));
     
+    // Set this week as active if we don't have an active week
     if (!activeWeekId) {
       setActiveWeekId(newWeek.id);
     }
     
+    // Set the new session as active
     setActiveSessionId(newSession.id);
   };
   
@@ -179,6 +196,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   const deleteWeek = (weekId: string) => {
+    // Check if there's at least one week
     if (!program.weeks || program.weeks.length <= 1) {
       toast({
         title: "Cannot Delete Week",
@@ -189,23 +207,28 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     
     setProgram(prevProgram => {
+      // Filter out the week to delete
       const updatedWeeks = (prevProgram.weeks || [])
         .filter(week => week.id !== weekId)
         .map((week, index) => ({
           ...week,
-          weekNumber: index + 1
+          weekNumber: index + 1 // Update week numbers
         }));
       
+      // Update the program
       return {
         ...prevProgram,
         weeks: updatedWeeks
       };
     });
     
+    // If the deleted week was active, set another week as active
     if (activeWeekId === weekId) {
+      // Find a new week to set as active
       const newActiveWeekId = program.weeks.find(week => week.id !== weekId)?.id;
       setActiveWeekId(newActiveWeekId || null);
       
+      // Set a session from the new active week as active
       if (newActiveWeekId) {
         const week = program.weeks.find(week => week.id === newActiveWeekId);
         if (week && week.sessions.length > 0) {
@@ -217,7 +240,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Session operations
   const addSession = (name?: string, weekId?: string) => {
+    // If weekId is provided, add the session to that week
+    // Otherwise, if we have an active week, add it there
+    // If we don't have weeks structure yet, add it to the flat sessions array
     const targetWeekId = weekId || activeWeekId;
     
     const newSession: WorkoutSession = {
@@ -229,11 +256,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     
     if (targetWeekId && program.weeks) {
+      // Add to a specific week
       newSession.weekId = targetWeekId;
       
       setProgram(prevProgram => {
         const updatedWeeks = (prevProgram.weeks || []).map(week => {
           if (week.id === targetWeekId) {
+            // Add the session to this week
             const updatedSessions = [...week.sessions, {
               ...newSession,
               day: week.sessions.length + 1,
@@ -254,22 +283,27 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       });
     } else {
+      // Add to the flat sessions array (backward compatibility)
       setProgram(prevProgram => ({
         ...prevProgram,
         sessions: [...prevProgram.sessions, newSession]
       }));
     }
     
+    // Set the new session as active
     setActiveSessionId(newSession.id);
   };
   
   const updateSession = (sessionId: string, updates: Partial<WorkoutSession>) => {
+    // Check if we have a weeks structure
     if (program.weeks && program.weeks.length > 0) {
       setProgram(prevProgram => {
         const updatedWeeks = prevProgram.weeks.map(week => {
+          // Check if this session is in this week
           const sessionIndex = week.sessions.findIndex(session => session.id === sessionId);
           
           if (sessionIndex >= 0) {
+            // Update the session in this week
             const updatedSessions = week.sessions.map(session => 
               session.id === sessionId ? { ...session, ...updates } : session
             );
@@ -289,6 +323,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       });
     } else {
+      // Update in the flat sessions array
       setProgram(prevProgram => ({
         ...prevProgram,
         sessions: prevProgram.sessions.map(session => 
@@ -303,10 +338,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   const deleteSession = (sessionId: string) => {
+    // Check if we have a weeks structure
     if (program.weeks && program.weeks.length > 0) {
       let weekHasOnlyOneSession = false;
       let weekWithSession: WorkoutWeek | null = null;
       
+      // Find the week that contains this session
       program.weeks.forEach(week => {
         if (week.sessions.some(session => session.id === sessionId)) {
           weekWithSession = week;
@@ -314,6 +351,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       });
       
+      // Don't allow deleting the last session in a week
       if (weekHasOnlyOneSession && weekWithSession) {
         toast({
           title: "Cannot Delete Session",
@@ -325,12 +363,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       setProgram(prevProgram => {
         const updatedWeeks = prevProgram.weeks.map(week => {
+          // Check if this session is in this week
           if (week.sessions.some(session => session.id === sessionId)) {
+            // Remove the session from this week
             const updatedSessions = week.sessions
               .filter(session => session.id !== sessionId)
               .map((session, index) => ({
                 ...session,
-                day: index + 1
+                day: index + 1 // Update day numbers
               }));
             
             return {
@@ -348,11 +388,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
       });
       
+      // If the deleted session was active, set another session as active
       if (activeSessionId === sessionId && weekWithSession) {
+        // Find a new session in the same week to set as active
         const newActiveSessionId = weekWithSession.sessions.find(session => session.id !== sessionId)?.id;
         setActiveSessionId(newActiveSessionId || null);
       }
     } else {
+      // Don't allow deleting the last session
       if (program.sessions.length <= 1) {
         toast({
           title: "Cannot Delete Session",
@@ -362,16 +405,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
       
+      // Delete from the flat sessions array
       setProgram(prevProgram => ({
         ...prevProgram,
         sessions: prevProgram.sessions
           .filter(session => session.id !== sessionId)
           .map((session, index) => ({
             ...session,
-            day: index + 1
+            day: index + 1 // Update day numbers
           }))
       }));
       
+      // If the deleted session was active, set another session as active
       if (activeSessionId === sessionId) {
         const newActiveSessionId = program.sessions.find(session => session.id !== sessionId)?.id;
         setActiveSessionId(newActiveSessionId || null);
@@ -379,6 +424,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Exercise operations
   const addExercise = (sessionId: string, exercise: Partial<Exercise> = {}) => {
     const newExercise: Exercise = {
       id: uuidv4(),
@@ -388,50 +434,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...exercise
     };
     
-    if (program.weeks && program.weeks.length > 0) {
-      setProgram(prevProgram => {
-        const updatedWeeks = prevProgram.weeks.map(week => {
-          const sessionIndex = week.sessions.findIndex(session => session.id === sessionId);
-          
-          if (sessionIndex >= 0) {
-            const updatedSessions = week.sessions.map(session => {
-              if (session.id === sessionId) {
-                return {
-                  ...session,
-                  exercises: [...session.exercises, newExercise]
-                };
-              }
-              return session;
-            });
-            
-            return {
-              ...week,
-              sessions: updatedSessions
-            };
-          }
-          
-          return week;
-        });
-        
-        return {
-          ...prevProgram,
-          weeks: updatedWeeks
-        };
-      });
-    } else {
-      setProgram(prevProgram => ({
-        ...prevProgram,
-        sessions: prevProgram.sessions.map(session => {
-          if (session.id === sessionId) {
-            return {
-              ...session,
-              exercises: [...session.exercises, newExercise]
-            };
-          }
-          return session;
-        })
-      }));
-    }
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      sessions: prevProgram.sessions.map(session => {
+        if (session.id === sessionId) {
+          return {
+            ...session,
+            exercises: [...session.exercises, newExercise]
+          };
+        }
+        return session;
+      })
+    }));
   };
   
   const updateExercise = (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => {
@@ -456,9 +470,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prevProgram,
       sessions: prevProgram.sessions.map(session => {
         if (session.id === sessionId) {
+          // Also remove any exercises that are part of a group if this is a group header
           const exerciseToDelete = session.exercises.find(e => e.id === exerciseId);
           
           if (exerciseToDelete?.isCircuit) {
+            // If it's a circuit, also remove all exercises in the circuit
             return {
               ...session,
               exercises: session.exercises.filter(e => 
@@ -467,6 +483,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
               circuits: session.circuits.filter(c => c.id !== exerciseToDelete.circuitId)
             };
           } else if (exerciseToDelete?.isGroup) {
+            // If it's a group, also remove all exercises in the group
             return {
               ...session,
               exercises: session.exercises.filter(e => 
@@ -485,75 +502,36 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
-  const addSet = (sessionId: string, exerciseId: string, set: Partial<Set> = {}) => {
+  // Set operations
+  const addSet = (sessionId: string, exerciseId: string, set?: Partial<Set>) => {
     const newSet: Set = {
       id: uuidv4(),
-      reps: set?.reps || "",
-      weight: set?.weight || "",
-      rpe: set?.rpe || "",
-      rest: set?.rest || ""
+      reps: set.reps || "",
+      weight: set.weight || "",
+      rpe: set.rpe || "",
+      rest: set.rest || ""
     };
     
-    if (program.weeks && program.weeks.length > 0) {
-      setProgram(prevProgram => {
-        const updatedWeeks = prevProgram.weeks.map(week => {
-          const sessionIndex = week.sessions.findIndex(session => session.id === sessionId);
-          
-          if (sessionIndex >= 0) {
-            const updatedSessions = week.sessions.map(session => {
-              if (session.id === sessionId) {
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      sessions: prevProgram.sessions.map(session => {
+        if (session.id === sessionId) {
+          return {
+            ...session,
+            exercises: session.exercises.map(exercise => {
+              if (exercise.id === exerciseId) {
                 return {
-                  ...session,
-                  exercises: session.exercises.map(exercise => {
-                    if (exercise.id === exerciseId) {
-                      return {
-                        ...exercise,
-                        sets: [...exercise.sets, newSet]
-                      };
-                    }
-                    return exercise;
-                  })
+                  ...exercise,
+                  sets: [...exercise.sets, newSet]
                 };
               }
-              return session;
-            });
-            
-            return {
-              ...week,
-              sessions: updatedSessions
-            };
-          }
-          
-          return week;
-        });
-        
-        return {
-          ...prevProgram,
-          weeks: updatedWeeks
-        };
-      });
-    } else {
-      setProgram(prevProgram => ({
-        ...prevProgram,
-        sessions: prevProgram.sessions.map(session => {
-          if (session.id === sessionId) {
-            return {
-              ...session,
-              exercises: session.exercises.map(exercise => {
-                if (exercise.id === exerciseId) {
-                  return {
-                    ...exercise,
-                    sets: [...exercise.sets, newSet]
-                  };
-                }
-                return exercise;
-              })
-            };
-          }
-          return session;
-        })
-      }));
-    }
+              return exercise;
+            })
+          };
+        }
+        return session;
+      })
+    }));
   };
   
   const updateSet = (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => {
@@ -604,9 +582,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
   
+  // Circuit operations
   const addCircuit = (sessionId: string, name: string) => {
     const circuitId = uuidv4();
     
+    // Create a circuit header exercise
     const circuitHeaderExercise: Exercise = {
       id: uuidv4(),
       name: name || "Circuit",
@@ -616,6 +596,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       circuitId
     };
     
+    // Create the circuit
     const newCircuit: Circuit = {
       id: circuitId,
       name: name || "Circuit",
@@ -662,10 +643,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prevProgram,
       sessions: prevProgram.sessions.map(session => {
         if (session.id === sessionId) {
+          // Update the circuit
           const updatedCircuits = session.circuits.map(circuit => 
             circuit.id === circuitId ? { ...circuit, ...updates } : circuit
           );
           
+          // Also update the circuit header exercise if name changed
           const updatedExercises = session.exercises.map(exercise => {
             if (exercise.isCircuit && exercise.circuitId === circuitId && updates.name) {
               return { ...exercise, name: updates.name };
@@ -691,10 +674,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (session.id === sessionId) {
           return {
             ...session,
+            // Remove circuit header and all exercises in the circuit
             exercises: session.exercises.filter(
               exercise => !(exercise.isCircuit && exercise.circuitId === circuitId) 
                 && !(exercise.isInCircuit && exercise.circuitId === circuitId)
             ),
+            // Remove the circuit
             circuits: session.circuits.filter(circuit => circuit.id !== circuitId)
           };
         }
@@ -718,6 +703,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...prevProgram,
       sessions: prevProgram.sessions.map(session => {
         if (session.id === sessionId) {
+          // Find the circuit to update its exercises array
           const updatedCircuits = session.circuits.map(circuit => {
             if (circuit.id === circuitId) {
               return {
@@ -728,11 +714,13 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return circuit;
           });
           
+          // Find the circuit header exercise to place the new exercise after it
           const circuitHeaderIndex = session.exercises.findIndex(
             e => e.isCircuit && e.circuitId === circuitId
           );
           
           if (circuitHeaderIndex !== -1) {
+            // Find the right position to insert the new exercise (after other circuit exercises)
             let insertIndex = circuitHeaderIndex + 1;
             while (
               insertIndex < session.exercises.length && 
@@ -755,6 +743,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             };
           }
           
+          // Fallback if header not found
           return {
             ...session,
             exercises: [...session.exercises, newExercise],
@@ -766,13 +755,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
-  const updateProgramDetails = (updates: { name?: string; image?: string }) => {
-    setProgram(prevProgram => ({
-      ...prevProgram,
-      ...updates
-    }));
-  };
-
+  // Add the updateSettings function
   const updateSettings = (settings: WorkoutSettings) => {
     setProgram(prevProgram => ({
       ...prevProgram,
@@ -780,8 +763,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }));
   };
 
+  // Update program details
+  const updateProgramDetails = (updates: { name?: string; image?: string }) => {
+    setProgram(prevProgram => ({
+      ...prevProgram,
+      ...updates
+    }));
+  };
+
+  // Library operations
   const saveToLibrary = (type: "program" | "session", id?: string) => {
     if (type === "program") {
+      // Save current program to library
       const newLibraryItem = {
         id: uuidv4(),
         name: program.name,
@@ -795,6 +788,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         description: `"${program.name}" has been added to your library.`
       });
     } else if (type === "session") {
+      // Save specific session to library
       const sessionId = id || activeSessionId;
       if (!sessionId) return;
       
@@ -817,6 +811,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   const importSession = (sessionToImport: WorkoutSession) => {
+    // Create a copy of the session with new IDs to avoid conflicts
     const newSession: WorkoutSession = {
       ...sessionToImport,
       id: uuidv4(),
@@ -844,11 +839,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     toast({
       title: "Session Imported",
-      description: `"${newSession.name}" has been added to your program."
+      description: `"${newSession.name}" has been added to your program.`
     });
   };
   
   const importProgram = (programToImport: WorkoutProgram) => {
+    // Create a copy of the program with new IDs to avoid conflicts
     const newProgram: WorkoutProgram = {
       ...programToImport,
       id: uuidv4(),
@@ -879,10 +875,11 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     toast({
       title: "Program Imported",
-      description: `"${newProgram.name}" has been loaded."
+      description: `"${newProgram.name}" has been loaded.`
     });
   };
 
+  // Provide the context value
   const contextValue: WorkoutContextType = {
     program,
     activeSessionId,
@@ -939,6 +936,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
+// Create a custom hook for easy access to the context
 export const useWorkout = () => {
   const context = useContext(WorkoutContext);
   if (context === undefined) {

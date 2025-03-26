@@ -3,19 +3,9 @@ import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Button } from "./ui/button";
-import { Plus } from "lucide-react";
-import EditableText from "./EditableText";
 
 const WeekTabs: React.FC = () => {
-  const { 
-    program, 
-    activeWeekId, 
-    setActiveWeekId, 
-    setActiveSessionId, 
-    addWeek, 
-    updateWeekName 
-  } = useWorkout();
+  const { program, activeWeekId, setActiveWeekId, setActiveSessionId } = useWorkout();
   
   // If we don't have a weeks structure, don't render anything
   if (!program.weeks || program.weeks.length === 0) {
@@ -47,11 +37,7 @@ const WeekTabs: React.FC = () => {
             )}
             onClick={() => handleWeekChange(week.id)}
           >
-            <EditableText
-              value={week.name}
-              onSave={(newName) => updateWeekName(week.id, newName)}
-              isActive={activeWeekId === week.id}
-            />
+            {week.name}
             {activeWeekId === week.id && (
               <motion.div
                 layoutId="activeWeekTab"
@@ -63,15 +49,6 @@ const WeekTabs: React.FC = () => {
             )}
           </button>
         ))}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs ml-2"
-          onClick={() => addWeek()}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add Week
-        </Button>
       </div>
     </div>
   );
