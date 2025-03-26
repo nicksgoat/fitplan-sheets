@@ -26,6 +26,8 @@ import {
   addWeekToLibrary,
   addProgramToLibrary,
   getSessionLibrary,
+  getWeekLibrary,
+  getProgramLibrary,
   removeSessionFromLibrary,
   removeWeekFromLibrary,
   removeProgramFromLibrary,
@@ -41,7 +43,6 @@ import {
 } from "@/utils/presets";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { getWeekLibraryData, getProgramLibraryData } from "@/utils/libraryHelpers";
 
 interface WorkoutContextType {
   program: WorkoutProgram;
@@ -49,7 +50,6 @@ interface WorkoutContextType {
   activeWeekId: string | null;
   setActiveSessionId: (id: string | null) => void;
   setActiveWeekId: (id: string | null) => void;
-  updateProgramName: (name: string) => void;
   updateSessionName: (sessionId: string, name: string) => void;
   updateWeekName: (weekId: string, name: string) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
@@ -122,45 +122,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     }
   }, [program, activeWeekId, activeSessionId]);
 
-  const updateProgramName = (name: string) => {
-    setProgram((prevProgram) => ({
-      ...prevProgram,
-      name,
-      updatedAt: new Date().toISOString()
-    }));
-  };
-
   const updateSessionName = (sessionId: string, name: string) => {
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) =>
-        session.id === sessionId ? { 
-          ...session, 
-          name,
-          updatedAt: new Date().toISOString()
-        } : session
+        session.id === sessionId ? { ...session, name } : session
       );
-      return { 
-        ...prevProgram, 
-        sessions: updatedSessions,
-        updatedAt: new Date().toISOString()
-      };
+      return { ...prevProgram, sessions: updatedSessions };
     });
   };
 
   const updateWeekName = (weekId: string, name: string) => {
     setProgram((prevProgram) => {
       const updatedWeeks = prevProgram.weeks.map((week) =>
-        week.id === weekId ? { 
-          ...week, 
-          name,
-          updatedAt: new Date().toISOString()
-        } : week
+        week.id === weekId ? { ...week, name } : week
       );
-      return { 
-        ...prevProgram, 
-        weeks: updatedWeeks,
-        updatedAt: new Date().toISOString()
-      };
+      return { ...prevProgram, weeks: updatedWeeks };
     });
   };
 
@@ -309,8 +285,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const resetProgram = () => {
     const emptyProgram = createEmptyProgram();
-    emptyProgram.createdAt = new Date().toISOString();
-    
     setProgram(emptyProgram);
     setActiveWeekId(emptyProgram.weeks[0]?.id || null);
     setActiveSessionId(emptyProgram.sessions[0]?.id || null);
@@ -318,14 +292,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loadSampleProgram = () => {
-    const timestampedProgram = {
-      ...sampleProgram,
-      createdAt: new Date().toISOString()
-    };
-    
-    setProgram(timestampedProgram);
-    setActiveWeekId(timestampedProgram.weeks[0]?.id || null);
-    setActiveSessionId(timestampedProgram.sessions[0]?.id || null);
+    setProgram(sampleProgram);
+    setActiveWeekId(sampleProgram.weeks[0]?.id || null);
+    setActiveSessionId(sampleProgram.sessions[0]?.id || null);
     toast.success("Sample program loaded");
   };
 
@@ -843,27 +812,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const saveSessionToLibrary = (sessionId: string, name: string) => {
-    const sessionToSave = saveCurrentSessionAsPreset(program, sessionId, name);
-    sessionToSave.createdAt = new Date().toISOString();
-    
-    addSessionToLibrary(sessionToSave);
-    toast.success("Workout added to library");
+    const sessionPreset = saveCurrentSessionAsPreset(program, sessionId, name);
+    addSessionToLibrary(sessionPreset);
+    toast.success("Workout playlist added to library");
   };
 
   const saveWeekToLibrary = (weekId: string, name: string) => {
-    const weekToSave = saveCurrentWeekAsPreset(program, weekId, name);
-    weekToSave.createdAt = new Date().toISOString();
-    
-    addWeekToLibrary(weekToSave);
+    const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
+    addWeekToLibrary(weekPreset);
     toast.success("Training week added to library");
   };
 
   const saveProgramToLibrary = (name: string) => {
-    const programToSave = copyProgramAsPreset(program, name);
-    programToSave.createdAt = new Date().toISOString();
-    
-    addProgramToLibrary(programToSave);
-    toast.success("Training program added to library");
+    const programPreset = copyProgramAsPreset(program, name);
+    addProgramToLibrary(programPreset);
+    toast.success("Training album added to library");
   };
 
   const loadSessionFromLibrary = (preset: WorkoutSession, weekId: string) => {
@@ -939,15 +902,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setProgram(preset);
     setActiveWeekId(preset.weeks[0]?.id || null);
     setActiveSessionId(preset.sessions[0]?.id || null);
-    toast.success(`Loaded training program: ${preset.name}`);
-  };
-
-  const getWeekLibrary = (): WorkoutWeek[] => {
-    return getWeekLibraryData();
-  };
-
-  const getProgramLibrary = (): WorkoutProgram[] => {
-    return getProgramLibraryData();
+    toast.success(`Loaded training album: ${preset.name}`);
   };
 
   return (
@@ -958,7 +913,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         activeWeekId,
         setActiveSessionId,
         setActiveWeekId,
-        updateProgramName,
         updateSessionName,
         updateWeekName,
         updateExercise,
