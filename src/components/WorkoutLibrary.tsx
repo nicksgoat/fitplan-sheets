@@ -40,7 +40,11 @@ import {
   WorkoutSession, 
   WorkoutWeek, 
   WorkoutProgram,
-  Exercise 
+  Exercise,
+  ExerciseLibraryItem,
+  WorkoutLibraryItem,
+  WeekLibraryItem,
+  ProgramLibraryItem
 } from "@/types/workout";
 
 type LibraryTabType = 'exercises' | 'workouts' | 'weeks' | 'programs';
@@ -104,16 +108,16 @@ const WorkoutLibrary = () => {
     switch (draggedItem.type) {
       case 'workout':
         if (activeWeekId) {
-          loadSessionFromLibrary(draggedItem.data as WorkoutSession, activeWeekId);
+          loadSessionFromLibrary((draggedItem as WorkoutLibraryItem).data, activeWeekId);
           setIsOpen(false);
         }
         break;
       case 'week':
-        loadWeekFromLibrary(draggedItem.data as WorkoutWeek);
+        loadWeekFromLibrary((draggedItem as WeekLibraryItem).data);
         setIsOpen(false);
         break;
       case 'program':
-        loadProgramFromLibrary(draggedItem.data as WorkoutProgram);
+        loadProgramFromLibrary((draggedItem as ProgramLibraryItem).data);
         setIsOpen(false);
         break;
     }
@@ -141,16 +145,16 @@ const WorkoutLibrary = () => {
     switch (item.type) {
       case 'workout':
         if (activeWeekId) {
-          loadSessionFromLibrary(item.data as WorkoutSession, activeWeekId);
+          loadSessionFromLibrary((item as WorkoutLibraryItem).data, activeWeekId);
           setIsOpen(false);
         }
         break;
       case 'week':
-        loadWeekFromLibrary(item.data as WorkoutWeek);
+        loadWeekFromLibrary((item as WeekLibraryItem).data);
         setIsOpen(false);
         break;
       case 'program':
-        loadProgramFromLibrary(item.data as WorkoutProgram);
+        loadProgramFromLibrary((item as ProgramLibraryItem).data);
         setIsOpen(false);
         break;
     }
@@ -274,18 +278,18 @@ const WorkoutLibrary = () => {
                           <CardContent className="pb-2">
                             {item.type === 'workout' && (
                               <p className="text-sm">
-                                {(item.data as WorkoutSession).exercises.length} exercises
+                                {((item as WorkoutLibraryItem).data as WorkoutSession).exercises.length} exercises
                               </p>
                             )}
                             {item.type === 'week' && (
                               <p className="text-sm">
-                                {(item.data as WorkoutWeek).sessions.length} workouts
+                                {((item as WeekLibraryItem).data as WorkoutWeek).sessions.length} workouts
                               </p>
                             )}
                             {item.type === 'program' && (
                               <p className="text-sm">
-                                {(item.data as WorkoutProgram).weeks.length} weeks • 
-                                {(item.data as WorkoutProgram).sessions.length} workouts
+                                {((item as ProgramLibraryItem).data as WorkoutProgram).weeks.length} weeks • 
+                                {((item as ProgramLibraryItem).data as WorkoutProgram).sessions.length} workouts
                               </p>
                             )}
                             {item.tags && item.tags.length > 0 && (

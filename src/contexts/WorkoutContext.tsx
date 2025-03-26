@@ -26,8 +26,6 @@ import {
   addWeekToLibrary,
   addProgramToLibrary,
   getSessionLibrary,
-  getWeekLibrary,
-  getProgramLibrary,
   removeSessionFromLibrary,
   removeWeekFromLibrary,
   removeProgramFromLibrary,
@@ -43,6 +41,7 @@ import {
 } from "@/utils/presets";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { getWeekLibraryData, getProgramLibraryData } from "@/utils/libraryHelpers";
 
 interface WorkoutContextType {
   program: WorkoutProgram;
@@ -941,6 +940,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setActiveWeekId(preset.weeks[0]?.id || null);
     setActiveSessionId(preset.sessions[0]?.id || null);
     toast.success(`Loaded training program: ${preset.name}`);
+  };
+
+  const getWeekLibrary = (): WorkoutWeek[] => {
+    return getWeekLibraryData();
+  };
+
+  const getProgramLibrary = (): WorkoutProgram[] => {
+    return getProgramLibraryData();
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import { 
   WorkoutProgram, 
   WorkoutSession, 
@@ -263,6 +262,58 @@ export function updateProgramInLibrary(program: WorkoutProgram): void {
 // Compatibility functions - maintain old names for backward compatibility
 export function getSessionLibrary(): WorkoutSession[] {
   return getWorkoutLibrary().map(item => item.data);
+}
+
+export function getWeekLibrary(): WeekLibraryItem[] {
+  const data = localStorage.getItem(WEEK_LIBRARY_KEY);
+  
+  // Handle legacy data
+  if (!data && localStorage.getItem(WEEK_LIBRARY_KEY)) {
+    const legacyData = localStorage.getItem(WEEK_LIBRARY_KEY);
+    const weeks = legacyData ? JSON.parse(legacyData) : [];
+    
+    // Convert legacy weeks to the new format
+    const weekItems: WeekLibraryItem[] = weeks.map((week: WorkoutWeek) => ({
+      id: week.id,
+      name: week.name,
+      type: 'week',
+      tags: [],
+      createdAt: getTimestamp(),
+      data: week
+    }));
+    
+    // Save the converted data
+    localStorage.setItem(WEEK_LIBRARY_KEY, JSON.stringify(weekItems));
+    return weekItems;
+  }
+  
+  return data ? JSON.parse(data) : [];
+}
+
+export function getProgramLibrary(): ProgramLibraryItem[] {
+  const data = localStorage.getItem(PROGRAM_LIBRARY_KEY);
+  
+  // Handle legacy data
+  if (!data && localStorage.getItem(PROGRAM_LIBRARY_KEY)) {
+    const legacyData = localStorage.getItem(PROGRAM_LIBRARY_KEY);
+    const programs = legacyData ? JSON.parse(legacyData) : [];
+    
+    // Convert legacy programs to the new format
+    const programItems: ProgramLibraryItem[] = programs.map((program: WorkoutProgram) => ({
+      id: program.id,
+      name: program.name,
+      type: 'program',
+      tags: [],
+      createdAt: getTimestamp(),
+      data: program
+    }));
+    
+    // Save the converted data
+    localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(programItems));
+    return programItems;
+  }
+  
+  return data ? JSON.parse(data) : [];
 }
 
 export function addSessionToLibrary(session: WorkoutSession): void {
