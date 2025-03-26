@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
@@ -18,7 +19,8 @@ import {
   cloneSession,
   saveCurrentSessionAsPreset,
   saveCurrentWeekAsPreset,
-  copyProgramAsPreset
+  copyProgramAsPreset,
+  generateId
 } from "@/utils/workout";
 import {
   saveSessionPreset,
