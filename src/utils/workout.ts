@@ -370,6 +370,100 @@ export function deleteWeekFromProgram(
   };
 }
 
+export function cloneSession(session: WorkoutSession, newWeekId?: string): WorkoutSession {
+  // Create a new session with a new ID
+  const newSession: WorkoutSession = {
+    ...session,
+    id: generateId(),
+    weekId: newWeekId || session.weekId,
+    exercises: [],
+    circuits: []
+  };
+
+  // Clone all exercises with new IDs
+  const exerciseIdMap = new Map<string, string>();
+  const circuitIdMap = new Map<string, string>();
+  
+  // First pass: create new exercises without circuit relationships
+  newSession.exercises = session.exercises.map(exercise => {
+    const newId = generateId();
+    exerciseIdMap.set(exercise.id, newId);
+    
+    // Create new exercise with new ID
+    const newExercise: Exercise = {
+      ...exercise,
+      id: newId,
+      sets: exercise.sets.map(set => ({
+        ...set,
+        id: generateId()
+      }))
+    };
+    
+    // Handle circuit IDs
+    if (exercise.circuitId) {
+      // If we haven't encountered this circuit ID yet, generate a new one
+      if (!circuitIdMap.has(exercise.circuitId)) {
+        circuitIdMap.set(exercise.circuitId, generateId());
+      }
+      newExercise.circuitId = circuitIdMap.get(exercise.circuitId);
+    }
+    
+    return newExercise;
+  });
+  
+  // Second pass: Clone all circuits with new IDs
+  if (session.circuits && session.circuits.length > 0) {
+    newSession.circuits = session.circuits.map(circuit => {
+      const newCircuitId = circuitIdMap.get(circuit.id) || generateId();
+      
+      return {
+        ...circuit,
+        id: newCircuitId,
+        exercises: circuit.exercises.map(exId => 
+          exerciseIdMap.get(exId) || generateId()
+        )
+      };
+    });
+  }
+  
+  return newSession;
+}
+
+export function copyProgramAsPreset(program: WorkoutProgram, presetName: string): WorkoutProgram {
+  return {
+    id: generateId(),
+    name: presetName,
+    sessions: program.sessions,
+    weeks: program.weeks
+  };
+}
+
+export function saveCurrentWeekAsPreset(program: WorkoutProgram, weekId: string, presetName: string): WorkoutWeek {
+  const week = program.weeks.find(w => w.id === weekId);
+  if (!week) throw new Error("Week not found");
+  
+  // Create a deep copy of the week
+  const weekCopy: WorkoutWeek = {
+    id: generateId(),
+    name: presetName,
+    order: week.order,
+    sessions: [...week.sessions]
+  };
+  
+  return weekCopy;
+}
+
+export function saveCurrentSessionAsPreset(program: WorkoutProgram, sessionId: string, presetName: string): WorkoutSession {
+  const session = program.sessions.find(s => s.id === sessionId);
+  if (!session) throw new Error("Session not found");
+  
+  // Create a deep copy of the session using the clone function
+  const sessionCopy = cloneSession(session);
+  sessionCopy.name = presetName;
+  
+  return sessionCopy;
+}
+
 export const sampleProgram: WorkoutProgram = {
   id: "sample1",
   name: "Strength Building Program",
