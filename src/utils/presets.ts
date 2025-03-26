@@ -4,7 +4,7 @@ import { WorkoutProgram, WorkoutSession, WorkoutWeek } from "@/types/workout";
 // Local storage keys
 const PROGRAM_LIBRARY_KEY = "fitplan-program-library";
 const WEEK_LIBRARY_KEY = "fitplan-week-library";
-const SESSION_LIBRARY_KEY = "fitplan-session-library";
+const SESSION_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
 
 // Preset keys - for backward compatibility
 const PROGRAM_PRESETS_KEY = "fitplan-program-presets";
@@ -12,8 +12,8 @@ const WEEK_PRESETS_KEY = "fitplan-week-presets";
 const SESSION_PRESETS_KEY = "fitplan-session-presets";
 
 // Save to library
-export function addSessionToLibrary(session: WorkoutSession): void {
-  const library = getSessionLibrary();
+export function addWorkoutToLibrary(session: WorkoutSession): void {
+  const library = getWorkoutLibrary();
   library.push(session);
   localStorage.setItem(SESSION_LIBRARY_KEY, JSON.stringify(library));
 }
@@ -31,7 +31,7 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
 }
 
 // Get from library
-export function getSessionLibrary(): WorkoutSession[] {
+export function getWorkoutLibrary(): WorkoutSession[] {
   const data = localStorage.getItem(SESSION_LIBRARY_KEY);
   return data ? JSON.parse(data) : [];
 }
@@ -47,8 +47,8 @@ export function getProgramLibrary(): WorkoutProgram[] {
 }
 
 // Remove from library
-export function removeSessionFromLibrary(sessionId: string): void {
-  const library = getSessionLibrary().filter(p => p.id !== sessionId);
+export function removeWorkoutFromLibrary(sessionId: string): void {
+  const library = getWorkoutLibrary().filter(p => p.id !== sessionId);
   localStorage.setItem(SESSION_LIBRARY_KEY, JSON.stringify(library));
 }
 
@@ -60,6 +60,19 @@ export function removeWeekFromLibrary(weekId: string): void {
 export function removeProgramFromLibrary(programId: string): void {
   const library = getProgramLibrary().filter(p => p.id !== programId);
   localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
+}
+
+// Compatibility functions - maintain old names for backward compatibility
+export function getSessionLibrary(): WorkoutSession[] {
+  return getWorkoutLibrary();
+}
+
+export function addSessionToLibrary(session: WorkoutSession): void {
+  addWorkoutToLibrary(session);
+}
+
+export function removeSessionFromLibrary(sessionId: string): void {
+  removeWorkoutFromLibrary(sessionId);
 }
 
 // Preset system functions - for compatibility with existing code
