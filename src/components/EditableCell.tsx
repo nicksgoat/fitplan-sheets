@@ -1,6 +1,7 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { CellCoordinate } from "@/hooks/useCellNavigation";
 
 interface EditableCellProps {
   value: string | number;
@@ -9,6 +10,10 @@ interface EditableCellProps {
   placeholder?: string;
   type?: "text" | "number";
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  coordinate: CellCoordinate;
+  isFocused: boolean;
+  onFocus: (coordinate: CellCoordinate) => void;
+  onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -18,17 +23,24 @@ const EditableCell: React.FC<EditableCellProps> = ({
   placeholder = "",
   type = "text",
   onKeyDown,
+  coordinate,
+  isFocused,
+  onFocus,
+  onNavigate,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isFocused]);
+  
   const handleClick = () => {
     setIsEditing(true);
-    // Focus the input in the next tick to ensure it's in the DOM
-    setTimeout(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }, 0);
+    onFocus(coordinate);
   };
   
   const handleBlur = () => {
@@ -40,8 +52,32 @@ const EditableCell: React.FC<EditableCellProps> = ({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      inputRef.current?.blur();
+    // Navigation with arrow keys
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onNavigate("up", e.shiftKey);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onNavigate("down", e.shiftKey);
+    } else if (e.key === "ArrowLeft") {
+      // Only navigate left if at the beginning of input
+      if (inputRef.current && inputRef.current.selectionStart === 0) {
+        e.preventDefault();
+        onNavigate("left", e.shiftKey);
+      }
+    } else if (e.key === "ArrowRight") {
+      // Only navigate right if at the end of input
+      if (inputRef.current && 
+          inputRef.current.selectionStart === inputRef.current.value.length) {
+        e.preventDefault();
+        onNavigate("right", e.shiftKey);
+      }
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      onNavigate(e.shiftKey ? "left" : "right", false);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      onNavigate(e.shiftKey ? "up" : "down", false);
     }
     
     if (onKeyDown) {
@@ -53,6 +89,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     <div 
       className={cn(
         "editable-cell rounded-md h-full flex items-center",
+        isFocused && "ring-2 ring-primary ring-offset-1",
         className
       )}
       onClick={handleClick}
@@ -60,7 +97,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
       <input
         ref={inputRef}
         type={type}
-        className="cell-input"
+        className="cell-input w-full h-full bg-transparent outline-none px-2"
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}

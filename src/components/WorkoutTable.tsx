@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { Trash2, ChevronRight } from "lucide-react";
-import { WorkoutSession, Exercise } from "@/types/workout";
+import { WorkoutSession, Exercise, CellType } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import EditableCell from "./EditableCell";
+import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -11,8 +12,13 @@ interface WorkoutTableProps {
   session: WorkoutSession;
 }
 
+// Define the order of columns for navigation
+const columnOrder: CellType[] = ["name", "sets", "reps", "weight", "rpe", "rest", "notes"];
+
 const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   const { updateExercise, addExercise, deleteExercise } = useWorkout();
+  const { focusedCell, focusCell, blurCell, isCellFocused } = useCellNavigation();
+  const tableRef = useRef<HTMLTableElement>(null);
   
   const handleCellChange = (exerciseId: string, field: keyof Exercise, value: string) => {
     const updates: Partial<Exercise> = { [field]: value };
@@ -30,26 +36,55 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     updateExercise(session.id, exerciseId, updates);
   };
   
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    exerciseId: string,
-    index: number
+  const handleCellFocus = (coordinate: CellCoordinate) => {
+    focusCell(coordinate);
+  };
+  
+  const handleCellNavigate = (
+    direction: "up" | "down" | "left" | "right",
+    shiftKey: boolean,
+    currentCoord: CellCoordinate
   ) => {
-    // Add a new row on Tab key press on the last row and last column
-    if (
-      e.key === "Tab" && 
-      !e.shiftKey && 
-      index === session.exercises.length - 1 && 
-      (e.target as HTMLElement).closest("td")?.classList.contains("note-cell")
-    ) {
-      e.preventDefault();
-      addExercise(session.id, exerciseId);
+    const { rowIndex, columnName, exerciseId } = currentCoord;
+    const currentColIndex = columnOrder.indexOf(columnName as CellType);
+    
+    let newRowIndex = rowIndex;
+    let newColIndex = currentColIndex;
+    
+    switch (direction) {
+      case "up":
+        newRowIndex = Math.max(0, rowIndex - 1);
+        break;
+      case "down":
+        newRowIndex = Math.min(session.exercises.length - 1, rowIndex + 1);
+        // If at the last row and last column, add a new exercise
+        if (newRowIndex === rowIndex && rowIndex === session.exercises.length - 1 && columnName === "notes") {
+          addExercise(session.id, exerciseId);
+          newRowIndex = rowIndex + 1;
+        }
+        break;
+      case "left":
+        newColIndex = Math.max(0, currentColIndex - 1);
+        break;
+      case "right":
+        newColIndex = Math.min(columnOrder.length - 1, currentColIndex + 1);
+        break;
     }
+    
+    // Get the new exercise ID based on the new row index
+    const newExerciseId = session.exercises[newRowIndex]?.id || exerciseId;
+    
+    // Focus the new cell
+    focusCell({
+      rowIndex: newRowIndex,
+      columnName: columnOrder[newColIndex],
+      exerciseId: newExerciseId
+    });
   };
   
   return (
     <div className="overflow-x-auto">
-      <table className="workout-table">
+      <table className="workout-table" ref={tableRef}>
         <thead>
           <tr>
             <th style={{ width: "40px" }}>#</th>
@@ -70,7 +105,10 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: index * 0.03 }}
-              className={exercise.groupId ? "bg-secondary/30" : ""}
+              className={cn(
+                "group",
+                exercise.groupId ? "bg-secondary/30" : ""
+              )}
             >
               <td className="text-center text-muted-foreground text-sm">
                 {exercise.groupId ? (
@@ -93,6 +131,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     exercise.name === "Cool down" && "font-medium text-blue-600",
                     exercise.name?.includes("Circuit") && "font-medium text-purple-600"
                   )}
+                  coordinate={{ rowIndex: index, columnName: "name", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "name", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "name", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -102,6 +150,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   onChange={(value) => handleCellChange(exercise.id, "sets", value)}
                   type="number"
                   placeholder="3"
+                  coordinate={{ rowIndex: index, columnName: "sets", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "sets", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "sets", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -110,7 +168,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   value={exercise.reps}
                   onChange={(value) => handleCellChange(exercise.id, "reps", value)}
                   placeholder="10"
-                  onKeyDown={(e) => handleKeyDown(e, exercise.id, index)}
+                  coordinate={{ rowIndex: index, columnName: "reps", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "reps", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "reps", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -119,7 +186,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   value={exercise.weight}
                   onChange={(value) => handleCellChange(exercise.id, "weight", value)}
                   placeholder="lbs"
-                  onKeyDown={(e) => handleKeyDown(e, exercise.id, index)}
+                  coordinate={{ rowIndex: index, columnName: "weight", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "weight", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "weight", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -128,7 +204,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   value={exercise.rpe}
                   onChange={(value) => handleCellChange(exercise.id, "rpe", value)}
                   placeholder="%"
-                  onKeyDown={(e) => handleKeyDown(e, exercise.id, index)}
+                  coordinate={{ rowIndex: index, columnName: "rpe", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "rpe", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "rpe", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -137,7 +222,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   value={exercise.rest}
                   onChange={(value) => handleCellChange(exercise.id, "rest", value)}
                   placeholder="60s"
-                  onKeyDown={(e) => handleKeyDown(e, exercise.id, index)}
+                  coordinate={{ rowIndex: index, columnName: "rest", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "rest", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "rest", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
@@ -146,7 +240,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   value={exercise.notes}
                   onChange={(value) => handleCellChange(exercise.id, "notes", value)}
                   placeholder="Add notes..."
-                  onKeyDown={(e) => handleKeyDown(e, exercise.id, index)}
+                  coordinate={{ rowIndex: index, columnName: "notes", exerciseId: exercise.id }}
+                  isFocused={isCellFocused(index, "notes", exercise.id)}
+                  onFocus={handleCellFocus}
+                  onNavigate={(direction, shiftKey) => 
+                    handleCellNavigate(direction, shiftKey, { 
+                      rowIndex: index, 
+                      columnName: "notes", 
+                      exerciseId: exercise.id 
+                    })
+                  }
                 />
               </td>
               
