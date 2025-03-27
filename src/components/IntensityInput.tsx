@@ -57,6 +57,24 @@ const formatValue = (value: string, intensityType: IntensityType): string => {
   }
 };
 
+// Get visual style based on intensity type
+const getIntensityStyle = (type: IntensityType) => {
+  switch (type) {
+    case 'rpe':
+      return 'text-amber-600';
+    case 'arpe':
+      return 'text-orange-600';
+    case 'percent':
+      return 'text-blue-600';
+    case 'absolute':
+      return 'text-green-600';
+    case 'velocity':
+      return 'text-purple-600';
+    default:
+      return '';
+  }
+};
+
 const IntensityInput: React.FC<IntensityInputProps> = ({
   value,
   intensityType,
@@ -121,23 +139,8 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
     }
   };
   
-  // Get visual style based on intensity type
-  const getIntensityStyle = (type: IntensityType) => {
-    switch (type) {
-      case 'rpe':
-        return 'text-amber-600';
-      case 'arpe':
-        return 'text-orange-600';
-      case 'percent':
-        return 'text-blue-600';
-      case 'absolute':
-        return 'text-green-600';
-      case 'velocity':
-        return 'text-purple-600';
-      default:
-        return '';
-    }
-  };
+  const currentPlaceholder = placeholder || getPlaceholder(intensityType);
+  const placeholderStyle = getIntensityStyle(intensityType);
   
   return (
     <div className="flex items-center w-full h-full">
@@ -172,18 +175,31 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
         </Popover>
       )}
       
-      <input
-        ref={inputRef}
-        type="text"
-        className={cn(
-          "cell-input w-full h-full bg-transparent outline-none px-2 py-1 font-medium",
-          intensityType && getIntensityStyle(intensityType)
+      <div className="relative w-full h-full">
+        <input
+          ref={inputRef}
+          type="text"
+          className={cn(
+            "cell-input w-full h-full bg-transparent outline-none px-2 py-1 font-medium",
+            value ? getIntensityStyle(intensityType) : ""
+          )}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder=""
+        />
+        
+        {/* Background placeholder that shows when there's no value */}
+        {!value && (
+          <div className={cn(
+            "absolute inset-0 flex items-center pointer-events-none px-2 py-1",
+            placeholderStyle,
+            "opacity-40"
+          )}>
+            {currentPlaceholder}
+          </div>
         )}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder={placeholder || getPlaceholder(intensityType)}
-      />
+      </div>
     </div>
   );
 };

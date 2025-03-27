@@ -50,6 +50,20 @@ const formatValue = (value: string, weightType: WeightType): string => {
   }
 };
 
+// Get visual style based on weight type
+const getWeightStyle = (type: WeightType) => {
+  switch (type) {
+    case 'pounds':
+      return 'text-blue-600';
+    case 'kilos':
+      return 'text-green-600';
+    case 'distance':
+      return 'text-purple-600';
+    default:
+      return '';
+  }
+};
+
 const WeightInput: React.FC<WeightInputProps> = ({
   value,
   weightType,
@@ -102,19 +116,8 @@ const WeightInput: React.FC<WeightInputProps> = ({
     }
   };
   
-  // Get visual style based on weight type
-  const getWeightStyle = (type: WeightType) => {
-    switch (type) {
-      case 'pounds':
-        return 'text-blue-600';
-      case 'kilos':
-        return 'text-green-600';
-      case 'distance':
-        return 'text-purple-600';
-      default:
-        return '';
-    }
-  };
+  const currentPlaceholder = placeholder || getPlaceholder(weightType);
+  const placeholderStyle = getWeightStyle(weightType);
   
   return (
     <div className="flex items-center w-full h-full">
@@ -149,18 +152,31 @@ const WeightInput: React.FC<WeightInputProps> = ({
         </Popover>
       )}
       
-      <input
-        ref={inputRef}
-        type="text"
-        className={cn(
-          "cell-input w-full h-full bg-transparent outline-none px-2 py-1 font-medium",
-          weightType && getWeightStyle(weightType)
+      <div className="relative w-full h-full">
+        <input
+          ref={inputRef}
+          type="text"
+          className={cn(
+            "cell-input w-full h-full bg-transparent outline-none px-2 py-1 font-medium",
+            value ? getWeightStyle(weightType) : ""
+          )}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder=""
+        />
+        
+        {/* Background placeholder that shows when there's no value */}
+        {!value && (
+          <div className={cn(
+            "absolute inset-0 flex items-center pointer-events-none px-2 py-1",
+            placeholderStyle,
+            "opacity-40"
+          )}>
+            {currentPlaceholder}
+          </div>
         )}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder={placeholder || getPlaceholder(weightType)}
-      />
+      </div>
     </div>
   );
 };
