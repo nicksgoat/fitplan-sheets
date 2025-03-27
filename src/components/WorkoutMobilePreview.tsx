@@ -23,16 +23,13 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   
   if (!session) return null;
   
-  // Determine which week this session belongs to
   const weekNumber = session.weekId 
     ? program.weeks.find(w => w.id === session.weekId)?.order || session.day
     : session.day;
   
-  // Format rest time from seconds to a readable format
   const formatRestTime = (restSeconds: string): string => {
     if (!restSeconds) return '';
     
-    // If rest already contains "s" or other time indicators, return as is
     if (restSeconds.includes('s') || restSeconds.includes('min') || 
         restSeconds.includes('m') || restSeconds.includes(':')) {
       return restSeconds;
@@ -52,41 +49,32 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
     }
   };
   
-  // Organize exercises for display
   const getOrganizedExercises = () => {
     const result = [];
     const circuitMap = new Map();
     
-    // First pass: collect circuits and standalone exercises
     for (const exercise of session.exercises) {
       if (exercise.isCircuit) {
-        // This is a circuit header
         result.push(exercise);
       } else if (exercise.isInCircuit && exercise.circuitId) {
-        // This is an exercise in a circuit
         if (!circuitMap.has(exercise.circuitId)) {
           circuitMap.set(exercise.circuitId, []);
         }
         circuitMap.get(exercise.circuitId).push(exercise);
       } else if (exercise.isGroup) {
-        // This is a group header
         result.push(exercise);
       } else if (!exercise.groupId && !exercise.isInCircuit) {
-        // This is a standalone exercise
         result.push(exercise);
       }
     }
     
-    // Second pass: insert circuit exercises after their headers
     const finalResult = [];
     
     for (const exercise of result) {
       finalResult.push(exercise);
       
       if (exercise.isCircuit && exercise.circuitId) {
-        // Don't display exercises here, they'll be shown in the circuit section
       } else if (exercise.isGroup) {
-        // Don't process child exercises here, they're handled separately
       }
     }
     
@@ -95,13 +83,11 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   
   const { exercises, circuitMap } = getOrganizedExercises();
 
-  // NEW: Calculate min and max reps for exercises
   const getRepRange = (exercise: any) => {
     if (!exercise.sets || exercise.sets.length === 0) return '';
     
     const repsValues = exercise.sets
       .map((set: any) => {
-        // Handle cases where reps might be a string like '10-12' or '12'
         if (typeof set.reps === 'string' && set.reps.includes('-')) {
           return set.reps.split('-').map(Number);
         }
@@ -113,7 +99,11 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
     const minReps = Math.min(...repsValues);
     const maxReps = Math.max(...repsValues);
 
-    return minReps === maxReps ? `${minReps} reps` : `${minReps}-${maxReps} reps`;
+    const repRange = minReps === maxReps 
+      ? `${minReps} reps` 
+      : `${minReps}-${maxReps} reps`;
+
+    return `${exercise.sets.length} sets, ${repRange}`;
   };
   
   return (
@@ -124,7 +114,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
       
       <div className="relative w-full p-4 flex justify-center">
         <div className="w-[300px] h-[620px] border-[10px] border-[#1a1a1a] rounded-[40px] overflow-hidden shadow-xl bg-[#1a1a1a]">
-          {/* Notch */}
           <div className="absolute top-[24px] left-1/2 transform -translate-x-1/2 w-[120px] h-[30px] bg-[#1a1a1a] rounded-b-xl z-10"></div>
           
           <div className="w-full h-full bg-white">
@@ -207,7 +196,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                         </div>
                       )}
                       
-                      {/* Display circuit exercises */}
                       {exercise.isCircuit && exercise.circuitId && (
                         <div className="mt-2">
                           {circuitMap.get(exercise.circuitId)?.map((circuitExercise, idx) => (
@@ -220,7 +208,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                                 <div className="text-sm font-medium truncate">{circuitExercise.name}</div>
                               </div>
                               
-                              {/* Show sets for circuit exercises */}
                               {circuitExercise.sets.length > 0 && (
                                 <div className="ml-4 text-xs text-gray-500">
                                   {circuitExercise.sets.map((set, setIdx) => (
@@ -242,7 +229,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                       )}
                     </div>
                     
-                    {/* Render sets as a table for non-circuit, non-group exercises with multiple sets */}
                     {(!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0) && (
                       <div className="overflow-x-auto max-w-full">
                         <Table className="border-t border-gray-200 text-sm w-full">
@@ -284,7 +270,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                       </div>
                     )}
                     
-                    {/* Display rest time for each set in non-circuit exercises */}
                     {(!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0) && (
                       <div className="px-3 pb-3 pt-1">
                         {exercise.sets.some(set => set.rest) && (
