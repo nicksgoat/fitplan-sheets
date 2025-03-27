@@ -1,11 +1,12 @@
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
-import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType } from "@/types/workout";
+import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import EditableCell from "./EditableCell";
 import EditableSetCell from "./EditableSetCell";
 import RepTypeSelector from "./RepTypeSelector";
 import IntensityTypeSelector from "./IntensityTypeSelector";
+import WeightTypeSelector from "./WeightTypeSelector";
 import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -106,6 +107,21 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   const handleSetIntensityTypeChange = (exerciseId: string, setId: string, intensityType: IntensityType) => {
     updateSet(session.id, exerciseId, setId, { intensityType } as Partial<Set>);
+  };
+  
+  const handleWeightTypeChange = (exerciseId: string, weightType: WeightType) => {
+    updateExercise(session.id, exerciseId, { weightType } as Partial<Exercise>);
+    
+    const exercise = session.exercises.find(e => e.id === exerciseId);
+    if (exercise) {
+      exercise.sets.forEach(set => {
+        updateSet(session.id, exerciseId, set.id, { weightType } as Partial<Set>);
+      });
+    }
+  };
+  
+  const handleSetWeightTypeChange = (exerciseId: string, setId: string, weightType: WeightType) => {
+    updateSet(session.id, exerciseId, setId, { weightType } as Partial<Set>);
   };
   
   const handleCellFocus = (coordinate: CellCoordinate) => {
@@ -279,6 +295,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
             const circuitId = exercise.circuitId;
             const repType = exercise.repType || 'fixed';
             const intensityType = exercise.intensityType || 'rpe';
+            const weightType = exercise.weightType || 'pounds';
             
             const circuit = circuitId 
               ? (session.circuits || []).find(c => c.id === circuitId) 
@@ -469,6 +486,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                 
                 {!isCircuit && !isInCircuit && exercise.sets.map((set, setIndex) => {
                   const setIntensityType = set.intensityType || exercise.intensityType || 'rpe';
+                  const setWeightType = set.weightType || exercise.weightType || 'pounds';
                   
                   return (
                     <motion.tr
@@ -521,6 +539,9 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             exerciseId: exercise.id,
                             setIndex: setIndex
                           }}
+                          columnName="weight"
+                          weightType={setWeightType}
+                          onWeightTypeChange={(type) => handleSetWeightTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
                           onNavigate={(direction, shiftKey) => 
@@ -531,6 +552,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                               setIndex: setIndex
                             })
                           }
+                          hideWeightTypeSelector={true}
                         />
                       </td>
                       
@@ -605,6 +627,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                 
                 {isInCircuit && exercise.sets.length > 0 && exercise.sets.map((set, setIndex) => {
                   const setIntensityType = set.intensityType || exercise.intensityType || 'rpe';
+                  const setWeightType = set.weightType || exercise.weightType || 'pounds';
                   
                   return (
                     <motion.tr
@@ -657,6 +680,9 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             exerciseId: exercise.id,
                             setIndex: setIndex
                           }}
+                          columnName="weight"
+                          weightType={setWeightType}
+                          onWeightTypeChange={(type) => handleSetWeightTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
                           onNavigate={(direction, shiftKey) => 
@@ -667,6 +693,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                               setIndex: setIndex
                             })
                           }
+                          hideWeightTypeSelector={true}
                         />
                       </td>
                       

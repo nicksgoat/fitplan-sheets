@@ -5,6 +5,7 @@ export interface Set {
   weight: string;
   intensity: string;
   intensityType?: IntensityType;
+  weightType?: WeightType;
   rest: string;
 }
 
@@ -21,6 +22,7 @@ export interface Exercise {
   groupId?: string;
   repType?: RepType;
   intensityType?: IntensityType;
+  weightType?: WeightType;
 }
 
 export interface Circuit {
@@ -70,10 +72,16 @@ export type RepType =
   | 'each-side'    // Each side (e.g., "12e/s")
   | 'amrap';       // As many reps as possible
 
-// New intensity types
+// Intensity types
 export type IntensityType =
   | 'rpe'           // Rate of Perceived Exertion (e.g., "8.5")
   | 'arpe'          // Adjusted RPE (e.g., "7.5")
   | 'percent'       // Percentage of max (e.g., "75%")
   | 'absolute'      // Absolute weight (e.g., "185 lbs")
   | 'velocity';     // Velocity-based (e.g., "0.8 m/s")
+
+// Weight types
+export type WeightType =
+  | 'pounds'        // Weight in pounds (e.g., "185 lbs")
+  | 'kilos'         // Weight in kilograms (e.g., "80 kg")
+  | 'distance';     // Distance (e.g., "100m")

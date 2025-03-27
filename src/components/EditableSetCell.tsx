@@ -2,9 +2,10 @@
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
-import { RepType, IntensityType } from "@/types/workout";
+import { RepType, IntensityType, WeightType } from "@/types/workout";
 import RepInput from "./RepInput";
 import IntensityInput from "./IntensityInput";
+import WeightInput from "./WeightInput";
 
 interface EditableSetCellProps {
   value: string;
@@ -21,8 +22,11 @@ interface EditableSetCellProps {
   onRepTypeChange?: (type: RepType) => void;
   intensityType?: IntensityType;
   onIntensityTypeChange?: (type: IntensityType) => void;
+  weightType?: WeightType;
+  onWeightTypeChange?: (type: WeightType) => void;
   hideRepTypeSelector?: boolean;
   hideIntensityTypeSelector?: boolean;
+  hideWeightTypeSelector?: boolean;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -40,8 +44,11 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   onRepTypeChange,
   intensityType = "rpe",
   onIntensityTypeChange,
+  weightType = "pounds",
+  onWeightTypeChange,
   hideRepTypeSelector = false,
   hideIntensityTypeSelector = false,
+  hideWeightTypeSelector = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -109,6 +116,30 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideRepTypeSelector}
+        />
+      </div>
+    );
+  }
+  
+  // Special rendering for weight column with WeightType support
+  if (columnName === "weight") {
+    return (
+      <div 
+        className={cn(
+          "editable-cell h-full",
+          isFocused && "ring-2 ring-primary ring-offset-1",
+          className
+        )}
+        onClick={handleClick}
+      >
+        <WeightInput
+          value={value}
+          weightType={weightType || "pounds"}
+          onChange={onChange}
+          onWeightTypeChange={onWeightTypeChange || (() => {})}
+          placeholder={placeholder}
+          isFocused={isFocused}
+          hideSelector={hideWeightTypeSelector}
         />
       </div>
     );
