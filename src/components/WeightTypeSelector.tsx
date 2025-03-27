@@ -1,76 +1,153 @@
 
 import React from "react";
-import { Check } from "lucide-react";
+import { CheckIcon, Scale, MoveVertical, Ruler } from "lucide-react";
 import { WeightType } from "@/types/workout";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface WeightTypeSelectorProps {
   value: WeightType;
-  onChange: (type: WeightType) => void;
+  onChange: (value: WeightType) => void;
   onClose?: () => void;
   variant?: "default" | "minimal";
 }
 
-const weightTypes: { type: WeightType; label: string; description: string }[] = [
+const weightTypeOptions: { value: WeightType; label: string; description: string; icon: React.ReactNode }[] = [
   {
-    type: "pounds",
-    label: "Pounds (lbs)",
-    description: "Weight in pounds (e.g., 135 lbs)",
+    value: 'pounds',
+    label: 'Pounds (lbs)',
+    description: 'Weight in pounds (e.g., 135 lbs)',
+    icon: <Scale className="h-4 w-4 text-muted-foreground" />
   },
   {
-    type: "kilos",
-    label: "Kilograms (kg)",
-    description: "Weight in kilograms (e.g., 60 kg)",
+    value: 'kilos',
+    label: 'Kilograms (kg)',
+    description: 'Weight in kilograms (e.g., 60 kg)',
+    icon: <MoveVertical className="h-4 w-4 text-muted-foreground" />
   },
   {
-    type: "distance",
-    label: "Distance (m)",
-    description: "Distance measurement (e.g., 100m)",
+    value: 'distance',
+    label: 'Distance (m)',
+    description: 'Distance measurement (e.g., 100m)',
+    icon: <Ruler className="h-4 w-4 text-muted-foreground" />
   },
 ];
 
-const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({
-  value,
+const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({ 
+  value, 
   onChange,
   onClose,
-  variant = "default",
+  variant = "default"
 }) => {
-  return (
-    <div className="weight-type-selector w-full p-1">
-      {variant === "default" && (
-        <div className="px-3 py-2 text-sm font-medium border-b">
-          Weight Type
-        </div>
-      )}
-      
-      <div className="py-1">
-        {weightTypes.map((weightType) => (
-          <button
-            key={weightType.type}
-            className={cn(
-              "flex items-center w-full text-left px-3 py-2 text-sm hover:bg-muted/80 rounded-sm",
-              value === weightType.type && "bg-muted"
-            )}
-            onClick={() => {
-              onChange(weightType.type);
-              if (onClose) onClose();
-            }}
-          >
-            <div className="flex-1">
-              <div className="font-medium">{weightType.label}</div>
-              {variant === "default" && (
-                <div className="text-xs text-muted-foreground">
-                  {weightType.description}
-                </div>
-              )}
-            </div>
-            {value === weightType.type && (
-              <Check className="h-4 w-4 text-primary" />
-            )}
-          </button>
-        ))}
+  const handleSelect = (selectedValue: WeightType) => {
+    onChange(selectedValue);
+    if (onClose) {
+      onClose();
+    }
+  };
+  
+  // Minimal variant (used in the main exercise row)
+  if (variant === "minimal") {
+    const selectedOption = weightTypeOptions.find(option => option.value === value);
+    
+    return (
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        {selectedOption?.icon}
+        <span className="text-xs">{selectedOption?.label}</span>
       </div>
-    </div>
+    );
+  }
+  
+  // Direct list mode (used in dropdown)
+  if (onClose) {
+    return (
+      <div className="w-full p-1">
+        <div className="mb-1">
+          <div className="px-2 mb-1 text-sm font-semibold">Select Weight Type</div>
+          {weightTypeOptions.map((option) => (
+            <div
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className={cn(
+                "flex flex-col gap-1 cursor-pointer py-1.5 px-3 hover:bg-accent rounded-md mb-1",
+                value === option.value && "bg-accent/50"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  {option.icon}
+                  <p className="text-sm font-medium">{option.label}</p>
+                </div>
+                {value === option.value && (
+                  <CheckIcon className="h-4 w-4" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{option.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
+  // Popover mode
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className="w-full justify-between border-dashed border-muted h-8"
+        >
+          <div className="flex items-center gap-2">
+            {weightTypeOptions.find(option => option.value === value)?.icon}
+            <span className="text-xs">{weightTypeOptions.find(option => option.value === value)?.label}</span>
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[250px] p-0" align="start" side="bottom">
+        <Command>
+          <CommandInput placeholder="Search weight type..." />
+          <CommandEmpty>No weight type found.</CommandEmpty>
+          <CommandGroup>
+            {weightTypeOptions.map((option) => (
+              <CommandItem
+                key={option.value}
+                value={option.value}
+                onSelect={() => handleSelect(option.value as WeightType)}
+                className="py-1.5"
+              >
+                <div className="flex items-center">
+                  {option.icon}
+                  <div className="ml-2">
+                    <p className="text-sm font-medium">{option.label}</p>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </div>
+                </div>
+                <CheckIcon
+                  className={cn(
+                    "ml-auto h-4 w-4",
+                    value === option.value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 

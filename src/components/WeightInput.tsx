@@ -1,10 +1,8 @@
 
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { WeightType } from "@/types/workout";
 import WeightTypeSelector from "./WeightTypeSelector";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -21,97 +19,146 @@ interface WeightInputProps {
   hideSelector?: boolean;
 }
 
+const getPlaceholder = (weightType: WeightType): string => {
+  switch (weightType) {
+    case 'pounds':
+      return '135 lbs';
+    case 'kilos':
+      return '60 kg';
+    case 'distance':
+      return '100m';
+    default:
+      return 'Weight';
+  }
+};
+
+const formatValue = (value: string, weightType: WeightType): string => {
+  if (!value) return value;
+
+  switch (weightType) {
+    case 'pounds':
+      // Add lbs if not already there
+      return value.includes('lbs') ? value : `${value} lbs`;
+    case 'kilos':
+      // Add kg if not already there
+      return value.includes('kg') ? value : `${value} kg`;
+    case 'distance':
+      // Add m if not already there
+      return value.includes('m') ? value : `${value}m`;
+    default:
+      return value;
+  }
+};
+
 const WeightInput: React.FC<WeightInputProps> = ({
   value,
   weightType,
   onChange,
   onWeightTypeChange,
-  placeholder = "Weight",
+  placeholder = "",
   isFocused = false,
   hideSelector = false,
 }) => {
-  const getPlaceholder = () => {
-    switch (weightType) {
-      case 'pounds':
-        return "135 lbs";
-      case 'kilos':
-        return "60 kg";
-      case 'distance':
-        return "100m";
-      default:
-        return placeholder;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
+  
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.focus();
     }
-  };
-
-  const getSuffix = () => {
-    switch (weightType) {
-      case 'pounds':
-        return "lbs";
-      case 'kilos':
-        return "kg";
-      case 'distance':
-        return "m";
-      default:
-        return "";
+  }, [isFocused]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let newValue = e.target.value;
+    
+    // Basic validation based on weight type
+    if (weightType === 'pounds') {
+      // Allow only numbers and lbs
+      newValue = newValue.replace(/[^0-9.\s/lbs]/g, '');
+      if (newValue.includes('lbs') && newValue.indexOf('lbs') !== newValue.length - 3) {
+        newValue = newValue.replace(/lbs/g, '') + 'lbs';
+      }
+    } else if (weightType === 'kilos') {
+      // Allow only numbers and kg
+      newValue = newValue.replace(/[^0-9.\s/kg]/g, '');
+      if (newValue.includes('kg') && newValue.indexOf('kg') !== newValue.length - 2) {
+        newValue = newValue.replace(/kg/g, '') + 'kg';
+      }
+    } else if (weightType === 'distance') {
+      // Allow only numbers and m
+      newValue = newValue.replace(/[^0-9.\s/m]/g, '');
+      if (newValue.includes('m') && newValue.indexOf('m') !== newValue.length - 1) {
+        newValue = newValue.replace(/m/g, '') + 'm';
+      }
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    // Strip any units from the input if they exist
-    const cleanValue = newValue
-      .replace(/lbs|kg|m/gi, '')
-      .trim();
     
-    onChange(cleanValue);
+    onChange(newValue);
   };
-
-  const getDisplayValue = () => {
-    if (!value) return '';
-    
-    // Ensure we're not duplicating the suffix if it's already there
-    const hasUnit = /lbs|kg|m$/i.test(value);
-    return hasUnit ? value : value;
+  
+  const handleBlur = () => {
+    // Format the value on blur
+    onChange(formatValue(value, weightType));
+  };
+  
+  // Get visual style based on weight type
+  const getWeightStyle = (type: WeightType) => {
+    switch (type) {
+      case 'pounds':
+        return 'text-blue-600';
+      case 'kilos':
+        return 'text-green-600';
+      case 'distance':
+        return 'text-purple-600';
+      default:
+        return '';
+    }
   };
   
   return (
-    <div className={cn(
-      "flex items-center",
-      isFocused && "ring-2 ring-primary ring-offset-1"
-    )}>
-      <input
-        type="text"
-        className="cell-input w-full h-full bg-transparent outline-none px-2 py-1"
-        value={getDisplayValue()}
-        onChange={handleInputChange}
-        placeholder={getPlaceholder()}
-      />
-      
+    <div className="flex items-center w-full h-full">
       {!hideSelector && (
-        <Popover>
+        <Popover open={isTypePickerOpen} onOpenChange={setIsTypePickerOpen}>
           <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs flex items-center hover:bg-muted"
+            <button 
+              type="button"
+              className="flex items-center mr-1.5 p-1 rounded hover:bg-accent"
+              aria-label="Change weight type"
             >
-              <span className="text-xs text-muted-foreground font-normal">{getSuffix()}</span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
-            </Button>
+              <WeightTypeSelector
+                value={weightType}
+                onChange={(type) => {
+                  onWeightTypeChange(type);
+                  setIsTypePickerOpen(false);
+                }}
+                variant="minimal"
+              />
+            </button>
           </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0" align="end" side="right">
+          <PopoverContent className="w-[250px] p-0 z-50" align="start">
             <WeightTypeSelector
               value={weightType}
-              onChange={onWeightTypeChange}
-              onClose={() => {}}
+              onChange={(type) => {
+                onWeightTypeChange(type);
+                setIsTypePickerOpen(false);
+              }}
+              onClose={() => setIsTypePickerOpen(false)}
             />
           </PopoverContent>
         </Popover>
       )}
       
-      {hideSelector && (
-        <span className="text-xs text-muted-foreground mr-2">{getSuffix()}</span>
-      )}
+      <input
+        ref={inputRef}
+        type="text"
+        className={cn(
+          "cell-input w-full h-full bg-transparent outline-none px-2 py-1 font-medium",
+          weightType && getWeightStyle(weightType)
+        )}
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        placeholder={placeholder || getPlaceholder(weightType)}
+      />
     </div>
   );
 };
