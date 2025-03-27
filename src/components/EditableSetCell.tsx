@@ -18,6 +18,7 @@ interface EditableSetCellProps {
   columnName?: string;
   repType?: RepType;
   onRepTypeChange?: (type: RepType) => void;
+  hideRepTypeSelector?: boolean;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -33,6 +34,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   columnName,
   repType = "fixed",
   onRepTypeChange,
+  hideRepTypeSelector = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -99,6 +101,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           onRepTypeChange={onRepTypeChange || (() => {})}
           placeholder={placeholder}
           isFocused={isFocused}
+          hideSelector={hideRepTypeSelector}
         />
       </div>
     );

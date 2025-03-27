@@ -13,16 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 
-interface RepInputProps {
-  value: string;
-  repType: RepType;
-  onChange: (value: string) => void;
-  onRepTypeChange: (type: RepType) => void;
-  className?: string;
-  placeholder?: string;
-  isFocused: boolean;
-}
-
 // Define repTypeOptions at the top of the file so it's available throughout the component
 const repTypeOptions = [
   {
@@ -81,6 +71,17 @@ const repTypeLabels: Record<RepType, string> = {
   'amrap': 'AMRAP'
 };
 
+interface RepInputProps {
+  value: string;
+  repType: RepType;
+  onChange: (value: string) => void;
+  onRepTypeChange: (type: RepType) => void;
+  className?: string;
+  placeholder?: string;
+  isFocused: boolean;
+  hideSelector?: boolean;
+}
+
 const RepInput: React.FC<RepInputProps> = ({
   value,
   repType,
@@ -88,7 +89,8 @@ const RepInput: React.FC<RepInputProps> = ({
   onRepTypeChange,
   className,
   placeholder,
-  isFocused
+  isFocused,
+  hideSelector = false
 }) => {
   const [showSelector, setShowSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
@@ -171,38 +173,41 @@ const RepInput: React.FC<RepInputProps> = ({
             onFocus={handleInputFocus}
             placeholder={repTypePlaceholders[repType] || placeholder}
             className={cn(
-              "h-9 pr-24",
+              "h-9",
+              !hideSelector && "pr-24",
               repType === 'amrap' && "text-amber-600 font-medium"
             )}
           />
-          <div 
-            ref={triggerRef}
-            className="absolute right-0 top-0 h-full flex items-center pr-2"
-          >
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 px-2 text-xs flex items-center gap-1 bg-muted/50 hover:bg-muted"
-                    onClick={handleOpenSelector}
-                  >
-                    {currentOption?.icon}
-                    <span className="text-muted-foreground ml-1">{repTypeLabels[repType]}</span>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{getHelpText()}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          {!hideSelector && (
+            <div 
+              ref={triggerRef}
+              className="absolute right-0 top-0 h-full flex items-center pr-2"
+            >
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs flex items-center gap-1 bg-muted/50 hover:bg-muted"
+                      onClick={handleOpenSelector}
+                    >
+                      {currentOption?.icon}
+                      <span className="text-muted-foreground ml-1">{repTypeLabels[repType]}</span>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{getHelpText()}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
         </div>
       </div>
       
-      {showSelector && (
+      {showSelector && !hideSelector && (
         <div 
           ref={selectorRef}
           className="absolute top-full left-0 right-0 mt-1 z-50 bg-popover border rounded-md shadow-md min-w-[350px]"

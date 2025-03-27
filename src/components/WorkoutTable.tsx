@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType } from "@/types/workout";
@@ -421,6 +422,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         }}
                         columnName="reps"
                         repType={repType}
+                        onRepTypeChange={(type) => handleRepTypeChange(exercise.id, type)}
                         isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
                         onFocus={handleCellFocus}
                         onNavigate={(direction, shiftKey) => 
@@ -431,6 +433,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             setIndex: setIndex
                           })
                         }
+                        hideRepTypeSelector={true}
                       />
                     </td>
                     
@@ -547,6 +550,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         }}
                         columnName="reps"
                         repType={repType}
+                        onRepTypeChange={(type) => handleRepTypeChange(exercise.id, type)}
                         isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
                         onFocus={handleCellFocus}
                         onNavigate={(direction, shiftKey) => 
@@ -557,6 +561,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             setIndex: setIndex
                           })
                         }
+                        hideRepTypeSelector={true}
                       />
                     </td>
                     
