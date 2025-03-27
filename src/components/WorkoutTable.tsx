@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType } from "@/types/workout";
@@ -243,7 +242,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   return (
-    <div className="overflow-x-auto">
+    <div className="workout-container">
       <Table className="workout-table border-collapse w-full" ref={tableRef}>
         <TableHeader>
           <TableRow className="bg-muted/40">
@@ -353,8 +352,8 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                               <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[350px] p-0">
-                            <div className="p-0">
+                          <PopoverContent className="w-[300px] p-0" align="start" side="bottom">
+                            <div className="p-0 max-h-[350px] overflow-y-auto">
                               <RepTypeSelector
                                 value={repType}
                                 onChange={(type) => handleRepTypeChange(exercise.id, type)}

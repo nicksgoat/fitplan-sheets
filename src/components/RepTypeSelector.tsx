@@ -91,20 +91,23 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
   // Direct list mode (used in RepInput dropdown)
   if (onClose) {
     return (
-      <div className="w-full p-2">
+      <div className="w-full p-1">
         <div className="mb-1">
-          <div className="px-2 mb-2 text-sm font-semibold">Select Rep Type</div>
+          <div className="px-2 mb-1 text-sm font-semibold">Select Rep Type</div>
           {repTypeOptions.map((option) => (
             <div
               key={option.value}
               onClick={() => handleSelect(option.value)}
               className={cn(
-                "flex flex-col gap-1 cursor-pointer py-3 px-4 hover:bg-accent rounded-md mb-2",
+                "flex flex-col gap-1 cursor-pointer py-2 px-3 hover:bg-accent rounded-md mb-1",
                 value === option.value && "bg-accent/50"
               )}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{option.label}</p>
+                <div className="flex items-center gap-1.5">
+                  {option.icon}
+                  <p className="text-sm font-medium">{option.label}</p>
+                </div>
                 {value === option.value && (
                   <CheckIcon className="h-4 w-4" />
                 )}
@@ -113,32 +116,32 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
               
               {/* Example input display based on rep type */}
               {option.value === 'fixed' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed">
                   12
                 </div>
               )}
               {option.value === 'range' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed">
                   8-12
                 </div>
               )}
               {option.value === 'descending' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed">
                   12, 10, 8
                 </div>
               )}
               {option.value === 'time' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed">
                   30s
                 </div>
               )}
               {option.value === 'each-side' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed">
                   12 e/s
                 </div>
               )}
               {option.value === 'amrap' && (
-                <div className="mt-1 bg-background/80 rounded px-3 py-1.5 text-sm border border-dashed text-amber-600 font-medium">
+                <div className="mt-1 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-amber-600 font-medium">
                   AMRAP
                 </div>
               )}

@@ -140,6 +140,12 @@
 .workout-container {
   max-width: 100%;
   overflow-x: auto;
+  position: relative;
+}
+
+/* Ensure popovers remain fully visible */
+.workout-container .popover-content {
+  z-index: 100;
 }
 
 @media (min-width: 1024px) {
