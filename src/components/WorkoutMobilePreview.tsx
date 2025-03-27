@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
@@ -27,6 +27,30 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   const weekNumber = session.weekId 
     ? program.weeks.find(w => w.id === session.weekId)?.order || session.day
     : session.day;
+  
+  // Format rest time from seconds to a readable format
+  const formatRestTime = (restSeconds: string): string => {
+    if (!restSeconds) return '';
+    
+    // If rest already contains "s" or other time indicators, return as is
+    if (restSeconds.includes('s') || restSeconds.includes('min') || 
+        restSeconds.includes('m') || restSeconds.includes(':')) {
+      return restSeconds;
+    }
+    
+    const seconds = parseInt(restSeconds);
+    if (isNaN(seconds)) return restSeconds;
+    
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return remainingSeconds > 0 
+        ? `${minutes}m ${remainingSeconds}s` 
+        : `${minutes}m`;
+    }
+  };
   
   // Organize exercises for display
   const getOrganizedExercises = () => {
@@ -129,12 +153,6 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                     </div>
                   )}
                   
-                  {!exercise.isCircuit && exercise.sets[0]?.rest && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      {exercise.sets[0].rest}
-                    </div>
-                  )}
-                  
                   {exercise.notes && (
                     <div className="text-sm text-gray-600 mt-2 italic">
                       {exercise.notes}
@@ -183,7 +201,11 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                                 <div key={set.id} className="mb-1">
                                   <span className="font-medium">Set {setIdx + 1}:</span> {set.reps || '-'} reps
                                   {set.weight && ` @ ${set.weight}`}
-                                  {set.rest && `, rest ${set.rest}`}
+                                  {set.rest && (
+                                    <span className="text-blue-500 flex items-center gap-1 mt-0.5">
+                                      <Clock className="w-3 h-3" /> Rest: {formatRestTime(set.rest)}
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -232,6 +254,27 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                       ))}
                     </TableBody>
                   </Table>
+                )}
+                
+                {/* Display rest time for each set in non-circuit exercises */}
+                {(!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0) && (
+                  <div className="px-3 pb-3 pt-1">
+                    {exercise.sets.some(set => set.rest) && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        <span className="font-medium">Rest times:</span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+                          {exercise.sets.map((set, idx) => (
+                            set.rest ? (
+                              <div key={idx} className="flex items-center gap-1 text-blue-500">
+                                <Clock className="w-3 h-3" />
+                                <span>Set {idx + 1}: {formatRestTime(set.rest)}</span>
+                              </div>
+                            ) : null
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </motion.div>
             ))}
