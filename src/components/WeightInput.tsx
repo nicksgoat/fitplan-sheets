@@ -170,8 +170,7 @@ const WeightInput: React.FC<WeightInputProps> = ({
         {!value && (
           <div className={cn(
             "absolute inset-0 flex items-center pointer-events-none px-2 py-1",
-            placeholderStyle,
-            "opacity-40"
+            placeholderStyle
           )}>
             {currentPlaceholder}
           </div>
