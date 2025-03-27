@@ -134,9 +134,21 @@ export function addSetToExercise(
     exercises: session.exercises.map(exercise => {
       if (exercise.id !== exerciseId) return exercise;
       
+      // Get the last set to copy its values
+      const lastSet = exercise.sets[exercise.sets.length - 1];
+      
+      // Create a new set that inherits values from the last set
+      const newSet: Set = {
+        id: generateId(),
+        reps: lastSet.reps,
+        weight: lastSet.weight,
+        intensity: lastSet.intensity,
+        rest: lastSet.rest,
+      };
+      
       return {
         ...exercise,
-        sets: [...exercise.sets, createEmptySet()]
+        sets: [...exercise.sets, newSet]
       };
     }),
   };
