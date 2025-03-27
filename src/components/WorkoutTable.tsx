@@ -17,6 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 interface WorkoutTableProps {
   session: WorkoutSession;
@@ -331,11 +338,31 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                       </td>
                       
                       <td className="border border-muted-foreground/20 p-2">
-                        <RepTypeSelector
-                          value={repType}
-                          onChange={(type) => handleRepTypeChange(exercise.id, type)}
-                          variant="minimal"
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs flex items-center gap-1 hover:bg-muted w-full justify-start"
+                            >
+                              <RepTypeSelector
+                                value={repType}
+                                onChange={(type) => handleRepTypeChange(exercise.id, type)}
+                                variant="minimal"
+                              />
+                              <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[350px] p-0">
+                            <div className="p-0">
+                              <RepTypeSelector
+                                value={repType}
+                                onChange={(type) => handleRepTypeChange(exercise.id, type)}
+                                onClose={() => {}}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </td>
                       <td className="border border-muted-foreground/20 p-2"></td>
                       <td className="border border-muted-foreground/20 p-2"></td>
