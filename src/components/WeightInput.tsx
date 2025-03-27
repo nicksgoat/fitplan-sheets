@@ -35,16 +35,17 @@ const getPlaceholder = (weightType: WeightType): string => {
 const formatValue = (value: string, weightType: WeightType): string => {
   if (!value) return value;
 
+  // Strip any existing unit
+  const numericValue = parseFloat(value.replace(/[^\d.]/g, ''));
+  if (isNaN(numericValue)) return value;
+
   switch (weightType) {
     case 'pounds':
-      // Add lbs if not already there
-      return value.includes('lbs') ? value : `${value} lbs`;
+      return `${numericValue} lbs`;
     case 'kilos':
-      // Add kg if not already there
-      return value.includes('kg') ? value : `${value} kg`;
+      return `${numericValue} kg`;
     case 'distance':
-      // Add m if not already there
-      return value.includes('m') ? value : `${value}m`;
+      return `${numericValue}m`;
     default:
       return value;
   }
@@ -64,6 +65,43 @@ const getWeightStyle = (type: WeightType) => {
   }
 };
 
+// Convert weight between units
+const convertWeight = (value: string, fromType: WeightType, toType: WeightType): string => {
+  // Extract numeric value
+  const numericValue = parseFloat(value.replace(/[^\d.]/g, ''));
+  if (isNaN(numericValue)) return value;
+  
+  // If types are the same, no conversion needed
+  if (fromType === toType) {
+    return formatValue(value, toType);
+  }
+
+  let convertedValue: number;
+  
+  // Convert to common unit (kilos) first
+  let inKilos: number;
+  if (fromType === 'pounds') {
+    inKilos = numericValue * 0.453592; // pounds to kilos
+  } else if (fromType === 'kilos') {
+    inKilos = numericValue;
+  } else {
+    // Can't convert distance to weight
+    return formatValue(value, toType);
+  }
+  
+  // Convert from common unit to target unit
+  if (toType === 'pounds') {
+    convertedValue = Math.round(inKilos / 0.453592); // kilos to pounds
+    return `${convertedValue} lbs`;
+  } else if (toType === 'kilos') {
+    convertedValue = Math.round(inKilos);
+    return `${convertedValue} kg`;
+  } else {
+    // Can't convert weight to distance
+    return formatValue('', toType);
+  }
+};
+
 const WeightInput: React.FC<WeightInputProps> = ({
   value,
   weightType,
@@ -75,12 +113,24 @@ const WeightInput: React.FC<WeightInputProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
+  const [prevWeightType, setPrevWeightType] = useState<WeightType>(weightType);
   
   useEffect(() => {
     if (isFocused && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isFocused]);
+  
+  // Handle weight type change and convert values
+  useEffect(() => {
+    if (prevWeightType !== weightType && value) {
+      const convertedValue = convertWeight(value, prevWeightType, weightType);
+      onChange(convertedValue);
+      setPrevWeightType(weightType);
+    } else if (prevWeightType !== weightType) {
+      setPrevWeightType(weightType);
+    }
+  }, [weightType, prevWeightType, value, onChange]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
@@ -109,6 +159,11 @@ const WeightInput: React.FC<WeightInputProps> = ({
     onChange(newValue);
   };
   
+  const handleWeightTypeChange = (newType: WeightType) => {
+    setPrevWeightType(weightType);
+    onWeightTypeChange(newType);
+  };
+  
   const handleBlur = () => {
     // Format the value on blur if it's not empty
     if (value) {
@@ -131,10 +186,7 @@ const WeightInput: React.FC<WeightInputProps> = ({
             >
               <WeightTypeSelector
                 value={weightType}
-                onChange={(type) => {
-                  onWeightTypeChange(type);
-                  setIsTypePickerOpen(false);
-                }}
+                onChange={handleWeightTypeChange}
                 variant="minimal"
               />
             </button>
@@ -142,10 +194,7 @@ const WeightInput: React.FC<WeightInputProps> = ({
           <PopoverContent className="w-[250px] p-0 z-50" align="start">
             <WeightTypeSelector
               value={weightType}
-              onChange={(type) => {
-                onWeightTypeChange(type);
-                setIsTypePickerOpen(false);
-              }}
+              onChange={handleWeightTypeChange}
               onClose={() => setIsTypePickerOpen(false)}
             />
           </PopoverContent>
