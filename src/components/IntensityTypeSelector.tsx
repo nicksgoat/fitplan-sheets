@@ -99,14 +99,43 @@ const IntensityTypeSelector: React.FC<IntensityTypeSelectorProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  {option.icon}
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-muted-foreground/30">
+                    {option.icon}
+                  </div>
                   <p className="text-sm font-medium">{option.label}</p>
                 </div>
                 {value === option.value && (
                   <CheckIcon className="h-4 w-4" />
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{option.description}</p>
+              <p className="text-xs text-muted-foreground ml-7">{option.description}</p>
+              
+              {/* Example input displays based on intensity type */}
+              {option.value === 'rpe' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-amber-600">
+                  8.5
+                </div>
+              )}
+              {option.value === 'arpe' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-orange-600">
+                  7.5
+                </div>
+              )}
+              {option.value === 'percent' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-blue-600">
+                  75%
+                </div>
+              )}
+              {option.value === 'absolute' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-green-600">
+                  185 lbs
+                </div>
+              )}
+              {option.value === 'velocity' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
+                  0.8 m/s
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -142,7 +171,9 @@ const IntensityTypeSelector: React.FC<IntensityTypeSelectorProps> = ({
                 className="py-1.5"
               >
                 <div className="flex items-center">
-                  {option.icon}
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-muted-foreground/30">
+                    {option.icon}
+                  </div>
                   <div className="ml-2">
                     <p className="text-sm font-medium">{option.label}</p>
                     <p className="text-xs text-muted-foreground">{option.description}</p>

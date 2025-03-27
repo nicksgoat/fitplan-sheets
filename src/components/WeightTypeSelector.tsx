@@ -87,14 +87,33 @@ const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  {option.icon}
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-muted-foreground/30">
+                    {option.icon}
+                  </div>
                   <p className="text-sm font-medium">{option.label}</p>
                 </div>
                 {value === option.value && (
                   <CheckIcon className="h-4 w-4" />
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{option.description}</p>
+              <p className="text-xs text-muted-foreground ml-7">{option.description}</p>
+              
+              {/* Example input display based on weight type */}
+              {option.value === 'pounds' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-blue-600">
+                  135 lbs
+                </div>
+              )}
+              {option.value === 'kilos' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-green-600">
+                  60 kg
+                </div>
+              )}
+              {option.value === 'distance' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
+                  100m
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -130,7 +149,9 @@ const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({
                 className="py-1.5"
               >
                 <div className="flex items-center">
-                  {option.icon}
+                  <div className="flex items-center justify-center h-5 w-5 rounded-full border border-muted-foreground/30">
+                    {option.icon}
+                  </div>
                   <div className="ml-2">
                     <p className="text-sm font-medium">{option.label}</p>
                     <p className="text-xs text-muted-foreground">{option.description}</p>
