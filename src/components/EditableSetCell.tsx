@@ -2,8 +2,9 @@
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
-import { RepType } from "@/types/workout";
+import { RepType, IntensityType } from "@/types/workout";
 import RepInput from "./RepInput";
+import IntensityInput from "./IntensityInput";
 
 interface EditableSetCellProps {
   value: string;
@@ -18,7 +19,10 @@ interface EditableSetCellProps {
   columnName?: string;
   repType?: RepType;
   onRepTypeChange?: (type: RepType) => void;
+  intensityType?: IntensityType;
+  onIntensityTypeChange?: (type: IntensityType) => void;
   hideRepTypeSelector?: boolean;
+  hideIntensityTypeSelector?: boolean;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -34,7 +38,10 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   columnName,
   repType = "fixed",
   onRepTypeChange,
+  intensityType = "rpe",
+  onIntensityTypeChange,
   hideRepTypeSelector = false,
+  hideIntensityTypeSelector = false,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -102,6 +109,30 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideRepTypeSelector}
+        />
+      </div>
+    );
+  }
+  
+  // Special rendering for intensity column with IntensityType support
+  if (columnName === "intensity") {
+    return (
+      <div 
+        className={cn(
+          "editable-cell h-full",
+          isFocused && "ring-2 ring-primary ring-offset-1",
+          className
+        )}
+        onClick={handleClick}
+      >
+        <IntensityInput
+          value={value}
+          intensityType={intensityType || "rpe"}
+          onChange={onChange}
+          onIntensityTypeChange={onIntensityTypeChange || (() => {})}
+          placeholder={placeholder}
+          isFocused={isFocused}
+          hideSelector={hideIntensityTypeSelector}
         />
       </div>
     );

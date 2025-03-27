@@ -3,7 +3,8 @@ export interface Set {
   id: string;
   reps: string;
   weight: string;
-  rpe: string;
+  intensity: string;
+  intensityType?: IntensityType;
   rest: string;
 }
 
@@ -19,6 +20,7 @@ export interface Exercise {
   isGroup?: boolean;
   groupId?: string;
   repType?: RepType;
+  intensityType?: IntensityType;
 }
 
 export interface Circuit {
@@ -53,13 +55,13 @@ export interface WorkoutProgram {
   weeks: WorkoutWeek[]; // New weeks array
 }
 
-export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'rpe' | 'rest' | 'notes';
+export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'intensity' | 'rest' | 'notes';
 export type ExerciseCellType = 'name' | 'notes';
-export type SetCellType = 'reps' | 'weight' | 'rpe' | 'rest';
+export type SetCellType = 'reps' | 'weight' | 'intensity' | 'rest';
 
 export type WorkoutType = 'standard' | 'circuit' | 'superset' | 'emom' | 'amrap' | 'tabata';
 
-// New rep types
+// Rep types
 export type RepType = 
   | 'fixed'        // Standard fixed reps (e.g., "12")
   | 'range'        // Rep range (e.g., "8-12")
@@ -67,3 +69,11 @@ export type RepType =
   | 'time'         // Time-based (e.g., "30s" or "1m")
   | 'each-side'    // Each side (e.g., "12e/s")
   | 'amrap';       // As many reps as possible
+
+// New intensity types
+export type IntensityType =
+  | 'rpe'           // Rate of Perceived Exertion (e.g., "8.5")
+  | 'arpe'          // Adjusted RPE (e.g., "7.5")
+  | 'percent'       // Percentage of max (e.g., "75%")
+  | 'absolute'      // Absolute weight (e.g., "185 lbs")
+  | 'velocity';     // Velocity-based (e.g., "0.8 m/s")
