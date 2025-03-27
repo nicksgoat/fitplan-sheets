@@ -82,6 +82,7 @@
 /* New table styling */
 .workout-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -91,16 +92,18 @@
 }
 
 .workout-table .exercise-cell {
-  min-width: 200px;
+  width: 180px;
+  min-width: 150px;
 }
 
 .workout-table .numeric-cell {
-  min-width: 70px;
-  width: 80px;
+  width: 60px;
+  min-width: 50px;
 }
 
 .workout-table .note-cell {
-  min-width: 150px;
+  width: 120px;
+  min-width: 100px;
 }
 
 .workout-table .set-number {
@@ -118,6 +121,9 @@
 /* Add Excel-like styling to cells */
 .workout-table td, .workout-table th {
   padding: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .editable-cell {
@@ -128,4 +134,16 @@
 
 .editable-cell:focus-within {
   outline: 2px solid hsl(var(--primary));
+}
+
+/* Add responsive container styles */
+.workout-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (min-width: 1024px) {
+  .workout-container {
+    overflow-x: visible;
+  }
 }
