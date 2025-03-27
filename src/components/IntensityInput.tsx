@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { IntensityType } from "@/types/workout";
@@ -41,23 +40,18 @@ const formatValue = (value: string, intensityType: IntensityType): string => {
 
   switch (intensityType) {
     case 'rpe':
-      // Add RPE if not already there
       return value.toLowerCase().includes('rpe') ? value : `RPE ${value}`;
     case 'arpe':
-      // Add aRPE if not already there
       return value.toLowerCase().includes('arpe') ? value : `aRPE ${value}`;
     case 'percent':
-      // Add % if not already there
       return value.includes('%') ? value : `${value}%`;
     case 'velocity':
-      // Add m/s if not already there
       return value.includes('m/s') ? value : `${value} m/s`;
     default:
       return value;
   }
 };
 
-// Get visual style based on intensity type
 const getIntensityStyle = (type: IntensityType) => {
   switch (type) {
     case 'rpe':
@@ -75,6 +69,57 @@ const getIntensityStyle = (type: IntensityType) => {
   }
 };
 
+const convertIntensity = (value: string, fromType: IntensityType, toType: IntensityType): string => {
+  const numericValue = parseFloat(value.replace(/[^\d.]/g, ''));
+  if (isNaN(numericValue)) return value;
+  
+  if (fromType === toType) {
+    return formatValue(value, toType);
+  }
+
+  if ((fromType === 'rpe' && toType === 'arpe') || (fromType === 'arpe' && toType === 'rpe')) {
+    return formatValue(numericValue.toString(), toType);
+  }
+  
+  if (fromType === 'rpe' && toType === 'percent') {
+    const percent = Math.round((numericValue - 1) * 10 + 5);
+    const cappedPercent = Math.min(percent, 100);
+    return `${cappedPercent}%`;
+  }
+  
+  if (fromType === 'percent' && toType === 'rpe') {
+    const percent = numericValue;
+    const rpe = (percent - 5) / 10 + 1;
+    const roundedRpe = Math.round(rpe * 2) / 2;
+    const cappedRpe = Math.max(1, Math.min(10, roundedRpe));
+    return `RPE ${cappedRpe}`;
+  }
+  
+  if (fromType === 'percent' && toType === 'arpe') {
+    const percent = numericValue;
+    const rpe = (percent - 5) / 10 + 1;
+    const roundedRpe = Math.round(rpe * 2) / 2;
+    const cappedRpe = Math.max(1, Math.min(10, roundedRpe));
+    return `aRPE ${cappedRpe}`;
+  }
+  
+  if (fromType === 'arpe' && toType === 'percent') {
+    const percent = Math.round((numericValue - 1) * 10 + 5);
+    const cappedPercent = Math.min(percent, 100);
+    return `${cappedPercent}%`;
+  }
+  
+  if ((fromType === 'absolute' || toType === 'absolute') && fromType !== toType) {
+    return formatValue('', toType);
+  }
+  
+  if ((fromType === 'velocity' || toType === 'velocity') && fromType !== toType) {
+    return formatValue('', toType);
+  }
+  
+  return formatValue(value, toType);
+};
+
 const IntensityInput: React.FC<IntensityInputProps> = ({
   value,
   intensityType,
@@ -86,6 +131,7 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
+  const [prevIntensityType, setPrevIntensityType] = useState<IntensityType>(intensityType);
   
   useEffect(() => {
     if (isFocused && inputRef.current) {
@@ -93,16 +139,23 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
     }
   }, [isFocused]);
   
+  useEffect(() => {
+    if (prevIntensityType !== intensityType && value) {
+      const convertedValue = convertIntensity(value, prevIntensityType, intensityType);
+      onChange(convertedValue);
+      setPrevIntensityType(intensityType);
+    } else if (prevIntensityType !== intensityType) {
+      setPrevIntensityType(intensityType);
+    }
+  }, [intensityType, prevIntensityType, value, onChange]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
     
-    // Basic validation based on intensity type
     if (intensityType === 'rpe' || intensityType === 'arpe') {
-      // Check if already has prefix
       const hasPrefix = newValue.toLowerCase().includes('rpe') || newValue.toLowerCase().includes('arpe');
       
       if (!hasPrefix) {
-        // Allow only numbers and decimal point, max value 10
         newValue = newValue.replace(/[^0-9.]/g, '');
         const numValue = parseFloat(newValue);
         if (!isNaN(numValue) && numValue > 10) {
@@ -110,19 +163,15 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
         }
       }
     } else if (intensityType === 'percent') {
-      // Allow only numbers and % symbol
       newValue = newValue.replace(/[^0-9%]/g, '').replace(/%+/g, '%');
-      // Remove any non-trailing % symbols
       if (newValue.indexOf('%') !== newValue.length - 1 && newValue.includes('%')) {
         newValue = newValue.replace(/%/g, '') + '%';
       }
-      // Ensure percentage doesn't exceed 100%
       const numValue = parseInt(newValue.replace('%', ''));
       if (!isNaN(numValue) && numValue > 100) {
         newValue = '100%';
       }
     } else if (intensityType === 'velocity') {
-      // For velocity, allow numbers, decimal point, and m/s
       newValue = newValue.replace(/[^0-9.\s/m/s]/g, '');
       if (newValue.includes('m/s') && newValue.indexOf('m/s') !== newValue.length - 3) {
         newValue = newValue.replace(/m\/s/g, '') + 'm/s';
@@ -132,8 +181,12 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
     onChange(newValue);
   };
   
+  const handleIntensityTypeChange = (newType: IntensityType) => {
+    setPrevIntensityType(intensityType);
+    onIntensityTypeChange(newType);
+  };
+  
   const handleBlur = () => {
-    // Format the value on blur if it's not empty
     if (value) {
       onChange(formatValue(value, intensityType));
     }
@@ -154,10 +207,7 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
             >
               <IntensityTypeSelector
                 value={intensityType}
-                onChange={(type) => {
-                  onIntensityTypeChange(type);
-                  setIsTypePickerOpen(false);
-                }}
+                onChange={handleIntensityTypeChange}
                 variant="minimal"
               />
             </button>
@@ -165,10 +215,7 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
           <PopoverContent className="w-[250px] p-0 z-50" align="start">
             <IntensityTypeSelector
               value={intensityType}
-              onChange={(type) => {
-                onIntensityTypeChange(type);
-                setIsTypePickerOpen(false);
-              }}
+              onChange={handleIntensityTypeChange}
               onClose={() => setIsTypePickerOpen(false)}
             />
           </PopoverContent>
@@ -189,7 +236,6 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
           placeholder=""
         />
         
-        {/* Background placeholder that shows when there's no value */}
         {!value && (
           <div className={cn(
             "absolute inset-0 flex items-center pointer-events-none px-2 py-1",
