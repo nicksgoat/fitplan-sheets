@@ -1,6 +1,6 @@
 
 import React from "react";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, Target, ArrowDown, Clock, FlipHorizontal, Timer } from "lucide-react";
 import { RepType } from "@/types/workout";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,7 @@ interface RepTypeSelectorProps {
   value: RepType;
   onChange: (value: RepType) => void;
   onClose?: () => void;
+  variant?: "default" | "minimal";
 }
 
 const repTypeOptions: { value: RepType; label: string; description: string; icon: React.ReactNode }[] = [
@@ -28,44 +29,45 @@ const repTypeOptions: { value: RepType; label: string; description: string; icon
     value: 'fixed',
     label: 'Fixed reps',
     description: 'Apply the same value across all sets.',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <Target className="h-4 w-4 text-muted-foreground" />
   },
   {
     value: 'range',
     label: 'Rep range',
     description: 'Enter a range of values for flexibility.',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <ArrowDown className="h-4 w-4 text-muted-foreground" />
   },
   {
     value: 'descending',
     label: 'Comma-separated reps',
     description: 'Apply different reps or time per set using commas.',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <ArrowDown className="h-4 w-4 text-muted-foreground" />
   },
   {
     value: 'time',
     label: 'Time-based reps',
     description: 'Specify a duration with "s" or "m".',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <Clock className="h-4 w-4 text-muted-foreground" />
   },
   {
     value: 'each-side',
     label: 'Each-side',
     description: 'Specify "each-side" with reps or time.',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <FlipHorizontal className="h-4 w-4 text-muted-foreground" />
   },
   {
     value: 'amrap',
     label: 'AMRAP',
     description: 'Specify "As many reps as possible".',
-    icon: <span className="h-4 w-4 text-muted-foreground" />
+    icon: <Timer className="h-4 w-4 text-muted-foreground" />
   },
 ];
 
 const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({ 
   value, 
   onChange,
-  onClose
+  onClose,
+  variant = "default"
 }) => {
   const handleSelect = (selectedValue: RepType) => {
     onChange(selectedValue);
@@ -73,6 +75,18 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
       onClose();
     }
   };
+  
+  // Minimal variant (used in the main exercise row)
+  if (variant === "minimal") {
+    const selectedOption = repTypeOptions.find(option => option.value === value);
+    
+    return (
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        {selectedOption?.icon}
+        <span className="text-xs">{selectedOption?.label}</span>
+      </div>
+    );
+  }
   
   // Direct list mode (used in RepInput dropdown)
   if (onClose) {
