@@ -1,11 +1,10 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import EditableCell from "./EditableCell";
 import EditableSetCell from "./EditableSetCell";
-import RepTypeSelector from "./RepTypeSelector"; // Added import for RepTypeSelector
+import RepTypeSelector from "./RepTypeSelector";
 import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -22,7 +21,6 @@ interface WorkoutTableProps {
   session: WorkoutSession;
 }
 
-// Define the order of columns for navigation
 const exerciseColumnOrder: ExerciseCellType[] = ["name", "notes"];
 const setColumnOrder: SetCellType[] = ["reps", "weight", "rpe", "rest"];
 
@@ -38,44 +36,35 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
   
-  // Organize exercises by grouping circuits
   const organizedExercises = React.useMemo(() => {
     const result: Exercise[] = [];
     const circuitMap = new Map<string, Exercise[]>();
     
-    // First pass: identify circuit exercises and group them
     session.exercises.forEach(exercise => {
       if (exercise.isCircuit) {
-        // This is a circuit header
         result.push(exercise);
       } else if (exercise.isInCircuit && exercise.circuitId) {
-        // This is an exercise inside a circuit
         const exercises = circuitMap.get(exercise.circuitId) || [];
         exercises.push(exercise);
         circuitMap.set(exercise.circuitId, exercises);
       } else if (exercise.isGroup) {
-        // This is a group header
         result.push(exercise);
       } else if (!exercise.groupId && !exercise.isInCircuit) {
-        // This is a standalone exercise
         result.push(exercise);
       }
     });
     
-    // Second pass: insert grouped exercises after their headers
     const finalResult: Exercise[] = [];
     
     for (const exercise of result) {
       finalResult.push(exercise);
       
       if (exercise.isCircuit && exercise.circuitId) {
-        // Add all exercises that belong to this circuit
         const circuitExercises = circuitMap.get(exercise.circuitId) || [];
         circuitExercises
           .sort((a, b) => (a.circuitOrder || 0) - (b.circuitOrder || 0))
           .forEach(e => finalResult.push(e));
       } else if (exercise.isGroup) {
-        // Add all exercises that belong to this group
         session.exercises
           .filter(e => e.groupId === exercise.id)
           .forEach(e => finalResult.push(e));
@@ -117,23 +106,19 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     
     switch (direction) {
       case "up":
-        // Move to previous exercise
         if (currentExerciseIndex > 0) {
           newRowIndex = currentExerciseIndex - 1;
         }
         break;
       case "down":
-        // If there's a next exercise
         if (currentExerciseIndex < exercises.length - 1) {
           newRowIndex = currentExerciseIndex + 1;
         } else if (columnName === "notes") {
-          // If at last exercise and last column, add a new exercise
           addExercise(session.id);
           newRowIndex = currentExerciseIndex + 1;
         } else if (columnName === "name") {
-          // If on name, go to the first set
           targetSetIndex = 0;
-          newColIndex = 0; // First set column (reps)
+          newColIndex = 0;
         }
         break;
       case "left":
@@ -145,20 +130,17 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
         if (currentColIndex < exerciseColumnOrder.length - 1) {
           newColIndex = currentColIndex + 1;
         } else if (columnName === "notes") {
-          // If at the last column, try to go to the next exercise
           if (currentExerciseIndex < exercises.length - 1) {
             newRowIndex = currentExerciseIndex + 1;
-            newColIndex = 0; // First column (name)
+            newColIndex = 0;
           }
         }
         break;
     }
     
-    // Get the new exercise ID based on the new row index
     const targetExercise = exercises[newRowIndex];
     const newExerciseId = targetExercise?.id || exerciseId;
     
-    // Focus the new cell
     focusCell({
       rowIndex: newRowIndex,
       columnName: targetSetIndex !== undefined ? setColumnOrder[0] : exerciseColumnOrder[newColIndex],
@@ -193,72 +175,57 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     switch (direction) {
       case "up":
         if (setIndex > 0) {
-          // Move to previous set
           newSetIndex = setIndex - 1;
         } else if (currentExerciseIndex > 0) {
-          // Move to previous exercise's last set
           newExerciseIndex = currentExerciseIndex - 1;
           const prevExercise = exercises[newExerciseIndex];
           newSetIndex = prevExercise.sets.length - 1;
         } else {
-          // If at the first set of the first exercise, go to the exercise's name
           targetExerciseColumn = "name";
           newSetIndex = undefined;
         }
         break;
       case "down":
         if (setIndex < sets.length - 1) {
-          // Move to next set
           newSetIndex = setIndex + 1;
         } else if (currentExerciseIndex < exercises.length - 1) {
-          // Move to next exercise's first set
           newExerciseIndex = currentExerciseIndex + 1;
           newSetIndex = 0;
         } else if (currentColIndex === setColumnOrder.length - 1) {
-          // If at the last column of the last set of the last exercise, add a new exercise
           addExercise(session.id);
           newExerciseIndex = currentExerciseIndex + 1;
           newSetIndex = 0;
         } else {
-          // If at the last set, go to the exercise's notes
           targetExerciseColumn = "notes";
           newSetIndex = undefined;
         }
         break;
       case "left":
         if (currentColIndex > 0) {
-          // Move to previous column
           newColIndex = currentColIndex - 1;
         } else if (setIndex > 0) {
-          // Move to previous set's last column
           newSetIndex = setIndex - 1;
           newColIndex = setColumnOrder.length - 1;
         } else {
-          // If at the first column of the first set, go to the exercise's name
           targetExerciseColumn = "name";
           newSetIndex = undefined;
         }
         break;
       case "right":
         if (currentColIndex < setColumnOrder.length - 1) {
-          // Move to next column
           newColIndex = currentColIndex + 1;
         } else if (setIndex < sets.length - 1) {
-          // Move to next set's first column
           newSetIndex = setIndex + 1;
           newColIndex = 0;
         } else {
-          // If at the last column of the last set, go to the exercise's notes
           targetExerciseColumn = "notes";
           newSetIndex = undefined;
         }
         break;
     }
     
-    // Get the target exercise
     const targetExercise = exercises[newExerciseIndex];
     
-    // Focus the new cell
     focusCell({
       rowIndex: newExerciseIndex,
       columnName: targetExerciseColumn || setColumnOrder[newColIndex],
@@ -285,20 +252,17 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
         </TableHeader>
         <TableBody>
           {organizedExercises.map((exercise, exerciseIndex) => {
-            // Calculate if this is a circuit exercise
             const isCircuit = exercise.isCircuit;
             const isInCircuit = exercise.isInCircuit;
             const circuitId = exercise.circuitId;
             const repType = exercise.repType || 'fixed';
             
-            // Find the circuit if this exercise is in one
             const circuit = circuitId 
               ? (session.circuits || []).find(c => c.id === circuitId) 
               : undefined;
             
             return (
               <React.Fragment key={exercise.id}>
-                {/* Main exercise row */}
                 <motion.tr
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -365,9 +329,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         {exercise.sets.length}
                       </td>
                       
-                      {/* Updated: Empty cells for main row instead of showing set 1 info */}
                       <td className="border border-muted-foreground/20 p-2">
-                        {/* Only show rep type selector in main row */}
                         <RepTypeSelector
                           value={repType}
                           onChange={(type) => handleRepTypeChange(exercise.id, type)}
@@ -434,7 +396,6 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   )}
                 </motion.tr>
                 
-                {/* Added: Always render all sets for non-circuit exercises */}
                 {!isCircuit && !isInCircuit && exercise.sets.map((set, setIndex) => (
                   <motion.tr
                     key={`${exercise.id}-${set.id}`}
@@ -561,7 +522,6 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                   </motion.tr>
                 ))}
                 
-                {/* Set rows for exercises WITHIN circuits */}
                 {isInCircuit && exercise.sets.length > 0 && exercise.sets.map((set, setIndex) => (
                   <motion.tr
                     key={`${exercise.id}-${set.id}`}
@@ -587,7 +547,6 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         }}
                         columnName="reps"
                         repType={repType}
-                        onRepTypeChange={(type) => handleRepTypeChange(exercise.id, type)}
                         isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
                         onFocus={handleCellFocus}
                         onNavigate={(direction, shiftKey) => 

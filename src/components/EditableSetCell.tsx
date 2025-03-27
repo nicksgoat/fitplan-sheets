@@ -82,7 +82,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   };
   
   // Special rendering for reps column with RepType support
-  if (columnName === "reps" && onRepTypeChange) {
+  if (columnName === "reps") {
     return (
       <div 
         className={cn(
@@ -96,7 +96,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           value={value}
           repType={repType}
           onChange={onChange}
-          onRepTypeChange={onRepTypeChange}
+          onRepTypeChange={onRepTypeChange || (() => {})}
           placeholder={placeholder}
           isFocused={isFocused}
         />
