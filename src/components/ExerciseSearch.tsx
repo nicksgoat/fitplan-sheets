@@ -111,8 +111,11 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       {showResults && searchResults.length > 0 && (
         <div 
           ref={resultsRef}
-          className="absolute z-50 w-full min-w-[240px] max-h-[300px] overflow-y-auto bg-popover border rounded-md shadow-md mt-1"
-          style={{ left: 0, right: 0 }}
+          className="fixed z-[100] w-[240px] max-h-[300px] overflow-y-auto bg-popover border rounded-md shadow-md"
+          style={{ 
+            left: inputRef.current ? inputRef.current.getBoundingClientRect().left : 0,
+            top: inputRef.current ? inputRef.current.getBoundingClientRect().bottom + 5 : 0
+          }}
         >
           <Command className="rounded-lg border shadow-md">
             <div className="p-0 overflow-y-auto">

@@ -148,6 +148,12 @@
   z-index: 50;
 }
 
+/* Exercise search dropdown */
+.exercise-search-dropdown {
+  z-index: 999 !important;
+  position: fixed;
+}
+
 /* Style intensity indicators */
 .intensity-rpe {
   color: hsl(39, 100%, 50%); /* amber */
