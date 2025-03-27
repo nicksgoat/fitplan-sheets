@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { ChevronRight, Clock } from "lucide-react";
@@ -95,6 +94,27 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   };
   
   const { exercises, circuitMap } = getOrganizedExercises();
+
+  // NEW: Calculate min and max reps for exercises
+  const getRepRange = (exercise: any) => {
+    if (!exercise.sets || exercise.sets.length === 0) return '';
+    
+    const repsValues = exercise.sets
+      .map((set: any) => {
+        // Handle cases where reps might be a string like '10-12' or '12'
+        if (typeof set.reps === 'string' && set.reps.includes('-')) {
+          return set.reps.split('-').map(Number);
+        }
+        return [Number(set.reps), Number(set.reps)];
+      })
+      .flat()
+      .filter((val: number) => !isNaN(val));
+
+    const minReps = Math.min(...repsValues);
+    const maxReps = Math.max(...repsValues);
+
+    return minReps === maxReps ? `${minReps} reps` : `${minReps}-${maxReps} reps`;
+  };
   
   return (
     <div className="glass-panel rounded-xl overflow-hidden h-full">
@@ -136,27 +156,28 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                   >
                     <div className="p-3">
                       <div className="flex justify-between items-center">
-                        <h3 className={cn(
-                          "font-medium truncate max-w-[200px]",
-                          exercise.isGroup && "text-purple-600",
-                          exercise.isCircuit && "text-primary",
-                          exercise.name === "Superset" && "text-indigo-600",
-                          exercise.name.includes("EMOM") && "text-green-600",
-                          exercise.name.includes("AMRAP") && "text-amber-600",
-                          exercise.name.includes("Tabata") && "text-rose-600",
-                          exercise.name === "Finisher" && "text-orange-600",
-                          exercise.name === "Cool down" && "text-blue-600"
-                        )}>
-                          {exercise.name}
-                        </h3>
+                        <div>
+                          <h3 className={cn(
+                            "font-medium truncate max-w-[200px]",
+                            exercise.isGroup && "text-purple-600",
+                            exercise.isCircuit && "text-primary",
+                            exercise.name === "Superset" && "text-indigo-600",
+                            exercise.name.includes("EMOM") && "text-green-600",
+                            exercise.name.includes("AMRAP") && "text-amber-600",
+                            exercise.name.includes("Tabata") && "text-rose-600",
+                            exercise.name === "Finisher" && "text-orange-600",
+                            exercise.name === "Cool down" && "text-blue-600"
+                          )}>
+                            {exercise.name}
+                          </h3>
+                          {!exercise.isCircuit && !exercise.isGroup && (
+                            <div className="text-sm text-gray-500">
+                              {getRepRange(exercise)}
+                            </div>
+                          )}
+                        </div>
                         <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       </div>
-                      
-                      {!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0 && (
-                        <div className="text-sm text-gray-500 mt-1">
-                          {exercise.sets.length} sets{exercise.sets[0]?.reps ? `, ${exercise.sets[0].reps} reps` : ''}
-                        </div>
-                      )}
                       
                       {exercise.notes && (
                         <div className="text-sm text-gray-600 mt-2 italic line-clamp-2">
