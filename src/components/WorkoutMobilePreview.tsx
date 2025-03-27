@@ -4,6 +4,14 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 interface WorkoutMobilePreviewProps {
   sessionId: string;
@@ -65,12 +73,17 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
       </div>
       
       <div className="relative w-full p-4 flex justify-center">
-        <div className="w-[280px] h-[580px] border-[8px] border-[#1a1a1a] rounded-[40px] overflow-hidden shadow-xl">
+        <div className="w-[300px] h-[620px] border-[10px] border-[#1a1a1a] rounded-[40px] overflow-hidden shadow-xl bg-[#1a1a1a]">
+          {/* Notch */}
           <div className="absolute top-[24px] left-1/2 transform -translate-x-1/2 w-[120px] h-[30px] bg-[#1a1a1a] rounded-b-xl z-10"></div>
           
-          <div className="w-full h-full bg-[#f8fafc] overflow-y-auto p-4">
-            <div className="text-xl font-bold mb-1">{session.name}</div>
-            <div className="text-sm text-gray-500 mb-4">0:00</div>
+          <div className="w-full h-full bg-white overflow-y-auto p-4">
+            <div className="text-xl font-bold mb-1 flex items-center">
+              <span className="text-amber-600">Day {session.week}</span>
+              <span className="mx-1">·</span>
+              <span>{session.name}</span>
+            </div>
+            <div className="text-sm text-gray-500 mb-6">0:00</div>
             
             <div className="text-lg font-semibold mb-3">Exercises</div>
             
@@ -81,9 +94,10 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
                 className={cn(
-                  "mb-4 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden",
+                  "mb-4 bg-white rounded-lg overflow-hidden",
                   exercise.isGroup && "bg-gray-50",
-                  exercise.isCircuit && "bg-primary/5"
+                  exercise.isCircuit && "bg-primary/5",
+                  !exercise.isGroup && !exercise.isCircuit && "border border-gray-200 shadow-sm"
                 )}
               >
                 <div className="p-3">
@@ -104,10 +118,9 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                   </div>
                   
-                  {!exercise.isCircuit && exercise.sets.length > 0 && exercise.sets.length !== 1 && (
+                  {!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0 && (
                     <div className="text-sm text-gray-500 mt-1">
-                      {exercise.sets.length} sets
-                      {exercise.sets[0]?.reps && `, ${exercise.sets[0].reps} reps`}
+                      {exercise.sets.length} sets{exercise.sets[0]?.reps ? `, ${exercise.sets[0].reps} reps` : ''}
                     </div>
                   )}
                   
@@ -176,38 +189,44 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
                   )}
                 </div>
                 
-                {(!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0 && exercise.sets.length !== 1) && (
-                  <div className="grid grid-cols-4 text-sm border-t border-gray-200">
-                    <div className="p-2 font-medium text-center border-r border-gray-200">Set</div>
-                    <div className="p-2 font-medium text-center border-r border-gray-200">Target</div>
-                    <div className="p-2 font-medium text-center border-r border-gray-200">
-                      {exercise.sets[0]?.weight ? "Weight" : "—"}
-                    </div>
-                    <div className="p-2 font-medium text-center">Reps</div>
-                    
-                    {Array.from({ length: exercise.sets.length }).map((_, idx) => (
-                      <React.Fragment key={idx}>
-                        <div className="p-2 text-center border-t border-r border-gray-200">{idx + 1}</div>
-                        <div className="p-2 text-center border-t border-r border-gray-200">
-                          {exercise.sets[idx]?.rpe || "—"}
-                        </div>
-                        <div className="p-2 text-center border-t border-r border-gray-200">
-                          {exercise.sets[idx]?.weight ? (
-                            Array.isArray(exercise.sets[idx]?.weight.split(',')) && exercise.sets[idx]?.weight.split(',')[idx]
-                              ? exercise.sets[idx]?.weight.split(',')[idx].trim()
-                              : exercise.sets[idx]?.weight
-                          ) : "—"}
-                        </div>
-                        <div className="p-2 text-center border-t border-gray-200">
-                          {exercise.sets[idx]?.reps ? (
-                            Array.isArray(exercise.sets[idx]?.reps.split(',')) && exercise.sets[idx]?.reps.split(',')[idx]
-                              ? exercise.sets[idx]?.reps.split(',')[idx].trim()
-                              : exercise.sets[idx]?.reps
-                          ) : "—"}
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
+                {/* Render sets as a table for non-circuit, non-group exercises with multiple sets */}
+                {(!exercise.isCircuit && !exercise.isGroup && exercise.sets.length > 0) && (
+                  <Table className="border-t border-gray-200 text-sm">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="h-8 w-14 font-medium text-center text-xs">Set</TableHead>
+                        <TableHead className="h-8 w-[25%] font-medium text-center text-xs">Target</TableHead>
+                        <TableHead className="h-8 w-[25%] font-medium text-center text-xs">
+                          {exercise.sets[0]?.weight ? "Weight" : "—"}
+                        </TableHead>
+                        <TableHead className="h-8 w-[25%] font-medium text-center text-xs">Reps</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exercise.sets.map((set, idx) => (
+                        <TableRow key={idx} className="hover:bg-gray-50">
+                          <TableCell className="h-8 py-1 px-2 text-center font-medium text-amber-600">{idx + 1}</TableCell>
+                          <TableCell className="h-8 py-1 px-2 text-center text-gray-500">
+                            {set.intensity || "—"}
+                          </TableCell>
+                          <TableCell className="h-8 py-1 px-2 text-center text-blue-600">
+                            {set.weight ? (
+                              Array.isArray(set.weight.split(',')) && set.weight.split(',')[idx]
+                                ? set.weight.split(',')[idx].trim()
+                                : set.weight
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="h-8 py-1 px-2 text-center">
+                            {set.reps ? (
+                              Array.isArray(set.reps.split(',')) && set.reps.split(',')[idx]
+                                ? set.reps.split(',')[idx].trim()
+                                : set.reps
+                            ) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </motion.div>
             ))}
