@@ -117,6 +117,9 @@ const RepInput: React.FC<RepInputProps> = ({
     setShowSelector(!showSelector);
   };
   
+  // Get the current rep type label and icon
+  const currentOption = repTypeOptions.find(option => option.value === repType);
+  
   return (
     <div className={cn("relative", className)}>
       <div className="flex items-center gap-1">
@@ -128,7 +131,7 @@ const RepInput: React.FC<RepInputProps> = ({
             onFocus={handleInputFocus}
             placeholder={repTypePlaceholders[repType] || placeholder}
             className={cn(
-              "h-9 pr-20",
+              "h-9 pr-24",
               repType === 'amrap' && "text-amber-600 font-medium"
             )}
           />
@@ -142,10 +145,11 @@ const RepInput: React.FC<RepInputProps> = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 px-2 text-xs flex items-center gap-1"
+                    className="h-7 px-2 text-xs flex items-center gap-1 bg-muted/50 hover:bg-muted"
                     onClick={handleOpenSelector}
                   >
-                    <span className="text-muted-foreground">{repTypeLabels[repType]}</span>
+                    {currentOption?.icon}
+                    <span className="text-muted-foreground ml-1">{repTypeLabels[repType]}</span>
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
@@ -173,5 +177,39 @@ const RepInput: React.FC<RepInputProps> = ({
     </div>
   );
 };
+
+// Add missing repTypeOptions that's used in the component
+const repTypeOptions = [
+  {
+    value: 'fixed' as RepType,
+    label: 'Fixed reps',
+    icon: <TargetIcon className="h-4 w-4" />
+  },
+  {
+    value: 'range' as RepType,
+    label: 'Rep range',
+    icon: <ArrowDownIcon className="h-4 w-4" />
+  },
+  {
+    value: 'descending' as RepType,
+    label: 'Descending',
+    icon: <ArrowDownIcon className="h-4 w-4" />
+  },
+  {
+    value: 'time' as RepType,
+    label: 'Time',
+    icon: <ClockIcon className="h-4 w-4" />
+  },
+  {
+    value: 'each-side' as RepType,
+    label: 'Each Side',
+    icon: <FlipHorizontalIcon className="h-4 w-4" />
+  },
+  {
+    value: 'amrap' as RepType,
+    label: 'AMRAP',
+    icon: <TimerIcon className="h-4 w-4" />
+  }
+];
 
 export default RepInput;

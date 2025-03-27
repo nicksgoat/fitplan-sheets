@@ -78,13 +78,13 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
   if (onClose) {
     return (
       <div className="w-full p-2">
-        <CommandGroup className="mb-1">
+        <div className="mb-1">
           <div className="px-2 mb-1 text-sm font-medium">Select Rep Type</div>
           {repTypeOptions.map((option) => (
-            <CommandItem
+            <div
               key={option.value}
-              onSelect={() => handleSelect(option.value)}
-              className="flex items-center gap-2 cursor-pointer py-2"
+              onClick={() => handleSelect(option.value)}
+              className="flex items-center gap-2 cursor-pointer py-2 px-2 hover:bg-accent rounded-sm"
             >
               {option.icon}
               <div className="ml-2 flex-1">
@@ -94,9 +94,9 @@ const RepTypeSelector: React.FC<RepTypeSelectorProps> = ({
               {value === option.value && (
                 <CheckIcon className="ml-auto h-4 w-4" />
               )}
-            </CommandItem>
+            </div>
           ))}
-        </CommandGroup>
+        </div>
       </div>
     );
   }
