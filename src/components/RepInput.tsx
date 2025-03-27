@@ -4,7 +4,7 @@ import { RepType } from "@/types/workout";
 import RepTypeSelector from "./RepTypeSelector";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TargetIcon, ArrowDownIcon, ClockIcon, FlipHorizontalIcon, TimerIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
