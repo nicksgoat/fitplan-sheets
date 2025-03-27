@@ -317,7 +317,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const circuitHeader: Exercise = {
           id: circuitHeaderId,
           name: "Circuit",
-          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
           circuitId: circuitId
@@ -329,7 +329,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise1: Exercise = {
           id: exercise1Id,
           name: "Circuit Exercise 1",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -339,7 +339,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise2: Exercise = {
           id: exercise2Id,
           name: "Circuit Exercise 2",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -380,7 +380,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const circuitHeader: Exercise = {
           id: circuitHeaderId,
           name: "Superset",
-          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
           circuitId: circuitId
@@ -392,7 +392,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise1: Exercise = {
           id: exercise1Id,
           name: "Superset Exercise A",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -402,7 +402,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise2: Exercise = {
           id: exercise2Id,
           name: "Superset Exercise B",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -443,7 +443,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const circuitHeader: Exercise = {
           id: circuitHeaderId,
           name: "EMOM - 10 min",
-          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
           circuitId: circuitId
@@ -454,7 +454,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise: Exercise = {
           id: exerciseId,
           name: "EMOM Exercise",
-          sets: [{ id: uuidv4(), reps: "8-10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "8-10", weight: "", intensity: "", rest: "" }],
           notes: "Complete within 40-45 seconds to allow for rest",
           isInCircuit: true,
           circuitId: circuitId,
@@ -495,7 +495,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const circuitHeader: Exercise = {
           id: circuitHeaderId,
           name: "AMRAP - 10 min",
-          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
           circuitId: circuitId
@@ -508,7 +508,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise1: Exercise = {
           id: exercise1Id,
           name: "AMRAP Exercise 1",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -518,7 +518,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise2: Exercise = {
           id: exercise2Id,
           name: "AMRAP Exercise 2",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -528,7 +528,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise3: Exercise = {
           id: exercise3Id,
           name: "AMRAP Exercise 3",
-          sets: [{ id: uuidv4(), reps: "10", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "" }],
           notes: "",
           isInCircuit: true,
           circuitId: circuitId,
@@ -569,7 +569,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const circuitHeader: Exercise = {
           id: circuitHeaderId,
           name: "Tabata - 4 min",
-          sets: [{ id: uuidv4(), reps: "", weight: "", rpe: "", rest: "" }],
+          sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
           circuitId: circuitId
@@ -580,7 +580,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const exercise: Exercise = {
           id: exerciseId,
           name: "Tabata Exercise",
-          sets: [{ id: uuidv4(), reps: "20s", weight: "", rpe: "", rest: "10s" }],
+          sets: [{ id: uuidv4(), reps: "20s", weight: "", intensity: "", rest: "10s" }],
           notes: "20s work, 10s rest x 8 rounds",
           isInCircuit: true,
           circuitId: circuitId,
