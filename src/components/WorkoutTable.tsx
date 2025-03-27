@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -396,7 +397,34 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           </PopoverContent>
                         </Popover>
                       </td>
-                      <td className="border border-muted-foreground/20 p-2"></td>
+                      
+                      <td className="border border-muted-foreground/20 p-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs flex items-center gap-1 hover:bg-muted w-full justify-start"
+                            >
+                              <WeightTypeSelector
+                                value={weightType}
+                                onChange={(type) => handleWeightTypeChange(exercise.id, type)}
+                                variant="minimal"
+                              />
+                              <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[250px] p-0 z-50" align="start" side="bottom">
+                            <div className="p-0 max-h-[300px] overflow-y-auto">
+                              <WeightTypeSelector
+                                value={weightType}
+                                onChange={(type) => handleWeightTypeChange(exercise.id, type)}
+                                onClose={() => {}}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </td>
                       
                       <td className="border border-muted-foreground/20 p-2">
                         <Popover>
