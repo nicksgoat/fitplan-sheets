@@ -1,4 +1,3 @@
-
 // Exercise categories
 export type ExerciseCategory = 
   | "barbell"
@@ -24,6 +23,8 @@ export type PrimaryMuscle =
   | "abs"
   | "forearms"
   | "full body"
+  | "upper chest"
+  | "core"
   | "other";
 
 // Exercise model
