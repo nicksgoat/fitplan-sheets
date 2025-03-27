@@ -50,6 +50,13 @@ const formatValue = (value: string, weightType: WeightType): string => {
   }
 };
 
+// Example values for different weight types to show in placeholder
+const exampleValues: Record<WeightType, string> = {
+  'pounds': '135 lbs',
+  'kilos': '60 kg',
+  'distance': '100m',
+};
+
 const WeightInput: React.FC<WeightInputProps> = ({
   value,
   weightType,
@@ -67,6 +74,13 @@ const WeightInput: React.FC<WeightInputProps> = ({
       inputRef.current.focus();
     }
   }, [isFocused]);
+  
+  // When weight type changes, if no value is set, suggest the example value
+  useEffect(() => {
+    if (!value && isFocused) {
+      onChange(exampleValues[weightType]);
+    }
+  }, [weightType, value, onChange, isFocused]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
@@ -98,6 +112,20 @@ const WeightInput: React.FC<WeightInputProps> = ({
   const handleBlur = () => {
     // Format the value on blur
     onChange(formatValue(value, weightType));
+  };
+  
+  const handleFocus = () => {
+    // If empty on focus, preload with example value
+    if (!value) {
+      onChange(exampleValues[weightType]);
+      
+      // Select the text for easy replacement
+      if (inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.select();
+        }, 0);
+      }
+    }
   };
   
   // Get visual style based on weight type
@@ -157,6 +185,7 @@ const WeightInput: React.FC<WeightInputProps> = ({
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
+        onFocus={handleFocus}
         placeholder={placeholder || getPlaceholder(weightType)}
       />
     </div>

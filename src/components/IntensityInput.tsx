@@ -51,6 +51,15 @@ const formatValue = (value: string, intensityType: IntensityType): string => {
   }
 };
 
+// Example values for different intensity types to show in placeholder
+const exampleValues: Record<IntensityType, string> = {
+  'rpe': '8',
+  'arpe': '7',
+  'percent': '75%',
+  'absolute': '135',
+  'velocity': '0.8 m/s',
+};
+
 const IntensityInput: React.FC<IntensityInputProps> = ({
   value,
   intensityType,
@@ -68,6 +77,13 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
       inputRef.current.focus();
     }
   }, [isFocused]);
+  
+  // When intensity type changes, if no value is set, suggest the example value
+  useEffect(() => {
+    if (!value && isFocused) {
+      onChange(exampleValues[intensityType]);
+    }
+  }, [intensityType, value, onChange, isFocused]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
@@ -106,6 +122,20 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
   const handleBlur = () => {
     // Format the value on blur
     onChange(formatValue(value, intensityType));
+  };
+  
+  const handleFocus = () => {
+    // If empty on focus, preload with example value
+    if (!value) {
+      onChange(exampleValues[intensityType]);
+      
+      // Select the text for easy replacement
+      if (inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.select();
+        }, 0);
+      }
+    }
   };
   
   // Get visual style based on intensity type
@@ -169,6 +199,7 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
+        onFocus={handleFocus}
         placeholder={placeholder || getPlaceholder(intensityType)}
       />
     </div>
