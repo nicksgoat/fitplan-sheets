@@ -1,19 +1,20 @@
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
+import ExerciseSearch from "./ExerciseSearch";
 
 interface EditableCellProps {
-  value: string | number;
+  value: string;
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
   type?: "text" | "number";
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   coordinate: CellCoordinate;
   isFocused: boolean;
   onFocus: (coordinate: CellCoordinate) => void;
   onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
+  isExerciseName?: boolean;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -22,29 +23,23 @@ const EditableCell: React.FC<EditableCellProps> = ({
   className,
   placeholder = "",
   type = "text",
-  onKeyDown,
   coordinate,
   isFocused,
   onFocus,
   onNavigate,
+  isExerciseName = false,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    if (isFocused && inputRef.current) {
+    if (isFocused && inputRef.current && !isExerciseName) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [isFocused]);
+  }, [isFocused, isExerciseName]);
   
   const handleClick = () => {
-    setIsEditing(true);
     onFocus(coordinate);
-  };
-  
-  const handleBlur = () => {
-    setIsEditing(false);
   };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,11 +74,29 @@ const EditableCell: React.FC<EditableCellProps> = ({
       e.preventDefault();
       onNavigate(e.shiftKey ? "up" : "down", false);
     }
-    
-    if (onKeyDown) {
-      onKeyDown(e);
-    }
   };
+  
+  // Special rendering for exercise name with search functionality
+  if (isExerciseName) {
+    return (
+      <div 
+        className={cn(
+          "editable-cell h-full",
+          isFocused && "ring-2 ring-primary ring-offset-1",
+          className
+        )}
+        onClick={handleClick}
+      >
+        <ExerciseSearch
+          value={value}
+          onChange={onChange}
+          autoFocus={isFocused}
+          placeholder={placeholder}
+          className={className}
+        />
+      </div>
+    );
+  }
   
   return (
     <div 
@@ -100,7 +113,6 @@ const EditableCell: React.FC<EditableCellProps> = ({
         className="cell-input w-full h-full bg-transparent outline-none px-2 py-1"
         value={value}
         onChange={handleChange}
-        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
       />

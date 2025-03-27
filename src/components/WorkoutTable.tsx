@@ -352,6 +352,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             exerciseId: exercise.id 
                           })
                         }
+                        isExerciseName={true}
                       />
                       
                       {isCircuit && circuit && (
