@@ -38,9 +38,27 @@ const weightTypeOptions: { value: WeightType; label: string; description: string
     icon: <MoveVertical className="h-4 w-4 text-muted-foreground" />
   },
   {
-    value: 'distance',
-    label: 'Distance (m)',
-    description: 'Distance measurement (e.g., 100m)',
+    value: 'distance-m',
+    label: 'Meters (m)',
+    description: 'Distance in meters (e.g., 100m)',
+    icon: <Ruler className="h-4 w-4 text-muted-foreground" />
+  },
+  {
+    value: 'distance-ft',
+    label: 'Feet (ft)',
+    description: 'Distance in feet (e.g., 50ft)',
+    icon: <Ruler className="h-4 w-4 text-muted-foreground" />
+  },
+  {
+    value: 'distance-yd',
+    label: 'Yards (yd)',
+    description: 'Distance in yards (e.g., 25yd)',
+    icon: <Ruler className="h-4 w-4 text-muted-foreground" />
+  },
+  {
+    value: 'distance-mi',
+    label: 'Miles (mi)',
+    description: 'Distance in miles (e.g., 0.5mi)',
     icon: <Ruler className="h-4 w-4 text-muted-foreground" />
   },
 ];
@@ -109,9 +127,24 @@ const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({
                   60 kg
                 </div>
               )}
-              {option.value === 'distance' && (
+              {option.value === 'distance-m' && (
                 <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
                   100m
+                </div>
+              )}
+              {option.value === 'distance-ft' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
+                  50ft
+                </div>
+              )}
+              {option.value === 'distance-yd' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
+                  25yd
+                </div>
+              )}
+              {option.value === 'distance-mi' && (
+                <div className="mt-1 ml-7 bg-background/80 rounded px-2 py-1 text-xs border border-dashed text-purple-600">
+                  0.5mi
                 </div>
               )}
             </div>

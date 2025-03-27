@@ -84,4 +84,7 @@ export type IntensityType =
 export type WeightType =
   | 'pounds'        // Weight in pounds (e.g., "185 lbs")
   | 'kilos'         // Weight in kilograms (e.g., "80 kg")
-  | 'distance';     // Distance (e.g., "100m")
+  | 'distance-m'    // Distance in meters (e.g., "100m")
+  | 'distance-ft'   // Distance in feet (e.g., "50ft")
+  | 'distance-yd'   // Distance in yards (e.g., "25yd")
+  | 'distance-mi';  // Distance in miles (e.g., "0.5mi")
