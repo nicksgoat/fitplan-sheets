@@ -22,15 +22,15 @@ interface IntensityInputProps {
 const getPlaceholder = (intensityType: IntensityType): string => {
   switch (intensityType) {
     case 'rpe':
-      return 'RPE (1-10)';
+      return 'RPE 8';
     case 'arpe':
-      return 'aRPE (1-10)';
+      return 'aRPE 7';
     case 'percent':
-      return '% of max';
+      return '75%';
     case 'absolute':
-      return 'Weight';
+      return '135';
     case 'velocity':
-      return 'm/s';
+      return '0.8 m/s';
     default:
       return 'Intensity';
   }
@@ -40,6 +40,12 @@ const formatValue = (value: string, intensityType: IntensityType): string => {
   if (!value) return value;
 
   switch (intensityType) {
+    case 'rpe':
+      // Add RPE if not already there
+      return value.toLowerCase().includes('rpe') ? value : `RPE ${value}`;
+    case 'arpe':
+      // Add aRPE if not already there
+      return value.toLowerCase().includes('arpe') ? value : `aRPE ${value}`;
     case 'percent':
       // Add % if not already there
       return value.includes('%') ? value : `${value}%`;
@@ -49,15 +55,6 @@ const formatValue = (value: string, intensityType: IntensityType): string => {
     default:
       return value;
   }
-};
-
-// Example values for different intensity types to show in placeholder
-const exampleValues: Record<IntensityType, string> = {
-  'rpe': '8',
-  'arpe': '7',
-  'percent': '75%',
-  'absolute': '135',
-  'velocity': '0.8 m/s',
 };
 
 const IntensityInput: React.FC<IntensityInputProps> = ({
@@ -78,23 +75,21 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
     }
   }, [isFocused]);
   
-  // When intensity type changes, if no value is set, suggest the example value
-  useEffect(() => {
-    if (!value && isFocused) {
-      onChange(exampleValues[intensityType]);
-    }
-  }, [intensityType, value, onChange, isFocused]);
-  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
     
     // Basic validation based on intensity type
     if (intensityType === 'rpe' || intensityType === 'arpe') {
-      // Allow only numbers and decimal point, max value 10
-      newValue = newValue.replace(/[^0-9.]/g, '');
-      const numValue = parseFloat(newValue);
-      if (!isNaN(numValue) && numValue > 10) {
-        newValue = '10';
+      // Check if already has prefix
+      const hasPrefix = newValue.toLowerCase().includes('rpe') || newValue.toLowerCase().includes('arpe');
+      
+      if (!hasPrefix) {
+        // Allow only numbers and decimal point, max value 10
+        newValue = newValue.replace(/[^0-9.]/g, '');
+        const numValue = parseFloat(newValue);
+        if (!isNaN(numValue) && numValue > 10) {
+          newValue = '10';
+        }
       }
     } else if (intensityType === 'percent') {
       // Allow only numbers and % symbol
@@ -120,21 +115,9 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
   };
   
   const handleBlur = () => {
-    // Format the value on blur
-    onChange(formatValue(value, intensityType));
-  };
-  
-  const handleFocus = () => {
-    // If empty on focus, preload with example value
-    if (!value) {
-      onChange(exampleValues[intensityType]);
-      
-      // Select the text for easy replacement
-      if (inputRef.current) {
-        setTimeout(() => {
-          inputRef.current?.select();
-        }, 0);
-      }
+    // Format the value on blur if it's not empty
+    if (value) {
+      onChange(formatValue(value, intensityType));
     }
   };
   
@@ -199,7 +182,6 @@ const IntensityInput: React.FC<IntensityInputProps> = ({
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        onFocus={handleFocus}
         placeholder={placeholder || getPlaceholder(intensityType)}
       />
     </div>
