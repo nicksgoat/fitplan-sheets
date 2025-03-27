@@ -23,6 +23,46 @@ interface RepInputProps {
   isFocused: boolean;
 }
 
+// Define repTypeOptions at the top of the file so it's available throughout the component
+const repTypeOptions = [
+  {
+    value: 'fixed' as RepType,
+    label: 'Fixed reps',
+    description: 'Apply the same value across all sets.',
+    icon: <TargetIcon className="h-4 w-4" />
+  },
+  {
+    value: 'range' as RepType,
+    label: 'Rep range',
+    description: 'Enter a range of values for flexibility.',
+    icon: <ArrowDownIcon className="h-4 w-4" />
+  },
+  {
+    value: 'descending' as RepType,
+    label: 'Comma-separated reps',
+    description: 'Apply different reps or time per set using commas.',
+    icon: <ArrowDownIcon className="h-4 w-4" />
+  },
+  {
+    value: 'time' as RepType,
+    label: 'Time',
+    description: 'Specify a duration with "s" or "m".',
+    icon: <ClockIcon className="h-4 w-4" />
+  },
+  {
+    value: 'each-side' as RepType,
+    label: 'Each Side',
+    description: 'Specify "each-side" with reps or time.',
+    icon: <FlipHorizontalIcon className="h-4 w-4" />
+  },
+  {
+    value: 'amrap' as RepType,
+    label: 'AMRAP',
+    description: 'As many reps as possible.',
+    icon: <TimerIcon className="h-4 w-4" />
+  }
+];
+
 const repTypePlaceholders: Record<RepType, string> = {
   'fixed': '12',
   'range': '8-12',
@@ -177,45 +217,5 @@ const RepInput: React.FC<RepInputProps> = ({
     </div>
   );
 };
-
-// Define repTypeOptions that's used in the component
-const repTypeOptions = [
-  {
-    value: 'fixed' as RepType,
-    label: 'Fixed reps',
-    description: 'Apply the same value across all sets.',
-    icon: <TargetIcon className="h-4 w-4" />
-  },
-  {
-    value: 'range' as RepType,
-    label: 'Rep range',
-    description: 'Enter a range of values for flexibility.',
-    icon: <ArrowDownIcon className="h-4 w-4" />
-  },
-  {
-    value: 'descending' as RepType,
-    label: 'Comma-separated reps',
-    description: 'Apply different reps or time per set using commas.',
-    icon: <ArrowDownIcon className="h-4 w-4" />
-  },
-  {
-    value: 'time' as RepType,
-    label: 'Time',
-    description: 'Specify a duration with "s" or "m".',
-    icon: <ClockIcon className="h-4 w-4" />
-  },
-  {
-    value: 'each-side' as RepType,
-    label: 'Each Side',
-    description: 'Specify "each-side" with reps or time.',
-    icon: <FlipHorizontalIcon className="h-4 w-4" />
-  },
-  {
-    value: 'amrap' as RepType,
-    label: 'AMRAP',
-    description: 'As many reps as possible.',
-    icon: <TimerIcon className="h-4 w-4" />
-  }
-];
 
 export default RepInput;
