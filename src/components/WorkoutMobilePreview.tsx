@@ -23,6 +23,11 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
   
   if (!session) return null;
   
+  // Determine which week this session belongs to
+  const weekNumber = session.weekId 
+    ? program.weeks.find(w => w.id === session.weekId)?.order || session.day
+    : session.day;
+  
   // Organize exercises for display
   const getOrganizedExercises = () => {
     const result = [];
@@ -79,7 +84,7 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }
           
           <div className="w-full h-full bg-white overflow-y-auto p-4">
             <div className="text-xl font-bold mb-1 flex items-center">
-              <span className="text-amber-600">Day {session.week}</span>
+              <span className="text-amber-600">Day {weekNumber}</span>
               <span className="mx-1">·</span>
               <span>{session.name}</span>
             </div>
