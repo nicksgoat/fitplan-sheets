@@ -19,60 +19,60 @@ export default function AppLayout() {
         <Sidebar>
           <SidebarContent>
             <div className="p-4">
-              <h2 className="text-xl font-bold text-white mb-8">
-                <span className="text-purple-500">Fit</span>
-                <span className="text-gray-100">Bloom</span>
+              <h2 className="text-xl font-bold text-white mb-6">
+                <span className="text-gray-100">Fit</span>
+                <span className="text-purple-500">Bloom</span>
               </h2>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Home" className="mb-2">
-                    <Link to="/" className="flex items-center gap-x-4">
-                      <Home className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="Home">
+                    <Link to="/">
+                      <Home />
                       <span>Home</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Search" className="mb-2">
-                    <Link to="/search" className="flex items-center gap-x-4">
-                      <Search className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="Search">
+                    <Link to="/search">
+                      <Search />
                       <span>Search</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="My Library" className="mb-2">
-                    <Link to="/library" className="flex items-center gap-x-4">
-                      <Library className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="My Library">
+                    <Link to="/library">
+                      <Library />
                       <span>My Library</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Liked" className="mb-2">
-                    <Link to="/liked" className="flex items-center gap-x-4">
-                      <Heart className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="Liked">
+                    <Link to="/liked">
+                      <Heart />
                       <span>Liked</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Sheets" className="mb-2">
-                    <Link to="/sheets" className="flex items-center gap-x-4">
-                      <FileText className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="Sheets">
+                    <Link to="/sheets">
+                      <FileText />
                       <span>Sheets</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Profile" className="mb-2">
-                    <Link to="/profile" className="flex items-center gap-x-4">
-                      <User className="h-5 w-5" />
+                  <SidebarMenuButton asChild tooltip="Profile">
+                    <Link to="/profile">
+                      <User />
                       <span>Profile</span>
                     </Link>
                   </SidebarMenuButton>
@@ -82,7 +82,7 @@ export default function AppLayout() {
           </SidebarContent>
         </Sidebar>
         
-        <main className="flex-grow bg-black text-white">
+        <main className="flex-grow bg-dark-100 text-white">
           <Outlet />
         </main>
       </div>
