@@ -4,10 +4,10 @@ import ContentCard from './ContentCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ItemType } from '@/lib/types';
-import { ExerciseWithVisual } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 
 interface ContentCarouselProps {
-  items: (ItemType | ExerciseWithVisual)[];
+  items: (ItemType | Exercise)[];
   className?: string;
 }
 

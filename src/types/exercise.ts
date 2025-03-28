@@ -26,6 +26,8 @@ export type PrimaryMuscle =
   | "core"
   | "other";
 
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -36,10 +38,10 @@ export interface Exercise {
   instructions?: string;
   isCustom?: boolean;
   userId?: string;
-  // Additional fields from the consolidated structure
+  // Visual properties directly in the Exercise type
   imageUrl?: string;
   tags?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  difficulty?: Difficulty;
   duration?: string;
   creator?: string;
 }

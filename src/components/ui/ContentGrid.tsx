@@ -2,10 +2,10 @@
 import React from 'react';
 import ContentCard from './ContentCard';
 import { ItemType } from '@/lib/types';
-import { ExerciseWithVisual } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 
 interface ContentGridProps {
-  items: (ItemType | ExerciseWithVisual)[];
+  items: (ItemType | Exercise)[];
   className?: string;
   columns?: number;
 }

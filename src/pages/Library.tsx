@@ -7,7 +7,7 @@ import ContentGrid from '@/components/ui/ContentGrid';
 import ContentCarousel from '@/components/ui/ContentCarousel';
 import CollectionCard from '@/components/ui/CollectionCard';
 import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
-import { ExerciseWithVisual } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -16,18 +16,18 @@ const Library = () => {
   const navigate = useNavigate();
   
   // Fetch exercises with visuals from Supabase
-  const { data: exercisesWithVisuals, isLoading, error } = useExercisesWithVisuals();
+  const { data: exercises, isLoading, error } = useExercisesWithVisuals();
   
   // Transform our exercise data to match the ItemType format
-  const exerciseItems: ItemType[] = exercisesWithVisuals?.map((exercise: ExerciseWithVisual) => ({
+  const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
     id: exercise.id,
     title: exercise.name,
     type: 'exercise',
-    creator: exercise.visual?.creator || 'FitBloom',
-    imageUrl: exercise.visual?.imageUrl || 'https://placehold.co/600x400?text=No+Image',
-    tags: exercise.visual?.tags || [],
-    duration: exercise.visual?.duration || '',
-    difficulty: exercise.visual?.difficulty || 'beginner',
+    creator: exercise.creator || 'FitBloom',
+    imageUrl: exercise.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+    tags: exercise.tags || [],
+    duration: exercise.duration || '',
+    difficulty: exercise.difficulty || 'beginner',
     isFavorite: false,
     description: exercise.description
   })) || [];
