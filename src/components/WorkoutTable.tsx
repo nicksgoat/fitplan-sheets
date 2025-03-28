@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback } from "react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -346,6 +347,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     set={set}
                     setIndex={setIndex}
                     exerciseIndex={exerciseIndex}
+                    exerciseName={exercise.name}
                     handleSetCellChange={handleSetCellChange}
                     isCellFocused={isCellFocused}
                     handleCellFocus={handleCellFocus}
@@ -355,7 +357,6 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     handleRepTypeChange={handleRepTypeChange}
                     deleteSet={deleteSet}
                     sessionId={session.id}
-                    exerciseName={exercise.name}
                   />
                 ))}
               </React.Fragment>

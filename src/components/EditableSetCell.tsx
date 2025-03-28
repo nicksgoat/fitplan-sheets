@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
@@ -136,13 +135,13 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
       >
         <WeightInput
           value={value}
-          weightType={weightType || "pounds"}
+          weightType={weightType}
           onChange={onChange}
           onWeightTypeChange={onWeightTypeChange || (() => {})}
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideWeightTypeSelector}
-          exerciseName={exerciseName} // Pass exercise name to WeightInput
+          exerciseName={exerciseName}
         />
       </div>
     );
@@ -161,7 +160,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
       >
         <IntensityInput
           value={value}
-          intensityType={intensityType || "rpe"}
+          intensityType={intensityType}
           onChange={onChange}
           onIntensityTypeChange={onIntensityTypeChange || (() => {})}
           placeholder={placeholder}

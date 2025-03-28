@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Minus } from "lucide-react";
 import { Set, Exercise } from "@/types/workout";
@@ -111,6 +112,7 @@ const SetRow: React.FC<SetRowProps> = ({
             })
           }
           hideWeightTypeSelector={true}
+          exerciseName={exerciseName}
         />
       </td>
       
