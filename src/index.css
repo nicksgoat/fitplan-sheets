@@ -1,128 +1,181 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
- 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
- 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
- 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
- 
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
- 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
- 
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
- 
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 258 80% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 258 80% 75%;
+    --accent-foreground: 0 0% 98%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
- 
-    --ring: 0 0% 63.9%;
- 
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 258 80% 75%;
+
     --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 258 80% 75%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
- 
+
   .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
- 
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
- 
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
- 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
- 
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
- 
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
- 
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
- 
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
- 
-    --ring: 0 0% 14.9%;
-  }
 
-  /* Apply dark mode by default */
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 258 80% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 258 80% 75%;
+
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 258 80% 75%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  
+  /* Apply dark mode by default (from CSS 2) */
   :root {
     color-scheme: dark;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Table styling */
+@layer components {
+  .content-card {
+    @apply bg-card rounded-lg overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer;
+  }
+  
+  .content-card-image {
+    @apply h-24 sm:h-28 w-full object-cover;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent;
+  }
+  
+  /* Mobile optimizations */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Animation */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Table styling from CSS 2 */
 .workout-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
-
 .workout-table th {
   text-align: left;
   font-weight: 500;
 }
-
 .workout-table .exercise-cell {
   width: 180px;
   min-width: 150px;
 }
-
 .workout-table .numeric-cell {
   width: 70px;
   min-width: 60px;
 }
-
 .workout-table .note-cell {
   width: 120px;
   min-width: 100px;
 }
-
 .workout-table .set-number {
   font-size: 0.875rem;
   color: var(--muted-foreground);
   padding-left: 1.5rem;
 }
-
 .workout-table .cell-input {
   width: 100%;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
 }
-
 /* Add Excel-like styling to cells */
 .workout-table td, .workout-table th {
   padding: 0.5rem;
@@ -130,68 +183,54 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .editable-cell {
   position: relative;
   min-height: 38px;
   width: 100%;
 }
-
 .editable-cell:focus-within {
   outline: 2px solid hsl(var(--primary));
 }
-
 /* Add responsive container styles */
 .workout-container {
   max-width: 100%;
   overflow-x: auto;
   position: relative;
 }
-
 /* Ensure popovers remain fully visible with high z-index */
 .workout-container .popover-content {
   z-index: 50;
 }
-
 /* Exercise search dropdown */
 .exercise-search-dropdown {
   z-index: 999 !important;
   position: fixed;
 }
-
 /* Style intensity indicators */
 .intensity-rpe {
   color: hsl(39, 100%, 50%); /* amber */
 }
-
 .intensity-arpe {
   color: hsl(24, 75%, 50%); /* orange */
 }
-
 .intensity-percent {
   color: hsl(210, 100%, 50%); /* blue */
 }
-
 .intensity-absolute {
   color: hsl(142, 71%, 45%); /* green */
 }
-
 .intensity-velocity {
   color: hsl(262, 83%, 58%); /* purple */
 }
-
 @media (min-width: 1024px) {
   .workout-container {
     overflow-x: visible;
   }
 }
-
 /* Dark theme customizations */
 .glass-panel {
   @apply bg-dark-200 border border-dark-300;
 }
-
 body {
   @apply bg-dark-100;
 }
-
