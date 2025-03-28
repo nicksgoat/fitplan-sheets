@@ -12,13 +12,9 @@ import WorkoutCard from "@/components/WorkoutCard";
 import CollectionCard from "@/components/CollectionCard";
 import ProgramCard from "@/components/ProgramCard";
 import { exerciseLibrary } from "@/utils/exerciseLibrary";
+import { Tables } from "@/integrations/supabase/types";
 
-interface LikedItem {
-  id: string;
-  item_id: string;
-  item_type: string;
-  created_at: string;
-}
+interface LikedItem extends Tables.liked_items.Row {}
 
 const Liked: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("exercises");
