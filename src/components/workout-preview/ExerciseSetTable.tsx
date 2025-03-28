@@ -63,6 +63,8 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   const intensityColor = getIntensityColor(intensityType);
   const weightColor = getWeightColor(weightType);
   
+  console.log("ExerciseSetTable rendering with intensity type:", intensityType, "weight type:", weightType);
+  
   return (
     <div>
       <div className="overflow-x-auto max-w-full">

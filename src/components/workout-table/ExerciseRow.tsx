@@ -60,19 +60,20 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const intensityType = exercise.intensityType || 'rpe';
   const weightType = exercise.weightType || 'pounds';
   
-  const handleIntensityTypeSelect = (type: IntensityType) => {
-    console.log("Exercise row intensity type changed to:", type);
-    handleIntensityTypeChange(exercise.id, type);
+  // Fixed: Use more direct approach for handling selection changes
+  const handleIntensityTypeSelect = (value: string) => {
+    console.log("Exercise row intensity type changed to:", value);
+    handleIntensityTypeChange(exercise.id, value as IntensityType);
   };
 
-  const handleWeightTypeSelect = (type: WeightType) => {
-    console.log("Exercise row weight type changed to:", type);
-    handleWeightTypeChange(exercise.id, type);
+  const handleWeightTypeSelect = (value: string) => {
+    console.log("Exercise row weight type changed to:", value);
+    handleWeightTypeChange(exercise.id, value as WeightType);
   };
   
-  const handleRepTypeSelect = (type: RepType) => {
-    console.log("Exercise row rep type changed to:", type);
-    handleRepTypeChange(exercise.id, type);
+  const handleRepTypeSelect = (value: string) => {
+    console.log("Exercise row rep type changed to:", value);
+    handleRepTypeChange(exercise.id, value as RepType);
   };
   
   return (
@@ -137,7 +138,8 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        <Select value={weightType} onValueChange={handleWeightTypeSelect}>
+        {/* Fixed: Simplified the weight type selector to just pass string values */}
+        <Select defaultValue={weightType} onValueChange={handleWeightTypeSelect}>
           <SelectTrigger className="h-7 text-xs w-full">
             <SelectValue>
               <WeightTypeSelector
@@ -148,17 +150,56 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[300px] z-50 bg-popover">
-            <WeightTypeSelector
-              value={weightType}
-              onChange={handleWeightTypeSelect}
-              onClose={() => {}}
-            />
+            {/* Directly use SelectItem for each weight type option */}
+            <SelectItem value="pounds">
+              <WeightTypeSelector 
+                value="pounds" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="kilos">
+              <WeightTypeSelector 
+                value="kilos" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="distance-m">
+              <WeightTypeSelector 
+                value="distance-m" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="distance-ft">
+              <WeightTypeSelector 
+                value="distance-ft" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="distance-yd">
+              <WeightTypeSelector 
+                value="distance-yd" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="distance-mi">
+              <WeightTypeSelector 
+                value="distance-mi" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
           </SelectContent>
         </Select>
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        <Select value={intensityType} onValueChange={handleIntensityTypeSelect}>
+        {/* Fixed: Simplified the intensity type selector to just pass string values */}
+        <Select defaultValue={intensityType} onValueChange={handleIntensityTypeSelect}>
           <SelectTrigger className="h-7 text-xs w-full">
             <SelectValue>
               <IntensityTypeSelector
@@ -169,11 +210,42 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[300px] z-50 bg-popover">
-            <IntensityTypeSelector
-              value={intensityType}
-              onChange={handleIntensityTypeSelect}
-              onClose={() => {}}
-            />
+            {/* Directly use SelectItem for each intensity type option */}
+            <SelectItem value="rpe">
+              <IntensityTypeSelector 
+                value="rpe" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="arpe">
+              <IntensityTypeSelector 
+                value="arpe" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="percent">
+              <IntensityTypeSelector 
+                value="percent" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="absolute">
+              <IntensityTypeSelector 
+                value="absolute" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
+            <SelectItem value="velocity">
+              <IntensityTypeSelector 
+                value="velocity" 
+                onChange={() => {}} 
+                variant="minimal" 
+              />
+            </SelectItem>
           </SelectContent>
         </Select>
       </td>
