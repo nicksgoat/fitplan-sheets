@@ -45,8 +45,10 @@ const SetRow: React.FC<SetRowProps> = ({
   sessionId,
 }) => {
   const repType = exercise.repType || 'fixed';
-  const setIntensityType = set.intensityType || exercise.intensityType || 'rpe';
-  const setWeightType = set.weightType || exercise.weightType || 'pounds';
+  // Use the exercise's intensity type as the default for all sets
+  // Individual set intensity type will override this if it exists
+  const intensityType = exercise.intensityType || 'rpe';
+  const weightType = exercise.weightType || 'pounds';
   
   return (
     <motion.tr
@@ -99,7 +101,7 @@ const SetRow: React.FC<SetRowProps> = ({
             setIndex: setIndex
           }}
           columnName="weight"
-          weightType={setWeightType}
+          weightType={weightType}
           onWeightTypeChange={(type) => handleSetWeightTypeChange(exercise.id, set.id, type)}
           isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
           onFocus={handleCellFocus}
@@ -128,7 +130,7 @@ const SetRow: React.FC<SetRowProps> = ({
             setIndex: setIndex
           }}
           columnName="intensity"
-          intensityType={setIntensityType}
+          intensityType={intensityType}
           onIntensityTypeChange={(type) => handleSetIntensityTypeChange(exercise.id, set.id, type)}
           isFocused={isCellFocused(exerciseIndex, "intensity", exercise.id, setIndex)}
           onFocus={handleCellFocus}

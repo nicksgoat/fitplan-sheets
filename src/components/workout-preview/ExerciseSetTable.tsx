@@ -19,6 +19,29 @@ interface ExerciseSetTableProps {
 const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   if (!exercise.sets || exercise.sets.length === 0) return null;
   
+  // Get the intensity type from the exercise, which will be used for all sets
+  const intensityType = exercise.intensityType || 'rpe';
+  
+  // Function to get appropriate color based on intensity type
+  const getIntensityColor = (type: string) => {
+    switch (type) {
+      case 'rpe':
+        return 'text-amber-400';
+      case 'arpe':
+        return 'text-orange-400';
+      case 'percent':
+        return 'text-blue-400';
+      case 'absolute':
+        return 'text-green-400';
+      case 'velocity':
+        return 'text-purple-400';
+      default:
+        return 'text-gray-400';
+    }
+  };
+  
+  const intensityColor = getIntensityColor(intensityType);
+  
   return (
     <>
       <div className="overflow-x-auto max-w-full">
@@ -37,7 +60,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
             {exercise.sets.map((set, idx) => (
               <TableRow key={idx} className="hover:bg-dark-400 border-dark-border">
                 <TableCell className="h-8 py-1 px-1 text-center font-medium text-amber-400">{idx + 1}</TableCell>
-                <TableCell className="h-8 py-1 px-1 text-center text-gray-400 truncate">
+                <TableCell className={`h-8 py-1 px-1 text-center truncate ${intensityColor}`}>
                   {set.intensity || "—"}
                 </TableCell>
                 <TableCell className="h-8 py-1 px-1 text-center text-blue-400 truncate">
