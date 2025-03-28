@@ -1,5 +1,5 @@
 
-import { Exercise, Set, WorkoutProgram, WorkoutSession, WorkoutWeek } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -24,10 +24,10 @@ export function createEmptyExercise(): Exercise {
   };
 }
 
-export function createEmptySession(day: number, weekId?: string): WorkoutSession {
+export function createEmptyWorkout(day: number, weekId?: string): Workout {
   return {
     id: generateId(),
-    name: `Day ${day} Session`,
+    name: `Day ${day} Workout`,
     day,
     exercises: [createEmptyExercise()],
     circuits: [],
@@ -36,67 +36,67 @@ export function createEmptySession(day: number, weekId?: string): WorkoutSession
 }
 
 export function createEmptyWeek(order: number): WorkoutWeek {
-  const sessionId = generateId();
+  const workoutId = generateId();
   
   return {
     id: generateId(),
     name: `Week ${order}`,
     order,
-    sessions: [sessionId]
+    workouts: [workoutId]
   };
 }
 
 export function createEmptyProgram(): WorkoutProgram {
   const week = createEmptyWeek(1);
-  const session = createEmptySession(1, week.id);
+  const workout = createEmptyWorkout(1, week.id);
   
   return {
     id: generateId(),
     name: "New Workout Program",
-    sessions: [session],
+    workouts: [workout],
     weeks: [week]
   };
 }
 
-export function addExerciseToSession(
-  session: WorkoutSession,
+export function addExerciseToWorkout(
+  workout: Workout,
   afterExerciseId?: string
-): WorkoutSession {
+): Workout {
   const newExercise = createEmptyExercise();
   
   if (!afterExerciseId) {
     return {
-      ...session,
-      exercises: [...session.exercises, newExercise],
+      ...workout,
+      exercises: [...workout.exercises, newExercise],
     };
   }
   
-  const exerciseIndex = session.exercises.findIndex(e => e.id === afterExerciseId);
+  const exerciseIndex = workout.exercises.findIndex(e => e.id === afterExerciseId);
   
   if (exerciseIndex === -1) {
     return {
-      ...session,
-      exercises: [...session.exercises, newExercise],
+      ...workout,
+      exercises: [...workout.exercises, newExercise],
     };
   }
   
-  const updatedExercises = [...session.exercises];
+  const updatedExercises = [...workout.exercises];
   updatedExercises.splice(exerciseIndex + 1, 0, newExercise);
   
   return {
-    ...session,
+    ...workout,
     exercises: updatedExercises,
   };
 }
 
-export function updateExerciseInSession(
-  session: WorkoutSession,
+export function updateExerciseInWorkout(
+  workout: Workout,
   exerciseId: string,
   updates: Partial<Exercise>
-): WorkoutSession {
+): Workout {
   return {
-    ...session,
-    exercises: session.exercises.map(exercise =>
+    ...workout,
+    exercises: workout.exercises.map(exercise =>
       exercise.id === exerciseId
         ? { ...exercise, ...updates }
         : exercise
@@ -105,14 +105,14 @@ export function updateExerciseInSession(
 }
 
 export function updateSetInExercise(
-  session: WorkoutSession,
+  workout: Workout,
   exerciseId: string,
   setId: string,
   updates: Partial<Set>
-): WorkoutSession {
+): Workout {
   return {
-    ...session,
-    exercises: session.exercises.map(exercise => {
+    ...workout,
+    exercises: workout.exercises.map(exercise => {
       if (exercise.id !== exerciseId) return exercise;
       
       return {
@@ -126,12 +126,12 @@ export function updateSetInExercise(
 }
 
 export function addSetToExercise(
-  session: WorkoutSession,
+  workout: Workout,
   exerciseId: string
-): WorkoutSession {
+): Workout {
   return {
-    ...session,
-    exercises: session.exercises.map(exercise => {
+    ...workout,
+    exercises: workout.exercises.map(exercise => {
       if (exercise.id !== exerciseId) return exercise;
       
       // Get the last set to copy its values
@@ -155,13 +155,13 @@ export function addSetToExercise(
 }
 
 export function deleteSetFromExercise(
-  session: WorkoutSession,
+  workout: Workout,
   exerciseId: string,
   setId: string
-): WorkoutSession {
+): Workout {
   return {
-    ...session,
-    exercises: session.exercises.map(exercise => {
+    ...workout,
+    exercises: workout.exercises.map(exercise => {
       if (exercise.id !== exerciseId) return exercise;
       
       // Don't allow deleting the last set
@@ -175,69 +175,69 @@ export function deleteSetFromExercise(
   };
 }
 
-export function deleteExerciseFromSession(
-  session: WorkoutSession,
+export function deleteExerciseFromWorkout(
+  workout: Workout,
   exerciseId: string
-): WorkoutSession {
+): Workout {
   // Don't allow deleting the last exercise
-  if (session.exercises.length <= 1) {
-    return session;
+  if (workout.exercises.length <= 1) {
+    return workout;
   }
   
   return {
-    ...session,
-    exercises: session.exercises.filter(exercise => exercise.id !== exerciseId),
+    ...workout,
+    exercises: workout.exercises.filter(exercise => exercise.id !== exerciseId),
   };
 }
 
-export function addSessionToProgram(
+export function addWorkoutToProgram(
   program: WorkoutProgram,
   weekId: string,
-  afterSessionId?: string
+  afterWorkoutId?: string
 ): WorkoutProgram {
   const week = program.weeks.find(w => w.id === weekId);
   if (!week) return program;
 
-  const sessionsInWeek = week.sessions.length;
-  const newSession = createEmptySession(sessionsInWeek + 1, weekId);
+  const workoutsInWeek = week.workouts.length;
+  const newWorkout = createEmptyWorkout(workoutsInWeek + 1, weekId);
   
   const updatedProgram = {
     ...program,
-    sessions: [...program.sessions, newSession]
+    workouts: [...program.workouts, newWorkout]
   };
   
-  if (!afterSessionId) {
+  if (!afterWorkoutId) {
     return {
       ...updatedProgram,
       weeks: program.weeks.map(w => 
         w.id === weekId 
-          ? { ...w, sessions: [...w.sessions, newSession.id] }
+          ? { ...w, workouts: [...w.workouts, newWorkout.id] }
           : w
       )
     };
   }
   
-  const sessionIndex = week.sessions.findIndex(id => id === afterSessionId);
+  const workoutIndex = week.workouts.findIndex(id => id === afterWorkoutId);
   
-  if (sessionIndex === -1) {
+  if (workoutIndex === -1) {
     return {
       ...updatedProgram,
       weeks: program.weeks.map(w => 
         w.id === weekId 
-          ? { ...w, sessions: [...w.sessions, newSession.id] }
+          ? { ...w, workouts: [...w.workouts, newWorkout.id] }
           : w
       )
     };
   }
   
-  const updatedSessions = [...week.sessions];
-  updatedSessions.splice(sessionIndex + 1, 0, newSession.id);
+  const updatedWorkouts = [...week.workouts];
+  updatedWorkouts.splice(workoutIndex + 1, 0, newWorkout.id);
   
   return {
     ...updatedProgram,
     weeks: program.weeks.map(w => 
       w.id === weekId 
-        ? { ...w, sessions: updatedSessions }
+        ? { ...w, workouts: updatedWorkouts }
         : w
     )
   };
@@ -249,13 +249,13 @@ export function addWeekToProgram(
 ): WorkoutProgram {
   const newWeekOrder = program.weeks.length + 1;
   const newWeek = createEmptyWeek(newWeekOrder);
-  const newSession = createEmptySession(1, newWeek.id);
+  const newWorkout = createEmptyWorkout(1, newWeek.id);
   
   if (!afterWeekId) {
     return {
       ...program,
       weeks: [...program.weeks, newWeek],
-      sessions: [...program.sessions, newSession]
+      workouts: [...program.workouts, newWorkout]
     };
   }
   
@@ -265,7 +265,7 @@ export function addWeekToProgram(
     return {
       ...program,
       weeks: [...program.weeks, newWeek],
-      sessions: [...program.sessions, newSession]
+      workouts: [...program.workouts, newWorkout]
     };
   }
   
@@ -281,19 +281,19 @@ export function addWeekToProgram(
   return {
     ...program,
     weeks: reorderedWeeks,
-    sessions: [...program.sessions, newSession]
+    workouts: [...program.workouts, newWorkout]
   };
 }
 
-export function updateSessionInProgram(
+export function updateWorkoutInProgram(
   program: WorkoutProgram,
-  sessionId: string,
-  updatedSession: WorkoutSession
+  workoutId: string,
+  updatedWorkout: Workout
 ): WorkoutProgram {
   return {
     ...program,
-    sessions: program.sessions.map(session =>
-      session.id === sessionId ? updatedSession : session
+    workouts: program.workouts.map(workout =>
+      workout.id === workoutId ? updatedWorkout : workout
     )
   };
 }
@@ -311,42 +311,42 @@ export function updateWeekInProgram(
   };
 }
 
-export function deleteSessionFromProgram(
+export function deleteWorkoutFromProgram(
   program: WorkoutProgram,
-  sessionId: string
+  workoutId: string
 ): WorkoutProgram {
-  const sessionToDelete = program.sessions.find(s => s.id === sessionId);
-  if (!sessionToDelete) return program;
+  const workoutToDelete = program.workouts.find(s => s.id === workoutId);
+  if (!workoutToDelete) return program;
   
-  const weekId = sessionToDelete.weekId;
+  const weekId = workoutToDelete.weekId;
   if (!weekId) return program;
   
   const week = program.weeks.find(w => w.id === weekId);
   if (!week) return program;
   
-  // Don't allow deleting the last session in a week
-  if (week.sessions.length <= 1) {
+  // Don't allow deleting the last workout in a week
+  if (week.workouts.length <= 1) {
     return program;
   }
   
-  // Filter out the session from the program
-  const updatedSessions = program.sessions.filter(
-    session => session.id !== sessionId
+  // Filter out the workout from the program
+  const updatedWorkouts = program.workouts.filter(
+    workout => workout.id !== workoutId
   );
   
-  // Filter out the session ID from the week
+  // Filter out the workout ID from the week
   const updatedWeeks = program.weeks.map(week => {
     if (week.id !== weekId) return week;
     
     return {
       ...week,
-      sessions: week.sessions.filter(id => id !== sessionId)
+      workouts: week.workouts.filter(id => id !== workoutId)
     };
   });
   
   return {
     ...program,
-    sessions: updatedSessions,
+    workouts: updatedWorkouts,
     weeks: updatedWeeks
   };
 }
@@ -371,24 +371,24 @@ export function deleteWeekFromProgram(
       order: index + 1 // Update order numbers
     }));
   
-  // Filter out the sessions that were in this week
-  const updatedSessions = program.sessions.filter(
-    session => session.weekId !== weekId
+  // Filter out the workouts that were in this week
+  const updatedWorkouts = program.workouts.filter(
+    workout => workout.weekId !== weekId
   );
   
   return {
     ...program,
-    sessions: updatedSessions,
+    workouts: updatedWorkouts,
     weeks: updatedWeeks
   };
 }
 
-export function cloneSession(session: WorkoutSession, newWeekId?: string): WorkoutSession {
-  // Create a new session with a new ID
-  const newSession: WorkoutSession = {
-    ...session,
+export function cloneWorkout(workout: Workout, newWeekId?: string): Workout {
+  // Create a new workout with a new ID
+  const newWorkout: Workout = {
+    ...workout,
     id: generateId(),
-    weekId: newWeekId || session.weekId,
+    weekId: newWeekId || workout.weekId,
     exercises: [],
     circuits: []
   };
@@ -398,7 +398,7 @@ export function cloneSession(session: WorkoutSession, newWeekId?: string): Worko
   const circuitIdMap = new Map<string, string>();
   
   // First pass: create new exercises without circuit relationships
-  newSession.exercises = session.exercises.map(exercise => {
+  newWorkout.exercises = workout.exercises.map(exercise => {
     const newId = generateId();
     exerciseIdMap.set(exercise.id, newId);
     
@@ -425,8 +425,8 @@ export function cloneSession(session: WorkoutSession, newWeekId?: string): Worko
   });
   
   // Second pass: Clone all circuits with new IDs
-  if (session.circuits && session.circuits.length > 0) {
-    newSession.circuits = session.circuits.map(circuit => {
+  if (workout.circuits && workout.circuits.length > 0) {
+    newWorkout.circuits = workout.circuits.map(circuit => {
       const newCircuitId = circuitIdMap.get(circuit.id) || generateId();
       
       return {
@@ -439,14 +439,14 @@ export function cloneSession(session: WorkoutSession, newWeekId?: string): Worko
     });
   }
   
-  return newSession;
+  return newWorkout;
 }
 
 export function copyProgramAsPreset(program: WorkoutProgram, presetName: string): WorkoutProgram {
   return {
     id: generateId(),
     name: presetName,
-    sessions: program.sessions,
+    workouts: program.workouts,
     weeks: program.weeks
   };
 }
@@ -460,21 +460,21 @@ export function saveCurrentWeekAsPreset(program: WorkoutProgram, weekId: string,
     id: generateId(),
     name: presetName,
     order: week.order,
-    sessions: [...week.sessions]
+    workouts: [...week.workouts]
   };
   
   return weekCopy;
 }
 
-export function saveCurrentSessionAsPreset(program: WorkoutProgram, sessionId: string, presetName: string): WorkoutSession {
-  const session = program.sessions.find(s => s.id === sessionId);
-  if (!session) throw new Error("Session not found");
+export function saveCurrentWorkoutAsPreset(program: WorkoutProgram, workoutId: string, presetName: string): Workout {
+  const workout = program.workouts.find(s => s.id === workoutId);
+  if (!workout) throw new Error("Workout not found");
   
-  // Create a deep copy of the session using the clone function
-  const sessionCopy = cloneSession(session);
-  sessionCopy.name = presetName;
+  // Create a deep copy of the workout using the clone function
+  const workoutCopy = cloneWorkout(workout);
+  workoutCopy.name = presetName;
   
-  return sessionCopy;
+  return workoutCopy;
 }
 
 export const sampleProgram: WorkoutProgram = {
@@ -485,19 +485,19 @@ export const sampleProgram: WorkoutProgram = {
       id: "week1",
       name: "Week 1 - Foundation",
       order: 1,
-      sessions: ["day1", "day2"]
+      workouts: ["day1", "day2"]
     },
     {
       id: "week2",
       name: "Week 2 - Progress",
       order: 2,
-      sessions: ["day3"]
+      workouts: ["day3"]
     }
   ],
-  sessions: [
+  workouts: [
     {
       id: "day1",
-      name: "Monday Session",
+      name: "Monday Workout",
       day: 1,
       weekId: "week1",
       exercises: [
@@ -775,7 +775,7 @@ export const sampleProgram: WorkoutProgram = {
     },
     {
       id: "day2",
-      name: "Wednesday Session",
+      name: "Wednesday Workout",
       day: 2,
       weekId: "week1",
       exercises: [
@@ -840,7 +840,7 @@ export const sampleProgram: WorkoutProgram = {
     },
     {
       id: "day3",
-      name: "Monday Session",
+      name: "Monday Workout",
       day: 1,
       weekId: "week2",
       exercises: [

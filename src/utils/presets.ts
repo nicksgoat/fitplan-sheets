@@ -1,21 +1,21 @@
 
-import { WorkoutProgram, WorkoutSession, WorkoutWeek } from "@/types/workout";
+import { WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 
 // Local storage keys
 const PROGRAM_LIBRARY_KEY = "fitplan-program-library";
 const WEEK_LIBRARY_KEY = "fitplan-week-library";
-const SESSION_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
+const WORKOUT_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
 
 // Preset keys - for backward compatibility
 const PROGRAM_PRESETS_KEY = "fitplan-program-presets";
 const WEEK_PRESETS_KEY = "fitplan-week-presets";
-const SESSION_PRESETS_KEY = "fitplan-session-presets";
+const WORKOUT_PRESETS_KEY = "fitplan-workout-presets";
 
 // Save to library
-export function addWorkoutToLibrary(session: WorkoutSession): void {
+export function addWorkoutToLibrary(workout: Workout): void {
   const library = getWorkoutLibrary();
-  library.push(session);
-  localStorage.setItem(SESSION_LIBRARY_KEY, JSON.stringify(library));
+  library.push(workout);
+  localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
 }
 
 export function addWeekToLibrary(week: WorkoutWeek): void {
@@ -31,8 +31,8 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
 }
 
 // Get from library
-export function getWorkoutLibrary(): WorkoutSession[] {
-  const data = localStorage.getItem(SESSION_LIBRARY_KEY);
+export function getWorkoutLibrary(): Workout[] {
+  const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
   return data ? JSON.parse(data) : [];
 }
 
@@ -47,9 +47,9 @@ export function getProgramLibrary(): WorkoutProgram[] {
 }
 
 // Remove from library
-export function removeWorkoutFromLibrary(sessionId: string): void {
-  const library = getWorkoutLibrary().filter(p => p.id !== sessionId);
-  localStorage.setItem(SESSION_LIBRARY_KEY, JSON.stringify(library));
+export function removeWorkoutFromLibrary(workoutId: string): void {
+  const library = getWorkoutLibrary().filter(p => p.id !== workoutId);
+  localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
 }
 
 export function removeWeekFromLibrary(weekId: string): void {
@@ -63,23 +63,23 @@ export function removeProgramFromLibrary(programId: string): void {
 }
 
 // Compatibility functions - maintain old names for backward compatibility
-export function getSessionLibrary(): WorkoutSession[] {
+export function getSessionLibrary(): Workout[] {
   return getWorkoutLibrary();
 }
 
-export function addSessionToLibrary(session: WorkoutSession): void {
-  addWorkoutToLibrary(session);
+export function addSessionToLibrary(workout: Workout): void {
+  addWorkoutToLibrary(workout);
 }
 
-export function removeSessionFromLibrary(sessionId: string): void {
-  removeWorkoutFromLibrary(sessionId);
+export function removeSessionFromLibrary(workoutId: string): void {
+  removeWorkoutFromLibrary(workoutId);
 }
 
 // Preset system functions - for compatibility with existing code
-export function saveSessionPreset(session: WorkoutSession): void {
-  const presets = getSessionPresets();
-  presets.push(session);
-  localStorage.setItem(SESSION_PRESETS_KEY, JSON.stringify(presets));
+export function saveWorkoutPreset(workout: Workout): void {
+  const presets = getWorkoutPresets();
+  presets.push(workout);
+  localStorage.setItem(WORKOUT_PRESETS_KEY, JSON.stringify(presets));
 }
 
 export function saveWeekPreset(week: WorkoutWeek): void {
@@ -94,8 +94,8 @@ export function saveProgramPreset(program: WorkoutProgram): void {
   localStorage.setItem(PROGRAM_PRESETS_KEY, JSON.stringify(program));
 }
 
-export function getSessionPresets(): WorkoutSession[] {
-  const data = localStorage.getItem(SESSION_PRESETS_KEY);
+export function getWorkoutPresets(): Workout[] {
+  const data = localStorage.getItem(WORKOUT_PRESETS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
@@ -109,9 +109,9 @@ export function getProgramPresets(): WorkoutProgram[] {
   return data ? JSON.parse(data) : [];
 }
 
-export function deleteSessionPreset(sessionId: string): void {
-  const presets = getSessionPresets().filter(p => p.id !== sessionId);
-  localStorage.setItem(SESSION_PRESETS_KEY, JSON.stringify(presets));
+export function deleteWorkoutPreset(workoutId: string): void {
+  const presets = getWorkoutPresets().filter(p => p.id !== workoutId);
+  localStorage.setItem(WORKOUT_PRESETS_KEY, JSON.stringify(presets));
 }
 
 export function deleteWeekPreset(weekId: string): void {
@@ -122,4 +122,17 @@ export function deleteWeekPreset(weekId: string): void {
 export function deleteProgramPreset(programId: string): void {
   const presets = getProgramPresets().filter(p => p.id !== programId);
   localStorage.setItem(PROGRAM_PRESETS_KEY, JSON.stringify(presets));
+}
+
+// Additional backwards compatibility
+export function saveSessionPreset(workout: Workout): void {
+  saveWorkoutPreset(workout);
+}
+
+export function getSessionPresets(): Workout[] {
+  return getWorkoutPresets();
+}
+
+export function deleteSessionPreset(workoutId: string): void {
+  deleteWorkoutPreset(workoutId);
 }

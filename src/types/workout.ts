@@ -34,26 +34,26 @@ export interface Circuit {
   restBetweenRounds?: string;
 }
 
-export interface WorkoutSession {
+export interface Workout {
   id: string;
   name: string;
   day: number;
   exercises: Exercise[];
   circuits: Circuit[];
-  weekId?: string; // New field to associate session with a week
+  weekId?: string; // New field to associate workout with a week
 }
 
 export interface WorkoutWeek {
   id: string;
   name: string;
   order: number;
-  sessions: string[]; // Array of session IDs
+  workouts: string[]; // Array of workout IDs
 }
 
 export interface WorkoutProgram {
   id: string;
   name: string;
-  sessions: WorkoutSession[];
+  workouts: Workout[];
   weeks: WorkoutWeek[]; // New weeks array
 }
 

@@ -1,109 +1,126 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, Workout, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
   createEmptyProgram, 
-  addExerciseToSession, 
-  updateExerciseInSession,
+  addExerciseToWorkout, 
+  updateExerciseInWorkout,
   updateSetInExercise,
   addSetToExercise,
   deleteSetFromExercise,
-  deleteExerciseFromSession,
-  addSessionToProgram,
+  deleteExerciseFromWorkout,
+  addWorkoutToProgram,
   addWeekToProgram,
-  updateSessionInProgram,
+  updateWorkoutInProgram,
   updateWeekInProgram,
-  deleteSessionFromProgram,
+  deleteWorkoutFromProgram,
   deleteWeekFromProgram,
   sampleProgram,
-  cloneSession,
-  saveCurrentSessionAsPreset,
+  cloneWorkout,
+  saveCurrentWorkoutAsPreset,
   saveCurrentWeekAsPreset,
   copyProgramAsPreset,
   generateId
 } from "@/utils/workout";
 import {
-  addSessionToLibrary,
+  addWorkoutToLibrary,
   addWeekToLibrary,
   addProgramToLibrary,
-  getSessionLibrary,
+  getWorkoutLibrary,
   getWeekLibrary,
   getProgramLibrary,
-  removeSessionFromLibrary,
+  removeWorkoutFromLibrary,
   removeWeekFromLibrary,
   removeProgramFromLibrary,
-  saveSessionPreset,
+  saveWorkoutPreset,
   saveWeekPreset,
   saveProgramPreset,
-  getSessionPresets,
+  getWorkoutPresets,
   getWeekPresets,
   getProgramPresets,
-  deleteSessionPreset,
+  deleteWorkoutPreset,
   deleteWeekPreset,
-  deleteProgramPreset
+  deleteProgramPreset,
+  // Compatibility functions
+  getSessionLibrary,
+  addSessionToLibrary,
+  removeSessionFromLibrary,
+  saveSessionPreset,
+  getSessionPresets,
+  deleteSessionPreset
 } from "@/utils/presets";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 interface WorkoutContextType {
   program: WorkoutProgram;
-  activeSessionId: string | null;
+  activeWorkoutId: string | null;
   activeWeekId: string | null;
-  setActiveSessionId: (id: string | null) => void;
+  setActiveWorkoutId: (id: string | null) => void;
   setActiveWeekId: (id: string | null) => void;
-  updateSessionName: (sessionId: string, name: string) => void;
+  updateWorkoutName: (workoutId: string, name: string) => void;
   updateWeekName: (weekId: string, name: string) => void;
-  updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
-  updateSet: (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
-  addExercise: (sessionId: string, afterExerciseId?: string) => void;
-  addSet: (sessionId: string, exerciseId: string) => void;
-  deleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
-  deleteExercise: (sessionId: string, exerciseId: string) => void;
-  addSession: (weekId: string, afterSessionId?: string) => void;
+  updateExercise: (workoutId: string, exerciseId: string, updates: Partial<Exercise>) => void;
+  updateSet: (workoutId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
+  addExercise: (workoutId: string, afterExerciseId?: string) => void;
+  addSet: (workoutId: string, exerciseId: string) => void;
+  deleteSet: (workoutId: string, exerciseId: string, setId: string) => void;
+  deleteExercise: (workoutId: string, exerciseId: string) => void;
+  addWorkout: (weekId: string, afterWorkoutId?: string) => void;
   addWeek: (afterWeekId?: string) => void;
-  deleteSession: (sessionId: string) => void;
+  deleteWorkout: (workoutId: string) => void;
   deleteWeek: (weekId: string) => void;
   resetProgram: () => void;
   loadSampleProgram: () => void;
-  createCircuit: (sessionId: string) => void;
-  createSuperset: (sessionId: string) => void;
-  createEMOM: (sessionId: string) => void;
-  createAMRAP: (sessionId: string) => void;
-  createTabata: (sessionId: string) => void;
-  updateCircuit: (sessionId: string, circuitId: string, updates: Partial<Circuit>) => void;
-  deleteCircuit: (sessionId: string, circuitId: string) => void;
-  addExerciseToCircuit: (sessionId: string, circuitId: string, exerciseId: string) => void;
-  removeExerciseFromCircuit: (sessionId: string, circuitId: string, exerciseId: string) => void;
-  saveSessionAsPreset: (sessionId: string, name: string) => void;
+  createCircuit: (workoutId: string) => void;
+  createSuperset: (workoutId: string) => void;
+  createEMOM: (workoutId: string) => void;
+  createAMRAP: (workoutId: string) => void;
+  createTabata: (workoutId: string) => void;
+  updateCircuit: (workoutId: string, circuitId: string, updates: Partial<Circuit>) => void;
+  deleteCircuit: (workoutId: string, circuitId: string) => void;
+  addExerciseToCircuit: (workoutId: string, circuitId: string, exerciseId: string) => void;
+  removeExerciseFromCircuit: (workoutId: string, circuitId: string, exerciseId: string) => void;
+  saveWorkoutAsPreset: (workoutId: string, name: string) => void;
   saveWeekAsPreset: (weekId: string, name: string) => void;
   saveProgramAsPreset: (name: string) => void;
-  loadSessionPreset: (preset: WorkoutSession, weekId: string) => void;
+  loadWorkoutPreset: (preset: Workout, weekId: string) => void;
   loadWeekPreset: (preset: WorkoutWeek) => void;
   loadProgramPreset: (preset: WorkoutProgram) => void;
-  getSessionPresets: () => WorkoutSession[];
+  getWorkoutPresets: () => Workout[];
   getWeekPresets: () => WorkoutWeek[];
   getProgramPresets: () => WorkoutProgram[];
-  deleteSessionPreset: (presetId: string) => void;
+  deleteWorkoutPreset: (presetId: string) => void;
   deleteWeekPreset: (presetId: string) => void;
   deleteProgramPreset: (presetId: string) => void;
-  saveSessionToLibrary: (sessionId: string, name: string) => void;
+  saveWorkoutToLibrary: (workoutId: string, name: string) => void;
   saveWeekToLibrary: (weekId: string, name: string) => void;
   saveProgramToLibrary: (name: string) => void;
-  loadSessionFromLibrary: (session: WorkoutSession, weekId: string) => void;
+  loadWorkoutFromLibrary: (workout: Workout, weekId: string) => void;
   loadWeekFromLibrary: (week: WorkoutWeek) => void;
   loadProgramFromLibrary: (program: WorkoutProgram) => void;
-  getSessionLibrary: () => WorkoutSession[];
+  getWorkoutLibrary: () => Workout[];
   getWeekLibrary: () => WorkoutWeek[];
   getProgramLibrary: () => WorkoutProgram[];
-  removeSessionFromLibrary: (sessionId: string) => void;
+  removeWorkoutFromLibrary: (workoutId: string) => void;
   removeWeekFromLibrary: (weekId: string) => void;
   removeProgramFromLibrary: (programId: string) => void;
+  // Compatibility functions
+  saveSessionAsPreset: (sessionId: string, name: string) => void;
+  loadSessionPreset: (preset: Workout, weekId: string) => void;
+  getSessionPresets: () => Workout[];
+  deleteSessionPreset: (presetId: string) => void;
+  saveSessionToLibrary: (sessionId: string, name: string) => void;
+  loadSessionFromLibrary: (session: Workout, weekId: string) => void;
+  getSessionLibrary: () => Workout[];
+  removeSessionFromLibrary: (sessionId: string) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [program, setProgram] = useState<WorkoutProgram>(createEmptyProgram());
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeWorkoutId, setActiveWorkoutId] = useState<string | null>(null);
   const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,23 +128,23 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       setActiveWeekId(program.weeks[0].id);
     }
     
-    if (activeWeekId && (!activeSessionId || !program.sessions.some(s => s.id === activeSessionId))) {
+    if (activeWeekId && (!activeWorkoutId || !program.workouts.some(s => s.id === activeWorkoutId))) {
       const currentWeek = program.weeks.find(w => w.id === activeWeekId);
-      if (currentWeek && currentWeek.sessions.length > 0) {
-        const firstSessionId = currentWeek.sessions[0];
-        if (program.sessions.some(s => s.id === firstSessionId)) {
-          setActiveSessionId(firstSessionId);
+      if (currentWeek && currentWeek.workouts.length > 0) {
+        const firstWorkoutId = currentWeek.workouts[0];
+        if (program.workouts.some(s => s.id === firstWorkoutId)) {
+          setActiveWorkoutId(firstWorkoutId);
         }
       }
     }
-  }, [program, activeWeekId, activeSessionId]);
+  }, [program, activeWeekId, activeWorkoutId]);
 
-  const updateSessionName = (sessionId: string, name: string) => {
+  const updateWorkoutName = (workoutId: string, name: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) =>
-        session.id === sessionId ? { ...session, name } : session
+      const updatedWorkouts = prevProgram.workouts.map((workout) =>
+        workout.id === workoutId ? { ...workout, name } : workout
       );
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
 
@@ -140,86 +157,86 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const updateExercise = (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => {
+  const updateExercise = (workoutId: string, exerciseId: string, updates: Partial<Exercise>) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return updateExerciseInSession(session, exerciseId, updates);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return updateExerciseInWorkout(workout, exerciseId, updates);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
 
-  const updateSet = (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => {
+  const updateSet = (workoutId: string, exerciseId: string, setId: string, updates: Partial<Set>) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return updateSetInExercise(session, exerciseId, setId, updates);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return updateSetInExercise(workout, exerciseId, setId, updates);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
 
-  const addExercise = (sessionId: string, afterExerciseId?: string) => {
+  const addExercise = (workoutId: string, afterExerciseId?: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return addExerciseToSession(session, afterExerciseId);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return addExerciseToWorkout(workout, afterExerciseId);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     toast.success("Exercise added");
   };
 
-  const addSet = (sessionId: string, exerciseId: string) => {
+  const addSet = (workoutId: string, exerciseId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return addSetToExercise(session, exerciseId);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return addSetToExercise(workout, exerciseId);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     toast.success("Set added");
   };
 
-  const deleteSet = (sessionId: string, exerciseId: string, setId: string) => {
+  const deleteSet = (workoutId: string, exerciseId: string, setId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return deleteSetFromExercise(session, exerciseId, setId);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return deleteSetFromExercise(workout, exerciseId, setId);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     toast.success("Set deleted");
   };
 
-  const deleteExercise = (sessionId: string, exerciseId: string) => {
+  const deleteExercise = (workoutId: string, exerciseId: string) => {
     setProgram((prevProgram) => {
-      const session = prevProgram.sessions.find(s => s.id === sessionId);
-      if (!session || session.exercises.length <= 1) {
+      const workout = prevProgram.workouts.find(s => s.id === workoutId);
+      if (!workout || workout.exercises.length <= 1) {
         toast.error("Cannot delete the last exercise");
         return prevProgram;
       }
       
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return deleteExerciseFromSession(session, exerciseId);
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        return deleteExerciseFromWorkout(workout, exerciseId);
       });
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     toast.success("Exercise deleted");
   };
 
-  const addSession = (weekId: string, afterSessionId?: string) => {
+  const addWorkout = (weekId: string, afterWorkoutId?: string) => {
     setProgram((prevProgram) => {
-      const updatedProgram = addSessionToProgram(prevProgram, weekId, afterSessionId);
+      const updatedProgram = addWorkoutToProgram(prevProgram, weekId, afterWorkoutId);
       
-      const newSession = updatedProgram.sessions[updatedProgram.sessions.length - 1];
-      setActiveSessionId(newSession.id);
+      const newWorkout = updatedProgram.workouts[updatedProgram.workouts.length - 1];
+      setActiveWorkoutId(newWorkout.id);
       
       return updatedProgram;
     });
-    toast.success("Session added");
+    toast.success("Workout added");
   };
 
   const addWeek = (afterWeekId?: string) => {
@@ -227,40 +244,40 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const updatedProgram = addWeekToProgram(prevProgram, afterWeekId);
       
       const newWeek = updatedProgram.weeks[updatedProgram.weeks.length - 1];
-      const newSessionId = newWeek.sessions[0];
+      const newWorkoutId = newWeek.workouts[0];
       
       setActiveWeekId(newWeek.id);
-      setActiveSessionId(newSessionId);
+      setActiveWorkoutId(newWorkoutId);
       
       return updatedProgram;
     });
     toast.success("Week added");
   };
 
-  const deleteSession = (sessionId: string) => {
+  const deleteWorkout = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const session = prevProgram.sessions.find(s => s.id === sessionId);
-      if (!session || !session.weekId) return prevProgram;
+      const workout = prevProgram.workouts.find(s => s.id === workoutId);
+      if (!workout || !workout.weekId) return prevProgram;
       
-      const week = prevProgram.weeks.find(w => w.id === session.weekId);
-      if (!week || week.sessions.length <= 1) {
-        toast.error("Cannot delete the last session in a week");
+      const week = prevProgram.weeks.find(w => w.id === workout.weekId);
+      if (!week || week.workouts.length <= 1) {
+        toast.error("Cannot delete the last workout in a week");
         return prevProgram;
       }
       
-      const updatedProgram = deleteSessionFromProgram(prevProgram, sessionId);
+      const updatedProgram = deleteWorkoutFromProgram(prevProgram, workoutId);
       
-      if (sessionId === activeSessionId) {
-        const weekSessions = updatedProgram.weeks
-          .find(w => w.id === session.weekId)
-          ?.sessions || [];
+      if (workoutId === activeWorkoutId) {
+        const weekWorkouts = updatedProgram.weeks
+          .find(w => w.id === workout.weekId)
+          ?.workouts || [];
         
-        setActiveSessionId(weekSessions[0] || null);
+        setActiveWorkoutId(weekWorkouts[0] || null);
       }
       
       return updatedProgram;
     });
-    toast.success("Session deleted");
+    toast.success("Workout deleted");
   };
 
   const deleteWeek = (weekId: string) => {
@@ -275,7 +292,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       if (weekId === activeWeekId) {
         const firstWeek = updatedProgram.weeks[0];
         setActiveWeekId(firstWeek?.id || null);
-        setActiveSessionId(firstWeek?.sessions[0] || null);
+        setActiveWorkoutId(firstWeek?.workouts[0] || null);
       }
       
       return updatedProgram;
@@ -287,21 +304,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     const emptyProgram = createEmptyProgram();
     setProgram(emptyProgram);
     setActiveWeekId(emptyProgram.weeks[0]?.id || null);
-    setActiveSessionId(emptyProgram.sessions[0]?.id || null);
+    setActiveWorkoutId(emptyProgram.workouts[0]?.id || null);
     toast.success("Program reset");
   };
 
   const loadSampleProgram = () => {
     setProgram(sampleProgram);
     setActiveWeekId(sampleProgram.weeks[0]?.id || null);
-    setActiveSessionId(sampleProgram.sessions[0]?.id || null);
+    setActiveWorkoutId(sampleProgram.workouts[0]?.id || null);
     toast.success("Sample program loaded");
   };
 
-  const createCircuit = (sessionId: string) => {
+  const createCircuit = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
         const circuitId = uuidv4();
         const circuit: Circuit = {
@@ -349,22 +366,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         circuit.exercises = [exercise1Id, exercise2Id];
         
         return {
-          ...session,
-          circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, circuitHeader, exercise1, exercise2]
+          ...workout,
+          circuits: [...(workout.circuits || []), circuit],
+          exercises: [...workout.exercises, circuitHeader, exercise1, exercise2]
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("Circuit created");
   };
   
-  const createSuperset = (sessionId: string) => {
+  const createSuperset = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
         const circuitId = uuidv4();
         const circuit: Circuit = {
@@ -412,22 +429,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         circuit.exercises = [exercise1Id, exercise2Id];
         
         return {
-          ...session,
-          circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, circuitHeader, exercise1, exercise2]
+          ...workout,
+          circuits: [...(workout.circuits || []), circuit],
+          exercises: [...workout.exercises, circuitHeader, exercise1, exercise2]
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("Superset created");
   };
   
-  const createEMOM = (sessionId: string) => {
+  const createEMOM = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
         const circuitId = uuidv4();
         const circuit: Circuit = {
@@ -464,22 +481,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         circuit.exercises = [exerciseId];
         
         return {
-          ...session,
-          circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, circuitHeader, exercise]
+          ...workout,
+          circuits: [...(workout.circuits || []), circuit],
+          exercises: [...workout.exercises, circuitHeader, exercise]
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("EMOM created");
   };
   
-  const createAMRAP = (sessionId: string) => {
+  const createAMRAP = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
         const circuitId = uuidv4();
         const circuit: Circuit = {
@@ -538,22 +555,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         circuit.exercises = [exercise1Id, exercise2Id, exercise3Id];
         
         return {
-          ...session,
-          circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, circuitHeader, exercise1, exercise2, exercise3]
+          ...workout,
+          circuits: [...(workout.circuits || []), circuit],
+          exercises: [...workout.exercises, circuitHeader, exercise1, exercise2, exercise3]
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("AMRAP created");
   };
   
-  const createTabata = (sessionId: string) => {
+  const createTabata = (workoutId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
         const circuitId = uuidv4();
         const circuit: Circuit = {
@@ -590,45 +607,45 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         circuit.exercises = [exerciseId];
         
         return {
-          ...session,
-          circuits: [...(session.circuits || []), circuit],
-          exercises: [...session.exercises, circuitHeader, exercise]
+          ...workout,
+          circuits: [...(workout.circuits || []), circuit],
+          exercises: [...workout.exercises, circuitHeader, exercise]
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("Tabata created");
   };
   
-  const updateCircuit = (sessionId: string, circuitId: string, updates: Partial<Circuit>) => {
+  const updateCircuit = (workoutId: string, circuitId: string, updates: Partial<Circuit>) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
-        const updatedCircuits = (session.circuits || []).map((circuit) => {
+        const updatedCircuits = (workout.circuits || []).map((circuit) => {
           if (circuit.id !== circuitId) return circuit;
           return { ...circuit, ...updates };
         });
         
-        return { ...session, circuits: updatedCircuits };
+        return { ...workout, circuits: updatedCircuits };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
   
-  const deleteCircuit = (sessionId: string, circuitId: string) => {
+  const deleteCircuit = (workoutId: string, circuitId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
-        const updatedCircuits = (session.circuits || []).filter(
+        const updatedCircuits = (workout.circuits || []).filter(
           (circuit) => circuit.id !== circuitId
         );
         
-        const updatedExercises = session.exercises.map((exercise) => {
+        const updatedExercises = workout.exercises.map((exercise) => {
           if (exercise.circuitId === circuitId) {
             const { isInCircuit, circuitId, circuitOrder, ...rest } = exercise;
             return rest;
@@ -637,27 +654,27 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         });
         
         return { 
-          ...session, 
+          ...workout, 
           circuits: updatedCircuits,
           exercises: updatedExercises
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
     
     toast.success("Circuit deleted");
   };
   
-  const addExerciseToCircuit = (sessionId: string, circuitId: string, exerciseId: string) => {
+  const addExerciseToCircuit = (workoutId: string, circuitId: string, exerciseId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
-        const circuit = (session.circuits || []).find((c) => c.id === circuitId);
-        if (!circuit) return session;
+        const circuit = (workout.circuits || []).find((c) => c.id === circuitId);
+        if (!circuit) return workout;
         
-        const updatedCircuits = (session.circuits || []).map((c) => {
+        const updatedCircuits = (workout.circuits || []).map((c) => {
           if (c.id !== circuitId) return c;
           return { 
             ...c, 
@@ -665,7 +682,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           };
         });
         
-        const updatedExercises = session.exercises.map((exercise) => {
+        const updatedExercises = workout.exercises.map((exercise) => {
           if (exercise.id !== exerciseId) return exercise;
           return { 
             ...exercise, 
@@ -676,22 +693,22 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         });
         
         return { 
-          ...session, 
+          ...workout, 
           circuits: updatedCircuits,
           exercises: updatedExercises
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
   
-  const removeExerciseFromCircuit = (sessionId: string, circuitId: string, exerciseId: string) => {
+  const removeExerciseFromCircuit = (workoutId: string, circuitId: string, exerciseId: string) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
+      const updatedWorkouts = prevProgram.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
         
-        const updatedCircuits = (session.circuits || []).map((circuit) => {
+        const updatedCircuits = (workout.circuits || []).map((circuit) => {
           if (circuit.id !== circuitId) return circuit;
           return { 
             ...circuit, 
@@ -699,7 +716,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           };
         });
         
-        const updatedExercises = session.exercises.map((exercise) => {
+        const updatedExercises = workout.exercises.map((exercise) => {
           if (exercise.id !== exerciseId) return exercise;
           
           const { isInCircuit, circuitId, circuitOrder, ...restExercise } = exercise;
@@ -707,20 +724,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         });
         
         return { 
-          ...session, 
+          ...workout, 
           circuits: updatedCircuits,
           exercises: updatedExercises
         };
       });
       
-      return { ...prevProgram, sessions: updatedSessions };
+      return { ...prevProgram, workouts: updatedWorkouts };
     });
   };
 
-  const saveSessionAsPreset = (sessionId: string, name: string) => {
-    const sessionPreset = saveCurrentSessionAsPreset(program, sessionId, name);
-    saveSessionPreset(sessionPreset);
-    toast.success("Session saved as preset");
+  // Main preset functions
+  const saveWorkoutAsPreset = (workoutId: string, name: string) => {
+    const workoutPreset = saveCurrentWorkoutAsPreset(program, workoutId, name);
+    saveWorkoutPreset(workoutPreset);
+    toast.success("Workout saved as preset");
   };
 
   const saveWeekAsPreset = (weekId: string, name: string) => {
@@ -735,15 +753,15 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success("Program saved as preset");
   };
 
-  const loadSessionPreset = (preset: WorkoutSession, weekId: string) => {
+  const loadWorkoutPreset = (preset: Workout, weekId: string) => {
     setProgram((prevProgram) => {
-      const newSession = cloneSession(preset, weekId);
+      const newWorkout = cloneWorkout(preset, weekId);
       
       const updatedWeeks = prevProgram.weeks.map(week => {
         if (week.id === weekId) {
           return {
             ...week,
-            sessions: [...week.sessions, newSession.id]
+            workouts: [...week.workouts, newWorkout.id]
           };
         }
         return week;
@@ -751,16 +769,16 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       
       const updatedProgram = {
         ...prevProgram,
-        sessions: [...prevProgram.sessions, newSession],
+        workouts: [...prevProgram.workouts, newWorkout],
         weeks: updatedWeeks
       };
       
-      setActiveSessionId(newSession.id);
+      setActiveWorkoutId(newWorkout.id);
       
       return updatedProgram;
     });
     
-    toast.success(`Loaded session preset: ${preset.name}`);
+    toast.success(`Loaded workout preset: ${preset.name}`);
   };
 
   const loadWeekPreset = (preset: WorkoutWeek) => {
@@ -770,32 +788,32 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         ...preset,
         id: newWeekId,
         order: prevProgram.weeks.length + 1,
-        sessions: []
+        workouts: []
       };
       
-      const sessionsToAdd: WorkoutSession[] = [];
-      const sessionIds: string[] = [];
+      const workoutsToAdd: Workout[] = [];
+      const workoutIds: string[] = [];
       
-      preset.sessions.forEach(originalSessionId => {
-        const originalSession = getSessionPresets().find(s => s.id === originalSessionId);
-        if (originalSession) {
-          const newSession = cloneSession(originalSession, newWeekId);
-          sessionsToAdd.push(newSession);
-          sessionIds.push(newSession.id);
+      preset.workouts.forEach(originalWorkoutId => {
+        const originalWorkout = getWorkoutPresets().find(s => s.id === originalWorkoutId);
+        if (originalWorkout) {
+          const newWorkout = cloneWorkout(originalWorkout, newWeekId);
+          workoutsToAdd.push(newWorkout);
+          workoutIds.push(newWorkout.id);
         }
       });
       
-      newWeek.sessions = sessionIds;
+      newWeek.workouts = workoutIds;
       
       const updatedProgram = {
         ...prevProgram,
         weeks: [...prevProgram.weeks, newWeek],
-        sessions: [...prevProgram.sessions, ...sessionsToAdd]
+        workouts: [...prevProgram.workouts, ...workoutsToAdd]
       };
       
       setActiveWeekId(newWeekId);
-      if (sessionIds.length > 0) {
-        setActiveSessionId(sessionIds[0]);
+      if (workoutIds.length > 0) {
+        setActiveWorkoutId(workoutIds[0]);
       }
       
       return updatedProgram;
@@ -807,13 +825,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const loadProgramPreset = (preset: WorkoutProgram) => {
     setProgram(preset);
     setActiveWeekId(preset.weeks[0]?.id || null);
-    setActiveSessionId(preset.sessions[0]?.id || null);
+    setActiveWorkoutId(preset.workouts[0]?.id || null);
     toast.success(`Loaded program preset: ${preset.name}`);
   };
 
-  const saveSessionToLibrary = (sessionId: string, name: string) => {
-    const sessionPreset = saveCurrentSessionAsPreset(program, sessionId, name);
-    addSessionToLibrary(sessionPreset);
+  // Library functions
+  const saveWorkoutToLibrary = (workoutId: string, name: string) => {
+    const workoutPreset = saveCurrentWorkoutAsPreset(program, workoutId, name);
+    addWorkoutToLibrary(workoutPreset);
     toast.success("Workout playlist added to library");
   };
 
@@ -829,15 +848,15 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success("Training album added to library");
   };
 
-  const loadSessionFromLibrary = (preset: WorkoutSession, weekId: string) => {
+  const loadWorkoutFromLibrary = (preset: Workout, weekId: string) => {
     setProgram((prevProgram) => {
-      const newSession = cloneSession(preset, weekId);
+      const newWorkout = cloneWorkout(preset, weekId);
       
       const updatedWeeks = prevProgram.weeks.map(week => {
         if (week.id === weekId) {
           return {
             ...week,
-            sessions: [...week.sessions, newSession.id]
+            workouts: [...week.workouts, newWorkout.id]
           };
         }
         return week;
@@ -845,11 +864,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       
       const updatedProgram = {
         ...prevProgram,
-        sessions: [...prevProgram.sessions, newSession],
+        workouts: [...prevProgram.workouts, newWorkout],
         weeks: updatedWeeks
       };
       
-      setActiveSessionId(newSession.id);
+      setActiveWorkoutId(newWorkout.id);
       
       return updatedProgram;
     });
@@ -864,32 +883,32 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         ...preset,
         id: newWeekId,
         order: prevProgram.weeks.length + 1,
-        sessions: []
+        workouts: []
       };
       
-      const sessionsToAdd: WorkoutSession[] = [];
-      const sessionIds: string[] = [];
+      const workoutsToAdd: Workout[] = [];
+      const workoutIds: string[] = [];
       
-      preset.sessions.forEach(originalSessionId => {
-        const originalSession = getSessionLibrary().find(s => s.id === originalSessionId);
-        if (originalSession) {
-          const newSession = cloneSession(originalSession, newWeekId);
-          sessionsToAdd.push(newSession);
-          sessionIds.push(newSession.id);
+      preset.workouts.forEach(originalWorkoutId => {
+        const originalWorkout = getWorkoutLibrary().find(s => s.id === originalWorkoutId);
+        if (originalWorkout) {
+          const newWorkout = cloneWorkout(originalWorkout, newWeekId);
+          workoutsToAdd.push(newWorkout);
+          workoutIds.push(newWorkout.id);
         }
       });
       
-      newWeek.sessions = sessionIds;
+      newWeek.workouts = workoutIds;
       
       const updatedProgram = {
         ...prevProgram,
         weeks: [...prevProgram.weeks, newWeek],
-        sessions: [...prevProgram.sessions, ...sessionsToAdd]
+        workouts: [...prevProgram.workouts, ...workoutsToAdd]
       };
       
       setActiveWeekId(newWeekId);
-      if (sessionIds.length > 0) {
-        setActiveSessionId(sessionIds[0]);
+      if (workoutIds.length > 0) {
+        setActiveWorkoutId(workoutIds[0]);
       }
       
       return updatedProgram;
@@ -901,19 +920,36 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const loadProgramFromLibrary = (preset: WorkoutProgram) => {
     setProgram(preset);
     setActiveWeekId(preset.weeks[0]?.id || null);
-    setActiveSessionId(preset.sessions[0]?.id || null);
+    setActiveWorkoutId(preset.workouts[0]?.id || null);
     toast.success(`Loaded training album: ${preset.name}`);
+  };
+
+  // Compatibility functions
+  const saveSessionAsPreset = (sessionId: string, name: string) => {
+    saveWorkoutAsPreset(sessionId, name);
+  };
+
+  const loadSessionPreset = (preset: Workout, weekId: string) => {
+    loadWorkoutPreset(preset, weekId);
+  };
+
+  const saveSessionToLibrary = (sessionId: string, name: string) => {
+    saveWorkoutToLibrary(sessionId, name);
+  };
+
+  const loadSessionFromLibrary = (session: Workout, weekId: string) => {
+    loadWorkoutFromLibrary(session, weekId);
   };
 
   return (
     <WorkoutContext.Provider
       value={{
         program,
-        activeSessionId,
+        activeWorkoutId,
         activeWeekId,
-        setActiveSessionId,
+        setActiveWorkoutId,
         setActiveWeekId,
-        updateSessionName,
+        updateWorkoutName,
         updateWeekName,
         updateExercise,
         updateSet,
@@ -921,9 +957,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         addSet,
         deleteSet,
         deleteExercise,
-        addSession,
+        addWorkout,
         addWeek,
-        deleteSession,
+        deleteWorkout,
         deleteWeek,
         resetProgram,
         loadSampleProgram,
@@ -936,30 +972,39 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         deleteCircuit,
         addExerciseToCircuit,
         removeExerciseFromCircuit,
-        saveSessionAsPreset,
+        saveWorkoutAsPreset,
         saveWeekAsPreset,
         saveProgramAsPreset,
-        loadSessionPreset,
+        loadWorkoutPreset,
         loadWeekPreset,
         loadProgramPreset,
-        getSessionPresets,
+        getWorkoutPresets,
         getWeekPresets,
         getProgramPresets,
-        deleteSessionPreset,
+        deleteWorkoutPreset,
         deleteWeekPreset,
         deleteProgramPreset,
-        saveSessionToLibrary,
+        saveWorkoutToLibrary,
         saveWeekToLibrary,
         saveProgramToLibrary,
-        loadSessionFromLibrary,
+        loadWorkoutFromLibrary,
         loadWeekFromLibrary,
         loadProgramFromLibrary,
-        getSessionLibrary,
+        getWorkoutLibrary,
         getWeekLibrary,
         getProgramLibrary,
-        removeSessionFromLibrary,
+        removeWorkoutFromLibrary,
         removeWeekFromLibrary,
         removeProgramFromLibrary,
+        // Compatibility functions
+        saveSessionAsPreset,
+        loadSessionPreset,
+        getSessionPresets,
+        deleteSessionPreset,
+        saveSessionToLibrary,
+        loadSessionFromLibrary,
+        getSessionLibrary,
+        removeSessionFromLibrary,
       }}
     >
       {children}
