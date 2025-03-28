@@ -7,7 +7,6 @@ import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
-import MainLayout from "@/components/layout/MainLayout";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -50,14 +49,12 @@ const WorkoutApp: React.FC = () => {
 
 const Sheets: React.FC = () => {
   return (
-    <MainLayout>
-      <WorkoutProvider>
-        <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
-          <WorkoutHeader />
-          <WorkoutApp />
-        </div>
-      </WorkoutProvider>
-    </MainLayout>
+    <WorkoutProvider>
+      <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
+        <WorkoutHeader />
+        <WorkoutApp />
+      </div>
+    </WorkoutProvider>
   );
 };
 
