@@ -18,31 +18,43 @@ import {
 } from '@/types/workout';
 import { getLocalStorage, setLocalStorage } from '@/utils/localStorage';
 import { 
-  setMaxWeight, 
+  setMaxWeight as setMaxWeightUtil, 
   weightToPercentage, 
   percentageToWeight 
 } from "@/utils/maxWeightUtils";
 
 interface WorkoutContextProps {
-  program: WorkoutProgram | null;
+  program: WorkoutProgram;
   currentWeek: WorkoutWeek | null;
   currentSession: WorkoutSession | null;
+  activeWeekId: string | null;
+  activeSessionId: string | null;
   setCurrentWeek: (week: WorkoutWeek | null) => void;
   setCurrentSession: (session: WorkoutSession | null) => void;
+  setActiveWeekId: (weekId: string) => void;
+  setActiveSessionId: (sessionId: string) => void;
   createProgram: (name: string) => void;
   createWeek: (name: string, order: number) => void;
   createSession: (name: string, day: number, weekId?: string) => void;
-  createCircuit: (name: string) => void;
+  createCircuit: (sessionId: string) => void;
+  createSuperset: (sessionId: string) => void;
+  createEMOM: (sessionId: string) => void;
+  createAMRAP: (sessionId: string) => void;
+  createTabata: (sessionId: string) => void;
   createExercise: (sessionId: string, callback?: (exerciseId: string) => void) => void;
   createSet: (sessionId: string, exerciseId: string) => void;
   updateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
   updateWeek: (weekId: string, updates: Partial<WorkoutWeek>) => void;
   updateSession: (sessionId: string, updates: Partial<WorkoutSession>) => void;
+  updateSessionName: (sessionId: string, name: string) => void;
+  updateWeekName: (weekId: string, name: string) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
   updateSet: (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
   addExercise: (sessionId: string, circuitId?: string, callback?: (exerciseId: string) => void) => void;
   addExerciseToCircuit: (sessionId: string, circuitId: string, exerciseId: string) => void;
   addSet: (sessionId: string, exerciseId: string) => void;
+  addWeek: () => void;
+  addSession: (weekId: string) => void;
   deleteProgram: (programId: string) => void;
   deleteWeek: (weekId: string) => void;
   deleteSession: (sessionId: string) => void;
@@ -52,6 +64,20 @@ interface WorkoutContextProps {
   setMaxWeight: (exerciseName: string, weight: string, weightType: WeightType) => void;
   convertWeightToPercentage: (weight: string, exerciseName: string) => string;
   convertPercentageToWeight: (percentage: string, exerciseName: string, targetWeightType: WeightType) => string;
+  resetProgram: () => void;
+  loadSampleProgram: () => void;
+  saveSessionToLibrary: (sessionId: string, name: string) => void;
+  saveWeekToLibrary: (weekId: string, name: string) => void;
+  saveProgramToLibrary: (name: string) => void;
+  loadSessionFromLibrary: (session: any, weekId: string) => void;
+  loadWeekFromLibrary: (week: any) => void;
+  loadProgramFromLibrary: (program: any) => void;
+  getSessionLibrary: () => any[];
+  getWeekLibrary: () => any[];
+  getProgramLibrary: () => any[];
+  removeSessionFromLibrary: (id: string) => void;
+  removeWeekFromLibrary: (id: string) => void;
+  removeProgramFromLibrary: (id: string) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextProps | undefined>(undefined);
@@ -61,9 +87,17 @@ interface WorkoutProviderProps {
 }
 
 export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) => {
-  const [program, setProgram] = useState<WorkoutProgram | null>(null);
+  const [program, setProgram] = useState<WorkoutProgram>({
+    id: uuidv4(),
+    name: 'My Program',
+    sessions: [],
+    weeks: [],
+    maxWeights: {}
+  });
   const [currentWeek, setCurrentWeek] = useState<WorkoutWeek | null>(null);
   const [currentSession, setCurrentSession] = useState<WorkoutSession | null>(null);
+  const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   
   useEffect(() => {
     const storedProgram = getLocalStorage<WorkoutProgram>('workoutProgram');
@@ -80,12 +114,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     }
   }, [program]);
   
-  // Helper function to update the program state
   const updateProgramState = (updatedProgram: WorkoutProgram) => {
     setProgram(updatedProgram);
   };
   
-  // Program CRUD operations
   const createProgram = (name: string) => {
     const newProgram: WorkoutProgram = {
       id: uuidv4(),
@@ -107,10 +139,15 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   };
   
   const deleteProgram = (programId: string) => {
-    setProgram(null);
+    setProgram({
+      id: uuidv4(),
+      name: 'My Program',
+      sessions: [],
+      weeks: [],
+      maxWeights: {}
+    });
   };
   
-  // Week CRUD operations
   const createWeek = (name: string, order: number) => {
     if (!program) return;
     
@@ -138,6 +175,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
     updateProgramState(updatedProgram);
   };
+
+  const updateWeekName = (weekId: string, name: string) => {
+    updateWeek(weekId, { name });
+  };
   
   const deleteWeek = (weekId: string) => {
     if (!program) return;
@@ -147,8 +188,15 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
     updateProgramState(updatedProgram);
   };
+
+  const addWeek = () => {
+    const newWeekOrder = program.weeks.length > 0 
+      ? Math.max(...program.weeks.map(w => w.order)) + 1 
+      : 1;
+    
+    createWeek(`Week ${newWeekOrder}`, newWeekOrder);
+  };
   
-  // Session CRUD operations
   const createSession = (name: string, day: number, weekId?: string) => {
     if (!program) return;
     
@@ -175,6 +223,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       }
     });
     updateProgramState(updatedProgram);
+    return newSession.id;
   };
   
   const updateSession = (sessionId: string, updates: Partial<WorkoutSession>) => {
@@ -187,6 +236,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       }
     });
     updateProgramState(updatedProgram);
+  };
+
+  const updateSessionName = (sessionId: string, name: string) => {
+    updateSession(sessionId, { name });
   };
   
   const deleteSession = (sessionId: string) => {
@@ -203,19 +256,112 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
     updateProgramState(updatedProgram);
   };
+
+  const addSession = (weekId: string) => {
+    const week = program.weeks.find(w => w.id === weekId);
+    if (!week) return;
+    
+    const sessionCount = week.sessions.length;
+    const sessionId = createSession(`Session ${sessionCount + 1}`, sessionCount + 1, weekId);
+    setActiveSessionId(sessionId);
+    return sessionId;
+  };
   
-  // Circuit CRUD operations
-  const createCircuit = (name: string) => {
-    if (!program || !currentSession) return;
+  const createCircuit = (sessionId: string) => {
+    if (!program) return;
     
     const newCircuit = {
       id: uuidv4(),
-      name: name,
+      name: "Circuit",
       exercises: [],
     };
     
     const updatedProgram = produce(program, draft => {
-      const sessionIndex = draft.sessions.findIndex(session => session.id === currentSession.id);
+      const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
+      if (sessionIndex !== -1) {
+        if (!draft.sessions[sessionIndex].circuits) {
+          draft.sessions[sessionIndex].circuits = [];
+        }
+        draft.sessions[sessionIndex].circuits.push(newCircuit);
+      }
+    });
+    updateProgramState(updatedProgram);
+  };
+
+  const createSuperset = (sessionId: string) => {
+    if (!program) return;
+    
+    const newCircuit = {
+      id: uuidv4(),
+      name: "Superset",
+      exercises: [],
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
+      if (sessionIndex !== -1) {
+        if (!draft.sessions[sessionIndex].circuits) {
+          draft.sessions[sessionIndex].circuits = [];
+        }
+        draft.sessions[sessionIndex].circuits.push(newCircuit);
+      }
+    });
+    updateProgramState(updatedProgram);
+  };
+
+  const createEMOM = (sessionId: string) => {
+    if (!program) return;
+    
+    const newCircuit = {
+      id: uuidv4(),
+      name: "EMOM",
+      exercises: [],
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
+      if (sessionIndex !== -1) {
+        if (!draft.sessions[sessionIndex].circuits) {
+          draft.sessions[sessionIndex].circuits = [];
+        }
+        draft.sessions[sessionIndex].circuits.push(newCircuit);
+      }
+    });
+    updateProgramState(updatedProgram);
+  };
+
+  const createAMRAP = (sessionId: string) => {
+    if (!program) return;
+    
+    const newCircuit = {
+      id: uuidv4(),
+      name: "AMRAP",
+      exercises: [],
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
+      if (sessionIndex !== -1) {
+        if (!draft.sessions[sessionIndex].circuits) {
+          draft.sessions[sessionIndex].circuits = [];
+        }
+        draft.sessions[sessionIndex].circuits.push(newCircuit);
+      }
+    });
+    updateProgramState(updatedProgram);
+  };
+
+  const createTabata = (sessionId: string) => {
+    if (!program) return;
+    
+    const newCircuit = {
+      id: uuidv4(),
+      name: "Tabata",
+      exercises: [],
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
       if (sessionIndex !== -1) {
         if (!draft.sessions[sessionIndex].circuits) {
           draft.sessions[sessionIndex].circuits = [];
@@ -226,7 +372,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     updateProgramState(updatedProgram);
   };
   
-  // Exercise CRUD operations
   const createExercise = (sessionId: string, callback?: (exerciseId: string) => void) => {
     if (!program) return;
     
@@ -279,7 +424,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       const sessionIndex = draft.sessions.findIndex(session => session.id === sessionId);
       if (sessionIndex !== -1) {
         if (circuitId) {
-          // Add exercise to circuit
           const circuit = draft.sessions[sessionIndex].circuits.find(c => c.id === circuitId);
           if (circuit) {
             circuit.exercises.push(newExercise.id);
@@ -289,7 +433,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
             draft.sessions[sessionIndex].exercises.push(newExercise);
           }
         } else {
-          // Add exercise to session
           draft.sessions[sessionIndex].exercises.push(newExercise);
         }
       }
@@ -336,7 +479,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     updateProgramState(updatedProgram);
   };
   
-  // Set CRUD operations
   const createSet = (sessionId: string, exerciseId: string) => {
     if (!program) return;
     
@@ -428,14 +570,13 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     weight: string, 
     weightType: WeightType
   ) => {
-    // Ensure program exists and is updated
     if (!program) return;
 
     const updatedProgram = produce(program, draft => {
       if (!draft.maxWeights) {
         draft.maxWeights = {};
       }
-      draft.maxWeights = setMaxWeight(
+      draft.maxWeights = setMaxWeightUtil(
         draft.maxWeights, 
         exerciseName, 
         weight, 
@@ -450,20 +591,12 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     weight: string, 
     exerciseName: string
   ): string => {
-    const maxWeightData = getMaxWeightForExercise(exerciseName);
-    
-    if (!maxWeightData) return '';
+    if (!program || !program.maxWeights) return '';
     
     return weightToPercentage(
-      weight, 
-      maxWeightData.weight, 
-      weight.includes('kg') ? 'kilos' : 
-      weight.includes('m') && !weight.includes('mi') ? 'distance-m' :
-      weight.includes('ft') ? 'distance-ft' :
-      weight.includes('yd') ? 'distance-yd' :
-      weight.includes('mi') ? 'distance-mi' :
-      'pounds',
-      maxWeightData.weightType
+      weight,
+      exerciseName,
+      program.maxWeights
     );
   };
 
@@ -472,38 +605,110 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     exerciseName: string, 
     targetWeightType: WeightType
   ): string => {
-    const maxWeightData = getMaxWeightForExercise(exerciseName);
-    
-    if (!maxWeightData) return '';
+    if (!program || !program.maxWeights) return '';
     
     return percentageToWeight(
-      percentage, 
-      maxWeightData.weight, 
-      targetWeightType, 
-      maxWeightData.weightType
+      percentage,
+      exerciseName,
+      targetWeightType,
+      program.maxWeights
     );
+  };
+
+  const resetProgram = () => {
+    setProgram({
+      id: uuidv4(),
+      name: 'My Program',
+      sessions: [],
+      weeks: [],
+      maxWeights: {}
+    });
+  };
+
+  const loadSampleProgram = () => {
+    console.log("Loading sample program");
+  };
+
+  const saveSessionToLibrary = (sessionId: string, name: string) => {
+    console.log("Saving session to library", sessionId, name);
+  };
+
+  const saveWeekToLibrary = (weekId: string, name: string) => {
+    console.log("Saving week to library", weekId, name);
+  };
+
+  const saveProgramToLibrary = (name: string) => {
+    console.log("Saving program to library", name);
+  };
+
+  const loadSessionFromLibrary = (session: any, weekId: string) => {
+    console.log("Loading session from library", session, weekId);
+  };
+
+  const loadWeekFromLibrary = (week: any) => {
+    console.log("Loading week from library", week);
+  };
+
+  const loadProgramFromLibrary = (program: any) => {
+    console.log("Loading program from library", program);
+  };
+
+  const getSessionLibrary = () => {
+    return [];
+  };
+
+  const getWeekLibrary = () => {
+    return [];
+  };
+
+  const getProgramLibrary = () => {
+    return [];
+  };
+
+  const removeSessionFromLibrary = (id: string) => {
+    console.log("Removing session from library", id);
+  };
+
+  const removeWeekFromLibrary = (id: string) => {
+    console.log("Removing week from library", id);
+  };
+
+  const removeProgramFromLibrary = (id: string) => {
+    console.log("Removing program from library", id);
   };
   
   const contextValue = {
     program,
     currentWeek,
     currentSession,
+    activeWeekId,
+    activeSessionId,
     setCurrentWeek,
     setCurrentSession,
+    setActiveWeekId,
+    setActiveSessionId,
     createProgram,
     createWeek,
     createSession,
     createCircuit,
+    createSuperset,
+    createEMOM,
+    createAMRAP,
+    createTabata,
     createExercise,
     createSet,
     updateProgram,
     updateWeek,
+    updateWeekName,
     updateSession,
+    updateSessionName,
     updateExercise,
     updateSet,
     addExercise,
     addExerciseToCircuit,
     addSet,
+    addWeek,
+    addSession,
     deleteProgram,
     deleteWeek,
     deleteSession,
@@ -513,6 +718,20 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     setMaxWeight: setMaxWeightForExercise,
     convertWeightToPercentage,
     convertPercentageToWeight,
+    resetProgram,
+    loadSampleProgram,
+    saveSessionToLibrary,
+    saveWeekToLibrary,
+    saveProgramToLibrary,
+    loadSessionFromLibrary,
+    loadWeekFromLibrary,
+    loadProgramFromLibrary,
+    getSessionLibrary,
+    getWeekLibrary,
+    getProgramLibrary,
+    removeSessionFromLibrary,
+    removeWeekFromLibrary,
+    removeProgramFromLibrary,
   };
   
   return (
