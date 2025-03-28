@@ -46,7 +46,7 @@ const WorkoutApp: React.FC = () => {
 const Index: React.FC = () => {
   return (
     <WorkoutProvider>
-      <div className="min-h-screen py-4 px-4">
+      <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
         <WorkoutHeader />
         <WorkoutApp />
       </div>

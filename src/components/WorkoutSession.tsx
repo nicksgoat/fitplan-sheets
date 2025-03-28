@@ -15,7 +15,7 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   if (!session) return null;
   
   return (
-    <div className="session-card">
+    <div className="session-card bg-dark-200 border border-dark-300 rounded-lg overflow-hidden shadow-md">
       <WorkoutSessionHeader sessionId={sessionId} />
       <WorkoutTable session={session} />
     </div>

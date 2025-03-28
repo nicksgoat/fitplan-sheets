@@ -67,6 +67,11 @@
  
     --ring: 0 0% 14.9%;
   }
+
+  /* Apply dark mode by default */
+  :root {
+    color-scheme: dark;
+  }
 }
  
 @layer base {
@@ -179,5 +184,14 @@
   .workout-container {
     overflow-x: visible;
   }
+}
+
+/* Dark theme customizations */
+.glass-panel {
+  @apply bg-dark-200 border border-dark-300;
+}
+
+body {
+  @apply bg-dark-100;
 }
 

@@ -61,13 +61,13 @@ export default {
 					border: 'hsl(var(--table-border))'
 				},
 				dark: {
-					100: '#121212',
-					200: '#1e1e1e',
-					300: '#2d2d2d',
-					400: '#353535',
-					500: '#4a4a4a',
-					card: '#1a1a1a',
-					border: '#333333',
+					100: '#0f0f0f', // Darkest (background)
+					200: '#121212', // Darker (surface/cards)
+					300: '#1e1e1e', // Dark (borders/dividers)
+					400: '#272727', // Medium dark (hover states)
+					500: '#4a4a4a', // Light dark (disabled states)
+					card: '#121212', // Card background
+					border: '#333333', // Border color
 				}
 			},
 			borderRadius: {

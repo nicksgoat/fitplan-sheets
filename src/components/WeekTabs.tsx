@@ -21,7 +21,7 @@ const WeekTabs: React.FC = () => {
   
   return (
     <div className="mb-6 overflow-x-auto">
-      <div className="flex items-center gap-1 border-b border-border pb-1">
+      <div className="flex items-center gap-1 border-b border-dark-300 pb-1">
         {program.weeks.map((week) => (
           <button
             key={week.id}
@@ -29,8 +29,8 @@ const WeekTabs: React.FC = () => {
               "px-4 py-2 rounded-t-lg text-sm font-medium relative",
               "transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5",
               activeWeekId === week.id
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-white"
+                : "text-gray-400 hover:text-gray-200"
             )}
             onClick={() => handleWeekClick(week.id)}
           >
@@ -39,7 +39,7 @@ const WeekTabs: React.FC = () => {
             {activeWeekId === week.id && (
               <motion.div
                 layoutId="activeWeekTab"
-                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-blue-500"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -51,7 +51,7 @@ const WeekTabs: React.FC = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="px-2 flex items-center gap-1 text-muted-foreground"
+          className="px-2 flex items-center gap-1 text-gray-400 hover:text-gray-200 hover:bg-dark-300"
           onClick={() => addWeek()}
         >
           <Plus className="h-4 w-4" />
