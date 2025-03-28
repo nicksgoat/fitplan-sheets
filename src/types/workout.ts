@@ -1,3 +1,4 @@
+
 export interface Set {
   id: string;
   reps: string;
@@ -22,18 +23,6 @@ export interface Exercise {
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
-  maxWeight?: string;  // New field to store max weight
-}
-
-export interface MaxWeightRecord {
-  exerciseName: string;  // We use the exercise name as a key for consistency
-  maxWeight: string;
-  weightType: WeightType;
-  date: string;  // When the max was recorded
-}
-
-export interface UserMaxWeights {
-  records: Record<string, MaxWeightRecord>; // Keyed by exercise name
 }
 
 export interface Circuit {
@@ -68,8 +57,8 @@ export interface WorkoutProgram {
   weeks: WorkoutWeek[]; // New weeks array
 }
 
-export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'intensity' | 'rest' | 'notes' | 'max';
-export type ExerciseCellType = 'name' | 'notes' | 'max';
+export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'intensity' | 'rest' | 'notes';
+export type ExerciseCellType = 'name' | 'notes';
 export type SetCellType = 'reps' | 'weight' | 'intensity' | 'rest';
 
 export type WorkoutType = 'standard' | 'circuit' | 'superset' | 'emom' | 'amrap' | 'tabata';
@@ -102,16 +91,3 @@ export type WeightType =
 
 // New callback type for exercise creation
 export type ExerciseCallback = (exerciseId: string) => void;
-
-// New callback type for max weight updates
-export type MaxWeightCallback = (exerciseName: string, maxWeight: string, weightType: WeightType) => void;
-
-// Weight calculation modes
-export type WeightCalculationMode = 
-  | 'direct'       // Direct weight input (default)
-  | 'percentage';  // Calculate based on percentage of max
-
-// New type for weight calculation direction
-export type CalculationDirection = 
-  | 'weight-to-percentage'  // Calculate percentage from weight
-  | 'percentage-to-weight'; // Calculate weight from percentage

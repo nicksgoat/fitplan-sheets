@@ -1,7 +1,7 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Minus } from "lucide-react";
-import { Set, Exercise, CalculationDirection } from "@/types/workout";
+import { Set, Exercise } from "@/types/workout";
 import { motion } from "framer-motion";
 import EditableSetCell from "../EditableSetCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
@@ -45,7 +45,6 @@ const SetRow: React.FC<SetRowProps> = ({
   const repType = exercise.repType || 'fixed';
   const setIntensityType = set.intensityType || exercise.intensityType || 'rpe';
   const setWeightType = set.weightType || exercise.weightType || 'pounds';
-  const [calculationDirection, setCalculationDirection] = useState<CalculationDirection>("weight-to-percentage");
   
   return (
     <motion.tr
@@ -111,10 +110,6 @@ const SetRow: React.FC<SetRowProps> = ({
             })
           }
           hideWeightTypeSelector={true}
-          maxWeight={exercise.maxWeight}
-          usePercentage={true}
-          calculationDirection={calculationDirection}
-          onCalculationDirectionChange={setCalculationDirection}
         />
       </td>
       

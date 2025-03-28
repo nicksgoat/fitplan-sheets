@@ -5,29 +5,16 @@ import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 const WorkoutTableHeader: React.FC = () => {
   return (
     <TableHeader>
-      <TableRow>
-        <TableHead className="w-[50px] text-center border border-muted-foreground/20">
-          Actions
-        </TableHead>
-        <TableHead className="w-[80px] text-left border border-muted-foreground/20">
-          Exercise
-        </TableHead>
-        <TableHead className="w-[200px] text-left border border-muted-foreground/20"></TableHead>
-        <TableHead className="w-[100px] text-left border border-muted-foreground/20">
-          Reps
-        </TableHead>
-        <TableHead className="w-[120px] text-left border border-muted-foreground/20">
-          Weight/Max
-        </TableHead>
-        <TableHead className="w-[100px] text-left border border-muted-foreground/20">
-          Intensity
-        </TableHead>
-        <TableHead className="w-[100px] text-left border border-muted-foreground/20">
-          Rest
-        </TableHead>
-        <TableHead className="text-left border border-muted-foreground/20" colSpan={2}>
-          Notes
-        </TableHead>
+      <TableRow className="bg-muted/40">
+        <TableHead className="border border-muted-foreground/20 p-2 text-center" style={{ width: "40px" }}>#</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 exercise-cell">Exercise</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Sets</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Reps</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Weight</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Intensity</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Rest</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2 note-cell">Notes</TableHead>
+        <TableHead className="border border-muted-foreground/20 p-2" style={{ width: "70px" }}>Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

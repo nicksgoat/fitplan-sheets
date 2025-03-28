@@ -1,33 +1,34 @@
 
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/sonner';
-import { ThemeProvider } from '@/components/ui/theme-provider';
-import { WorkoutProvider } from './contexts/WorkoutContext';
-import { MaxWeightProvider } from './contexts/MaxWeightContext';
-import Index from './pages/Index';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-import './App.css';
+// Remove the old CSS import and use the new tailwind styles
+import "./index.css";
 
-// Create a client
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-function App() {
-  return (
+// Make sure each provider is properly nested
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <MaxWeightProvider>
-            <WorkoutProvider>
-              <Index />
-              <Toaster position="top-center" />
-            </WorkoutProvider>
-          </MaxWeightProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <div className="dark">
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner position="top-center" />
+        </TooltipProvider>
+      </div>
     </BrowserRouter>
-  );
-}
+  </QueryClientProvider>
+);
 
 export default App;
