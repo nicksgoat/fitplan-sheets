@@ -83,6 +83,54 @@ export type Database = {
           },
         ]
       }
+      exercise_library: {
+        Row: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          created_at: string
+          description: string | null
+          id: string
+          instructions: string | null
+          is_custom: boolean | null
+          name: string
+          primary_muscle: Database["public"]["Enums"]["primary_muscle"]
+          secondary_muscles:
+            | Database["public"]["Enums"]["primary_muscle"][]
+            | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["exercise_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructions?: string | null
+          is_custom?: boolean | null
+          name: string
+          primary_muscle: Database["public"]["Enums"]["primary_muscle"]
+          secondary_muscles?:
+            | Database["public"]["Enums"]["primary_muscle"][]
+            | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["exercise_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructions?: string | null
+          is_custom?: boolean | null
+          name?: string
+          primary_muscle?: Database["public"]["Enums"]["primary_muscle"]
+          secondary_muscles?:
+            | Database["public"]["Enums"]["primary_muscle"][]
+            | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       exercise_sets: {
         Row: {
           created_at: string
@@ -126,6 +174,47 @@ export type Database = {
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_visuals: {
+        Row: {
+          created_at: string
+          creator: string | null
+          difficulty: string | null
+          duration: string | null
+          exercise_id: string
+          id: string
+          image_url: string
+          tags: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          creator?: string | null
+          difficulty?: string | null
+          duration?: string | null
+          exercise_id: string
+          id?: string
+          image_url: string
+          tags?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          creator?: string | null
+          difficulty?: string | null
+          duration?: string | null
+          exercise_id?: string
+          id?: string
+          image_url?: string
+          tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_visuals_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
             referencedColumns: ["id"]
           },
         ]
@@ -344,7 +433,32 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      exercise_category:
+        | "barbell"
+        | "dumbbell"
+        | "machine"
+        | "bodyweight"
+        | "kettlebell"
+        | "cable"
+        | "cardio"
+        | "other"
       intensity_type: "rpe" | "arpe" | "percent" | "absolute" | "velocity"
+      primary_muscle:
+        | "chest"
+        | "back"
+        | "shoulders"
+        | "biceps"
+        | "triceps"
+        | "quadriceps"
+        | "hamstrings"
+        | "glutes"
+        | "calves"
+        | "abs"
+        | "forearms"
+        | "full body"
+        | "upper chest"
+        | "core"
+        | "other"
       rep_type:
         | "fixed"
         | "range"

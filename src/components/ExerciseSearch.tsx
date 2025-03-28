@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { Exercise, searchExercises } from "@/utils/exerciseLibrary";
+import { Exercise } from "@/types/exercise";
 import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { useSearchExercises } from "@/hooks/useExerciseLibrary";
 
 interface ExerciseSearchProps {
   value: string;
@@ -23,20 +24,14 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   placeholder = "Search exercises...",
   className
 }) => {
-  const [searchResults, setSearchResults] = useState<Exercise[]>([]);
+  const { searchResults, loading, setQuery } = useSearchExercises();
   const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (value.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-    
-    const results = searchExercises(value);
-    setSearchResults(results);
-  }, [value]);
+    setQuery(value);
+  }, [value, setQuery]);
   
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -119,26 +114,30 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
         >
           <Command className="rounded-lg border shadow-md">
             <div className="p-0 overflow-y-auto">
-              {searchResults.map((exercise) => (
-                <div
-                  key={exercise.id}
-                  className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center"
-                  onClick={() => handleSelectExercise(exercise)}
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{exercise.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {exercise.primaryMuscle} • {exercise.category}
+              {loading ? (
+                <div className="p-2 text-sm text-center">Searching...</div>
+              ) : (
+                searchResults.map((exercise) => (
+                  <div
+                    key={exercise.id}
+                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center"
+                    onClick={() => handleSelectExercise(exercise)}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium">{exercise.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {exercise.primaryMuscle} • {exercise.category}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Command>
         </div>
       )}
     </div>
   );
-};
+}
 
 export default ExerciseSearch;

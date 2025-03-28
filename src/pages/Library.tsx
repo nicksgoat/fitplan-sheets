@@ -1,15 +1,59 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { mockExercises, mockWorkouts, mockPrograms, mockCollections } from '@/lib/mockData';
+import { Plus, Loader2 } from 'lucide-react';
 import ContentGrid from '@/components/ui/ContentGrid';
 import CollectionCard from '@/components/ui/CollectionCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
+import { ExerciseWithVisual } from '@/types/exercise';
+import { ItemType } from '@/lib/types';
 
 const Library = () => {
   const isMobile = useIsMobile();
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  
+  // Fetch exercises with visuals from Supabase
+  const { data: exercisesWithVisuals, isLoading } = useExercisesWithVisuals();
+  
+  // Transform our exercise data to match the ItemType format
+  const exerciseItems: ItemType[] = exercisesWithVisuals?.map((exercise: ExerciseWithVisual) => ({
+    id: exercise.id,
+    title: exercise.name,
+    type: 'exercise',
+    creator: exercise.visual?.creator || 'FitBloom',
+    imageUrl: exercise.visual?.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+    tags: exercise.visual?.tags || [],
+    duration: exercise.visual?.duration || '',
+    difficulty: exercise.visual?.difficulty || 'beginner',
+    isFavorite: false
+  })) || [];
+  
+  // Filter exercises based on active category
+  const filteredExercises = activeCategory 
+    ? exerciseItems.filter(item => 
+        item.tags?.some(tag => tag.toLowerCase() === activeCategory.toLowerCase())
+      )
+    : exerciseItems;
+  
+  // Placeholder data for other tabs
+  const mockWorkouts = [];
+  const mockPrograms = [];
+  const mockCollections = [
+    {
+      id: '1',
+      title: 'My Favorite Exercises',
+      count: 12,
+      imageUrl: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=2069',
+    },
+    {
+      id: '2',
+      title: 'Weekly Routines',
+      count: 5,
+      imageUrl: 'https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?q=80&w=2070',
+    }
+  ];
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -21,7 +65,7 @@ const Library = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="collections" className="w-full">
+      <Tabs defaultValue="exercises" className="w-full">
         <TabsList className="mb-6 w-full overflow-x-auto scrollbar-hide flex">
           <TabsTrigger value="collections">Collections</TabsTrigger>
           <TabsTrigger value="exercises">Exercises</TabsTrigger>
@@ -39,50 +83,43 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="exercises" className="mt-4">
-          <ContentGrid items={mockExercises.slice(0, 8)} />
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+            </div>
+          ) : filteredExercises.length > 0 ? (
+            <ContentGrid items={filteredExercises} />
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-400">No exercises found.</p>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="workouts" className="mt-4">
-          <ContentGrid items={mockWorkouts.slice(0, 8)} />
+          <div className="text-center py-10">
+            <p className="text-gray-400">No workouts saved yet.</p>
+            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
+              Create Workout
+            </Button>
+          </div>
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">
-          <ContentGrid items={mockPrograms.slice(0, 8)} />
+          <div className="text-center py-10">
+            <p className="text-gray-400">No programs saved yet.</p>
+            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
+              Create Program
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="created" className="mt-4">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">My Workouts</h2>
-              {mockWorkouts.slice(0, 4).map(workout => (
-                <div key={workout.id} className="bg-gray-900 p-4 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={workout.imageUrl} alt={workout.title} className="h-12 w-12 object-cover rounded" />
-                    <div>
-                      <h3 className="font-medium">{workout.title}</h3>
-                      <p className="text-sm text-gray-400">Created on May 12, 2023</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">Edit</Button>
-                </div>
-              ))}
-            </div>
-            
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">My Programs</h2>
-              {mockPrograms.slice(0, 2).map(program => (
-                <div key={program.id} className="bg-gray-900 p-4 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={program.imageUrl} alt={program.title} className="h-12 w-12 object-cover rounded" />
-                    <div>
-                      <h3 className="font-medium">{program.title}</h3>
-                      <p className="text-sm text-gray-400">Created on June 3, 2023</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">Edit</Button>
-                </div>
-              ))}
-            </div>
+          <div className="text-center py-10">
+            <p className="text-gray-400">You haven't created any content yet.</p>
+            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
+              Create Content
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
