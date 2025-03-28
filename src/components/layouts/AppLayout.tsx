@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton
 } from "@/components/ui/sidebar";
-import { Home, Search, Library, Heart, User } from "lucide-react";
+import { Home, Search, Library, Heart, User, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AppLayout() {
@@ -53,6 +53,15 @@ export default function AppLayout() {
                     <Link to="/liked">
                       <Heart />
                       <span>Liked</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Sheets">
+                    <Link to="/sheets">
+                      <FileText />
+                      <span>Sheets</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
