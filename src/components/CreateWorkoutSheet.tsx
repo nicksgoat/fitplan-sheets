@@ -51,17 +51,9 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
   };
 
   const handleSaveSession = () => {
-    if (sessionName.trim() && exercises.length > 0) {
-      const newSession = {
-        id: Date.now().toString(),
-        name: sessionName,
-        day: 1,
-        exercises,
-        circuits: [],
-        weekId
-      };
-
-      addSession(newSession);
+    if (sessionName.trim() && exercises.length > 0 && weekId) {
+      // Call addSession with weekId as the first parameter
+      addSession(weekId);
       
       if (onSave) {
         onSave();
