@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -275,6 +276,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleAddExerciseToCircuit = (circuitId: string) => {
+    // Use the callback pattern to ensure the exercise is added to the circuit
     addExercise(session.id, undefined, (newExerciseId) => {
       if (newExerciseId) {
         addExerciseToCircuit(session.id, circuitId, newExerciseId);
