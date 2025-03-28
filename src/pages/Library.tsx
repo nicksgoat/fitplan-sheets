@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,7 +31,8 @@ const Library = () => {
     duration: exercise.duration || '',
     difficulty: exercise.difficulty || 'beginner',
     isFavorite: false,
-    description: exercise.description
+    description: exercise.description,
+    isCustom: false
   })) || [];
   
   // Transform our custom exercise data to match the ItemType format
@@ -47,7 +47,8 @@ const Library = () => {
     duration: exercise.duration || '',
     difficulty: exercise.difficulty || 'beginner',
     isFavorite: false,
-    description: exercise.description
+    description: exercise.description,
+    isCustom: true
   })) || [];
   
   // Filter exercises based on active category

@@ -31,7 +31,8 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
         tags: item.tags || [],
         difficulty: (item.difficulty as any) || 'beginner',
         isFavorite: false,
-        description: item.description
+        description: item.description,
+        isCustom: item.isCustom || false
       }
     : item as ItemType;
   
