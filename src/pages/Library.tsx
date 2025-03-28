@@ -12,6 +12,62 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { exerciseLibrary } from "@/utils/exerciseLibrary";
 
+// Sample workout data
+const sampleWorkouts = [
+  {
+    id: "workout-1",
+    name: "Full Body Strength",
+    exerciseCount: 8,
+    duration: "45 min",
+    category: "Strength",
+    difficulty: "Intermediate",
+    createdBy: "FitBloom Trainer"
+  },
+  {
+    id: "workout-2",
+    name: "HIIT Cardio Blast",
+    exerciseCount: 6,
+    duration: "30 min",
+    category: "HIIT",
+    difficulty: "Advanced",
+    createdBy: "FitBloom Trainer"
+  },
+  {
+    id: "workout-3",
+    name: "Upper Body Focus",
+    exerciseCount: 7,
+    duration: "40 min",
+    category: "Strength",
+    difficulty: "Beginner",
+    createdBy: "FitBloom Trainer"
+  }
+];
+
+// Sample collection data
+const sampleCollections = [
+  {
+    id: "collection-1",
+    name: "Beginner Program",
+    itemCount: 12,
+    type: "exercises" as const,
+    createdBy: "FitBloom Trainer"
+  },
+  {
+    id: "collection-2",
+    name: "Advanced Workouts",
+    itemCount: 8,
+    type: "workouts" as const,
+    createdBy: "FitBloom Trainer"
+  },
+  {
+    id: "collection-3",
+    name: "Monthly Challenge",
+    itemCount: 5,
+    type: "mixed" as const,
+    createdBy: "FitBloom Trainer"
+  }
+];
+
 const Library: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("exercises");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -113,6 +169,10 @@ const Library: React.FC = () => {
                   </div>
                 </div>
               ))
+            ) : sampleCollections.length > 0 ? (
+              sampleCollections.map(collection => (
+                <CollectionCard key={collection.id} collection={collection} />
+              ))
             ) : (
               <div className="col-span-full text-gray-400 text-center py-8">
                 You don't have any collections yet.
@@ -132,6 +192,10 @@ const Library: React.FC = () => {
                     <Skeleton className="h-4 w-1/2" />
                   </div>
                 </div>
+              ))
+            ) : sampleWorkouts.length > 0 ? (
+              sampleWorkouts.map(workout => (
+                <WorkoutCard key={workout.id} workout={workout} />
               ))
             ) : (
               <div className="col-span-full text-gray-400 text-center py-8">
