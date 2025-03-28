@@ -5,39 +5,39 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WorkoutSession } from "@/types/workout";
+import { Workout } from "@/types/workout";
 
 const SessionTabs: React.FC = () => {
-  const { program, activeSessionId, activeWeekId, setActiveSessionId, addSession } = useWorkout();
+  const { program, activeWorkoutId, activeWeekId, setActiveWorkoutId, addWorkout } = useWorkout();
   
   if (!activeWeekId) return null;
   
   const currentWeek = program.weeks.find(w => w.id === activeWeekId);
   if (!currentWeek) return null;
   
-  const sessionsInWeek = currentWeek.sessions
-    .map(sessionId => program.sessions.find(s => s.id === sessionId))
-    .filter(session => session !== undefined) as WorkoutSession[];
+  const workoutsInWeek = currentWeek.workouts
+    .map(workoutId => program.workouts.find(s => s.id === workoutId))
+    .filter(workout => workout !== undefined) as Workout[];
   
-  if (sessionsInWeek.length <= 0) return null;
+  if (workoutsInWeek.length <= 0) return null;
   
   return (
     <div className="mb-6 overflow-x-auto">
       <div className="flex items-center gap-1 border-b border-border pb-1">
-        {sessionsInWeek.map((session) => (
+        {workoutsInWeek.map((workout) => (
           <button
-            key={session.id}
+            key={workout.id}
             className={cn(
               "px-4 py-2 rounded-t-lg text-sm font-medium relative",
               "transition-colors duration-200 whitespace-nowrap",
-              activeSessionId === session.id
+              activeWorkoutId === workout.id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
-            onClick={() => setActiveSessionId(session.id)}
+            onClick={() => setActiveWorkoutId(workout.id)}
           >
-            {session.name}
-            {activeSessionId === session.id && (
+            {workout.name}
+            {activeWorkoutId === workout.id && (
               <motion.div
                 layoutId="activeTab"
                 className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-primary"
@@ -53,7 +53,7 @@ const SessionTabs: React.FC = () => {
           variant="ghost" 
           size="sm" 
           className="px-2 flex items-center gap-1 text-muted-foreground"
-          onClick={() => addSession(activeWeekId)}
+          onClick={() => addWorkout(activeWeekId)}
         >
           <Plus className="h-4 w-4" />
           <span className="text-xs">Add Session</span>

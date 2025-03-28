@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, Set, WorkoutProgram, Workout, WorkoutWeek, Circuit } from "@/types/workout";
+import { useAuth } from "@/hooks/useAuth";
 
 // Function to convert database snake_case to camelCase types
 function mapDbWorkoutToModel(dbWorkout: any): Workout {
@@ -184,10 +185,20 @@ export async function getProgram(programId: string): Promise<WorkoutProgram> {
 }
 
 export async function createProgram(name: string) {
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error("No authenticated user found");
+  }
+  
   // Create a program
   const { data: programData, error: programError } = await supabase
     .from('programs')
-    .insert({ name })
+    .insert({ 
+      name,
+      user_id: user.id
+    })
     .select()
     .single();
   

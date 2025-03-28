@@ -40,7 +40,7 @@ export interface Workout {
   day: number;
   exercises: Exercise[];
   circuits: Circuit[];
-  weekId?: string; // New field to associate workout with a week
+  weekId?: string; // Field to associate workout with a week
 }
 
 export interface WorkoutWeek {
@@ -54,8 +54,11 @@ export interface WorkoutProgram {
   id: string;
   name: string;
   workouts: Workout[];
-  weeks: WorkoutWeek[]; // New weeks array
+  weeks: WorkoutWeek[]; // Weeks array
 }
+
+// For backward compatibility
+export type WorkoutSession = Workout;
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'intensity' | 'rest' | 'notes';
 export type ExerciseCellType = 'name' | 'notes';

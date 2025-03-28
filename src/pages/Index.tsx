@@ -11,10 +11,10 @@ import { motion } from "framer-motion";
 const WorkoutApp: React.FC = () => {
   const { 
     program, 
-    activeSessionId
+    activeWorkoutId
   } = useWorkout();
   
-  if (!activeSessionId) return null;
+  if (!activeWorkoutId) return null;
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
@@ -23,19 +23,19 @@ const WorkoutApp: React.FC = () => {
           <WeekTabs />
           <SessionTabs />
           <motion.div
-            key={activeSessionId}
+            key={activeWorkoutId}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <WorkoutSession sessionId={activeSessionId} />
+            <WorkoutSession sessionId={activeWorkoutId} />
           </motion.div>
         </div>
         
         <div className="hidden lg:block">
           <div className="sticky top-24">
-            <WorkoutMobilePreview sessionId={activeSessionId} />
+            <WorkoutMobilePreview sessionId={activeWorkoutId} />
           </div>
         </div>
       </div>

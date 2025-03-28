@@ -7,15 +7,15 @@ import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const WeekTabs: React.FC = () => {
-  const { program, activeWeekId, setActiveWeekId, setActiveSessionId, addWeek } = useWorkout();
+  const { program, activeWeekId, setActiveWeekId, setActiveWorkoutId, addWeek } = useWorkout();
   
   const handleWeekClick = (weekId: string) => {
     setActiveWeekId(weekId);
     
-    // Find the first session in this week and make it active
+    // Find the first workout in this week and make it active
     const week = program.weeks.find(w => w.id === weekId);
-    if (week && week.sessions.length > 0) {
-      setActiveSessionId(week.sessions[0]);
+    if (week && week.workouts.length > 0) {
+      setActiveWorkoutId(week.workouts[0]);
     }
   };
   

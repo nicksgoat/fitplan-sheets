@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -11,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { WorkoutSession, WorkoutWeek, WorkoutProgram } from "@/types/workout";
+import { Workout, WorkoutWeek, WorkoutProgram } from "@/types/workout";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
@@ -23,25 +22,25 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const WorkoutHeader: React.FC = () => {
   const { 
-    addSession, 
+    addWorkout, 
     activeWeekId, 
-    activeSessionId,
+    activeWorkoutId,
     resetProgram, 
     loadSampleProgram,
-    saveSessionToLibrary,
+    saveWorkoutToLibrary,
     saveWeekToLibrary,
     saveProgramToLibrary,
-    loadSessionFromLibrary,
+    loadWorkoutFromLibrary,
     loadWeekFromLibrary,
     loadProgramFromLibrary,
-    getSessionLibrary,
+    getWorkoutLibrary,
     getWeekLibrary,
     getProgramLibrary,
-    removeSessionFromLibrary,
+    removeWorkoutFromLibrary,
     removeWeekFromLibrary,
     removeProgramFromLibrary,
     program,
-    updateSessionName,
+    updateWorkoutName,
     updateWeekName,
   } = useWorkout();
   
@@ -56,25 +55,21 @@ const WorkoutHeader: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState<{id: string, type: string, name: string} | null>(null);
   
-  // Get library data
-  const workoutLibrary = getSessionLibrary();
+  const workoutLibrary = getWorkoutLibrary();
   const weekLibrary = getWeekLibrary();
   const programLibrary = getProgramLibrary();
 
-  // Function to handle drag start
   const handleDragStart = (e: React.DragEvent, item: any, type: string) => {
     setDraggedItem({...item, type});
     e.dataTransfer.setData("application/json", JSON.stringify({id: item.id, type}));
     e.dataTransfer.effectAllowed = "move";
   };
 
-  // Function to handle drag over
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
-  // Function to handle drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (!activeWeekId) return;
@@ -88,7 +83,7 @@ const WorkoutHeader: React.FC = () => {
       if (type === "workout") {
         const workout = workoutLibrary.find(w => w.id === id);
         if (workout) {
-          loadSessionFromLibrary(workout, activeWeekId);
+          loadWorkoutFromLibrary(workout, activeWeekId);
         }
       } else if (type === "week") {
         const week = weekLibrary.find(w => w.id === id);
@@ -106,16 +101,14 @@ const WorkoutHeader: React.FC = () => {
     }
   };
 
-  // Function to handle saving a workout to library
   const handleSaveWorkoutToLibrary = () => {
-    if (activeSessionId && libraryItemName) {
-      saveSessionToLibrary(activeSessionId, libraryItemName);
+    if (activeWorkoutId && libraryItemName) {
+      saveWorkoutToLibrary(activeWorkoutId, libraryItemName);
       setLibraryItemName("");
       setIsWorkoutDialogOpen(false);
     }
   };
   
-  // Function to handle saving a week to library
   const handleSaveWeekToLibrary = () => {
     if (activeWeekId && libraryItemName) {
       saveWeekToLibrary(activeWeekId, libraryItemName);
@@ -124,7 +117,6 @@ const WorkoutHeader: React.FC = () => {
     }
   };
   
-  // Function to handle saving a program to library
   const handleSaveProgramToLibrary = () => {
     if (libraryItemName) {
       saveProgramToLibrary(libraryItemName);
@@ -133,12 +125,11 @@ const WorkoutHeader: React.FC = () => {
     }
   };
 
-  // Function to handle deleting an item from library
   const handleDeleteFromLibrary = () => {
     if (!itemToDelete) return;
     
     if (itemToDelete.type === "workout") {
-      removeSessionFromLibrary(itemToDelete.id);
+      removeWorkoutFromLibrary(itemToDelete.id);
     } else if (itemToDelete.type === "week") {
       removeWeekFromLibrary(itemToDelete.id);
     } else if (itemToDelete.type === "program") {
@@ -149,12 +140,11 @@ const WorkoutHeader: React.FC = () => {
     setIsDeleteDialogOpen(false);
   };
 
-  // Function to handle renaming an item
   const handleRenameItem = () => {
     if (!isEditingName) return;
     
-    if (isEditingName.type === "session" && isEditingName.id === activeSessionId) {
-      updateSessionName(isEditingName.id, isEditingName.name);
+    if (isEditingName.type === "workout" && isEditingName.id === activeWorkoutId) {
+      updateWorkoutName(isEditingName.id, isEditingName.name);
     } else if (isEditingName.type === "week" && isEditingName.id === activeWeekId) {
       updateWeekName(isEditingName.id, isEditingName.name);
     }
@@ -162,21 +152,19 @@ const WorkoutHeader: React.FC = () => {
     setIsEditingName(null);
   };
 
-  // Handle click on session tab when already selected (for renaming)
   const handleSessionTabClick = (sessionId: string) => {
-    if (sessionId === activeSessionId) {
+    if (sessionId === activeWorkoutId) {
       const session = program.sessions.find(s => s.id === sessionId);
       if (session) {
         setIsEditingName({
           id: sessionId,
-          type: "session",
+          type: "workout",
           name: session.name
         });
       }
     }
   };
 
-  // Handle click on week tab when already selected (for renaming)
   const handleWeekTabClick = (weekId: string) => {
     if (weekId === activeWeekId) {
       const week = program.weeks.find(w => w.id === weekId);
@@ -190,7 +178,6 @@ const WorkoutHeader: React.FC = () => {
     }
   };
   
-  // Use mobile detection to determine if we should use Drawer instead of Sheet for library
   const isMobile = window.innerWidth < 768;
   
   const LibraryComponent = isMobile ? Drawer : Sheet;
@@ -207,7 +194,6 @@ const WorkoutHeader: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Library Button */}
         <LibraryComponent>
           <LibraryTrigger asChild>
             <Button
@@ -280,7 +266,7 @@ const WorkoutHeader: React.FC = () => {
                                 size="icon"
                                 onClick={() => {
                                   if (activeWeekId) {
-                                    loadSessionFromLibrary(workout, activeWeekId);
+                                    loadWorkoutFromLibrary(workout, activeWeekId);
                                   }
                                 }}
                                 disabled={!activeWeekId}
@@ -403,14 +389,13 @@ const WorkoutHeader: React.FC = () => {
               <div className="p-4 border-t">
                 <h3 className="font-medium mb-2">Add to Library</h3>
                 <div className="flex flex-col gap-2">
-                  {/* Save Current Workout */}
                   <Dialog open={isWorkoutDialogOpen} onOpenChange={setIsWorkoutDialogOpen}>
                     <DialogTrigger asChild>
                       <Button 
                         variant="outline"
                         size="sm"
                         className="flex items-center justify-start"
-                        disabled={!activeSessionId}
+                        disabled={!activeWorkoutId}
                       >
                         <ListMusic className="h-4 w-4 mr-2" />
                         <span>Save Current Workout</span>
@@ -446,7 +431,6 @@ const WorkoutHeader: React.FC = () => {
                     </DialogContent>
                   </Dialog>
                   
-                  {/* Save Current Week */}
                   <Dialog open={isWeekDialogOpen} onOpenChange={setIsWeekDialogOpen}>
                     <DialogTrigger asChild>
                       <Button 
@@ -489,7 +473,6 @@ const WorkoutHeader: React.FC = () => {
                     </DialogContent>
                   </Dialog>
                   
-                  {/* Save Current Program */}
                   <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
                     <DialogTrigger asChild>
                       <Button 
@@ -560,7 +543,7 @@ const WorkoutHeader: React.FC = () => {
           variant="default"
           size="sm"
           className="flex items-center gap-1"
-          onClick={() => activeWeekId ? addSession(activeWeekId) : null}
+          onClick={() => activeWeekId ? addWorkout(activeWeekId) : null}
           disabled={!activeWeekId}
         >
           <PlusCircle className="h-4 w-4" />
@@ -568,7 +551,6 @@ const WorkoutHeader: React.FC = () => {
         </Button>
       </div>
       
-      {/* Rename Dialog */}
       <Dialog 
         open={isEditingName !== null} 
         onOpenChange={(open) => !open && setIsEditingName(null)}
@@ -576,7 +558,7 @@ const WorkoutHeader: React.FC = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              Rename {isEditingName?.type === "session" ? "Workout" : "Week"}
+              Rename {isEditingName?.type === "workout" ? "Workout" : "Week"}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
@@ -595,7 +577,6 @@ const WorkoutHeader: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

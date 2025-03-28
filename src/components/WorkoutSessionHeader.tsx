@@ -11,18 +11,18 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, updateSessionName, addExercise, deleteSession } = useWorkout();
-  const session = program.sessions.find((s) => s.id === sessionId);
+  const { program, updateWorkoutName, addExercise, deleteWorkout } = useWorkout();
+  const workout = program.workouts.find((s) => s.id === sessionId);
   
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(session?.name || "");
+  const [title, setTitle] = useState(workout?.name || "");
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    if (session) {
-      setTitle(session.name);
+    if (workout) {
+      setTitle(workout.name);
     }
-  }, [session]);
+  }, [workout]);
   
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -32,8 +32,8 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   }, [isEditing]);
   
   const handleSave = () => {
-    if (session && title.trim() !== "") {
-      updateSessionName(sessionId, title);
+    if (workout && title.trim() !== "") {
+      updateWorkoutName(sessionId, title);
       setIsEditing(false);
     }
   };
@@ -43,18 +43,18 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
       handleSave();
     } else if (e.key === "Escape") {
       setIsEditing(false);
-      setTitle(session?.name || "");
+      setTitle(workout?.name || "");
     }
   };
   
-  if (!session) return null;
+  if (!workout) return null;
   
   return (
     <div className="session-header flex justify-between mb-4">
       <div className="flex items-center gap-2">
         {!isEditing ? (
           <h2 className="text-lg font-medium flex items-center">
-            {title || `Day ${session.day} Session`}
+            {title || `Day ${workout.day} Session`}
             <Button
               variant="ghost"
               size="sm"
@@ -78,14 +78,14 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
               onChange={(e) => setTitle(e.target.value)}
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
-              placeholder={`Day ${session.day} Session`}
+              placeholder={`Day ${workout.day} Session`}
             />
             <Button size="sm" variant="ghost" onClick={handleSave}>
               <Save className="h-4 w-4" />
             </Button>
           </div>
         )}
-        <div className="text-xs text-muted-foreground">Day {session.day}</div>
+        <div className="text-xs text-muted-foreground">Day {workout.day}</div>
       </div>
       
       <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
           variant="ghost"
           size="sm"
           className="text-destructive hover:text-destructive"
-          onClick={() => deleteSession(sessionId)}
+          onClick={() => deleteWorkout(sessionId)}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
