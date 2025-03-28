@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +15,6 @@ import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Sheets from "./pages/Sheets";
 import MainLayout from "./components/layout/MainLayout";
-import "./index.css";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +31,9 @@ const App = () => (
                 path="/explore" 
                 element={
                   <AuthenticatedRoute>
-                    <Explore />
+                    <MainLayout>
+                      <Explore />
+                    </MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
@@ -39,7 +41,9 @@ const App = () => (
                 path="/library" 
                 element={
                   <AuthenticatedRoute>
-                    <Library />
+                    <MainLayout>
+                      <Library />
+                    </MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
@@ -47,7 +51,9 @@ const App = () => (
                 path="/liked" 
                 element={
                   <AuthenticatedRoute>
-                    <Liked />
+                    <MainLayout>
+                      <Liked />
+                    </MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
@@ -55,7 +61,9 @@ const App = () => (
                 path="/search" 
                 element={
                   <AuthenticatedRoute>
-                    <Search />
+                    <MainLayout>
+                      <Search />
+                    </MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
@@ -63,7 +71,9 @@ const App = () => (
                 path="/sheets" 
                 element={
                   <AuthenticatedRoute>
-                    <Sheets />
+                    <MainLayout>
+                      <Sheets />
+                    </MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
