@@ -1,5 +1,4 @@
-
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -25,6 +24,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import ExerciseSearch from "./ExerciseSearch";
 
 interface WorkoutTableProps {
   session: WorkoutSession;
@@ -40,11 +48,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     addExercise, 
     addSet,
     deleteSet,
-    deleteExercise 
+    deleteExercise,
+    addExerciseToCircuit
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
-  
+  const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
+  const [selectedCircuitId, setSelectedCircuitId] = useState<string | null>(null);
+  const [newExerciseName, setNewExerciseName] = useState("");
+
   const organizedExercises = React.useMemo(() => {
     const result: Exercise[] = [];
     const circuitMap = new Map<string, Exercise[]>();
@@ -271,6 +283,26 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
       exerciseId: targetExercise.id,
       setIndex: targetExerciseColumn ? undefined : newSetIndex
     });
+  };
+  
+  const handleAddExerciseToCircuit = (circuitId: string) => {
+    setSelectedCircuitId(circuitId);
+    setIsAddExerciseDialogOpen(true);
+  };
+  
+  const handleSubmitAddExerciseToCircuit = () => {
+    if (!selectedCircuitId || !newExerciseName.trim()) return;
+    
+    const newExerciseId = addExercise(session.id);
+    
+    if (newExerciseId) {
+      updateExercise(session.id, newExerciseId, { name: newExerciseName } as Partial<Exercise>);
+      addExerciseToCircuit(session.id, selectedCircuitId, newExerciseId);
+      
+      setIsAddExerciseDialogOpen(false);
+      setNewExerciseName("");
+      setSelectedCircuitId(null);
+    }
   };
   
   return (
@@ -500,6 +532,13 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     <>
                       <td colSpan={4} className="border border-muted-foreground/20 p-2">
                         <div className="flex justify-end space-x-2">
+                          <button
+                            className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            onClick={() => handleAddExerciseToCircuit(exercise.id)}
+                            aria-label="Add exercise to circuit"
+                          >
+                            <Plus className="h-4 w-4 text-muted-foreground" />
+                          </button>
                           <button
                             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
                             onClick={() => deleteExercise(session.id, exercise.id)}
@@ -808,6 +847,48 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
           })}
         </TableBody>
       </Table>
+      
+      <Dialog 
+        open={isAddExerciseDialogOpen} 
+        onOpenChange={setIsAddExerciseDialogOpen}
+      >
+        <DialogContent className="bg-dark-200 border-dark-300 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add Exercise to Circuit</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="exerciseName" className="text-gray-300">Exercise Name</Label>
+                <div className="mt-1 rounded-md border border-dark-400 bg-dark-300">
+                  <ExerciseSearch
+                    value={newExerciseName}
+                    onChange={setNewExerciseName}
+                    placeholder="Search for an exercise..."
+                    className="text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAddExerciseDialogOpen(false)}
+              className="text-gray-300 hover:bg-dark-400"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitAddExerciseToCircuit}
+              disabled={!newExerciseName.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Add Exercise
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
