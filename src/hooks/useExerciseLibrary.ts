@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise, ExerciseVisual, ExerciseWithVisual } from '@/types/exercise';
