@@ -16,9 +16,9 @@ const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, ci
   
   if (!circuitExercises || circuitExercises.length === 0) return null;
   
-  // Find the session that contains this circuit
-  const sessionWithCircuit = program.sessions.find(session => 
-    session.circuits.some(circuit => circuit.id === circuitId)
+  // Find the session that contains this circuit with proper null checking
+  const sessionWithCircuit = program?.sessions?.find(session => 
+    session?.circuits?.some(circuit => circuit.id === circuitId)
   );
   
   const handleAddExercise = () => {

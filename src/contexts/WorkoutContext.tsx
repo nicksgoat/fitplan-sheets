@@ -54,7 +54,7 @@ interface WorkoutContextType {
   updateWeekName: (weekId: string, name: string) => void;
   updateExercise: (sessionId: string, exerciseId: string, updates: Partial<Exercise>) => void;
   updateSet: (sessionId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
-  addExercise: (sessionId: string, afterExerciseId?: string) => void;
+  addExercise: (sessionId: string, afterExerciseId?: string, callback?: (exerciseId: string) => void) => void;
   addSet: (sessionId: string, exerciseId: string) => void;
   deleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
   deleteExercise: (sessionId: string, exerciseId: string) => void;
@@ -160,14 +160,25 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addExercise = (sessionId: string, afterExerciseId?: string) => {
+  const addExercise = (sessionId: string, afterExerciseId?: string, callback?: (exerciseId: string) => void) => {
     setProgram((prevProgram) => {
-      const updatedSessions = prevProgram.sessions.map((session) => {
-        if (session.id !== sessionId) return session;
-        return addExerciseToSession(session, afterExerciseId);
+      const session = prevProgram.sessions.find(s => s.id === sessionId);
+      if (!session) return prevProgram;
+      
+      const { updatedSession, newExerciseId } = addExerciseToSession(session, afterExerciseId);
+      
+      const updatedSessions = prevProgram.sessions.map((s) => {
+        if (s.id !== sessionId) return s;
+        return updatedSession;
       });
+      
+      if (callback) {
+        setTimeout(() => callback(newExerciseId), 0);
+      }
+      
       return { ...prevProgram, sessions: updatedSessions };
     });
+    
     toast.success("Exercise added");
   };
 
