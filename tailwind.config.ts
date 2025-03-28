@@ -1,6 +1,4 @@
-
 import type { Config } from "tailwindcss";
-
 export default {
 	darkMode: ["class"],
 	content: [
@@ -68,6 +66,26 @@ export default {
 					500: '#4a4a4a', // Light dark (disabled states)
 					card: '#121212', // Card background
 					border: '#333333', // Border color
+				},
+				sidebar: {
+					DEFAULT: 'hsl(var(--sidebar-background))',
+					foreground: 'hsl(var(--sidebar-foreground))',
+					primary: 'hsl(var(--sidebar-primary))',
+					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+					accent: 'hsl(var(--sidebar-accent))',
+					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+					border: 'hsl(var(--sidebar-border))',
+					ring: 'hsl(var(--sidebar-ring))'
+				},
+				fitbloom: {
+					purple: "#9b87f5",
+					dark: "#1A1F2C",
+					light: "#D6BCFA",
+					background: "#F1F0FB",
+					accent: "#1EAEDB",
+					white: "#FFFFFF",
+					"text-medium": "#999999",
+					"text-light": "#CCCCCC",
 				}
 			},
 			borderRadius: {
@@ -99,7 +117,17 @@ export default {
 				'slide-out': {
 					'0%': { transform: 'translateY(0)', opacity: '1' },
 					'100%': { transform: 'translateY(10px)', opacity: '0' }
-				}
+				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -107,7 +135,9 @@ export default {
 				'fade-in': 'fade-in 0.3s ease-out',
 				'fade-out': 'fade-out 0.3s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
-				'slide-out': 'slide-out 0.3s ease-out'
+				'slide-out': 'slide-out 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out',
+				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
 			}
 		}
 	},
