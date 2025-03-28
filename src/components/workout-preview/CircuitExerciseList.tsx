@@ -24,11 +24,16 @@ const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, ci
   const handleAddExercise = () => {
     if (sessionWithCircuit) {
       // Add new exercise to the session
-      const newExerciseId = addExercise(sessionWithCircuit.id);
+      addExercise(sessionWithCircuit.id);
       
-      // If exercise was added successfully, add it to the circuit
-      if (newExerciseId) {
-        addExerciseToCircuit(sessionWithCircuit.id, circuitId, newExerciseId);
+      // We can't check the return value of addExercise since it has void return type
+      // Get the last exercise that was added to this session (which should be the one we just created)
+      const session = program.sessions.find(s => s.id === sessionWithCircuit.id);
+      if (session) {
+        const lastExerciseId = session.exercises[session.exercises.length - 1]?.id;
+        if (lastExerciseId) {
+          addExerciseToCircuit(sessionWithCircuit.id, circuitId, lastExerciseId);
+        }
       }
     }
   };
