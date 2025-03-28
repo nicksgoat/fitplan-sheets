@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Plus, Trash2, ChevronDown } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Exercise, RepType, IntensityType, WeightType } from "@/types/workout";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -8,20 +8,15 @@ import EditableCell from "../EditableCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import RepTypeSelector from "../RepTypeSelector";
-import IntensityTypeSelector from "../IntensityTypeSelector";
-import WeightTypeSelector from "../WeightTypeSelector";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import RepTypeSelector from "../RepTypeSelector";
+import IntensityTypeSelector from "../IntensityTypeSelector";
+import WeightTypeSelector from "../WeightTypeSelector";
 
 interface ExerciseRowProps {
   exercise: Exercise;
@@ -60,6 +55,11 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const intensityType = exercise.intensityType || 'rpe';
   const weightType = exercise.weightType || 'pounds';
   
+  const handleRepTypeSelect = (value: string) => {
+    console.log("Exercise row rep type changed to:", value);
+    handleRepTypeChange(exercise.id, value as RepType);
+  };
+  
   const handleIntensityTypeSelect = (value: string) => {
     console.log("Exercise row intensity type changed to:", value);
     handleIntensityTypeChange(exercise.id, value as IntensityType);
@@ -68,11 +68,6 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const handleWeightTypeSelect = (value: string) => {
     console.log("Exercise row weight type changed to:", value);
     handleWeightTypeChange(exercise.id, value as WeightType);
-  };
-  
-  const handleRepTypeSelect = (value: string) => {
-    console.log("Exercise row rep type changed to:", value);
-    handleRepTypeChange(exercise.id, value as RepType);
   };
   
   return (
@@ -126,12 +121,25 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="max-h-[350px] z-50 bg-popover">
-            <RepTypeSelector
-              value={repType}
-              onChange={handleRepTypeSelect}
-              onClose={() => {}}
-            />
+          <SelectContent>
+            <SelectItem value="fixed">
+              <RepTypeSelector value="fixed" onChange={() => {}} variant="minimal" />
+            </SelectItem>
+            <SelectItem value="range">
+              <RepTypeSelector value="range" onChange={() => {}} variant="minimal" />
+            </SelectItem>
+            <SelectItem value="descending">
+              <RepTypeSelector value="descending" onChange={() => {}} variant="minimal" />
+            </SelectItem>
+            <SelectItem value="time">
+              <RepTypeSelector value="time" onChange={() => {}} variant="minimal" />
+            </SelectItem>
+            <SelectItem value="each-side">
+              <RepTypeSelector value="each-side" onChange={() => {}} variant="minimal" />
+            </SelectItem>
+            <SelectItem value="amrap">
+              <RepTypeSelector value="amrap" onChange={() => {}} variant="minimal" />
+            </SelectItem>
           </SelectContent>
         </Select>
       </td>
@@ -147,48 +155,24 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="max-h-[300px] z-50 bg-popover">
+          <SelectContent>
             <SelectItem value="pounds">
-              <WeightTypeSelector 
-                value="pounds" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="pounds" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="kilos">
-              <WeightTypeSelector 
-                value="kilos" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="kilos" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="distance-m">
-              <WeightTypeSelector 
-                value="distance-m" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="distance-m" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="distance-ft">
-              <WeightTypeSelector 
-                value="distance-ft" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="distance-ft" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="distance-yd">
-              <WeightTypeSelector 
-                value="distance-yd" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="distance-yd" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="distance-mi">
-              <WeightTypeSelector 
-                value="distance-mi" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <WeightTypeSelector value="distance-mi" onChange={() => {}} variant="minimal" />
             </SelectItem>
           </SelectContent>
         </Select>
@@ -205,41 +189,21 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
               />
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="max-h-[300px] z-50 bg-popover">
+          <SelectContent>
             <SelectItem value="rpe">
-              <IntensityTypeSelector 
-                value="rpe" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <IntensityTypeSelector value="rpe" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="arpe">
-              <IntensityTypeSelector 
-                value="arpe" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <IntensityTypeSelector value="arpe" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="percent">
-              <IntensityTypeSelector 
-                value="percent" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <IntensityTypeSelector value="percent" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="absolute">
-              <IntensityTypeSelector 
-                value="absolute" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <IntensityTypeSelector value="absolute" onChange={() => {}} variant="minimal" />
             </SelectItem>
             <SelectItem value="velocity">
-              <IntensityTypeSelector 
-                value="velocity" 
-                onChange={() => {}} 
-                variant="minimal" 
-              />
+              <IntensityTypeSelector value="velocity" onChange={() => {}} variant="minimal" />
             </SelectItem>
           </SelectContent>
         </Select>

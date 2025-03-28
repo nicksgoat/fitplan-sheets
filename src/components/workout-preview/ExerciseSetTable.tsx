@@ -60,6 +60,23 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
     }
   };
   
+  // Get the rep type from the exercise
+  const repType = exercise.repType || 'fixed';
+  
+  // Function to get appropriate color based on rep type
+  const getRepColor = (type: string) => {
+    switch (type) {
+      case 'amrap':
+        return 'text-amber-600 font-medium';
+      case 'time':
+        return 'text-blue-400';
+      case 'each-side':
+        return 'text-purple-400';
+      default:
+        return 'text-white';
+    }
+  };
+  
   // Get display text for weight type
   const getWeightLabel = () => {
     switch (weightType) {
@@ -100,6 +117,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   
   const intensityColor = getIntensityColor(intensityType);
   const weightColor = getWeightColor(weightType);
+  const repColor = getRepColor(repType);
   
   console.log("ExerciseSetTable rendering with intensity type:", intensityType, "weight type:", weightType);
   
@@ -133,7 +151,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
                       : set.weight
                   ) : "—"}
                 </TableCell>
-                <TableCell className="h-8 py-1 px-1 text-center truncate text-white">
+                <TableCell className={`h-8 py-1 px-1 text-center truncate ${repColor}`}>
                   {set.reps ? (
                     Array.isArray(set.reps.split(',')) && set.reps.split(',')[idx]
                       ? set.reps.split(',')[idx].trim()

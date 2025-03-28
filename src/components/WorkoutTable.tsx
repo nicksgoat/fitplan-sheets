@@ -1,5 +1,6 @@
+
 import React, { useRef, useCallback } from "react";
-import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
+import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, WeightType } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { 
@@ -136,34 +137,49 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
-      const convertWeight = (weight: string, fromType: WeightType, toType: WeightType): string => {
-        if (!weight || fromType === toType) return weight;
-        
-        const numMatch = weight.match(/[0-9.]+/);
-        if (!numMatch) return weight;
-        
-        const numValue = parseFloat(numMatch[0]);
-        if (isNaN(numValue)) return weight;
-        
-        if ((fromType === 'pounds' && toType === 'kilos')) {
-          const kilos = Math.round(numValue / 2.20462 * 10) / 10;
-          return `${kilos}`;
-        } else if ((fromType === 'kilos' && toType === 'pounds')) {
-          const pounds = Math.round(numValue * 2.20462 * 10) / 10;
-          return `${pounds}`;
-        }
-        
-        return `${numValue}`;
-      };
-      
       const fromType = exercise.weightType || 'pounds';
       
       exercise.sets.forEach(set => {
-        const convertedWeight = convertWeight(set.weight, fromType, weightType);
+        // Extract numeric value from weight
+        const numMatch = set.weight.match(/[0-9.]+/);
+        if (!numMatch) {
+          updateSet(session.id, exerciseId, set.id, { 
+            weightType
+          } as Partial<Set>);
+          return;
+        }
+        
+        const numValue = parseFloat(numMatch[0]);
+        if (isNaN(numValue)) {
+          updateSet(session.id, exerciseId, set.id, { 
+            weightType
+          } as Partial<Set>);
+          return;
+        }
+        
+        let convertedValue = set.weight;
+        
+        // Convert between pounds and kilos
+        if ((fromType === 'pounds' && weightType === 'kilos')) {
+          const kilos = Math.round(numValue / 2.20462 * 10) / 10;
+          convertedValue = `${kilos}`;
+        } else if ((fromType === 'kilos' && weightType === 'pounds')) {
+          const pounds = Math.round(numValue * 2.20462 * 10) / 10;
+          convertedValue = `${pounds}`;
+        }
+        
+        // Handle distance conversions
+        const isFromDistance = fromType.startsWith('distance-');
+        const isToDistance = weightType.startsWith('distance-');
+        
+        if (isFromDistance && isToDistance) {
+          // Handle distance-to-distance conversions
+          // These would need to be implemented based on your requirements
+        }
         
         updateSet(session.id, exerciseId, set.id, { 
           weightType,
-          weight: convertedWeight
+          weight: convertedValue
         } as Partial<Set>);
       });
     }
