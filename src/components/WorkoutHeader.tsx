@@ -8,11 +8,15 @@ import { Download, MoreVertical, Save } from "lucide-react";
 const WorkoutHeader: React.FC = () => {
   const { program } = useWorkout();
   
+  // Provide defaults if title or description are not available
+  const title = program.name || "My Workout Program";
+  const description = program.description || "Custom workout program";
+  
   return (
     <header className="mb-8 flex items-center justify-between">
       <div>
-        <h1 className="mb-1 text-2xl font-bold md:text-3xl">{program.title}</h1>
-        <p className="text-sm text-gray-400 md:text-base">{program.description}</p>
+        <h1 className="mb-1 text-2xl font-bold md:text-3xl">{title}</h1>
+        <p className="text-sm text-gray-400 md:text-base">{description}</p>
       </div>
       
       <div className="flex items-center gap-2">

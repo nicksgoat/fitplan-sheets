@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar } from "@/components/ui/avatar";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { LogOut, User } from "lucide-react";
 
 interface UserProfileProps {
@@ -15,7 +15,7 @@ interface UserProfileProps {
 const UserProfile = ({ className }: UserProfileProps) => {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isMobile = useIsMobile();
 
   if (!user) return null;
 
