@@ -12,6 +12,7 @@ import Explore from "./pages/Explore";
 import Library from "./pages/Library";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
+import Sheets from "./pages/Sheets";
 import MainLayout from "./components/layout/MainLayout";
 // Keep the CSS import
 import "./index.css";
@@ -27,14 +28,7 @@ const App = () => (
           <TooltipProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route 
-                path="/" 
-                element={
-                  <AuthenticatedRoute>
-                    <Index />
-                  </AuthenticatedRoute>
-                } 
-              />
+              <Route path="/" element={<Index />} />
               <Route 
                 path="/explore" 
                 element={
@@ -64,6 +58,14 @@ const App = () => (
                 element={
                   <AuthenticatedRoute>
                     <Search />
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/sheets" 
+                element={
+                  <AuthenticatedRoute>
+                    <Sheets />
                   </AuthenticatedRoute>
                 } 
               />

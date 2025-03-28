@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Library, Compass, Heart, User, Home } from 'lucide-react';
+import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,6 +19,7 @@ const Sidebar = ({ mobileFooter = false }: SidebarProps) => {
     { name: 'Search', path: '/search', icon: <Search className="h-5 w-5" /> },
     { name: 'My Library', path: '/library', icon: <Library className="h-5 w-5" /> },
     { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
+    { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
   ];
 
   if (mobileFooter) {
