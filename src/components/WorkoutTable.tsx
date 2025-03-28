@@ -275,17 +275,11 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleAddExerciseToCircuit = (circuitId: string) => {
-    addExercise(session.id);
-    
-    const updatedSession = program.sessions.find(s => s.id === session.id);
-    if (!updatedSession) return;
-    
-    const newExerciseIndex = updatedSession.exercises.length - 1;
-    if (newExerciseIndex < 0) return;
-    
-    const newExercise = updatedSession.exercises[newExerciseIndex];
-    
-    addExerciseToCircuit(session.id, circuitId, newExercise.id);
+    addExercise(session.id, undefined, (newExerciseId) => {
+      if (newExerciseId) {
+        addExerciseToCircuit(session.id, circuitId, newExerciseId);
+      }
+    });
   };
   
   return (
