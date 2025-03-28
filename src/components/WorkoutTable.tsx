@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -11,6 +10,7 @@ import WeightTypeSelector from "./WeightTypeSelector";
 import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { createEmptyExercise } from "@/utils/workout";
 import { 
   Table,
   TableBody,
@@ -276,7 +276,8 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleAddExerciseToCircuit = (circuitId: string) => {
-    // Use the callback pattern to ensure the exercise is added to the circuit
+    const newExercise = createEmptyExercise();
+    
     addExercise(session.id, undefined, (newExerciseId) => {
       if (newExerciseId) {
         addExerciseToCircuit(session.id, circuitId, newExerciseId);
@@ -806,15 +807,6 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                             aria-label="Delete set"
                           >
                             <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        )}
-                        {exercise.sets.length === 1 && (
-                          <button
-                            className="p-1 rounded-full hover:bg-secondary transition-colors"
-                            onClick={() => addSet(session.id, exercise.id)}
-                            aria-label="Add set"
-                          >
-                            <Plus className="h-4 w-4 text-muted-foreground" />
                           </button>
                         )}
                       </td>
