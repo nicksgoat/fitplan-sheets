@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
-import { RepType, IntensityType, WeightType } from "@/types/workout";
+import { RepType, IntensityType, WeightType, CalculationDirection } from "@/types/workout";
 import RepInput from "./RepInput";
 import IntensityInput from "./IntensityInput";
 import WeightInput from "./WeightInput";
@@ -27,6 +27,10 @@ interface EditableSetCellProps {
   hideRepTypeSelector?: boolean;
   hideIntensityTypeSelector?: boolean;
   hideWeightTypeSelector?: boolean;
+  maxWeight?: string; // New prop for max weight
+  usePercentage?: boolean; // Whether to enable percentage mode
+  onCalculationDirectionChange?: (direction: CalculationDirection) => void;
+  calculationDirection?: CalculationDirection;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -49,6 +53,10 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   hideRepTypeSelector = false,
   hideIntensityTypeSelector = false,
   hideWeightTypeSelector = false,
+  maxWeight,
+  usePercentage = false,
+  onCalculationDirectionChange,
+  calculationDirection = "weight-to-percentage",
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -140,6 +148,10 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideWeightTypeSelector}
+          maxWeight={maxWeight}
+          usePercentage={usePercentage}
+          onCalculationDirectionChange={onCalculationDirectionChange}
+          calculationDirection={calculationDirection}
         />
       </div>
     );
@@ -164,6 +176,30 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideIntensityTypeSelector}
+        />
+      </div>
+    );
+  }
+  
+  // Special rendering for max weight cell
+  if (columnName === "max") {
+    return (
+      <div 
+        className={cn(
+          "editable-cell h-full flex items-center",
+          isFocused && "ring-2 ring-primary ring-offset-1",
+          className
+        )}
+        onClick={handleClick}
+      >
+        <WeightInput
+          value={value}
+          weightType={weightType || "pounds"}
+          onChange={onChange}
+          onWeightTypeChange={onWeightTypeChange || (() => {})}
+          placeholder="Max weight"
+          isFocused={isFocused}
+          hideSelector={hideWeightTypeSelector}
         />
       </div>
     );
