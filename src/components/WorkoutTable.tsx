@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -275,16 +274,25 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleAddExerciseToCircuit = (circuitId: string) => {
-    // Add the exercise to the session
+    const sessionCopy = { ...session };
+    
+    const circuit = sessionCopy.circuits.find(c => c.id === circuitId);
+    if (!circuit) return;
+    
     addExercise(session.id);
     
-    // Then add the exercise to the circuit
-    // We can't check if addExercise returns anything since it has void return type
-    // Get the last exercise that was added (which should be the one we just created)
-    const lastExercise = session.exercises[session.exercises.length - 1];
-    if (lastExercise) {
-      addExerciseToCircuit(session.id, circuitId, lastExercise.id);
-    }
+    const updatedSession = sessionCopy.id ? 
+      program.sessions.find(s => s.id === sessionCopy.id) : 
+      null;
+    
+    if (!updatedSession) return;
+    
+    const newExerciseIndex = updatedSession.exercises.length - 1;
+    if (newExerciseIndex < 0) return;
+    
+    const newExercise = updatedSession.exercises[newExerciseIndex];
+    
+    addExerciseToCircuit(session.id, circuitId, newExercise.id);
   };
   
   return (
