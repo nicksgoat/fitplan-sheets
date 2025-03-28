@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -199,10 +200,10 @@ const SAMPLE_PROGRAM: WorkoutProgram = {
     }
   ],
   maxWeights: {
-    "Barbell Squat": { weight: "275", weightType: "lbs" },
-    "Bench Press": { weight: "225", weightType: "lbs" },
-    "Deadlift": { weight: "365", weightType: "lbs" },
-    "Overhead Press": { weight: "135", weightType: "lbs" }
+    "Barbell Squat": { weight: "275", weightType: "pounds" },
+    "Bench Press": { weight: "225", weightType: "pounds" },
+    "Deadlift": { weight: "365", weightType: "pounds" },
+    "Overhead Press": { weight: "135", weightType: "pounds" }
   }
 };
 
