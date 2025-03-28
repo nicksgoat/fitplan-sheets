@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import EditableCell from "../EditableCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
 import { Button } from "@/components/ui/button";
-import { useWorkout } from "@/contexts/WorkoutContext";
 
 interface CircuitRowProps {
   exercise: Exercise;

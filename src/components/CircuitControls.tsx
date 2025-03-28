@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -92,21 +93,74 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
   ];
 
   const handleCreateCircuit = (type: WorkoutType) => {
+    let circuitId: string | undefined;
+    
+    // Create the initial circuit based on type
     switch (type) {
       case 'circuit':
-        createCircuit(sessionId);
+        circuitId = createCircuit(sessionId);
+        // Add 3 exercises to circuit
+        if (circuitId) {
+          for (let i = 0; i < 3; i++) {
+            addExercise(sessionId, undefined, (newExerciseId) => {
+              if (newExerciseId && circuitId) {
+                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
+              }
+            });
+          }
+        }
         break;
       case 'superset':
-        createSuperset(sessionId);
+        circuitId = createSuperset(sessionId);
+        // Add 2 exercises to superset
+        if (circuitId) {
+          for (let i = 0; i < 2; i++) {
+            addExercise(sessionId, undefined, (newExerciseId) => {
+              if (newExerciseId && circuitId) {
+                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
+              }
+            });
+          }
+        }
         break;
       case 'emom':
-        createEMOM(sessionId);
+        circuitId = createEMOM(sessionId);
+        // Add 3 exercises to EMOM
+        if (circuitId) {
+          for (let i = 0; i < 3; i++) {
+            addExercise(sessionId, undefined, (newExerciseId) => {
+              if (newExerciseId && circuitId) {
+                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
+              }
+            });
+          }
+        }
         break;
       case 'amrap':
-        createAMRAP(sessionId);
+        circuitId = createAMRAP(sessionId);
+        // Add 3 exercises to AMRAP
+        if (circuitId) {
+          for (let i = 0; i < 3; i++) {
+            addExercise(sessionId, undefined, (newExerciseId) => {
+              if (newExerciseId && circuitId) {
+                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
+              }
+            });
+          }
+        }
         break;
       case 'tabata':
-        createTabata(sessionId);
+        circuitId = createTabata(sessionId);
+        // Add 3 exercises to Tabata
+        if (circuitId) {
+          for (let i = 0; i < 3; i++) {
+            addExercise(sessionId, undefined, (newExerciseId) => {
+              if (newExerciseId && circuitId) {
+                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
+              }
+            });
+          }
+        }
         break;
     }
     setSelectedType(null);
