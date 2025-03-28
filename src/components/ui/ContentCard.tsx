@@ -7,21 +7,41 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
 import { ExerciseWithVisual } from '@/types/exercise';
+import { ItemType } from '@/lib/types';
 
 interface ContentCardProps {
-  item: ExerciseWithVisual;
+  item: ExerciseWithVisual | ItemType;
   className?: string;
 }
 
 const ContentCard = ({ item, className }: ContentCardProps) => {
-  const imageUrl = item.visual?.imageUrl || 'https://placehold.co/600x400?text=No+Image';
-  const tags = item.visual?.tags || [];
-  const creator = item.visual?.creator || 'FitBloom';
-  const duration = item.visual?.duration || '';
-  const title = item.name;
+  // Determine if item is ExerciseWithVisual or ItemType
+  const isExerciseWithVisual = 'primaryMuscle' in item;
+  
+  // Map ExerciseWithVisual properties to match ItemType structure for consistency
+  const normalizedItem: ItemType = isExerciseWithVisual 
+    ? {
+        id: item.id,
+        title: item.name,
+        type: 'exercise',
+        creator: item.visual?.creator || 'FitBloom',
+        imageUrl: item.visual?.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+        duration: item.visual?.duration || '',
+        tags: item.visual?.tags || [],
+        difficulty: (item.visual?.difficulty as any) || 'beginner',
+        isFavorite: false,
+        description: item.description
+      }
+    : item as ItemType;
+  
+  const imageUrl = normalizedItem.imageUrl;
+  const tags = normalizedItem.tags || [];
+  const creator = normalizedItem.creator;
+  const duration = normalizedItem.duration;
+  const title = normalizedItem.title;
   
   return (
-    <DetailDrawer item={item}>
+    <DetailDrawer item={normalizedItem}>
       <Card className={cn("content-card", className)}>
         <div className="relative">
           <img 
@@ -38,12 +58,12 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
               // Handle favorite toggle logic here
             }}
           >
-            <Heart className={cn("h-3 w-3", false ? "fill-fitbloom-purple text-fitbloom-purple" : "text-white")} />
+            <Heart className={cn("h-3 w-3", normalizedItem.isFavorite ? "fill-fitbloom-purple text-fitbloom-purple" : "text-white")} />
           </Button>
         </div>
         <CardContent className="p-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase text-fitbloom-text-medium">exercise</span>
+            <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{normalizedItem.type}</span>
             {duration && (
               <span className="text-xs text-fitbloom-text-medium">{duration}</span>
             )}

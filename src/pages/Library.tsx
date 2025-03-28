@@ -8,7 +8,7 @@ import CollectionCard from '@/components/ui/CollectionCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
 import { ExerciseWithVisual } from '@/types/exercise';
-import { ItemType } from '@/lib/types';
+import { ItemType, CollectionType } from '@/lib/types';
 
 const Library = () => {
   const isMobile = useIsMobile();
@@ -27,7 +27,8 @@ const Library = () => {
     tags: exercise.visual?.tags || [],
     duration: exercise.visual?.duration || '',
     difficulty: exercise.visual?.difficulty || 'beginner',
-    isFavorite: false
+    isFavorite: false,
+    description: exercise.description
   })) || [];
   
   // Filter exercises based on active category
@@ -38,20 +39,26 @@ const Library = () => {
     : exerciseItems;
   
   // Placeholder data for other tabs
-  const mockWorkouts = [];
-  const mockPrograms = [];
-  const mockCollections = [
+  const mockWorkouts: ItemType[] = [];
+  const mockPrograms: ItemType[] = [];
+  
+  // Mock collections with proper type
+  const mockCollections: CollectionType[] = [
     {
       id: '1',
-      title: 'My Favorite Exercises',
-      count: 12,
-      imageUrl: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=2069',
+      name: 'My Favorite Exercises',
+      description: 'Quick exercises to start the day energized and focused',
+      coverImages: ['https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=2069'],
+      itemCount: 12,
+      lastUpdated: '2 days ago'
     },
     {
       id: '2',
-      title: 'Weekly Routines',
-      count: 5,
-      imageUrl: 'https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?q=80&w=2070',
+      name: 'Weekly Routines',
+      description: 'Low intensity workouts for active recovery days',
+      coverImages: ['https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?q=80&w=2070'],
+      itemCount: 5,
+      lastUpdated: '1 week ago'
     }
   ];
   
