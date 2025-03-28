@@ -60,6 +60,44 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
     }
   };
   
+  // Get display text for weight type
+  const getWeightLabel = () => {
+    switch (weightType) {
+      case 'pounds':
+        return 'Weight (lbs)';
+      case 'kilos':
+        return 'Weight (kg)';
+      case 'distance-m':
+        return 'Distance (m)';
+      case 'distance-ft':
+        return 'Distance (ft)';
+      case 'distance-yd':
+        return 'Distance (yd)';
+      case 'distance-mi':
+        return 'Distance (mi)';
+      default:
+        return 'Weight';
+    }
+  };
+  
+  // Get display text for intensity type
+  const getIntensityLabel = () => {
+    switch (intensityType) {
+      case 'rpe':
+        return 'RPE';
+      case 'arpe':
+        return 'aRPE';
+      case 'percent':
+        return '% of Max';
+      case 'absolute':
+        return 'Absolute';
+      case 'velocity':
+        return 'Velocity';
+      default:
+        return 'Intensity';
+    }
+  };
+  
   const intensityColor = getIntensityColor(intensityType);
   const weightColor = getWeightColor(weightType);
   
@@ -72,9 +110,11 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
           <TableHeader>
             <TableRow className="hover:bg-transparent border-dark-border">
               <TableHead className="h-8 w-10 font-medium text-center text-xs p-1 text-gray-400">Set</TableHead>
-              <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">Target</TableHead>
               <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">
-                {exercise.sets[0]?.weight ? "Weight" : "—"}
+                {getIntensityLabel()}
+              </TableHead>
+              <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">
+                {exercise.sets[0]?.weight ? getWeightLabel() : "—"}
               </TableHead>
               <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">Reps</TableHead>
             </TableRow>

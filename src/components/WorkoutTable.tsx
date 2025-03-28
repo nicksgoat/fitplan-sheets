@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback } from "react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -82,19 +81,46 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   const handleRepTypeChange = (exerciseId: string, repType: Exercise['repType']) => {
     updateExercise(session.id, exerciseId, { repType } as Partial<Exercise>);
+    
+    const exercise = session.exercises.find(e => e.id === exerciseId);
+    if (exercise) {
+      exercise.sets.forEach(set => {
+        updateSet(session.id, exerciseId, set.id, { repType } as Partial<Set>);
+      });
+    }
   };
   
   const handleIntensityTypeChange = (exerciseId: string, intensityType: Exercise['intensityType']) => {
     console.log("WorkoutTable: Setting exercise intensity type to:", intensityType);
     
-    // Update the exercise's intensity type
     updateExercise(session.id, exerciseId, { intensityType } as Partial<Exercise>);
     
-    // Find the exercise and update all its sets to use the same intensity type
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
       exercise.sets.forEach(set => {
-        updateSet(session.id, exerciseId, set.id, { intensityType } as Partial<Set>);
+        let updatedIntensity = set.intensity;
+        
+        const numMatch = set.intensity.match(/[0-9.]+/);
+        const numValue = numMatch ? numMatch[0] : '';
+        
+        if (numValue) {
+          if (intensityType === 'rpe') {
+            updatedIntensity = `RPE ${numValue}`;
+          } else if (intensityType === 'arpe') {
+            updatedIntensity = `aRPE ${numValue}`;
+          } else if (intensityType === 'percent') {
+            updatedIntensity = `${numValue}%`;
+          } else if (intensityType === 'velocity') {
+            updatedIntensity = `${numValue} m/s`;
+          } else {
+            updatedIntensity = numValue;
+          }
+        }
+        
+        updateSet(session.id, exerciseId, set.id, { 
+          intensityType,
+          intensity: updatedIntensity
+        } as Partial<Set>);
       });
     }
   };
@@ -106,14 +132,39 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   const handleWeightTypeChange = (exerciseId: string, weightType: Exercise['weightType']) => {
     console.log("WorkoutTable: Setting exercise weight type to:", weightType);
     
-    // Update the exercise's weight type
     updateExercise(session.id, exerciseId, { weightType } as Partial<Exercise>);
     
-    // Find the exercise and update all its sets to use the same weight type
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
+      const convertWeight = (weight: string, fromType: WeightType, toType: WeightType): string => {
+        if (!weight || fromType === toType) return weight;
+        
+        const numMatch = weight.match(/[0-9.]+/);
+        if (!numMatch) return weight;
+        
+        const numValue = parseFloat(numMatch[0]);
+        if (isNaN(numValue)) return weight;
+        
+        if ((fromType === 'pounds' && toType === 'kilos')) {
+          const kilos = Math.round(numValue / 2.20462 * 10) / 10;
+          return `${kilos}`;
+        } else if ((fromType === 'kilos' && toType === 'pounds')) {
+          const pounds = Math.round(numValue * 2.20462 * 10) / 10;
+          return `${pounds}`;
+        }
+        
+        return `${numValue}`;
+      };
+      
+      const fromType = exercise.weightType || 'pounds';
+      
       exercise.sets.forEach(set => {
-        updateSet(session.id, exerciseId, set.id, { weightType } as Partial<Set>);
+        const convertedWeight = convertWeight(set.weight, fromType, weightType);
+        
+        updateSet(session.id, exerciseId, set.id, { 
+          weightType,
+          weight: convertedWeight
+        } as Partial<Set>);
       });
     }
   };

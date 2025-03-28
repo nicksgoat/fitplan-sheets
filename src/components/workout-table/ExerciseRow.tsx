@@ -60,7 +60,6 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const intensityType = exercise.intensityType || 'rpe';
   const weightType = exercise.weightType || 'pounds';
   
-  // Fixed: Use more direct approach for handling selection changes
   const handleIntensityTypeSelect = (value: string) => {
     console.log("Exercise row intensity type changed to:", value);
     handleIntensityTypeChange(exercise.id, value as IntensityType);
@@ -138,8 +137,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        {/* Fixed: Simplified the weight type selector to just pass string values */}
-        <Select defaultValue={weightType} onValueChange={handleWeightTypeSelect}>
+        <Select value={weightType} onValueChange={handleWeightTypeSelect}>
           <SelectTrigger className="h-7 text-xs w-full">
             <SelectValue>
               <WeightTypeSelector
@@ -150,7 +148,6 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[300px] z-50 bg-popover">
-            {/* Directly use SelectItem for each weight type option */}
             <SelectItem value="pounds">
               <WeightTypeSelector 
                 value="pounds" 
@@ -198,8 +195,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        {/* Fixed: Simplified the intensity type selector to just pass string values */}
-        <Select defaultValue={intensityType} onValueChange={handleIntensityTypeSelect}>
+        <Select value={intensityType} onValueChange={handleIntensityTypeSelect}>
           <SelectTrigger className="h-7 text-xs w-full">
             <SelectValue>
               <IntensityTypeSelector
@@ -210,7 +206,6 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[300px] z-50 bg-popover">
-            {/* Directly use SelectItem for each intensity type option */}
             <SelectItem value="rpe">
               <IntensityTypeSelector 
                 value="rpe" 
