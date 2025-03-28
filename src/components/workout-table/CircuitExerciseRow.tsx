@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ChevronRight, Plus, Trash2, Minus } from "lucide-react";
 import { Exercise, IntensityType, WeightType, RepType, Set } from "@/types/workout";
@@ -35,6 +34,7 @@ interface CircuitExerciseRowProps {
   handleSetIntensityTypeChange: (exerciseId: string, setId: string, intensityType: IntensityType) => void;
   handleSetWeightTypeChange: (exerciseId: string, setId: string, weightType: WeightType) => void;
   handleRepTypeChange: (exerciseId: string, repType: RepType) => void;
+  handleAddExerciseToCircuit: (circuitId: string) => void;
 }
 
 const CircuitExerciseRow: React.FC<CircuitExerciseRowProps> = ({
@@ -53,6 +53,7 @@ const CircuitExerciseRow: React.FC<CircuitExerciseRowProps> = ({
   handleSetIntensityTypeChange,
   handleSetWeightTypeChange,
   handleRepTypeChange,
+  handleAddExerciseToCircuit
 }) => {
   const repType = exercise.repType || 'fixed';
   
@@ -265,6 +266,13 @@ const CircuitExerciseRow: React.FC<CircuitExerciseRowProps> = ({
             aria-label="Delete exercise"
           >
             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+          </button>
+          <button
+            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+            onClick={() => handleAddExerciseToCircuit(exercise.circuitId || '')}
+            aria-label="Add exercise to circuit"
+          >
+            <Plus className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
       </td>

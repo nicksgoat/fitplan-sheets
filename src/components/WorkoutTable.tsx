@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -318,6 +317,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     handleSetIntensityTypeChange={handleSetIntensityTypeChange}
                     handleSetWeightTypeChange={handleSetWeightTypeChange}
                     handleRepTypeChange={handleRepTypeChange}
+                    handleAddExerciseToCircuit={handleAddExerciseToCircuit}
                   />
                 )}
                 
