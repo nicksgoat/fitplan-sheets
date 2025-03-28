@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ItemType } from '@/lib/types';
@@ -17,7 +16,6 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
   const navigate = useNavigate();
 
-  // Function to render media (image or video)
   const renderMedia = () => {
     if (item.videoUrl) {
       return (
@@ -42,9 +40,7 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
   };
 
   const handleEdit = () => {
-    // Close the detail drawer first
     onClose();
-    // Navigate to the edit page with the exercise ID
     if (item.id) {
       console.log("Navigating to edit exercise:", item.id);
       navigate(`/edit-exercise/${item.id}`);
@@ -53,7 +49,6 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
 
   return (
     <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
-      {/* Header Media (Image or Video) */}
       <div className="relative w-full h-48 md:h-64">
         {renderMedia()}
         <Button 
@@ -66,7 +61,6 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
         </Button>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-gray-800">
         <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="bg-transparent h-14 p-0 w-full flex justify-start">
@@ -86,7 +80,6 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
         </Tabs>
       </div>
 
-      {/* Content */}
       <div className="p-4 space-y-4 flex-1">
         {activeTab === "details" ? (
           <>
@@ -136,13 +129,7 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
         )}
       </div>
 
-      {/* Action Buttons */}
       <div className="sticky bottom-0 w-full bg-black bg-opacity-80 backdrop-blur-sm p-4 border-t border-gray-800 flex gap-3">
-        <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
-          Close
-        </Button>
-        
-        {/* Show Edit button only for custom exercises */}
         {item.isCustom && (
           <Button 
             variant="secondary" 
