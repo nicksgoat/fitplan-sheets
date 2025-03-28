@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,14 +8,17 @@ import AuthenticatedRoute from "@/components/AuthenticatedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-
-// Remove the old CSS import and use the new tailwind styles
+import Explore from "./pages/Explore";
+import Library from "./pages/Library";
+import Liked from "./pages/Liked";
+import Search from "./pages/Search";
+import MainLayout from "./components/layout/MainLayout";
+// Keep the CSS import
 import "./index.css";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-// Make sure each provider is properly nested
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -33,6 +35,39 @@ const App = () => (
                   </AuthenticatedRoute>
                 } 
               />
+              <Route 
+                path="/explore" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout><Explore /></MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/library" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout><Library /></MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/liked" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout><Liked /></MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/search" 
+                element={
+                  <AuthenticatedRoute>
+                    <Search />
+                  </AuthenticatedRoute>
+                } 
+              />
+              {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
