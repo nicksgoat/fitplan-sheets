@@ -19,7 +19,10 @@ export default function AppLayout() {
         <Sidebar>
           <SidebarContent>
             <div className="p-4">
-              <h2 className="text-xl font-bold text-white mb-6">Workout Pro</h2>
+              <h2 className="text-xl font-bold text-white mb-6">
+                <span className="text-gray-100">Fit</span>
+                <span className="text-purple-500">Bloom</span>
+              </h2>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Home">
