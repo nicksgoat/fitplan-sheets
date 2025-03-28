@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -116,25 +115,18 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
   const handleAddExerciseToCircuit = () => {
     if (!selectedCircuit || !newExerciseName.trim()) return;
     
-    // First create a new regular exercise
-    addExercise(sessionId);
-    
-    // Get the ID of the newly created exercise (it should be the last one)
-    const newSession = program.sessions.find(s => s.id === sessionId);
-    if (!newSession) return;
-    
-    const newExerciseId = newSession.exercises[newSession.exercises.length - 1].id;
-    
-    // Update the exercise name
-    if (newExerciseId) {
-      // Add this exercise to the circuit
-      addExerciseToCircuit(sessionId, selectedCircuit.id, newExerciseId);
-      
-      // Close dialog and reset state
-      setIsAddExerciseDialogOpen(false);
-      setNewExerciseName("");
-      setSelectedCircuit(null);
-    }
+    // First create a new regular exercise with callback pattern
+    addExercise(sessionId, undefined, (newExerciseId) => {
+      if (newExerciseId) {
+        // Add this exercise to the circuit
+        addExerciseToCircuit(sessionId, selectedCircuit.id, newExerciseId);
+        
+        // Close dialog and reset state
+        setIsAddExerciseDialogOpen(false);
+        setNewExerciseName("");
+        setSelectedCircuit(null);
+      }
+    });
   };
   
   const openAddExerciseDialog = (circuit: Circuit) => {
