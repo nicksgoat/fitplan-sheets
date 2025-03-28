@@ -46,6 +46,7 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
     onClose();
     // Navigate to the edit page with the exercise ID
     if (item.id) {
+      console.log("Navigating to edit exercise:", item.id);
       navigate(`/edit-exercise/${item.id}`);
     }
   };

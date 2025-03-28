@@ -113,6 +113,15 @@ function searchLocalExercises(query: string): Exercise[] {
 
 // Get exercise by ID with fallback
 export async function getExerciseById(id: string): Promise<Exercise | null> {
+  // First check if we can find it in local storage for custom exercises
+  const localCustomExercises = getCustomExercisesFromLocalStorage();
+  const localCustomExercise = localCustomExercises.find(e => e.id === id);
+  
+  if (localCustomExercise) {
+    console.log("Found exercise in local storage:", localCustomExercise);
+    return localCustomExercise;
+  }
+  
   try {
     const { data, error } = await supabase
       .from('exercise_library')
@@ -251,9 +260,12 @@ function addCustomExerciseToLocalStorage(exercise: Omit<Exercise, 'id'>): Exerci
 
 // Get custom exercises from Supabase or local storage
 export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
+  // Always get local exercises first
+  const localExercises = getCustomExercisesFromLocalStorage();
+  
   // If user is not logged in, just return local exercises
   if (!userId) {
-    return getCustomExercisesFromLocalStorage();
+    return localExercises;
   }
   
   try {
@@ -282,19 +294,20 @@ export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
     
     if (error) {
       console.error("Error fetching custom exercises from Supabase:", error);
-      // Fallback to local storage
-      return getCustomExercisesFromLocalStorage();
+      // Return local exercises as fallback
+      return localExercises;
     }
     
-    // Combine Supabase exercises with local ones
-    const localExercises = getCustomExercisesFromLocalStorage();
-    const combinedExercises = [...data.map(mapDbExerciseToModel), ...localExercises];
+    // Combine Supabase exercises with local ones that aren't in Supabase
+    const supabaseExercises = data.map(mapDbExerciseToModel);
+    const supabaseIds = supabaseExercises.map(e => e.id);
+    const uniqueLocalExercises = localExercises.filter(e => !supabaseIds.includes(e.id));
     
-    return combinedExercises;
+    return [...supabaseExercises, ...uniqueLocalExercises];
   } catch (error) {
     console.error("Unexpected error fetching custom exercises:", error);
     // Fallback to local storage
-    return getCustomExercisesFromLocalStorage();
+    return localExercises;
   }
 }
 
@@ -306,6 +319,14 @@ export function getCustomExercisesFromLocalStorage(): Exercise[] {
 
 // Update a custom exercise
 export async function updateCustomExercise(id: string, exercise: Partial<Exercise> & { userId?: string }): Promise<Exercise> {
+  // First check if this is a local exercise
+  const localExercises = getCustomExercisesFromLocalStorage();
+  const isLocalExercise = localExercises.some(e => e.id === id);
+  
+  if (isLocalExercise) {
+    return updateCustomExerciseInLocalStorage(id, exercise);
+  }
+  
   const updates: any = {};
   
   if (exercise.name !== undefined) updates.name = exercise.name;
@@ -364,6 +385,16 @@ function updateCustomExerciseInLocalStorage(id: string, exerciseUpdates: Partial
 
 // Delete a custom exercise
 export async function deleteCustomExercise(id: string): Promise<void> {
+  // First check if this is a local exercise
+  const localExercises = getCustomExercisesFromLocalStorage();
+  const isLocalExercise = localExercises.some(e => e.id === id);
+  
+  // If it's local, delete it from localStorage regardless
+  if (isLocalExercise) {
+    deleteCustomExerciseFromLocalStorage(id);
+  }
+  
+  // Then try to delete from Supabase if it exists there too
   try {
     const { error } = await supabase
       .from('exercise_library')
@@ -373,13 +404,19 @@ export async function deleteCustomExercise(id: string): Promise<void> {
     
     if (error) {
       console.error("Error deleting custom exercise from Supabase:", error);
-      // Fallback to local storage
+      // If we already deleted from local storage, just return
+      if (isLocalExercise) return;
+      
+      // Otherwise try to delete from local storage as fallback
       deleteCustomExerciseFromLocalStorage(id);
       return;
     }
   } catch (error) {
     console.error("Unexpected error deleting custom exercise:", error);
-    // Fallback to local storage
+    // If we already deleted from local storage, just return
+    if (isLocalExercise) return;
+    
+    // Otherwise try to delete from local storage as fallback
     deleteCustomExerciseFromLocalStorage(id);
   }
 }
