@@ -8,7 +8,7 @@ import { Download, MoreVertical, Save } from "lucide-react";
 const WorkoutHeader: React.FC = () => {
   const { program } = useWorkout();
   
-  // Provide defaults if title or description are not available
+  // Provide defaults if name or description are not available
   const title = program.name || "My Workout Program";
   const description = program.description || "Custom workout program";
   
