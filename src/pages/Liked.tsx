@@ -12,14 +12,7 @@ import WorkoutCard from "@/components/WorkoutCard";
 import CollectionCard from "@/components/CollectionCard";
 import ProgramCard from "@/components/ProgramCard";
 import { exerciseLibrary } from "@/utils/exerciseLibrary";
-
-interface LikedItem {
-  id: string;
-  user_id: string;
-  item_id: string;
-  item_type: string;
-  created_at: string;
-}
+import { useLikes, LikedItem } from "@/hooks/useLikes";
 
 const Liked: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("exercises");
@@ -27,6 +20,7 @@ const Liked: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [likedItems, setLikedItems] = useState<LikedItem[]>([]);
   const { user } = useAuth();
+  const { isLoading: likesLoading } = useLikes();
   
   // Sample data (will be replaced with actual data from the database)
   const sampleWorkouts = [
