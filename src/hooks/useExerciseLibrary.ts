@@ -93,7 +93,7 @@ export function useCreateExercise() {
     },
     onError: (error: any) => {
       console.error('Error creating exercise:', error);
-      toast.error(`Error creating exercise: ${error.message}`);
+      // Don't show error toast here as it's handled in the service
     }
   });
 }
@@ -112,7 +112,7 @@ export function useUpdateExercise() {
     },
     onError: (error: any) => {
       console.error('Error updating exercise:', error);
-      toast.error(`Error updating exercise: ${error.message}`);
+      // Don't show error toast here as it's handled in the service
     }
   });
 }
@@ -129,7 +129,7 @@ export function useDeleteExercise() {
     },
     onError: (error: any) => {
       console.error('Error deleting exercise:', error);
-      toast.error(`Error deleting exercise: ${error.message}`);
+      // Don't show error toast here as it's handled in the service
     }
   });
 }
