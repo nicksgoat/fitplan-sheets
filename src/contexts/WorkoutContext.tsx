@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Exercise, Set, WorkoutProgram, Workout, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
@@ -742,18 +741,46 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const saveWeekAsPreset = (weekId: string, name: string) => {
-    const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
-    // Save all workouts associated with this week first
+    // First, get all workouts in this week
     const week = program.weeks.find(w => w.id === weekId);
-    if (week && week.workouts) {
-      week.workouts.forEach(workoutId => {
-        const workout = program.workouts.find(w => w.id === workoutId);
-        if (workout) {
-          const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workout.name);
-          saveWorkoutPreset(workoutCopy);
-        }
-      });
+    if (!week || !week.workouts) {
+      toast.error("Week not found or has no workouts");
+      return;
     }
+    
+    // Save each workout as its own preset first
+    const savedWorkoutIds: string[] = [];
+    
+    week.workouts.forEach(workoutId => {
+      const workout = program.workouts.find(w => w.id === workoutId);
+      if (workout) {
+        // Create a unique name for this workout
+        const workoutPresetName = `${name} - ${workout.name}`;
+        
+        // Save the workout with this name
+        const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workoutPresetName);
+        
+        // Store the workout preset
+        saveWorkoutPreset(workoutCopy);
+        
+        // Keep track of the new workout ID
+        savedWorkoutIds.push(workoutCopy.id);
+        
+        console.log(`Saved workout preset: ${workoutPresetName} with ID: ${workoutCopy.id}`);
+      }
+    });
+    
+    // Now create the week preset with references to the newly saved workout presets
+    const weekPreset: WorkoutWeek = {
+      id: generateId(),
+      name: name,
+      order: week.order,
+      workouts: savedWorkoutIds  // Use the IDs of the newly saved workout presets
+    };
+    
+    console.log("Saving week preset with workouts:", weekPreset);
+    
+    // Save the week preset
     saveWeekPreset(weekPreset);
     toast.success("Week saved as preset");
   };
@@ -805,21 +832,33 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const workoutsToAdd: Workout[] = [];
       const workoutIds: string[] = [];
       
-      // First get all workouts from presets
+      // Get all workouts from presets
       const workoutPresets = getWorkoutPresets();
+      
+      // Debugging
+      console.log("Loading week preset:", preset);
+      console.log("All workout presets:", workoutPresets);
       
       if (preset.workouts && preset.workouts.length > 0) {
         preset.workouts.forEach(originalWorkoutId => {
+          console.log("Looking for workout with ID:", originalWorkoutId);
           const originalWorkout = workoutPresets.find(s => s.id === originalWorkoutId);
+          
           if (originalWorkout) {
+            console.log("Found matching workout preset:", originalWorkout);
             const newWorkout = cloneWorkout(originalWorkout, newWeekId);
             workoutsToAdd.push(newWorkout);
             workoutIds.push(newWorkout.id);
+          } else {
+            console.warn("Could not find workout with ID:", originalWorkoutId);
           }
         });
       }
       
       newWeek.workouts = workoutIds;
+      
+      console.log("New week created:", newWeek);
+      console.log("Workouts added:", workoutsToAdd);
       
       const updatedProgram = {
         ...prevProgram,
@@ -864,19 +903,47 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const saveWeekToLibrary = (weekId: string, name: string) => {
-    const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
-    // First save all workouts associated with this week
+    // First, get all workouts in this week
     const week = program.weeks.find(w => w.id === weekId);
-    if (week && week.workouts) {
-      week.workouts.forEach(workoutId => {
-        const workout = program.workouts.find(w => w.id === workoutId);
-        if (workout) {
-          const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workout.name);
-          addWorkoutToLibrary(workoutCopy);
-        }
-      });
+    if (!week || !week.workouts) {
+      toast.error("Week not found or has no workouts");
+      return;
     }
-    addWeekToLibrary(weekPreset);
+    
+    // Save each workout to the library first
+    const savedWorkoutIds: string[] = [];
+    
+    week.workouts.forEach(workoutId => {
+      const workout = program.workouts.find(w => w.id === workoutId);
+      if (workout) {
+        // Create a unique name for this workout
+        const workoutLibraryName = `${name} - ${workout.name}`;
+        
+        // Save the workout with this name
+        const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workoutLibraryName);
+        
+        // Store the workout in the library
+        addWorkoutToLibrary(workoutCopy);
+        
+        // Keep track of the new workout ID
+        savedWorkoutIds.push(workoutCopy.id);
+        
+        console.log(`Added workout to library: ${workoutLibraryName} with ID: ${workoutCopy.id}`);
+      }
+    });
+    
+    // Now create the week with references to the newly saved workout library items
+    const weekLibraryItem: WorkoutWeek = {
+      id: generateId(),
+      name: name,
+      order: week.order,
+      workouts: savedWorkoutIds  // Use the IDs of the newly saved workout library items
+    };
+    
+    console.log("Adding week to library with workouts:", weekLibraryItem);
+    
+    // Save the week to the library
+    addWeekToLibrary(weekLibraryItem);
     toast.success("Training week added to library");
   };
 
@@ -927,21 +994,33 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const workoutsToAdd: Workout[] = [];
       const workoutIds: string[] = [];
       
-      // First get all workouts from library
+      // Get all workouts from library
       const workoutLibrary = getWorkoutLibrary();
+      
+      // Debugging
+      console.log("Loading week from library:", preset);
+      console.log("All workout library items:", workoutLibrary);
       
       if (preset.workouts && preset.workouts.length > 0) {
         preset.workouts.forEach(originalWorkoutId => {
+          console.log("Looking for workout with ID:", originalWorkoutId);
           const originalWorkout = workoutLibrary.find(s => s.id === originalWorkoutId);
+          
           if (originalWorkout) {
+            console.log("Found matching workout in library:", originalWorkout);
             const newWorkout = cloneWorkout(originalWorkout, newWeekId);
             workoutsToAdd.push(newWorkout);
             workoutIds.push(newWorkout.id);
+          } else {
+            console.warn("Could not find workout with ID:", originalWorkoutId);
           }
         });
       }
       
       newWeek.workouts = workoutIds;
+      
+      console.log("New week created:", newWeek);
+      console.log("Workouts added:", workoutsToAdd);
       
       const updatedProgram = {
         ...prevProgram,

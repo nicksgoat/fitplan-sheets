@@ -460,7 +460,7 @@ export function saveCurrentWeekAsPreset(program: WorkoutProgram, weekId: string,
     id: generateId(),
     name: presetName,
     order: week.order,
-    workouts: [...week.workouts]
+    workouts: [...week.workouts]  // Keep the reference to the original workout IDs
   };
   
   return weekCopy;
