@@ -50,12 +50,14 @@ const WorkoutApp: React.FC = () => {
 
 const Sheets: React.FC = () => {
   return (
-    <WorkoutProvider>
-      <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
-        <WorkoutHeader />
-        <WorkoutApp />
-      </div>
-    </WorkoutProvider>
+    <MainLayout>
+      <WorkoutProvider>
+        <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
+          <WorkoutHeader />
+          <WorkoutApp />
+        </div>
+      </WorkoutProvider>
+    </MainLayout>
   );
 };
 
