@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise, ExerciseVisual, ExerciseWithVisual } from '@/types/exercise';
@@ -25,6 +24,7 @@ export function useSearchExercises() {
         setSearchResults(results);
       } catch (error) {
         console.error('Error searching exercises:', error);
+        toast.error('Failed to search exercises. Using local data.');
         setSearchResults([]);
       } finally {
         setLoading(false);
@@ -47,7 +47,13 @@ export function useSearchExercises() {
 export function useExercises() {
   return useQuery({
     queryKey: ['exercises'],
-    queryFn: exerciseLibraryService.getAllExercises
+    queryFn: exerciseLibraryService.getAllExercises,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Error fetching exercises:', error);
+      toast.error('Failed to fetch exercises. Using local data.');
+    }
   });
 }
 
@@ -56,7 +62,12 @@ export function useExercise(id: string) {
   return useQuery({
     queryKey: ['exercise', id],
     queryFn: () => exerciseLibraryService.getExerciseById(id),
-    enabled: !!id
+    enabled: !!id,
+    retry: 1,
+    onError: (error) => {
+      console.error(`Error fetching exercise ${id}:`, error);
+      toast.error('Failed to fetch exercise details. Using local data if available.');
+    }
   });
 }
 
@@ -64,7 +75,13 @@ export function useExercise(id: string) {
 export function useExerciseVisuals() {
   return useQuery({
     queryKey: ['exerciseVisuals'],
-    queryFn: exerciseVisualsService.getAllExerciseVisuals
+    queryFn: exerciseVisualsService.getAllExerciseVisuals,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Error fetching exercise visuals:', error);
+      toast.error('Failed to fetch exercise visuals. Using default images.');
+    }
   });
 }
 
@@ -73,7 +90,12 @@ export function useExerciseVisualsByTags(tags: string[]) {
   return useQuery({
     queryKey: ['exerciseVisuals', 'tags', ...tags],
     queryFn: () => exerciseVisualsService.getExerciseVisualsByTags(tags),
-    enabled: tags.length > 0
+    enabled: tags.length > 0,
+    retry: 1,
+    onError: (error) => {
+      console.error('Error fetching exercise visuals by tags:', error);
+      toast.error('Failed to filter exercises by tags. Using default images.');
+    }
   });
 }
 
@@ -87,11 +109,14 @@ export function useExercisesWithVisuals() {
   
   const exercisesWithVisuals: ExerciseWithVisual[] = [];
   
-  if (exercisesQuery.data && visualsQuery.data) {
+  if (exercisesQuery.data) {
     const visualsMap = new Map<string, ExerciseVisual>();
-    visualsQuery.data.forEach(visual => {
-      visualsMap.set(visual.exerciseId, visual);
-    });
+    
+    if (visualsQuery.data) {
+      visualsQuery.data.forEach(visual => {
+        visualsMap.set(visual.exerciseId, visual);
+      });
+    }
     
     exercisesQuery.data.forEach(exercise => {
       exercisesWithVisuals.push({

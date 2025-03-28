@@ -1,89 +1,142 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
+import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
+import { toast } from 'sonner';
 
-// Fetch all exercises from Supabase
+// Fetch all exercises from Supabase with fallback
 export async function getAllExercises(): Promise<Exercise[]> {
-  const { data, error } = await supabase
-    .from('exercise_library')
-    .select(`
-      id,
-      name,
-      primary_muscle,
-      secondary_muscles,
-      category,
-      description,
-      instructions,
-      is_custom,
-      user_id
-    `)
-    .order('name');
-  
-  if (error) {
-    console.error("Error fetching exercises:", error);
-    throw error;
+  try {
+    const { data, error } = await supabase
+      .from('exercise_library')
+      .select(`
+        id,
+        name,
+        primary_muscle,
+        secondary_muscles,
+        category,
+        description,
+        instructions,
+        is_custom,
+        user_id
+      `)
+      .order('name');
+    
+    if (error) {
+      console.error("Error fetching exercises from Supabase:", error);
+      // Fallback to local data
+      console.log("Using local exercise library as fallback");
+      return localExerciseLibrary;
+    }
+    
+    if (data.length === 0) {
+      console.warn("No exercises found in Supabase, using local data");
+      return localExerciseLibrary;
+    }
+    
+    return data.map(mapDbExerciseToModel);
+  } catch (error) {
+    console.error("Unexpected error fetching exercises:", error);
+    // Fallback to local data in case of any error
+    return localExerciseLibrary;
   }
-  
-  return data.map(mapDbExerciseToModel);
 }
 
-// Search exercises by name
+// Search exercises by name with fallback
 export async function searchExercises(query: string): Promise<Exercise[]> {
   if (!query || query.trim() === '') return [];
   
-  const { data, error } = await supabase
-    .from('exercise_library')
-    .select(`
-      id,
-      name,
-      primary_muscle,
-      secondary_muscles,
-      category,
-      description,
-      instructions,
-      is_custom,
-      user_id
-    `)
-    .ilike('name', `%${query}%`)
-    .order('name')
-    .limit(10);
-  
-  if (error) {
-    console.error("Error searching exercises:", error);
-    throw error;
+  try {
+    const { data, error } = await supabase
+      .from('exercise_library')
+      .select(`
+        id,
+        name,
+        primary_muscle,
+        secondary_muscles,
+        category,
+        description,
+        instructions,
+        is_custom,
+        user_id
+      `)
+      .ilike('name', `%${query}%`)
+      .order('name')
+      .limit(10);
+    
+    if (error) {
+      console.error("Error searching exercises from Supabase:", error);
+      // Fallback to local search
+      console.log("Using local exercise search as fallback");
+      return searchLocalExercises(query);
+    }
+    
+    return data.map(mapDbExerciseToModel);
+  } catch (error) {
+    console.error("Unexpected error searching exercises:", error);
+    // Fallback to local search in case of any error
+    return searchLocalExercises(query);
   }
-  
-  return data.map(mapDbExerciseToModel);
 }
 
-// Get exercise by ID
+// Local search fallback
+function searchLocalExercises(query: string): Exercise[] {
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  return localExerciseLibrary
+    .filter(exercise => exercise.name.toLowerCase().includes(normalizedQuery))
+    .sort((a, b) => {
+      // Sort by whether the name starts with the query first
+      const aStartsWith = a.name.toLowerCase().startsWith(normalizedQuery);
+      const bStartsWith = b.name.toLowerCase().startsWith(normalizedQuery);
+      
+      if (aStartsWith && !bStartsWith) return -1;
+      if (!aStartsWith && bStartsWith) return 1;
+      
+      // Then sort alphabetically
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 10);
+}
+
+// Get exercise by ID with fallback
 export async function getExerciseById(id: string): Promise<Exercise | null> {
-  const { data, error } = await supabase
-    .from('exercise_library')
-    .select(`
-      id,
-      name,
-      primary_muscle,
-      secondary_muscles,
-      category,
-      description,
-      instructions,
-      is_custom,
-      user_id
-    `)
-    .eq('id', id)
-    .single();
-  
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      return null;
+  try {
+    const { data, error } = await supabase
+      .from('exercise_library')
+      .select(`
+        id,
+        name,
+        primary_muscle,
+        secondary_muscles,
+        category,
+        description,
+        instructions,
+        is_custom,
+        user_id
+      `)
+      .eq('id', id)
+      .maybeSingle(); // Changed from single() to maybeSingle() to avoid errors
+    
+    if (error) {
+      console.error("Error fetching exercise:", error);
+      // Check if we can find it in local data
+      const localExercise = localExerciseLibrary.find(e => e.id === id);
+      return localExercise || null;
     }
-    console.error("Error fetching exercise:", error);
-    throw error;
+    
+    if (!data) {
+      // Check if we can find it in local data
+      const localExercise = localExerciseLibrary.find(e => e.id === id);
+      return localExercise || null;
+    }
+    
+    return mapDbExerciseToModel(data);
+  } catch (error) {
+    console.error("Unexpected error fetching exercise:", error);
+    // Check if we can find it in local data
+    const localExercise = localExerciseLibrary.find(e => e.id === id);
+    return localExercise || null;
   }
-  
-  return mapDbExerciseToModel(data);
 }
 
 // Add a custom exercise

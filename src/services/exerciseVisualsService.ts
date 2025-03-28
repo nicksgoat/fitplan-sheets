@@ -1,39 +1,92 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ExerciseVisual } from "@/types/exercise";
+import { toast } from "sonner";
 
-// Fetch all exercise visuals
-export async function getAllExerciseVisuals(): Promise<ExerciseVisual[]> {
-  const { data, error } = await supabase
-    .from('exercise_visuals')
-    .select('*');
-  
-  if (error) {
-    console.error("Error fetching exercise visuals:", error);
-    throw error;
+// Create a fallback mock visuals data
+const mockVisuals: ExerciseVisual[] = [
+  {
+    id: '1',
+    exerciseId: 'bb-bench-press',
+    imageUrl: 'https://placehold.co/600x400?text=Barbell+Bench+Press',
+    tags: ['strength', 'chest'],
+    difficulty: 'intermediate',
+    duration: '10-15 min',
+    creator: 'FitBloom'
+  },
+  {
+    id: '2',
+    exerciseId: 'bb-squat',
+    imageUrl: 'https://placehold.co/600x400?text=Barbell+Squat',
+    tags: ['strength', 'legs'],
+    difficulty: 'intermediate',
+    duration: '10-15 min',
+    creator: 'FitBloom'
+  },
+  {
+    id: '3',
+    exerciseId: 'bb-deadlift',
+    imageUrl: 'https://placehold.co/600x400?text=Barbell+Deadlift',
+    tags: ['strength', 'back'],
+    difficulty: 'intermediate',
+    duration: '10-15 min',
+    creator: 'FitBloom'
   }
-  
-  return data.map(mapDbVisualToModel);
+];
+
+// Fetch all exercise visuals with fallback
+export async function getAllExerciseVisuals(): Promise<ExerciseVisual[]> {
+  try {
+    const { data, error } = await supabase
+      .from('exercise_visuals')
+      .select('*');
+    
+    if (error) {
+      console.error("Error fetching exercise visuals:", error);
+      // Fallback to mock data
+      console.log("Using mock visuals as fallback");
+      return mockVisuals;
+    }
+    
+    if (data.length === 0) {
+      console.warn("No exercise visuals found in Supabase, using mock data");
+      return mockVisuals;
+    }
+    
+    return data.map(mapDbVisualToModel);
+  } catch (error) {
+    console.error("Unexpected error fetching exercise visuals:", error);
+    return mockVisuals;
+  }
 }
 
-// Get visuals for a specific exercise
+// Get visuals for a specific exercise with fallback
 export async function getExerciseVisualByExerciseId(exerciseId: string): Promise<ExerciseVisual | null> {
-  const { data, error } = await supabase
-    .from('exercise_visuals')
-    .select('*')
-    .eq('exercise_id', exerciseId)
-    .single();
-  
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      return null;
+  try {
+    const { data, error } = await supabase
+      .from('exercise_visuals')
+      .select('*')
+      .eq('exercise_id', exerciseId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error fetching exercise visual:", error);
+      // Look for a mock visual
+      const mockVisual = mockVisuals.find(v => v.exerciseId === exerciseId);
+      return mockVisual || null;
     }
-    console.error("Error fetching exercise visual:", error);
-    throw error;
+    
+    if (!data) {
+      // Look for a mock visual
+      const mockVisual = mockVisuals.find(v => v.exerciseId === exerciseId);
+      return mockVisual || null;
+    }
+    
+    return mapDbVisualToModel(data);
+  } catch (error) {
+    console.error("Unexpected error fetching exercise visual:", error);
+    const mockVisual = mockVisuals.find(v => v.exerciseId === exerciseId);
+    return mockVisual || null;
   }
-  
-  return mapDbVisualToModel(data);
 }
 
 // Get visuals with tag filtering

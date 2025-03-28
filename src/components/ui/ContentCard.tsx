@@ -42,12 +42,12 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
   
   return (
     <DetailDrawer item={normalizedItem}>
-      <Card className={cn("content-card", className)}>
+      <Card className={cn("content-card h-full flex flex-col", className)}>
         <div className="relative">
           <img 
             src={imageUrl} 
             alt={title} 
-            className="content-card-image"
+            className="content-card-image h-[120px] w-full object-cover"
           />
           <Button 
             variant="ghost" 
@@ -61,7 +61,7 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
             <Heart className={cn("h-3 w-3", normalizedItem.isFavorite ? "fill-fitbloom-purple text-fitbloom-purple" : "text-white")} />
           </Button>
         </div>
-        <CardContent className="p-2">
+        <CardContent className="p-2 flex-grow">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{normalizedItem.type}</span>
             {duration && (

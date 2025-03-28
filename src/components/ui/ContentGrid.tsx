@@ -6,11 +6,12 @@ import { ExerciseWithVisual } from '@/types/exercise';
 
 interface ContentGridProps {
   items: (ItemType | ExerciseWithVisual)[];
+  className?: string;
 }
 
-const ContentGrid = ({ items }: ContentGridProps) => {
+const ContentGrid = ({ items, className }: ContentGridProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 ${className || ''}`}>
       {items.map((item) => (
         <ContentCard key={item.id} item={item} />
       ))}

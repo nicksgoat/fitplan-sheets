@@ -8,9 +8,10 @@ import { ExerciseWithVisual } from '@/types/exercise';
 
 interface ContentCarouselProps {
   items: (ItemType | ExerciseWithVisual)[];
+  className?: string;
 }
 
-const ContentCarousel = ({ items }: ContentCarouselProps) => {
+const ContentCarousel = ({ items, className }: ContentCarouselProps) => {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -28,7 +29,7 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
   };
 
   return (
-    <div className="relative group">
+    <div className={`relative group ${className || ''}`}>
       <div 
         ref={carouselRef}
         className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x"
