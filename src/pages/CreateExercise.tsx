@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -35,8 +34,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { uploadExerciseVideo } from '@/services/exerciseLibraryService';
 import { useAuth } from '@/hooks/useAuth';
 
-// Maximum video size (50MB)
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+// Maximum video size (150MB)
+const MAX_VIDEO_SIZE = 150 * 1024 * 1024;
 // Allowed video file types
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
@@ -121,7 +120,7 @@ const CreateExercise: React.FC = () => {
     
     // Validate file size
     if (file.size > MAX_VIDEO_SIZE) {
-      toast.error('Video is too large. Maximum size is 50MB.');
+      toast.error('Video is too large. Maximum size is 150MB.');
       return;
     }
     
@@ -147,7 +146,7 @@ const CreateExercise: React.FC = () => {
     
     // Validate file size
     if (file.size > MAX_VIDEO_SIZE) {
-      toast.error('Video is too large. Maximum size is 50MB.');
+      toast.error('Video is too large. Maximum size is 150MB.');
       return;
     }
     
@@ -398,7 +397,7 @@ const CreateExercise: React.FC = () => {
                       <div className="flex flex-col items-center">
                         <Upload className="h-10 w-10 text-gray-400 mb-2" />
                         <p className="text-sm font-medium">Drop your video here or click to browse</p>
-                        <p className="text-xs text-gray-500 mt-1">MP4, WebM or QuickTime, up to 50MB</p>
+                        <p className="text-xs text-gray-500 mt-1">MP4, WebM or QuickTime, up to 150MB</p>
                       </div>
                     )}
                   </div>
