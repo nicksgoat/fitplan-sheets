@@ -20,7 +20,7 @@ const SessionTabs: React.FC = () => {
   const workoutsInWeek = currentWeek.workouts
     ? currentWeek.workouts
       .map(workoutId => program.workouts?.find(s => s.id === workoutId))
-      .filter(workout => workout !== undefined) as Workout[]
+      .filter((workout): workout is Workout => workout !== undefined)
     : [];
   
   if (workoutsInWeek.length <= 0) return null;

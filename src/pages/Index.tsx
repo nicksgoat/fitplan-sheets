@@ -14,7 +14,7 @@ const WorkoutApp: React.FC = () => {
     activeWorkoutId
   } = useWorkout();
   
-  if (!program || !activeWorkoutId) return null;
+  if (!program) return null;
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
