@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
@@ -84,7 +83,7 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 const CommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, children, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
@@ -92,9 +91,7 @@ const CommandGroup = React.forwardRef<
       className
     )}
     {...props}
-  >
-    {children}
-  </CommandPrimitive.Group>
+  />
 ))
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName
