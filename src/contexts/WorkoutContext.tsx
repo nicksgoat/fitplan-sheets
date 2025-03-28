@@ -128,11 +128,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       setActiveWeekId(program.weeks[0].id);
     }
     
-    if (activeWeekId && (!activeWorkoutId || !program.workouts.some(s => s.id === activeWorkoutId))) {
+    if (activeWeekId && (!activeWorkoutId || !program.workouts?.some(s => s.id === activeWorkoutId))) {
       const currentWeek = program.weeks.find(w => w.id === activeWeekId);
-      if (currentWeek && currentWeek.workouts.length > 0) {
+      if (currentWeek && currentWeek.workouts && currentWeek.workouts.length > 0) {
         const firstWorkoutId = currentWeek.workouts[0];
-        if (program.workouts.some(s => s.id === firstWorkoutId)) {
+        if (program.workouts?.some(s => s.id === firstWorkoutId)) {
           setActiveWorkoutId(firstWorkoutId);
         }
       }
@@ -889,14 +889,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const workoutsToAdd: Workout[] = [];
       const workoutIds: string[] = [];
       
-      preset.workouts.forEach(originalWorkoutId => {
-        const originalWorkout = getWorkoutLibrary().find(s => s.id === originalWorkoutId);
-        if (originalWorkout) {
-          const newWorkout = cloneWorkout(originalWorkout, newWeekId);
-          workoutsToAdd.push(newWorkout);
-          workoutIds.push(newWorkout.id);
-        }
-      });
+      if (preset.workouts && preset.workouts.length > 0) {
+        preset.workouts.forEach(originalWorkoutId => {
+          const workoutLibrary = getWorkoutLibrary();
+          const originalWorkout = workoutLibrary.find(s => s.id === originalWorkoutId);
+          if (originalWorkout) {
+            const newWorkout = cloneWorkout(originalWorkout, newWeekId);
+            workoutsToAdd.push(newWorkout);
+            workoutIds.push(newWorkout.id);
+          }
+        });
+      }
       
       newWeek.workouts = workoutIds;
       
@@ -918,9 +921,20 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loadProgramFromLibrary = (preset: WorkoutProgram) => {
+    if (!preset || !preset.weeks || preset.weeks.length === 0) {
+      toast.error("Invalid program preset");
+      return;
+    }
+    
     setProgram(preset);
     setActiveWeekId(preset.weeks[0]?.id || null);
-    setActiveWorkoutId(preset.workouts[0]?.id || null);
+    
+    if (preset.workouts && preset.workouts.length > 0) {
+      setActiveWorkoutId(preset.workouts[0]?.id || null);
+    } else {
+      setActiveWorkoutId(null);
+    }
+    
     toast.success(`Loaded training album: ${preset.name}`);
   };
 
