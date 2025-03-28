@@ -2,7 +2,9 @@
 import React from 'react';
 import { Exercise, Set } from "@/types/workout";
 import { formatRestTime } from "@/utils/workoutPreviewUtils";
-import { Clock } from "lucide-react";
+import { Clock, Plus } from "lucide-react";
+import { useWorkout } from "@/contexts/WorkoutContext";
+import { Button } from "@/components/ui/button";
 
 interface CircuitExerciseListProps {
   circuitId: string;
@@ -10,7 +12,24 @@ interface CircuitExerciseListProps {
 }
 
 const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, circuitExercises }) => {
+  const { addExerciseToCircuit, program } = useWorkout();
+  
   if (!circuitExercises || circuitExercises.length === 0) return null;
+  
+  // Find the session that contains this circuit
+  const sessionWithCircuit = program.sessions.find(session => 
+    session.circuits.some(circuit => circuit.id === circuitId)
+  );
+  
+  const handleAddExercise = () => {
+    if (sessionWithCircuit) {
+      // Open a dialog or implement the logic to add an exercise to this circuit
+      const dialogButton = document.querySelector('[data-dropdown-toggle="dropdown"]');
+      if (dialogButton instanceof HTMLElement) {
+        dialogButton.click();
+      }
+    }
+  };
   
   return (
     <div className="mt-2">
@@ -41,6 +60,20 @@ const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, ci
           )}
         </div>
       ))}
+      
+      {sessionWithCircuit && (
+        <div className="mt-2 pl-3 py-2 border-t border-dark-300">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="text-blue-400 p-0 h-auto hover:bg-transparent hover:text-blue-300"
+            onClick={handleAddExercise}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Exercise
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
