@@ -11,6 +11,7 @@ export interface ItemType {
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   isFavorite: boolean;
   description?: string;
+  isCustom?: boolean;
 }
 
 export interface CollectionType {
