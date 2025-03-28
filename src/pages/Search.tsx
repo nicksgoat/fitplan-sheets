@@ -113,7 +113,7 @@ const SearchPage = () => {
         </Select>
 
         <Select 
-          value={difficultyFilter} 
+          value={difficultyFilter}
           onValueChange={(value: 'all' | 'beginner' | 'intermediate' | 'advanced') => {
             setDifficultyFilter(value);
             performSearch(searchQuery);

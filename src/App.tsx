@@ -14,6 +14,7 @@ import Library from "./pages/Library";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Sheets from "./pages/Sheets";
+import CreateExercise from "./pages/CreateExercise";
 import MainLayout from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,16 @@ const App = () => (
                   <AuthenticatedRoute>
                     <MainLayout>
                       <Sheets />
+                    </MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/create-exercise" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout>
+                      <CreateExercise />
                     </MainLayout>
                   </AuthenticatedRoute>
                 } 

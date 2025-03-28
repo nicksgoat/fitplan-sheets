@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
@@ -13,6 +13,7 @@ import MainLayout from '@/components/layout/MainLayout';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const navigate = useNavigate();
   
   // Fetch exercises with visuals from Supabase
   const { data: exercisesWithVisuals, isLoading, error } = useExercisesWithVisuals();
@@ -37,7 +38,7 @@ const Library = () => {
         item.tags?.some(tag => tag.toLowerCase() === activeCategory.toLowerCase())
       )
     : exerciseItems;
-  
+    
   // Mock collections with proper type
   const mockCollections: CollectionType[] = [
     {
@@ -58,11 +59,25 @@ const Library = () => {
     }
   ];
   
+  const handleCreateButtonClick = () => {
+    const currentTab = document.querySelector('[data-state="active"][role="tab"]')?.textContent?.toLowerCase();
+    
+    if (currentTab === 'exercises') {
+      navigate('/create-exercise');
+    } else {
+      // Default to creating exercises for now
+      navigate('/create-exercise');
+    }
+  };
+  
   return (
     <div className="space-y-6 animate-fade-in p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold">My Library</h1>
-        <Button className="bg-fitbloom-purple hover:bg-opacity-90">
+        <Button 
+          className="bg-fitbloom-purple hover:bg-opacity-90" 
+          onClick={handleCreateButtonClick}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create
         </Button>
@@ -106,6 +121,12 @@ const Library = () => {
           ) : (
             <div className="text-center py-10">
               <p className="text-gray-400">No exercises found.</p>
+              <Button 
+                className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+                onClick={() => navigate('/create-exercise')}
+              >
+                Create Exercise
+              </Button>
             </div>
           )}
         </TabsContent>
@@ -131,7 +152,10 @@ const Library = () => {
         <TabsContent value="created" className="mt-4">
           <div className="text-center py-10">
             <p className="text-gray-400">You haven't created any content yet.</p>
-            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
+            <Button 
+              className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+              onClick={() => navigate('/create-exercise')}
+            >
               Create Content
             </Button>
           </div>
