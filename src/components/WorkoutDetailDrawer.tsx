@@ -1,10 +1,10 @@
 
 import React from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Heart, Share, Calendar, Play, Plus } from "lucide-react";
+import { Clock, Clock3, Heart } from "lucide-react";
 
 interface Workout {
   id: string;
@@ -33,103 +33,71 @@ const WorkoutDetailDrawer: React.FC<WorkoutDetailDrawerProps> = ({
 }) => {
   if (!workout) return null;
 
-  // Generate a background gradient based on the workout category
-  const getBgGradient = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "strength":
-        return "bg-gradient-to-br from-blue-900 to-purple-900";
-      case "hiit":
-        return "bg-gradient-to-br from-red-900 to-orange-900";
-      case "cardio":
-        return "bg-gradient-to-br from-green-900 to-teal-900";
-      case "flexibility":
-        return "bg-gradient-to-br from-indigo-900 to-blue-900";
-      default:
-        return "bg-gradient-to-br from-gray-800 to-gray-900";
-    }
-  };
-
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <div className={`h-40 flex items-center justify-center ${getBgGradient(workout.category)}`}>
-          <span className="text-2xl font-bold text-white">{workout.name}</span>
-        </div>
-        
-        <DrawerHeader className="px-6 pt-6">
-          <DrawerTitle className="text-xl">{workout.name}</DrawerTitle>
-          <DrawerDescription>
-            <div className="flex items-center text-gray-400 mt-1">
-              <Clock className="h-4 w-4 mr-1" />
-              <span className="mr-3">{workout.duration}</span>
-              <span>{workout.exerciseCount} exercises</span>
-            </div>
-          </DrawerDescription>
-        </DrawerHeader>
-        
-        <div className="px-6">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
-              <TabsTrigger value="exercises" className="flex-1">Exercises</TabsTrigger>
+      <DrawerContent className="max-h-[90vh] bg-black p-0">
+        {/* Top tabs for switching views */}
+        <div className="bg-black w-full">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 bg-transparent">
+              <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-500 data-[state=active]:bg-transparent">
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="leaderboard" className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-500 data-[state=active]:bg-transparent">
+                Leaderboard
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="py-4 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-dark-300">
-                  {workout.category}
-                </Badge>
-                <Badge variant="outline" className="bg-dark-300">
-                  {workout.difficulty}
-                </Badge>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">About this workout</h3>
-                <p className="text-gray-400">
-                  This {workout.category.toLowerCase()} workout was designed to help you improve your {workout.category.toLowerCase()} 
-                  and fitness. It's suitable for {workout.difficulty.toLowerCase()} level athletes and takes approximately {workout.duration} to complete.
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">Created by</h3>
-                <p className="text-gray-400">{workout.createdBy}</p>
+            <TabsContent value="details" className="p-0 m-0">
+              <div className="p-6">
+                <div className="uppercase text-xs font-semibold tracking-wider text-gray-400 mb-1">
+                  WORKOUT
+                </div>
+                <h1 className="text-2xl font-bold mb-1">{workout.name}</h1>
+                <p className="text-gray-400 mb-4">{workout.createdBy}</p>
+                
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Badge className="bg-black text-white border border-gray-700">{workout.category}</Badge>
+                  <Badge className="bg-black text-white border border-gray-700">{workout.difficulty}</Badge>
+                  <Badge className="bg-black text-white border border-gray-700">Full Body</Badge>
+                  <Badge className="bg-black text-white border border-gray-700">Intense</Badge>
+                </div>
+                
+                <div className="mb-6">
+                  <h2 className="text-lg font-medium mb-3">Description</h2>
+                  <p className="text-gray-400">
+                    A high-intensity interval training workout that targets all major muscle groups.
+                  </p>
+                </div>
+                
+                <div className="mb-6">
+                  <h2 className="text-lg font-medium mb-3">Exercises</h2>
+                  <div className="text-gray-400">
+                    {workout.exerciseCount} exercises
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
-            <TabsContent value="exercises" className="py-4">
+            <TabsContent value="leaderboard" className="p-6">
               <div className="text-gray-400 py-8 text-center">
-                Exercise list will be displayed here.
+                Leaderboard will be displayed here.
               </div>
             </TabsContent>
           </Tabs>
         </div>
         
-        <DrawerFooter className="px-6 py-4 flex-row justify-between gap-2">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onLikeToggle} className={isLiked ? "bg-purple-500 hover:bg-purple-600 text-white" : ""}>
-              <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-white" : ""}`} />
-              {isLiked ? "Liked" : "Like"}
+        <div className="flex px-6 py-4 border-t border-gray-800 justify-between">
+          <DrawerClose asChild>
+            <Button variant="outline" className="bg-transparent border-gray-700 text-white">
+              Close
             </Button>
-            
-            <Button variant="outline" size="sm">
-              <Share className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          </DrawerClose>
           
-          <div className="flex gap-2">
-            <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white">
-              <Play className="h-4 w-4 mr-2" />
-              Start
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule
-            </Button>
-          </div>
-        </DrawerFooter>
+          <Button className="bg-purple-600 hover:bg-purple-700">
+            Start Workout
+          </Button>
+        </div>
       </DrawerContent>
     </Drawer>
   );

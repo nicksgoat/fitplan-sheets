@@ -20,8 +20,8 @@ export default function AppLayout() {
           <SidebarContent>
             <div className="p-4">
               <h2 className="text-xl font-bold text-white mb-8">
-                <span className="text-gray-100">Fit</span>
-                <span className="text-purple-500">Bloom</span>
+                <span className="text-purple-500">Fit</span>
+                <span className="text-gray-100">Bloom</span>
               </h2>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -82,7 +82,7 @@ export default function AppLayout() {
           </SidebarContent>
         </Sidebar>
         
-        <main className="flex-grow bg-dark-100 text-white">
+        <main className="flex-grow bg-black text-white">
           <Outlet />
         </main>
       </div>

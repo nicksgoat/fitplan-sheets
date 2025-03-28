@@ -1,11 +1,10 @@
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Exercise } from "@/utils/exerciseLibrary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Plus, Share } from "lucide-react";
 
 interface ExerciseDetailDialogProps {
   exercise: Exercise | null;
@@ -24,109 +23,76 @@ const ExerciseDetailDialog: React.FC<ExerciseDetailDialogProps> = ({
 }) => {
   if (!exercise) return null;
 
-  // Generate a background gradient based on the exercise category
-  const getBgGradient = (category: string) => {
-    switch (category) {
-      case "barbell":
-        return "bg-gradient-to-br from-purple-900 to-blue-900";
-      case "dumbbell":
-        return "bg-gradient-to-br from-blue-900 to-teal-900";
-      case "machine":
-        return "bg-gradient-to-br from-teal-900 to-green-900";
-      case "bodyweight":
-        return "bg-gradient-to-br from-orange-900 to-red-900";
-      case "kettlebell":
-        return "bg-gradient-to-br from-red-900 to-pink-900";
-      case "cable":
-        return "bg-gradient-to-br from-indigo-900 to-purple-900";
-      case "cardio":
-        return "bg-gradient-to-br from-green-900 to-yellow-900";
-      default:
-        return "bg-gradient-to-br from-gray-800 to-gray-900";
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className={`-mx-6 -mt-6 h-48 flex items-center justify-center ${getBgGradient(exercise.category)}`}>
-          <span className="text-2xl font-bold text-white">{exercise.name}</span>
+      <DialogContent className="max-w-3xl p-0 bg-black max-h-[90vh] overflow-y-auto">
+        <div className="bg-black w-full">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 bg-transparent">
+              <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-500 data-[state=active]:bg-transparent">
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-500 data-[state=active]:bg-transparent">
+                History
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="p-0 m-0">
+              <div className="p-6">
+                <div className="uppercase text-xs font-semibold tracking-wider text-gray-400 mb-1">
+                  EXERCISE
+                </div>
+                <h1 className="text-2xl font-bold mb-1">{exercise.name}</h1>
+                
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Badge className="bg-black text-white border border-gray-700">
+                    {exercise.category.charAt(0).toUpperCase() + exercise.category.slice(1)}
+                  </Badge>
+                  <Badge className="bg-black text-white border border-gray-700">
+                    {exercise.primaryMuscle.charAt(0).toUpperCase() + exercise.primaryMuscle.slice(1)}
+                  </Badge>
+                  {exercise.secondaryMuscles && exercise.secondaryMuscles.map((muscle) => (
+                    <Badge key={muscle} className="bg-black text-white border border-gray-700">
+                      {muscle.charAt(0).toUpperCase() + muscle.slice(1)}
+                    </Badge>
+                  ))}
+                </div>
+                
+                <div className="mb-6">
+                  <h2 className="text-lg font-medium mb-3">Description</h2>
+                  <p className="text-gray-400">
+                    {exercise.description || "No description available for this exercise."}
+                  </p>
+                </div>
+                
+                {exercise.instructions && (
+                  <div className="mb-6">
+                    <h2 className="text-lg font-medium mb-3">Instructions</h2>
+                    <p className="text-gray-400">{exercise.instructions}</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="history" className="p-6">
+              <div className="text-gray-400 py-8 text-center">
+                Exercise history will be displayed here.
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
         
-        <DialogHeader className="mt-4">
-          <DialogTitle className="text-xl">{exercise.name}</DialogTitle>
-          <DialogDescription>
-            Primary muscle: {exercise.primaryMuscle.charAt(0).toUpperCase() + exercise.primaryMuscle.slice(1)}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Tabs defaultValue="details" className="mt-4">
-          <TabsList>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="instructions">Instructions</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details" className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium mb-2">Muscles Worked</h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-dark-300">
-                  {exercise.primaryMuscle.charAt(0).toUpperCase() + exercise.primaryMuscle.slice(1)}
-                </Badge>
-                
-                {exercise.secondaryMuscles && exercise.secondaryMuscles.map((muscle) => (
-                  <Badge key={muscle} variant="outline" className="bg-dark-300">
-                    {muscle.charAt(0).toUpperCase() + muscle.slice(1)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-2">Category</h3>
-              <Badge variant="outline" className="bg-dark-300">
-                {exercise.category.charAt(0).toUpperCase() + exercise.category.slice(1)}
-              </Badge>
-            </div>
-            
-            {exercise.description && (
-              <div>
-                <h3 className="text-lg font-medium mb-2">Description</h3>
-                <p className="text-gray-400">{exercise.description}</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="instructions">
-            {exercise.instructions ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">How to perform</h3>
-                <p className="text-gray-400">{exercise.instructions}</p>
-              </div>
-            ) : (
-              <div className="text-gray-400 py-8 text-center">
-                No detailed instructions available for this exercise.
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="flex gap-2 mt-6">
-          <Button variant="outline" size="sm" onClick={onLikeToggle} className={isLiked ? "bg-purple-500 hover:bg-purple-600 text-white" : ""}>
-            <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-white" : ""}`} />
-            {isLiked ? "Liked" : "Like"}
-          </Button>
-          
-          <Button variant="outline" size="sm">
-            <Share className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+        <div className="flex px-6 py-4 border-t border-gray-800 justify-between">
+          <DialogClose asChild>
+            <Button variant="outline" className="bg-transparent border-gray-700 text-white">
+              Close
+            </Button>
+          </DialogClose>
           
           <Button className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="h-4 w-4 mr-2" />
             Add to Workout
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
