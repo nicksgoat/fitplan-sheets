@@ -53,6 +53,16 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const intensityType = exercise.intensityType || 'rpe';
   const weightType = exercise.weightType || 'pounds';
   
+  const handleIntensityTypeSelect = (type: IntensityType) => {
+    console.log("Exercise row intensity type changed to:", type);
+    handleIntensityTypeChange(exercise.id, type);
+  };
+
+  const handleWeightTypeSelect = (type: WeightType) => {
+    console.log("Exercise row weight type changed to:", type);
+    handleWeightTypeChange(exercise.id, type);
+  };
+  
   return (
     <motion.tr
       initial={{ opacity: 0, y: 10 }}
@@ -131,7 +141,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             >
               <WeightTypeSelector
                 value={weightType}
-                onChange={(type) => handleWeightTypeChange(exercise.id, type)}
+                onChange={handleWeightTypeSelect}
                 variant="minimal"
               />
               <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
@@ -141,7 +151,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             <div className="p-0 max-h-[300px] overflow-y-auto">
               <WeightTypeSelector
                 value={weightType}
-                onChange={(type) => handleWeightTypeChange(exercise.id, type)}
+                onChange={handleWeightTypeSelect}
                 onClose={() => {}}
               />
             </div>
@@ -159,7 +169,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             >
               <IntensityTypeSelector
                 value={intensityType}
-                onChange={(type) => handleIntensityTypeChange(exercise.id, type)}
+                onChange={handleIntensityTypeSelect}
                 variant="minimal"
               />
               <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
@@ -169,7 +179,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             <div className="p-0 max-h-[300px] overflow-y-auto">
               <IntensityTypeSelector
                 value={intensityType}
-                onChange={(type) => handleIntensityTypeChange(exercise.id, type)}
+                onChange={handleIntensityTypeSelect}
                 onClose={() => {}}
               />
             </div>

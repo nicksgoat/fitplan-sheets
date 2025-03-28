@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback } from "react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -84,10 +85,12 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleIntensityTypeChange = (exerciseId: string, intensityType: Exercise['intensityType']) => {
-    console.log("Setting exercise intensity type to:", intensityType);
+    console.log("WorkoutTable: Setting exercise intensity type to:", intensityType);
+    
+    // Update the exercise's intensity type
     updateExercise(session.id, exerciseId, { intensityType } as Partial<Exercise>);
     
-    // Update all sets in this exercise to use the same intensity type
+    // Find the exercise and update all its sets to use the same intensity type
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
       exercise.sets.forEach(set => {
@@ -101,9 +104,12 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleWeightTypeChange = (exerciseId: string, weightType: Exercise['weightType']) => {
+    console.log("WorkoutTable: Setting exercise weight type to:", weightType);
+    
+    // Update the exercise's weight type
     updateExercise(session.id, exerciseId, { weightType } as Partial<Exercise>);
     
-    // Update all sets in this exercise to use the same weight type
+    // Find the exercise and update all its sets to use the same weight type
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
       exercise.sets.forEach(set => {

@@ -64,6 +64,7 @@ const IntensityTypeSelector: React.FC<IntensityTypeSelectorProps> = ({
   variant = "default"
 }) => {
   const handleSelect = (selectedValue: IntensityType) => {
+    console.log("IntensityTypeSelector: Selected intensity type:", selectedValue);
     onChange(selectedValue);
     if (onClose) {
       onClose();

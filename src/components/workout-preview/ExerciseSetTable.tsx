@@ -43,7 +43,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   const intensityColor = getIntensityColor(intensityType);
   
   return (
-    <>
+    <div>
       <div className="overflow-x-auto max-w-full">
         <Table className="border-t border-dark-border text-sm w-full">
           <TableHeader>
@@ -100,7 +100,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
