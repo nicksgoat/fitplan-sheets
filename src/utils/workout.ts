@@ -455,7 +455,7 @@ export function saveCurrentWeekAsPreset(program: WorkoutProgram, weekId: string,
   const week = program.weeks.find(w => w.id === weekId);
   if (!week) throw new Error("Week not found");
   
-  // Create a deep copy of the week
+  // Create a deep copy of the week with a new ID
   const weekCopy: WorkoutWeek = {
     id: generateId(),
     name: presetName,

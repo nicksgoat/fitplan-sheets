@@ -743,6 +743,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const saveWeekAsPreset = (weekId: string, name: string) => {
     const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
+    // Save all workouts associated with this week first
+    const week = program.weeks.find(w => w.id === weekId);
+    if (week && week.workouts) {
+      week.workouts.forEach(workoutId => {
+        const workout = program.workouts.find(w => w.id === workoutId);
+        if (workout) {
+          const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workout.name);
+          saveWorkoutPreset(workoutCopy);
+        }
+      });
+    }
     saveWeekPreset(weekPreset);
     toast.success("Week saved as preset");
   };
@@ -794,14 +805,19 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const workoutsToAdd: Workout[] = [];
       const workoutIds: string[] = [];
       
-      preset.workouts.forEach(originalWorkoutId => {
-        const originalWorkout = getWorkoutPresets().find(s => s.id === originalWorkoutId);
-        if (originalWorkout) {
-          const newWorkout = cloneWorkout(originalWorkout, newWeekId);
-          workoutsToAdd.push(newWorkout);
-          workoutIds.push(newWorkout.id);
-        }
-      });
+      // First get all workouts from presets
+      const workoutPresets = getWorkoutPresets();
+      
+      if (preset.workouts && preset.workouts.length > 0) {
+        preset.workouts.forEach(originalWorkoutId => {
+          const originalWorkout = workoutPresets.find(s => s.id === originalWorkoutId);
+          if (originalWorkout) {
+            const newWorkout = cloneWorkout(originalWorkout, newWeekId);
+            workoutsToAdd.push(newWorkout);
+            workoutIds.push(newWorkout.id);
+          }
+        });
+      }
       
       newWeek.workouts = workoutIds;
       
@@ -823,9 +839,20 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loadProgramPreset = (preset: WorkoutProgram) => {
+    if (!preset || !preset.weeks || preset.weeks.length === 0) {
+      toast.error("Invalid program preset");
+      return;
+    }
+    
     setProgram(preset);
     setActiveWeekId(preset.weeks[0]?.id || null);
-    setActiveWorkoutId(preset.workouts[0]?.id || null);
+    
+    if (preset.workouts && preset.workouts.length > 0) {
+      setActiveWorkoutId(preset.workouts[0]?.id || null);
+    } else {
+      setActiveWorkoutId(null);
+    }
+    
     toast.success(`Loaded program preset: ${preset.name}`);
   };
 
@@ -838,6 +865,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const saveWeekToLibrary = (weekId: string, name: string) => {
     const weekPreset = saveCurrentWeekAsPreset(program, weekId, name);
+    // First save all workouts associated with this week
+    const week = program.weeks.find(w => w.id === weekId);
+    if (week && week.workouts) {
+      week.workouts.forEach(workoutId => {
+        const workout = program.workouts.find(w => w.id === workoutId);
+        if (workout) {
+          const workoutCopy = saveCurrentWorkoutAsPreset(program, workout.id, workout.name);
+          addWorkoutToLibrary(workoutCopy);
+        }
+      });
+    }
     addWeekToLibrary(weekPreset);
     toast.success("Training week added to library");
   };
@@ -889,9 +927,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const workoutsToAdd: Workout[] = [];
       const workoutIds: string[] = [];
       
+      // First get all workouts from library
+      const workoutLibrary = getWorkoutLibrary();
+      
       if (preset.workouts && preset.workouts.length > 0) {
         preset.workouts.forEach(originalWorkoutId => {
-          const workoutLibrary = getWorkoutLibrary();
           const originalWorkout = workoutLibrary.find(s => s.id === originalWorkoutId);
           if (originalWorkout) {
             const newWorkout = cloneWorkout(originalWorkout, newWeekId);
