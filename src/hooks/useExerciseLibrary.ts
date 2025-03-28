@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise } from '@/types/exercise';
@@ -91,6 +90,37 @@ export function useExercise(id: string) {
 // Hook for fetching exercises with their visuals (now just returns exercises with consolidated data)
 export function useExercisesWithVisuals() {
   return useExercises();
+}
+
+// Hook for uploading a video for an exercise
+export function useUploadExerciseVideo() {
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const uploadVideo = async (file: File, userId?: string) => {
+    setIsUploading(true);
+    setProgress(0);
+    
+    try {
+      // Start progress indicator
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 5, 95));
+      }, 300);
+      
+      const videoUrl = await exerciseLibraryService.uploadExerciseVideo(file, userId);
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+      
+      return videoUrl;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  return { uploadVideo, progress, isUploading };
 }
 
 // Hook for creating a custom exercise

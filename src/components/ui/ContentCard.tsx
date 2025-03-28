@@ -42,6 +42,10 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
   const duration = normalizedItem.duration;
   const title = normalizedItem.title;
   
+  // Check if it's a Supabase Storage URL for videos
+  const isStorageVideo = videoUrl && videoUrl.includes('storage.googleapis.com') && 
+                         videoUrl.includes('exercise-videos');
+  
   return (
     <DetailDrawer item={normalizedItem}>
       <Card className={cn("content-card h-full flex flex-col", className)}>
@@ -49,7 +53,7 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
           {videoUrl ? (
             <div className="relative h-[120px] w-full">
               <img 
-                src={imageUrl} 
+                src={imageUrl || 'https://placehold.co/600x400?text=Video+Exercise'} 
                 alt={title} 
                 className="h-full w-full object-cover"
               />
@@ -92,6 +96,11 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
               {tag}
             </Badge>
           ))}
+          {isStorageVideo && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
+              Uploaded
+            </Badge>
+          )}
         </CardFooter>
       </Card>
     </DetailDrawer>

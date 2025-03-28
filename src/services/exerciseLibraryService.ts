@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
 import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
@@ -156,6 +155,42 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
     // Check if we can find it in local data
     const localExercise = localExerciseLibrary.find(e => e.id === id);
     return localExercise || null;
+  }
+}
+
+// Upload video file to Supabase Storage
+export async function uploadExerciseVideo(file: File, userId?: string): Promise<string> {
+  try {
+    // Create a unique filename using user ID (if available) and timestamp
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId || 'anonymous'}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+    
+    // Upload the file to the exercise-videos bucket
+    const { data, error } = await supabase
+      .storage
+      .from('exercise-videos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+      
+    if (error) {
+      console.error('Error uploading video:', error);
+      throw error;
+    }
+    
+    // Get the public URL for the uploaded video
+    const { data: { publicUrl } } = supabase
+      .storage
+      .from('exercise-videos')
+      .getPublicUrl(filePath);
+      
+    return publicUrl;
+  } catch (error) {
+    console.error('Unexpected error uploading video:', error);
+    toast.error('Failed to upload video. Please try again.');
+    throw error;
   }
 }
 

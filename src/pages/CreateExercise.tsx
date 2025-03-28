@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Plus, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, X, Upload, VideoIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -32,6 +32,13 @@ import {
 } from '@/types/exercise';
 import { useCreateExercise } from '@/hooks/useExerciseLibrary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { uploadExerciseVideo } from '@/services/exerciseLibraryService';
+import { useAuth } from '@/hooks/useAuth';
+
+// Maximum video size (50MB)
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+// Allowed video file types
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 // Form validation schema using zod
 const formSchema = z.object({
@@ -48,7 +55,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   instructions: z.string().optional(),
   imageUrl: z.string().optional(),
-  videoUrl: z.string().optional(), // Added videoUrl
+  videoUrl: z.string().optional(),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced'] as const),
   duration: z.string().optional(),
 });
@@ -61,6 +68,11 @@ const CreateExercise: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,7 +107,110 @@ const CreateExercise: React.FC = () => {
     }
   };
 
-  const onSubmit = (values: FormValues) => {
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    // Validate file type
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      toast.error('Invalid file type. Please upload MP4, WebM, or QuickTime video.');
+      return;
+    }
+    
+    // Validate file size
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast.error('Video is too large. Maximum size is 50MB.');
+      return;
+    }
+    
+    setVideoFile(file);
+    // Clear any previously set videoUrl when a new file is selected
+    form.setValue('videoUrl', '');
+  };
+
+  const handleVideoDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    // Validate file type
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      toast.error('Invalid file type. Please upload MP4, WebM, or QuickTime video.');
+      return;
+    }
+    
+    // Validate file size
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast.error('Video is too large. Maximum size is 50MB.');
+      return;
+    }
+    
+    setVideoFile(file);
+    // Clear any previously set videoUrl when a new file is selected
+    form.setValue('videoUrl', '');
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleVideoUpload = async () => {
+    if (!videoFile) {
+      toast.error('Please select a video file first');
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setUploadProgress(10); // Start progress indicator
+      
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+      
+      // Upload the video file
+      const videoUrl = await uploadExerciseVideo(videoFile, user?.id);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      // Set the video URL in the form
+      form.setValue('videoUrl', videoUrl);
+      
+      toast.success('Video uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast.error('Failed to upload video. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    // If video file is selected but not uploaded yet, upload it first
+    if (mediaType === 'video' && videoFile && !values.videoUrl) {
+      try {
+        setIsUploading(true);
+        const videoUrl = await uploadExerciseVideo(videoFile, user?.id);
+        values.videoUrl = videoUrl;
+      } catch (error) {
+        console.error('Error uploading video during submission:', error);
+        toast.error('Failed to upload video. Please try again.');
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+    
     createExercise({
       name: values.name,
       primaryMuscle: values.primaryMuscle as PrimaryMuscle,
@@ -254,21 +369,86 @@ const CreateExercise: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="video">
-                <FormField
-                  control={form.control}
-                  name="videoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input placeholder="https://example.com/video.mp4" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter a URL for the exercise video
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                <div>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    onChange={handleVideoSelect}
+                    className="hidden"
+                    ref={fileInputRef}
+                  />
+                  
+                  <div 
+                    className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer ${
+                      videoFile ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleVideoDrop}
+                    onDragOver={handleDragOver}
+                  >
+                    {videoFile ? (
+                      <div className="flex flex-col items-center">
+                        <VideoIcon className="h-12 w-12 text-green-500 mb-2" />
+                        <p className="text-sm font-medium">{videoFile.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium">Drop your video here or click to browse</p>
+                        <p className="text-xs text-gray-500 mt-1">MP4, WebM or QuickTime, up to 50MB</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {videoFile && !form.getValues('videoUrl') && (
+                    <div className="mt-2">
+                      <Button 
+                        type="button" 
+                        onClick={handleVideoUpload}
+                        disabled={isUploading}
+                        className="w-full"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading... {uploadProgress}%
+                          </>
+                        ) : (
+                          'Upload Video'
+                        )}
+                      </Button>
+                    </div>
                   )}
-                />
+                  
+                  {form.getValues('videoUrl') && (
+                    <div className="mt-2">
+                      <div className="p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800 flex items-center">
+                        <VideoIcon className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm text-green-600">Video uploaded successfully</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <FormField
+                    control={form.control}
+                    name="videoUrl"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Or enter a video URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/video.mp4" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          You can either upload a video file or provide a URL
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
@@ -397,13 +577,13 @@ const CreateExercise: React.FC = () => {
             </Button>
             <Button 
               type="submit" 
-              disabled={isPending}
+              disabled={isPending || isUploading}
               className="bg-fitbloom-purple hover:bg-opacity-90"
             >
-              {isPending ? (
+              {isPending || isUploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {isUploading ? 'Uploading...' : 'Creating...'}
                 </>
               ) : (
                 'Create Exercise'
