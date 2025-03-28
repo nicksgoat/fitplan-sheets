@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 const WeekTabs: React.FC = () => {
   const { program, activeWeekId, setActiveWeekId, setActiveWorkoutId, addWeek } = useWorkout();
   
+  if (!program || !program.weeks) return null;
+  
   const handleWeekClick = (weekId: string) => {
     setActiveWeekId(weekId);
     

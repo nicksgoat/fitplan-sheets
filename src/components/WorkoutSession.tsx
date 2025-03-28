@@ -10,6 +10,9 @@ interface WorkoutSessionProps {
 
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   const { program } = useWorkout();
+  
+  if (!program || !program.workouts) return null;
+  
   const session = program.workouts.find((s) => s.id === sessionId);
   
   if (!session) return null;
