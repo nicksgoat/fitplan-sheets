@@ -18,6 +18,19 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to format phone numbers properly
+const formatPhoneNumber = (phone: string): string => {
+  // Remove any non-digit characters except the plus sign at the beginning
+  let formattedPhone = phone.replace(/[^\d+]/g, '');
+  
+  // Ensure the number starts with a plus sign
+  if (!formattedPhone.startsWith('+')) {
+    formattedPhone = '+' + formattedPhone;
+  }
+  
+  return formattedPhone;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -118,15 +131,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const requestOTP = async (phone: string) => {
     try {
+      const formattedPhone = formatPhoneNumber(phone);
+      console.log("Sending OTP to formatted phone:", formattedPhone);
+      
       const { error } = await supabase.auth.signInWithOtp({
-        phone,
+        phone: formattedPhone,
       });
+      
       if (error) throw error;
+      
       toast({
         title: "OTP Sent",
         description: "Check your phone for the verification code",
       });
     } catch (error: any) {
+      console.error("error:", error);
       toast({
         title: "Error sending OTP",
         description: error.message,
@@ -138,11 +157,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithPhone = async (phone: string, otp: string) => {
     try {
+      const formattedPhone = formatPhoneNumber(phone);
+      console.log("Verifying OTP with formatted phone:", formattedPhone);
+      
       const { error } = await supabase.auth.verifyOtp({
-        phone,
+        phone: formattedPhone,
         token: otp,
         type: 'sms',
       });
+      
       if (error) throw error;
     } catch (error: any) {
       toast({

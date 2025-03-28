@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface LocationState {
   from?: {
@@ -32,12 +33,14 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
   
   // Register phone state
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerOtp, setRegisterOtp] = useState("");
   const [registerOtpSent, setRegisterOtpSent] = useState(false);
   const [registerAuthMethod, setRegisterAuthMethod] = useState<'email' | 'phone'>('email');
+  const [registerPhoneError, setRegisterPhoneError] = useState("");
 
   const state = location.state as LocationState;
   const from = state?.from?.pathname || "/";
@@ -45,6 +48,16 @@ const Auth = () => {
   if (user && !loading) {
     return <Navigate to={from} replace />;
   }
+
+  // Helper for validating phone numbers
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // Basic validation for demonstration - require plus sign and numbers
+    // For production, consider a more robust validation library
+    if (!phoneNumber.trim()) {
+      return false;
+    }
+    return true;
+  };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +97,13 @@ const Auth = () => {
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPhoneError("");
+    
+    if (!validatePhoneNumber(phone)) {
+      setPhoneError("Please enter a valid phone number with country code (e.g. +1234567890)");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       await requestOTP(phone);
@@ -110,6 +130,13 @@ const Auth = () => {
 
   const handleRegisterSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterPhoneError("");
+    
+    if (!validatePhoneNumber(registerPhone)) {
+      setRegisterPhoneError("Please enter a valid phone number with country code (e.g. +1234567890)");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       await requestOTP(registerPhone);
@@ -166,7 +193,7 @@ const Auth = () => {
                     <Button 
                       type="button"
                       variant="outline" 
-                      className="flex-1"
+                      className={`flex-1 ${authMethod === 'email' ? 'bg-primary/20' : ''}`}
                       onClick={() => setAuthMethod('email')}
                     >
                       Email
@@ -174,7 +201,7 @@ const Auth = () => {
                     <Button 
                       type="button"
                       variant="outline" 
-                      className="flex-1"
+                      className={`flex-1 ${authMethod === 'phone' ? 'bg-primary/20' : ''}`}
                       onClick={() => setAuthMethod('phone')}
                     >
                       Phone
@@ -249,6 +276,13 @@ const Auth = () => {
                           disabled={otpSent}
                           className="border-dark-300 bg-dark-300"
                         />
+                        {phoneError && (
+                          <Alert variant="destructive" className="mt-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{phoneError}</AlertDescription>
+                          </Alert>
+                        )}
                       </div>
                       
                       {otpSent && (
@@ -351,7 +385,7 @@ const Auth = () => {
                   <Button 
                     type="button"
                     variant="outline" 
-                    className="flex-1"
+                    className={`flex-1 ${registerAuthMethod === 'email' ? 'bg-primary/20' : ''}`}
                     onClick={() => setRegisterAuthMethod('email')}
                   >
                     Email
@@ -359,7 +393,7 @@ const Auth = () => {
                   <Button 
                     type="button"
                     variant="outline" 
-                    className="flex-1"
+                    className={`flex-1 ${registerAuthMethod === 'phone' ? 'bg-primary/20' : ''}`}
                     onClick={() => setRegisterAuthMethod('phone')}
                   >
                     Phone
@@ -434,6 +468,13 @@ const Auth = () => {
                         disabled={registerOtpSent}
                         className="border-dark-300 bg-dark-300"
                       />
+                      {registerPhoneError && (
+                        <Alert variant="destructive" className="mt-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Error</AlertTitle>
+                          <AlertDescription>{registerPhoneError}</AlertDescription>
+                        </Alert>
+                      )}
                     </div>
                     
                     {registerOtpSent && (
