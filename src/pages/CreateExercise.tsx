@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,6 +14,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   ExerciseCategory,
   PrimaryMuscle,
@@ -43,6 +46,9 @@ const formSchema = z.object({
   ] as const),
   description: z.string().optional(),
   instructions: z.string().optional(),
+  imageUrl: z.string().optional(),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced'] as const),
+  duration: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,6 +56,8 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateExercise: React.FC = () => {
   const navigate = useNavigate();
   const { mutate: createExercise, isPending } = useCreateExercise();
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,8 +67,29 @@ const CreateExercise: React.FC = () => {
       category: 'other' as ExerciseCategory,
       description: '',
       instructions: '',
+      imageUrl: '',
+      difficulty: 'beginner',
+      duration: '',
     },
   });
+
+  const addTag = () => {
+    if (tagInput.trim() !== '' && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
     createExercise({
@@ -70,6 +99,11 @@ const CreateExercise: React.FC = () => {
       description: values.description,
       instructions: values.instructions,
       isCustom: true,
+      imageUrl: values.imageUrl,
+      tags,
+      difficulty: values.difficulty,
+      duration: values.duration,
+      creator: 'You'
     }, {
       onSuccess: () => {
         toast.success('Exercise created successfully!');
@@ -185,12 +219,111 @@ const CreateExercise: React.FC = () => {
 
           <FormField
             control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Image URL (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com/image.jpg" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Enter a URL for the exercise image
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="difficulty"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Difficulty</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Duration (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 30 sec, 1 min" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div>
+            <FormLabel>Tags</FormLabel>
+            <div className="flex items-center mb-2">
+              <Input 
+                placeholder="Add a tag and press Enter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInputKeyDown}
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                onClick={addTag} 
+                size="sm" 
+                className="ml-2"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {tags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  {tag}
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => removeTag(tag)} 
+                    className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <FormField
+            control={form.control}
             name="description"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Description (Optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Brief description of the exercise" {...field} />
+                  <Textarea 
+                    placeholder="Brief description of the exercise" 
+                    className="min-h-20" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -204,7 +337,11 @@ const CreateExercise: React.FC = () => {
               <FormItem>
                 <FormLabel>Instructions (Optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Step-by-step instructions" {...field} />
+                  <Textarea 
+                    placeholder="Step-by-step instructions" 
+                    className="min-h-32" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

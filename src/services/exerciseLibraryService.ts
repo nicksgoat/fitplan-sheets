@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
 import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
@@ -17,7 +18,12 @@ export async function getAllExercises(): Promise<Exercise[]> {
         description,
         instructions,
         is_custom,
-        user_id
+        user_id,
+        image_url,
+        tags,
+        difficulty,
+        duration,
+        creator
       `)
       .order('name');
     
@@ -57,7 +63,12 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
         description,
         instructions,
         is_custom,
-        user_id
+        user_id,
+        image_url,
+        tags,
+        difficulty,
+        duration,
+        creator
       `)
       .ilike('name', `%${query}%`)
       .order('name')
@@ -112,10 +123,15 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
         description,
         instructions,
         is_custom,
-        user_id
+        user_id,
+        image_url,
+        tags,
+        difficulty,
+        duration,
+        creator
       `)
       .eq('id', id)
-      .maybeSingle(); // Changed from single() to maybeSingle() to avoid errors
+      .maybeSingle();
     
     if (error) {
       console.error("Error fetching exercise:", error);
@@ -150,7 +166,12 @@ export async function addCustomExercise(exercise: Omit<Exercise, 'id'>): Promise
       category: exercise.category,
       description: exercise.description || '',
       instructions: exercise.instructions || '',
-      is_custom: true
+      is_custom: true,
+      image_url: exercise.imageUrl || '',
+      tags: exercise.tags || [],
+      difficulty: exercise.difficulty || 'beginner',
+      duration: exercise.duration || '',
+      creator: exercise.creator || 'You'
     })
     .select()
     .single();
@@ -173,6 +194,11 @@ export async function updateCustomExercise(id: string, exercise: Partial<Exercis
   if (exercise.category !== undefined) updates.category = exercise.category;
   if (exercise.description !== undefined) updates.description = exercise.description;
   if (exercise.instructions !== undefined) updates.instructions = exercise.instructions;
+  if (exercise.imageUrl !== undefined) updates.image_url = exercise.imageUrl;
+  if (exercise.tags !== undefined) updates.tags = exercise.tags;
+  if (exercise.difficulty !== undefined) updates.difficulty = exercise.difficulty;
+  if (exercise.duration !== undefined) updates.duration = exercise.duration;
+  if (exercise.creator !== undefined) updates.creator = exercise.creator;
   
   const { data, error } = await supabase
     .from('exercise_library')
@@ -215,6 +241,11 @@ function mapDbExerciseToModel(dbExercise: any): Exercise {
     description: dbExercise.description || '',
     instructions: dbExercise.instructions || '',
     isCustom: dbExercise.is_custom || false,
-    userId: dbExercise.user_id
+    userId: dbExercise.user_id,
+    imageUrl: dbExercise.image_url || '',
+    tags: dbExercise.tags || [],
+    difficulty: dbExercise.difficulty || 'beginner',
+    duration: dbExercise.duration || '',
+    creator: dbExercise.creator || 'FitBloom'
   };
 }

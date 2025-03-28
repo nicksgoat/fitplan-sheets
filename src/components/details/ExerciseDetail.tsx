@@ -61,6 +61,9 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
             <div>
               <div className="flex justify-between items-start mb-1">
                 <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{item.type}</span>
+                {item.duration && (
+                  <span className="text-xs text-fitbloom-text-medium">{item.duration}</span>
+                )}
               </div>
               <h1 className="text-xl font-bold mb-1">{item.title}</h1>
               <p className="text-sm text-fitbloom-text-medium">{item.creator}</p>

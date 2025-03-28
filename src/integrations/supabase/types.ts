@@ -87,8 +87,12 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["exercise_category"]
           created_at: string
+          creator: string | null
           description: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"] | null
+          duration: string | null
           id: string
+          image_url: string | null
           instructions: string | null
           is_custom: boolean | null
           name: string
@@ -96,14 +100,19 @@ export type Database = {
           secondary_muscles:
             | Database["public"]["Enums"]["primary_muscle"][]
             | null
+          tags: string[] | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           category: Database["public"]["Enums"]["exercise_category"]
           created_at?: string
+          creator?: string | null
           description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          duration?: string | null
           id?: string
+          image_url?: string | null
           instructions?: string | null
           is_custom?: boolean | null
           name: string
@@ -111,14 +120,19 @@ export type Database = {
           secondary_muscles?:
             | Database["public"]["Enums"]["primary_muscle"][]
             | null
+          tags?: string[] | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["exercise_category"]
           created_at?: string
+          creator?: string | null
           description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          duration?: string | null
           id?: string
+          image_url?: string | null
           instructions?: string | null
           is_custom?: boolean | null
           name?: string
@@ -126,6 +140,7 @@ export type Database = {
           secondary_muscles?:
             | Database["public"]["Enums"]["primary_muscle"][]
             | null
+          tags?: string[] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -174,47 +189,6 @@ export type Database = {
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      exercise_visuals: {
-        Row: {
-          created_at: string
-          creator: string | null
-          difficulty: string | null
-          duration: string | null
-          exercise_id: string
-          id: string
-          image_url: string
-          tags: string[] | null
-        }
-        Insert: {
-          created_at?: string
-          creator?: string | null
-          difficulty?: string | null
-          duration?: string | null
-          exercise_id: string
-          id?: string
-          image_url: string
-          tags?: string[] | null
-        }
-        Update: {
-          created_at?: string
-          creator?: string | null
-          difficulty?: string | null
-          duration?: string | null
-          exercise_id?: string
-          id?: string
-          image_url?: string
-          tags?: string[] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "exercise_visuals_exercise_id_fkey"
-            columns: ["exercise_id"]
-            isOneToOne: false
-            referencedRelation: "exercise_library"
             referencedColumns: ["id"]
           },
         ]
@@ -433,6 +407,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      difficulty_level: "beginner" | "intermediate" | "advanced"
       exercise_category:
         | "barbell"
         | "dumbbell"

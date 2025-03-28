@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Exercise, ExerciseVisual, ExerciseWithVisual } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 import * as exerciseLibraryService from '@/services/exerciseLibraryService';
-import * as exerciseVisualsService from '@/services/exerciseVisualsService';
 import { toast } from 'sonner';
 
 // Hook for searching exercises
@@ -75,70 +75,9 @@ export function useExercise(id: string) {
   });
 }
 
-// Hook for fetching all exercise visuals
-export function useExerciseVisuals() {
-  return useQuery({
-    queryKey: ['exerciseVisuals'],
-    queryFn: exerciseVisualsService.getAllExerciseVisuals,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    meta: {
-      onError: (error: Error) => {
-        console.error('Error fetching exercise visuals:', error);
-        toast.error('Failed to fetch exercise visuals. Using default images.');
-      }
-    }
-  });
-}
-
-// Hook for fetching exercise visuals by tags
-export function useExerciseVisualsByTags(tags: string[]) {
-  return useQuery({
-    queryKey: ['exerciseVisuals', 'tags', ...tags],
-    queryFn: () => exerciseVisualsService.getExerciseVisualsByTags(tags),
-    enabled: tags.length > 0,
-    retry: 1,
-    meta: {
-      onError: (error: Error) => {
-        console.error('Error fetching exercise visuals by tags:', error);
-        toast.error('Failed to filter exercises by tags. Using default images.');
-      }
-    }
-  });
-}
-
-// Hook for fetching exercises with their visuals
+// Hook for fetching exercises with their visuals (now just returns exercises with consolidated data)
 export function useExercisesWithVisuals() {
-  const exercisesQuery = useExercises();
-  const visualsQuery = useExerciseVisuals();
-  
-  const isLoading = exercisesQuery.isLoading || visualsQuery.isLoading;
-  const error = exercisesQuery.error || visualsQuery.error;
-  
-  const exercisesWithVisuals: ExerciseWithVisual[] = [];
-  
-  if (exercisesQuery.data) {
-    const visualsMap = new Map<string, ExerciseVisual>();
-    
-    if (visualsQuery.data) {
-      visualsQuery.data.forEach(visual => {
-        visualsMap.set(visual.exerciseId, visual);
-      });
-    }
-    
-    exercisesQuery.data.forEach(exercise => {
-      exercisesWithVisuals.push({
-        ...exercise,
-        visual: visualsMap.get(exercise.id)
-      });
-    });
-  }
-  
-  return {
-    data: exercisesWithVisuals,
-    isLoading,
-    error
-  };
+  return useExercises();
 }
 
 // Hook for creating a custom exercise

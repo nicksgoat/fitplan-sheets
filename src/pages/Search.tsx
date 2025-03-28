@@ -14,15 +14,25 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
+import { Exercise } from '@/types/exercise';
 
 const SearchPage = () => {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<ItemType[]>([]);
+  const [searchResults, setSearchResults] = useState<(ItemType | Exercise)[]>([]);
   const [typeFilter, setTypeFilter] = useState<'all' | 'exercise' | 'workout' | 'program'>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   
-  const allItems = [...mockExercises, ...mockWorkouts, ...mockPrograms];
+  // Get real exercise data
+  const { data: exercisesData, isLoading, error } = useExercisesWithVisuals();
+  
+  // Combine mock workouts and programs with real exercises
+  const allItems = [
+    ...(exercisesData || []),
+    ...mockWorkouts,
+    ...mockPrograms
+  ];
 
   // Parse search query from URL if present
   useEffect(() => {
@@ -32,7 +42,7 @@ const SearchPage = () => {
       setSearchQuery(query);
       performSearch(query);
     }
-  }, [location.search]);
+  }, [location.search, exercisesData]);
 
   const performSearch = (query: string) => {
     if (!query.trim()) {
@@ -42,15 +52,38 @@ const SearchPage = () => {
 
     const normalizedQuery = query.toLowerCase().trim();
     let results = allItems.filter(item => {
-      const matchesQuery = 
-        item.title.toLowerCase().includes(normalizedQuery) ||
-        item.creator.toLowerCase().includes(normalizedQuery) ||
-        item.type.toLowerCase().includes(normalizedQuery) ||
-        item.tags?.some(tag => tag.toLowerCase().includes(normalizedQuery)) ||
-        (item.description && item.description.toLowerCase().includes(normalizedQuery));
+      // Handle both Exercise and ItemType objects
+      const isExercise = 'primaryMuscle' in item;
       
-      const matchesType = typeFilter === 'all' || item.type === typeFilter;
-      const matchesDifficulty = difficultyFilter === 'all' || item.difficulty === difficultyFilter;
+      let matchesQuery = false;
+      if (isExercise) {
+        const exercise = item as Exercise;
+        matchesQuery = 
+          exercise.name.toLowerCase().includes(normalizedQuery) ||
+          exercise.primaryMuscle.toLowerCase().includes(normalizedQuery) ||
+          exercise.category.toLowerCase().includes(normalizedQuery) ||
+          (exercise.tags?.some(tag => tag.toLowerCase().includes(normalizedQuery)) || false) ||
+          (exercise.description?.toLowerCase().includes(normalizedQuery) || false);
+      } else {
+        const itemType = item as ItemType;
+        matchesQuery = 
+          itemType.title.toLowerCase().includes(normalizedQuery) ||
+          itemType.creator.toLowerCase().includes(normalizedQuery) ||
+          itemType.type.toLowerCase().includes(normalizedQuery) ||
+          (itemType.tags?.some(tag => tag.toLowerCase().includes(normalizedQuery)) || false) ||
+          (itemType.description?.toLowerCase().includes(normalizedQuery) || false);
+      }
+      
+      let matchesType = typeFilter === 'all';
+      if (!matchesType) {
+        matchesType = isExercise ? typeFilter === 'exercise' : (item as ItemType).type === typeFilter;
+      }
+      
+      let matchesDifficulty = difficultyFilter === 'all';
+      if (!matchesDifficulty) {
+        const itemDifficulty = isExercise ? (item as Exercise).difficulty : (item as ItemType).difficulty;
+        matchesDifficulty = itemDifficulty === difficultyFilter;
+      }
       
       return matchesQuery && matchesType && matchesDifficulty;
     });

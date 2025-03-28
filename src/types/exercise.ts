@@ -36,18 +36,10 @@ export interface Exercise {
   instructions?: string;
   isCustom?: boolean;
   userId?: string;
-}
-
-export interface ExerciseVisual {
-  id: string;
-  exerciseId: string;
-  imageUrl: string;
+  // Additional fields from the consolidated structure
+  imageUrl?: string;
   tags?: string[];
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   duration?: string;
   creator?: string;
-}
-
-export interface ExerciseWithVisual extends Exercise {
-  visual?: ExerciseVisual;
 }

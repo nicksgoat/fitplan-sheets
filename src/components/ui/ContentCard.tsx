@@ -6,29 +6,29 @@ import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
-import { ExerciseWithVisual } from '@/types/exercise';
+import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
 
 interface ContentCardProps {
-  item: ExerciseWithVisual | ItemType;
+  item: Exercise | ItemType;
   className?: string;
 }
 
 const ContentCard = ({ item, className }: ContentCardProps) => {
-  // Determine if item is ExerciseWithVisual or ItemType
-  const isExerciseWithVisual = 'primaryMuscle' in item;
+  // Determine if item is Exercise or ItemType
+  const isExercise = 'primaryMuscle' in item;
   
-  // Map ExerciseWithVisual properties to match ItemType structure for consistency
-  const normalizedItem: ItemType = isExerciseWithVisual 
+  // Map Exercise properties to match ItemType structure for consistency
+  const normalizedItem: ItemType = isExercise 
     ? {
         id: item.id,
         title: item.name,
         type: 'exercise',
-        creator: item.visual?.creator || 'FitBloom',
-        imageUrl: item.visual?.imageUrl || 'https://placehold.co/600x400?text=No+Image',
-        duration: item.visual?.duration || '',
-        tags: item.visual?.tags || [],
-        difficulty: (item.visual?.difficulty as any) || 'beginner',
+        creator: item.creator || 'FitBloom',
+        imageUrl: item.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+        duration: item.duration || '',
+        tags: item.tags || [],
+        difficulty: (item.difficulty as any) || 'beginner',
         isFavorite: false,
         description: item.description
       }
