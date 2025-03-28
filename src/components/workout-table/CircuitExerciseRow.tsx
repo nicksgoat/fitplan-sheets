@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Exercise, IntensityType, WeightType, RepType, Set } from "@/types/workout";
@@ -6,8 +5,6 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import EditableCell from "../EditableCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
-import EditableSetCell from "../EditableSetCell";
-import { TableCell } from "../ui/table";
 
 interface CircuitExerciseRowProps {
   exercise: Exercise;
