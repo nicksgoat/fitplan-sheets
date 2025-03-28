@@ -22,6 +22,17 @@ import {
   weightToPercentage, 
   percentageToWeight 
 } from "@/utils/maxWeightUtils";
+import {
+  getSessionLibrary as getSessionLibraryUtil,
+  getWeekLibrary as getWeekLibraryUtil,
+  getProgramLibrary as getProgramLibraryUtil,
+  addWorkoutToLibrary,
+  addWeekToLibrary,
+  addProgramToLibrary,
+  removeWorkoutFromLibrary,
+  removeWeekFromLibrary,
+  removeProgramFromLibrary
+} from '@/utils/presets';
 
 interface WorkoutContextProps {
   program: WorkoutProgram;
@@ -85,6 +96,115 @@ const WorkoutContext = createContext<WorkoutContextProps | undefined>(undefined)
 interface WorkoutProviderProps {
   children: ReactNode;
 }
+
+const SAMPLE_PROGRAM: WorkoutProgram = {
+  id: "sample-123",
+  name: "Sample 5x5 Program",
+  sessions: [
+    {
+      id: "session1",
+      name: "Day 1: Squat Focus",
+      day: 1,
+      weekId: "week1",
+      exercises: [
+        {
+          id: "ex1",
+          name: "Barbell Squat",
+          sets: [
+            { id: "set1", reps: "5", weight: "135", intensity: "", rest: "180" },
+            { id: "set2", reps: "5", weight: "155", intensity: "", rest: "180" },
+            { id: "set3", reps: "5", weight: "185", intensity: "", rest: "180" },
+            { id: "set4", reps: "5", weight: "205", intensity: "", rest: "180" },
+            { id: "set5", reps: "5", weight: "225", intensity: "", rest: "180" },
+          ],
+          notes: "Focus on depth and form"
+        },
+        {
+          id: "ex2",
+          name: "Bench Press",
+          sets: [
+            { id: "set6", reps: "5", weight: "95", intensity: "", rest: "180" },
+            { id: "set7", reps: "5", weight: "115", intensity: "", rest: "180" },
+            { id: "set8", reps: "5", weight: "135", intensity: "", rest: "180" },
+            { id: "set9", reps: "5", weight: "155", intensity: "", rest: "180" },
+            { id: "set10", reps: "5", weight: "175", intensity: "", rest: "180" },
+          ],
+          notes: "Keep shoulders back"
+        },
+        {
+          id: "ex3",
+          name: "Barbell Row",
+          sets: [
+            { id: "set11", reps: "5", weight: "95", intensity: "", rest: "180" },
+            { id: "set12", reps: "5", weight: "115", intensity: "", rest: "180" },
+            { id: "set13", reps: "5", weight: "135", intensity: "", rest: "180" },
+            { id: "set14", reps: "5", weight: "155", intensity: "", rest: "180" },
+            { id: "set15", reps: "5", weight: "175", intensity: "", rest: "180" },
+          ],
+          notes: "Keep back flat"
+        }
+      ],
+      circuits: []
+    },
+    {
+      id: "session2",
+      name: "Day 2: Deadlift Focus",
+      day: 2,
+      weekId: "week1",
+      exercises: [
+        {
+          id: "ex4",
+          name: "Deadlift",
+          sets: [
+            { id: "set16", reps: "5", weight: "135", intensity: "", rest: "180" },
+            { id: "set17", reps: "5", weight: "185", intensity: "", rest: "180" },
+            { id: "set18", reps: "5", weight: "225", intensity: "", rest: "180" },
+            { id: "set19", reps: "5", weight: "275", intensity: "", rest: "180" },
+            { id: "set20", reps: "5", weight: "315", intensity: "", rest: "180" },
+          ],
+          notes: "Keep back straight, push through heels"
+        },
+        {
+          id: "ex5",
+          name: "Overhead Press",
+          sets: [
+            { id: "set21", reps: "5", weight: "45", intensity: "", rest: "180" },
+            { id: "set22", reps: "5", weight: "65", intensity: "", rest: "180" },
+            { id: "set23", reps: "5", weight: "85", intensity: "", rest: "180" },
+            { id: "set24", reps: "5", weight: "95", intensity: "", rest: "180" },
+            { id: "set25", reps: "5", weight: "105", intensity: "", rest: "180" },
+          ],
+          notes: "Full lockout at top"
+        },
+        {
+          id: "ex6",
+          name: "Pull Ups",
+          sets: [
+            { id: "set26", reps: "5", weight: "BW", intensity: "", rest: "180" },
+            { id: "set27", reps: "5", weight: "BW", intensity: "", rest: "180" },
+            { id: "set28", reps: "5", weight: "BW", intensity: "", rest: "180" },
+          ],
+          notes: "Full range of motion"
+        }
+      ],
+      circuits: []
+    }
+  ],
+  weeks: [
+    {
+      id: "week1",
+      name: "Week 1",
+      order: 1,
+      sessions: ["session1", "session2"]
+    }
+  ],
+  maxWeights: {
+    "Barbell Squat": { weight: "275", weightType: "lbs" },
+    "Bench Press": { weight: "225", weightType: "lbs" },
+    "Deadlift": { weight: "365", weightType: "lbs" },
+    "Overhead Press": { weight: "135", weightType: "lbs" }
+  }
+};
 
 export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) => {
   const [program, setProgram] = useState<WorkoutProgram>({
@@ -616,65 +736,161 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   };
 
   const resetProgram = () => {
-    setProgram({
+    const newProgram = {
       id: uuidv4(),
       name: 'My Program',
       sessions: [],
       weeks: [],
       maxWeights: {}
-    });
+    };
+    setProgram(newProgram);
+    setActiveWeekId(null);
+    setActiveSessionId(null);
+    console.log("Program reset successfully");
   };
 
   const loadSampleProgram = () => {
     console.log("Loading sample program");
+    const sampleProgramCopy = JSON.parse(JSON.stringify(SAMPLE_PROGRAM));
+    sampleProgramCopy.id = uuidv4();
+    setProgram(sampleProgramCopy);
+    
+    if (sampleProgramCopy.weeks.length > 0) {
+      const firstWeekId = sampleProgramCopy.weeks[0].id;
+      setActiveWeekId(firstWeekId);
+      
+      const firstWeek = sampleProgramCopy.weeks[0];
+      if (firstWeek.sessions && firstWeek.sessions.length > 0) {
+        setActiveSessionId(firstWeek.sessions[0]);
+      }
+    }
   };
 
   const saveSessionToLibrary = (sessionId: string, name: string) => {
     console.log("Saving session to library", sessionId, name);
+    const sessionToSave = program.sessions.find(session => session.id === sessionId);
+    if (!sessionToSave) return;
+    
+    const sessionCopy = {
+      ...sessionToSave,
+      id: uuidv4(),
+      name
+    };
+    
+    addWorkoutToLibrary(sessionCopy);
   };
 
   const saveWeekToLibrary = (weekId: string, name: string) => {
     console.log("Saving week to library", weekId, name);
+    const weekToSave = program.weeks.find(week => week.id === weekId);
+    if (!weekToSave) return;
+    
+    const weekCopy = {
+      ...weekToSave,
+      id: uuidv4(),
+      name,
+      sessions: [...weekToSave.sessions]
+    };
+    
+    addWeekToLibrary(weekCopy);
   };
 
   const saveProgramToLibrary = (name: string) => {
     console.log("Saving program to library", name);
+    const programCopy = {
+      ...program,
+      id: uuidv4(),
+      name
+    };
+    
+    addProgramToLibrary(programCopy);
   };
 
-  const loadSessionFromLibrary = (session: any, weekId: string) => {
+  const loadSessionFromLibrary = (session: WorkoutSession, weekId: string) => {
     console.log("Loading session from library", session, weekId);
+    if (!session || !weekId) return;
+    
+    const sessionCopy = {
+      ...session,
+      id: uuidv4(),
+      weekId
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      draft.sessions.push(sessionCopy);
+      
+      const weekIndex = draft.weeks.findIndex(week => week.id === weekId);
+      if (weekIndex !== -1) {
+        draft.weeks[weekIndex].sessions.push(sessionCopy.id);
+      }
+    });
+    
+    setProgram(updatedProgram);
+    setActiveSessionId(sessionCopy.id);
   };
 
-  const loadWeekFromLibrary = (week: any) => {
+  const loadWeekFromLibrary = (week: WorkoutWeek) => {
     console.log("Loading week from library", week);
+    if (!week) return;
+    
+    const weekCopy = {
+      ...week,
+      id: uuidv4(),
+      sessions: []
+    };
+    
+    const updatedProgram = produce(program, draft => {
+      draft.weeks.push(weekCopy);
+    });
+    
+    setProgram(updatedProgram);
+    setActiveWeekId(weekCopy.id);
   };
 
-  const loadProgramFromLibrary = (program: any) => {
-    console.log("Loading program from library", program);
+  const loadProgramFromLibrary = (programToLoad: WorkoutProgram) => {
+    console.log("Loading program from library", programToLoad);
+    if (!programToLoad) return;
+    
+    const programCopy = JSON.parse(JSON.stringify(programToLoad));
+    programCopy.id = uuidv4();
+    setProgram(programCopy);
+    
+    if (programCopy.weeks.length > 0) {
+      const firstWeekId = programCopy.weeks[0].id;
+      setActiveWeekId(firstWeekId);
+      
+      const firstWeek = programCopy.weeks[0];
+      if (firstWeek.sessions && firstWeek.sessions.length > 0) {
+        setActiveSessionId(firstWeek.sessions[0]);
+      }
+    }
   };
 
   const getSessionLibrary = () => {
-    return [];
+    return getSessionLibraryUtil();
   };
 
   const getWeekLibrary = () => {
-    return [];
+    return getWeekLibraryUtil();
   };
 
   const getProgramLibrary = () => {
-    return [];
+    return getProgramLibraryUtil();
   };
 
   const removeSessionFromLibrary = (id: string) => {
     console.log("Removing session from library", id);
+    removeWorkoutFromLibrary(id);
   };
 
   const removeWeekFromLibrary = (id: string) => {
     console.log("Removing week from library", id);
+    removeWeekFromLibrary(id);
   };
 
   const removeProgramFromLibrary = (id: string) => {
     console.log("Removing program from library", id);
+    removeProgramFromLibrary(id);
   };
   
   const contextValue = {
