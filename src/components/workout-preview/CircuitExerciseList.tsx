@@ -3,7 +3,6 @@ import React from 'react';
 import { Exercise, Set } from "@/types/workout";
 import { formatRestTime } from "@/utils/workoutPreviewUtils";
 import { Clock } from "lucide-react";
-import { useWorkout } from "@/contexts/WorkoutContext";
 
 interface CircuitExerciseListProps {
   circuitId: string;
@@ -11,8 +10,6 @@ interface CircuitExerciseListProps {
 }
 
 const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, circuitExercises }) => {
-  const { program } = useWorkout();
-  
   if (!circuitExercises || circuitExercises.length === 0) return null;
   
   return (

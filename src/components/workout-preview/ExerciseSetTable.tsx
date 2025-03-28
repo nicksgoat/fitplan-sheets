@@ -19,120 +19,16 @@ interface ExerciseSetTableProps {
 const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   if (!exercise.sets || exercise.sets.length === 0) return null;
   
-  // Get the intensity type from the exercise, which will be used for all sets
-  const intensityType = exercise.intensityType || 'rpe';
-  
-  // Function to get appropriate color based on intensity type
-  const getIntensityColor = (type: string) => {
-    switch (type) {
-      case 'rpe':
-        return 'text-amber-400';
-      case 'arpe':
-        return 'text-orange-400';
-      case 'percent':
-        return 'text-blue-400';
-      case 'absolute':
-        return 'text-green-400';
-      case 'velocity':
-        return 'text-purple-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
-  
-  // Get the weight type from the exercise
-  const weightType = exercise.weightType || 'pounds';
-  
-  // Function to get appropriate color based on weight type
-  const getWeightColor = (type: string) => {
-    switch (type) {
-      case 'pounds':
-        return 'text-blue-400';
-      case 'kilos':
-        return 'text-green-400';
-      case 'distance-m':
-      case 'distance-ft':
-      case 'distance-yd':
-      case 'distance-mi':
-        return 'text-purple-400';
-      default:
-        return 'text-blue-400';
-    }
-  };
-  
-  // Get the rep type from the exercise
-  const repType = exercise.repType || 'fixed';
-  
-  // Function to get appropriate color based on rep type
-  const getRepColor = (type: string) => {
-    switch (type) {
-      case 'amrap':
-        return 'text-amber-600 font-medium';
-      case 'time':
-        return 'text-blue-400';
-      case 'each-side':
-        return 'text-purple-400';
-      default:
-        return 'text-white';
-    }
-  };
-  
-  // Get display text for weight type
-  const getWeightLabel = () => {
-    switch (weightType) {
-      case 'pounds':
-        return 'Weight (lbs)';
-      case 'kilos':
-        return 'Weight (kg)';
-      case 'distance-m':
-        return 'Distance (m)';
-      case 'distance-ft':
-        return 'Distance (ft)';
-      case 'distance-yd':
-        return 'Distance (yd)';
-      case 'distance-mi':
-        return 'Distance (mi)';
-      default:
-        return 'Weight';
-    }
-  };
-  
-  // Get display text for intensity type
-  const getIntensityLabel = () => {
-    switch (intensityType) {
-      case 'rpe':
-        return 'RPE';
-      case 'arpe':
-        return 'aRPE';
-      case 'percent':
-        return '% of Max';
-      case 'absolute':
-        return 'Absolute';
-      case 'velocity':
-        return 'Velocity';
-      default:
-        return 'Intensity';
-    }
-  };
-  
-  const intensityColor = getIntensityColor(intensityType);
-  const weightColor = getWeightColor(weightType);
-  const repColor = getRepColor(repType);
-  
-  console.log("ExerciseSetTable rendering with intensity type:", intensityType, "weight type:", weightType);
-  
   return (
-    <div>
+    <>
       <div className="overflow-x-auto max-w-full">
         <Table className="border-t border-dark-border text-sm w-full">
           <TableHeader>
             <TableRow className="hover:bg-transparent border-dark-border">
               <TableHead className="h-8 w-10 font-medium text-center text-xs p-1 text-gray-400">Set</TableHead>
+              <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">Target</TableHead>
               <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">
-                {getIntensityLabel()}
-              </TableHead>
-              <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">
-                {exercise.sets[0]?.weight ? getWeightLabel() : "—"}
+                {exercise.sets[0]?.weight ? "Weight" : "—"}
               </TableHead>
               <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">Reps</TableHead>
             </TableRow>
@@ -141,17 +37,17 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
             {exercise.sets.map((set, idx) => (
               <TableRow key={idx} className="hover:bg-dark-400 border-dark-border">
                 <TableCell className="h-8 py-1 px-1 text-center font-medium text-amber-400">{idx + 1}</TableCell>
-                <TableCell className={`h-8 py-1 px-1 text-center truncate ${intensityColor}`}>
+                <TableCell className="h-8 py-1 px-1 text-center text-gray-400 truncate">
                   {set.intensity || "—"}
                 </TableCell>
-                <TableCell className={`h-8 py-1 px-1 text-center truncate ${weightColor}`}>
+                <TableCell className="h-8 py-1 px-1 text-center text-blue-400 truncate">
                   {set.weight ? (
                     Array.isArray(set.weight.split(',')) && set.weight.split(',')[idx]
                       ? set.weight.split(',')[idx].trim()
                       : set.weight
                   ) : "—"}
                 </TableCell>
-                <TableCell className={`h-8 py-1 px-1 text-center truncate ${repColor}`}>
+                <TableCell className="h-8 py-1 px-1 text-center truncate text-white">
                   {set.reps ? (
                     Array.isArray(set.reps.split(',')) && set.reps.split(',')[idx]
                       ? set.reps.split(',')[idx].trim()
@@ -181,7 +77,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

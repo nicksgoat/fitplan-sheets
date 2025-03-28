@@ -27,7 +27,6 @@ interface EditableSetCellProps {
   hideRepTypeSelector?: boolean;
   hideIntensityTypeSelector?: boolean;
   hideWeightTypeSelector?: boolean;
-  exerciseName?: string;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -50,7 +49,6 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   hideRepTypeSelector = false,
   hideIntensityTypeSelector = false,
   hideWeightTypeSelector = false,
-  exerciseName = "",
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -136,13 +134,12 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
       >
         <WeightInput
           value={value}
-          weightType={weightType}
+          weightType={weightType || "pounds"}
           onChange={onChange}
           onWeightTypeChange={onWeightTypeChange || (() => {})}
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideWeightTypeSelector}
-          exerciseName={exerciseName}
         />
       </div>
     );
@@ -161,7 +158,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
       >
         <IntensityInput
           value={value}
-          intensityType={intensityType}
+          intensityType={intensityType || "rpe"}
           onChange={onChange}
           onIntensityTypeChange={onIntensityTypeChange || (() => {})}
           placeholder={placeholder}

@@ -70,7 +70,6 @@ const WeightTypeSelector: React.FC<WeightTypeSelectorProps> = ({
   variant = "default"
 }) => {
   const handleSelect = (selectedValue: WeightType) => {
-    console.log("WeightTypeSelector: Selected weight type:", selectedValue);
     onChange(selectedValue);
     if (onClose) {
       onClose();

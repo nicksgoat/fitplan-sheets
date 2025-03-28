@@ -61,16 +61,13 @@ export function createEmptyProgram(): WorkoutProgram {
 export function addExerciseToSession(
   session: WorkoutSession,
   afterExerciseId?: string
-): { updatedSession: WorkoutSession, newExerciseId: string } {
+): WorkoutSession {
   const newExercise = createEmptyExercise();
   
   if (!afterExerciseId) {
     return {
-      updatedSession: {
-        ...session,
-        exercises: [...session.exercises, newExercise],
-      },
-      newExerciseId: newExercise.id
+      ...session,
+      exercises: [...session.exercises, newExercise],
     };
   }
   
@@ -78,11 +75,8 @@ export function addExerciseToSession(
   
   if (exerciseIndex === -1) {
     return {
-      updatedSession: {
-        ...session,
-        exercises: [...session.exercises, newExercise],
-      },
-      newExerciseId: newExercise.id
+      ...session,
+      exercises: [...session.exercises, newExercise],
     };
   }
   
@@ -90,11 +84,8 @@ export function addExerciseToSession(
   updatedExercises.splice(exerciseIndex + 1, 0, newExercise);
   
   return {
-    updatedSession: {
-      ...session,
-      exercises: updatedExercises,
-    },
-    newExerciseId: newExercise.id
+    ...session,
+    exercises: updatedExercises,
   };
 }
 
@@ -191,21 +182,6 @@ export function deleteExerciseFromSession(
   // Don't allow deleting the last exercise
   if (session.exercises.length <= 1) {
     return session;
-  }
-  
-  // Check if the exercise is in a circuit
-  const exerciseToDelete = session.exercises.find(e => e.id === exerciseId);
-  if (exerciseToDelete?.circuitId) {
-    // Remove the exercise ID from the circuit
-    return {
-      ...session,
-      exercises: session.exercises.filter(e => e.id !== exerciseId),
-      circuits: session.circuits.map(circuit => 
-        circuit.id === exerciseToDelete.circuitId
-          ? { ...circuit, exercises: circuit.exercises.filter(id => id !== exerciseId) }
-          : circuit
-      )
-    };
   }
   
   return {
