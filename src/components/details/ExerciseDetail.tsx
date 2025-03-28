@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ItemType } from '@/lib/types';
@@ -142,7 +143,10 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
           </Button>
         )}
         
-        <Button className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
+        <Button 
+          className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+          size="lg" // Add size="lg" to match the edit button
+        >
           <Play className="h-4 w-4 mr-2" />
           Start Exercise
         </Button>
