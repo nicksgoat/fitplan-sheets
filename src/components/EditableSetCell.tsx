@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
@@ -26,7 +27,7 @@ interface EditableSetCellProps {
   hideRepTypeSelector?: boolean;
   hideIntensityTypeSelector?: boolean;
   hideWeightTypeSelector?: boolean;
-  exerciseName?: string; // New prop to pass exercise name to WeightInput
+  exerciseName?: string;
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -49,7 +50,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   hideRepTypeSelector = false,
   hideIntensityTypeSelector = false,
   hideWeightTypeSelector = false,
-  exerciseName = "", // Default to empty string
+  exerciseName = "",
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
