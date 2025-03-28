@@ -6,12 +6,18 @@ import WeekTabs from "@/components/WeekTabs";
 import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import CreateWorkoutSheet from "@/components/CreateWorkoutSheet";
 import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const WorkoutApp: React.FC = () => {
   const { 
     program, 
-    activeSessionId
+    activeSessionId,
+    activeWeekId,
+    addSession
   } = useWorkout();
   
   if (!activeSessionId) return null;
@@ -20,7 +26,21 @@ const WorkoutApp: React.FC = () => {
     <div className="w-full max-w-screen-2xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <WeekTabs />
+          <div className="flex justify-between items-center mb-6">
+            <WeekTabs />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="default" size="sm" className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" />
+                  <span>Create Workout</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-xl bg-dark-200 border-dark-300 p-0">
+                <CreateWorkoutSheet weekId={activeWeekId} />
+              </SheetContent>
+            </Sheet>
+          </div>
+
           <SessionTabs />
           <motion.div
             key={activeSessionId}
