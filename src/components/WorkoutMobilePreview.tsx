@@ -53,7 +53,11 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({
         <h2 className="text-lg font-semibold">Preview</h2>
       </div>
       
-      <MobileDeviceFrame title={`Day ${weekNumber}`} subtitle={session.name} className="py-[14px] px-[23px]">
+      <MobileDeviceFrame 
+        title={`Day ${weekNumber}`} 
+        subtitle={session.name} 
+        className="py-[14px] px-[23px]"
+      >
         <div className="p-4">
           <div className="text-lg font-semibold mb-3">Exercises</div>
           
