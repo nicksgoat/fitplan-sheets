@@ -12,7 +12,7 @@ interface WorkoutMobilePreviewProps {
 
 const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({ sessionId }) => {
   const { program } = useWorkout();
-  const session = program.sessions.find((s) => s.id === sessionId);
+  const session = program.workouts.find((s) => s.id === sessionId);
   
   if (!session) return null;
   

@@ -154,7 +154,7 @@ const WorkoutHeader: React.FC = () => {
 
   const handleSessionTabClick = (sessionId: string) => {
     if (sessionId === activeWorkoutId) {
-      const session = program.sessions.find(s => s.id === sessionId);
+      const session = program.workouts.find(s => s.id === sessionId);
       if (session) {
         setIsEditingName({
           id: sessionId,
