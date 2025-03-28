@@ -1,23 +1,21 @@
+
 import React, { ReactNode } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface MobileDeviceFrameProps {
   children: ReactNode;
   title: string;
   subtitle: string;
-  className?: string;
 }
 
 const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({ 
   children, 
   title,
-  subtitle,
-  className
+  subtitle
 }) => {
   return (
-    <div className={cn("relative w-full p-4 flex justify-center", className)}>
+    <div className="relative w-full p-4 flex justify-center">
       <div className="w-[300px] h-[620px] border-[10px] border-dark-100 rounded-[40px] overflow-hidden shadow-xl bg-dark-100">
         <div className="absolute top-[24px] left-1/2 transform -translate-x-1/2 w-[120px] h-[30px] bg-dark-100 rounded-b-xl z-10"></div>
         
