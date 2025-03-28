@@ -7,7 +7,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import ContentGrid from '@/components/ui/ContentGrid';
 import ContentCarousel from '@/components/ui/ContentCarousel';
 import CollectionCard from '@/components/ui/CollectionCard';
-import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
+import { useExercisesWithVisuals, useCustomExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import MainLayout from '@/components/layout/MainLayout';
@@ -18,6 +18,7 @@ const Library = () => {
   
   // Fetch exercises with visuals from Supabase
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
+  const { data: customExercises } = useCustomExercises();
   
   // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
@@ -34,6 +35,21 @@ const Library = () => {
     description: exercise.description
   })) || [];
   
+  // Transform our custom exercise data to match the ItemType format
+  const customExerciseItems: ItemType[] = customExercises?.map((exercise: Exercise) => ({
+    id: exercise.id,
+    title: exercise.name,
+    type: 'exercise',
+    creator: exercise.creator || 'You',
+    imageUrl: exercise.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+    videoUrl: exercise.videoUrl,
+    tags: exercise.tags || [],
+    duration: exercise.duration || '',
+    difficulty: exercise.difficulty || 'beginner',
+    isFavorite: false,
+    description: exercise.description
+  })) || [];
+  
   // Filter exercises based on active category
   const filteredExercises = activeCategory 
     ? exerciseItems.filter(item => 
@@ -41,6 +57,13 @@ const Library = () => {
       )
     : exerciseItems;
     
+  // Filter custom exercises
+  const filteredCustomExercises = activeCategory 
+    ? customExerciseItems.filter(item => 
+        item.tags?.some(tag => tag.toLowerCase() === activeCategory.toLowerCase())
+      )
+    : customExerciseItems;
+  
   // Mock collections with proper type
   const mockCollections: CollectionType[] = [
     {
@@ -152,15 +175,19 @@ const Library = () => {
         </TabsContent>
 
         <TabsContent value="created" className="mt-4">
-          <div className="text-center py-10">
-            <p className="text-gray-400">You haven't created any content yet.</p>
-            <Button 
-              className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
-              onClick={() => navigate('/create-exercise')}
-            >
-              Create Content
-            </Button>
-          </div>
+          {filteredCustomExercises && filteredCustomExercises.length > 0 ? (
+            <ContentGrid items={filteredCustomExercises} />
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-400">You haven't created any content yet.</p>
+              <Button 
+                className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+                onClick={() => navigate('/create-exercise')}
+              >
+                Create Content
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

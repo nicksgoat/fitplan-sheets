@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise } from '@/types/exercise';
 import * as exerciseLibraryService from '@/services/exerciseLibraryService';
@@ -43,7 +43,7 @@ export function useSearchExercises() {
   };
 }
 
-// Hook for fetching all exercises
+// Hook for fetching all exercises including custom exercises
 export function useExercises() {
   return useQuery({
     queryKey: ['exercises'],
@@ -56,6 +56,15 @@ export function useExercises() {
         toast.error('Failed to fetch exercises. Using local data.');
       }
     }
+  });
+}
+
+// Hook for fetching custom exercises specifically
+export function useCustomExercises() {
+  return useQuery({
+    queryKey: ['custom-exercises'],
+    queryFn: exerciseLibraryService.getCustomExercisesFromLocalStorage,
+    staleTime: 1 * 60 * 1000, // 1 minute
   });
 }
 
@@ -89,6 +98,7 @@ export function useCreateExercise() {
       exerciseLibraryService.addCustomExercise(exercise),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-exercises'] });
       toast.success('Exercise created successfully');
     },
     onError: (error: any) => {
@@ -107,6 +117,7 @@ export function useUpdateExercise() {
       exerciseLibraryService.updateCustomExercise(id, exercise),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-exercises'] });
       queryClient.invalidateQueries({ queryKey: ['exercise', variables.id] });
       toast.success('Exercise updated successfully');
     },
@@ -125,6 +136,7 @@ export function useDeleteExercise() {
     mutationFn: (id: string) => exerciseLibraryService.deleteCustomExercise(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['custom-exercises'] });
       toast.success('Exercise deleted successfully');
     },
     onError: (error: any) => {

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
 import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
@@ -211,7 +210,7 @@ function addCustomExerciseToLocalStorage(exercise: Omit<Exercise, 'id'>): Exerci
 }
 
 // Get custom exercises from local storage
-function getCustomExercisesFromLocalStorage(): Exercise[] {
+export function getCustomExercisesFromLocalStorage(): Exercise[] {
   const stored = localStorage.getItem('fitbloom-custom-exercises');
   return stored ? JSON.parse(stored) : [];
 }
