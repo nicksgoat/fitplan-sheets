@@ -4,6 +4,7 @@ import { Exercise, IntensityType, WeightType, RepType, Set } from "@/types/worko
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import EditableCell from "../EditableCell";
+import EditableSetCell from "../EditableSetCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
 
 interface CircuitExerciseRowProps {
