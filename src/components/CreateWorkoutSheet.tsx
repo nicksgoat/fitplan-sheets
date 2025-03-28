@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { createEmptyExercise, createEmptySet } from "@/utils/workout";
 import { Exercise, Set, WorkoutSession } from "@/types/workout";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { toast } from "sonner";
 
 interface CreateWorkoutSheetProps {
   weekId?: string;
@@ -56,7 +57,12 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
   };
 
   const handleSaveSession = () => {
-    if (sessionName.trim() && exercises.length > 0 && weekId) {
+    if (!sessionName.trim() || exercises.length === 0 || !weekId) {
+      toast.error("Please provide a session name and at least one exercise");
+      return;
+    }
+    
+    try {
       const newSession: WorkoutSession = {
         id: Date.now().toString(),
         name: sessionName,
@@ -66,18 +72,22 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
         weekId: weekId
       };
       
-      // Looking at WorkoutContext, we need to check the function signature
-      // It appears addSession can accept (weekId, newSession) or just weekId
+      // We must pass both weekId and the newSession
       addSession(weekId, newSession);
+      
+      toast.success("Workout session created successfully");
       
       if (onSave) {
         onSave();
       }
+    } catch (error) {
+      console.error("Error saving session:", error);
+      toast.error("Failed to create workout session");
     }
   };
 
   return (
-    <div className="p-6 bg-dark-200 text-white">
+    <div className="p-6 bg-dark-200 text-white min-h-screen">
       <h2 className="text-xl font-bold mb-4">Create Workout Session</h2>
       
       <div className="mb-4">
@@ -89,19 +99,19 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
           value={sessionName}
           onChange={(e) => setSessionName(e.target.value)}
           placeholder="Session Name"
-          className="w-full bg-dark-300 text-white"
+          className="w-full bg-dark-300 text-white border-dark-400"
         />
       </div>
 
       <div className="space-y-6">
         {exercises.map((exercise, exerciseIndex) => (
-          <div key={exercise.id} className="bg-dark-300 rounded-lg p-4">
+          <div key={exercise.id} className="bg-dark-300 rounded-lg p-4 border border-dark-400">
             <div className="flex items-center mb-4">
               <Input 
                 value={exercise.name}
                 onChange={(e) => handleUpdateExerciseName(exercise.id, e.target.value)}
                 placeholder="Exercise Name"
-                className="mr-2 bg-dark-400 text-white"
+                className="mr-2 bg-dark-400 text-white border-dark-500"
               />
               <div className="flex space-x-2">
                 <Button 
@@ -117,6 +127,7 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
                   size="sm"
                   onClick={() => handleRemoveExercise(exercise.id)}
                   className="flex items-center text-red-400 hover:text-red-300"
+                  disabled={exercises.length <= 1}
                 >
                   <Trash2 className="h-4 w-4 mr-1" /> Remove
                 </Button>
@@ -142,7 +153,7 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
                         value={set.reps}
                         onChange={(e) => handleUpdateSet(exercise.id, set.id, 'reps', e.target.value)}
                         placeholder="Reps"
-                        className="w-full bg-dark-400 text-white"
+                        className="w-full bg-dark-400 text-white border-dark-500"
                       />
                     </TableCell>
                     <TableCell>
@@ -150,7 +161,7 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
                         value={set.weight}
                         onChange={(e) => handleUpdateSet(exercise.id, set.id, 'weight', e.target.value)}
                         placeholder="Weight"
-                        className="w-full bg-dark-400 text-white"
+                        className="w-full bg-dark-400 text-white border-dark-500"
                       />
                     </TableCell>
                     <TableCell>
@@ -158,7 +169,7 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
                         value={set.intensity}
                         onChange={(e) => handleUpdateSet(exercise.id, set.id, 'intensity', e.target.value)}
                         placeholder="Intensity"
-                        className="w-full bg-dark-400 text-white"
+                        className="w-full bg-dark-400 text-white border-dark-500"
                       />
                     </TableCell>
                     <TableCell>
@@ -166,7 +177,7 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
                         value={set.rest}
                         onChange={(e) => handleUpdateSet(exercise.id, set.id, 'rest', e.target.value)}
                         placeholder="Rest"
-                        className="w-full bg-dark-400 text-white"
+                        className="w-full bg-dark-400 text-white border-dark-500"
                       />
                     </TableCell>
                   </TableRow>

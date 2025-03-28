@@ -37,11 +37,13 @@ const WorkoutApp: React.FC = () => {
                   <span>Create Workout</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-4xl bg-dark-200 border-dark-300 p-0 overflow-y-auto">
-                <CreateWorkoutSheet 
-                  weekId={activeWeekId} 
-                  onSave={() => setShowWorkoutSheet(false)}
-                />
+              <SheetContent side="right" className="w-full md:max-w-4xl bg-dark-200 border-dark-300 p-0 overflow-y-auto">
+                {activeWeekId && (
+                  <CreateWorkoutSheet 
+                    weekId={activeWeekId} 
+                    onSave={() => setShowWorkoutSheet(false)}
+                  />
+                )}
               </SheetContent>
             </Sheet>
           </div>
