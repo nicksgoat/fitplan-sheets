@@ -93,74 +93,27 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
   ];
 
   const handleCreateCircuit = (type: WorkoutType) => {
-    let circuitId: string | undefined;
-    
     // Create the initial circuit based on type
     switch (type) {
       case 'circuit':
-        circuitId = createCircuit(sessionId);
-        // Add 3 exercises to circuit
-        if (circuitId) {
-          for (let i = 0; i < 3; i++) {
-            addExercise(sessionId, undefined, (newExerciseId) => {
-              if (newExerciseId && circuitId) {
-                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
-              }
-            });
-          }
-        }
+        // Create the circuit first
+        createCircuit(sessionId);
         break;
       case 'superset':
-        circuitId = createSuperset(sessionId);
-        // Add 2 exercises to superset
-        if (circuitId) {
-          for (let i = 0; i < 2; i++) {
-            addExercise(sessionId, undefined, (newExerciseId) => {
-              if (newExerciseId && circuitId) {
-                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
-              }
-            });
-          }
-        }
+        // Create the superset first
+        createSuperset(sessionId);
         break;
       case 'emom':
-        circuitId = createEMOM(sessionId);
-        // Add 3 exercises to EMOM
-        if (circuitId) {
-          for (let i = 0; i < 3; i++) {
-            addExercise(sessionId, undefined, (newExerciseId) => {
-              if (newExerciseId && circuitId) {
-                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
-              }
-            });
-          }
-        }
+        // Create the EMOM first
+        createEMOM(sessionId);
         break;
       case 'amrap':
-        circuitId = createAMRAP(sessionId);
-        // Add 3 exercises to AMRAP
-        if (circuitId) {
-          for (let i = 0; i < 3; i++) {
-            addExercise(sessionId, undefined, (newExerciseId) => {
-              if (newExerciseId && circuitId) {
-                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
-              }
-            });
-          }
-        }
+        // Create the AMRAP first
+        createAMRAP(sessionId);
         break;
       case 'tabata':
-        circuitId = createTabata(sessionId);
-        // Add 3 exercises to Tabata
-        if (circuitId) {
-          for (let i = 0; i < 3; i++) {
-            addExercise(sessionId, undefined, (newExerciseId) => {
-              if (newExerciseId && circuitId) {
-                addExerciseToCircuit(sessionId, circuitId, newExerciseId);
-              }
-            });
-          }
-        }
+        // Create the Tabata first
+        createTabata(sessionId);
         break;
     }
     setSelectedType(null);
@@ -317,3 +270,4 @@ const CircuitControls: React.FC<CircuitControlsProps> = ({ sessionId }) => {
 };
 
 export default CircuitControls;
+

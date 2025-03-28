@@ -64,11 +64,11 @@ interface WorkoutContextType {
   deleteWeek: (weekId: string) => void;
   resetProgram: () => void;
   loadSampleProgram: () => void;
-  createCircuit: (sessionId: string) => void;
-  createSuperset: (sessionId: string) => void;
-  createEMOM: (sessionId: string) => void;
-  createAMRAP: (sessionId: string) => void;
-  createTabata: (sessionId: string) => void;
+  createCircuit: (sessionId: string) => string;
+  createSuperset: (sessionId: string) => string;
+  createEMOM: (sessionId: string) => string;
+  createAMRAP: (sessionId: string) => string;
+  createTabata: (sessionId: string) => string;
   updateCircuit: (sessionId: string, circuitId: string, updates: Partial<Circuit>) => void;
   deleteCircuit: (sessionId: string, circuitId: string) => void;
   addExerciseToCircuit: (sessionId: string, circuitId: string, exerciseId: string) => void;
@@ -309,14 +309,18 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success("Sample program loaded");
   };
 
-  const createCircuit = (sessionId: string) => {
+  const createCircuit = (sessionId: string): string => {
+    let circuitId = "";
+    
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
         if (session.id !== sessionId) return session;
         
-        const circuitId = uuidv4();
+        const newCircuitId = uuidv4();
+        circuitId = newCircuitId; // Store the ID to return it
+        
         const circuit: Circuit = {
-          id: circuitId,
+          id: newCircuitId,
           name: "Circuit",
           exercises: [],
           rounds: "3",
@@ -331,7 +335,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
-          circuitId: circuitId
+          circuitId: newCircuitId
         };
         
         const exercise1Id = uuidv4();
@@ -370,16 +374,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
     
     toast.success("Circuit created");
+    return circuitId;
   };
   
-  const createSuperset = (sessionId: string) => {
+  const createSuperset = (sessionId: string): string => {
+    let circuitId = "";
+    
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
         if (session.id !== sessionId) return session;
         
-        const circuitId = uuidv4();
+        const newCircuitId = uuidv4();
+        circuitId = newCircuitId; // Store the ID to return it
+        
         const circuit: Circuit = {
-          id: circuitId,
+          id: newCircuitId,
           name: "Superset",
           exercises: [],
           rounds: "3",
@@ -394,7 +403,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
-          circuitId: circuitId
+          circuitId: newCircuitId
         };
         
         const exercise1Id = uuidv4();
@@ -433,16 +442,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
     
     toast.success("Superset created");
+    return circuitId;
   };
   
-  const createEMOM = (sessionId: string) => {
+  const createEMOM = (sessionId: string): string => {
+    let circuitId = "";
+    
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
         if (session.id !== sessionId) return session;
         
-        const circuitId = uuidv4();
+        const newCircuitId = uuidv4();
+        circuitId = newCircuitId; // Store the ID to return it
+        
         const circuit: Circuit = {
-          id: circuitId,
+          id: newCircuitId,
           name: "EMOM - 10 min",
           exercises: [],
           rounds: "10",
@@ -457,7 +471,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
-          circuitId: circuitId
+          circuitId: newCircuitId
         };
         
         const exerciseId = uuidv4();
@@ -485,16 +499,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
     
     toast.success("EMOM created");
+    return circuitId;
   };
   
-  const createAMRAP = (sessionId: string) => {
+  const createAMRAP = (sessionId: string): string => {
+    let circuitId = "";
+    
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
         if (session.id !== sessionId) return session;
         
-        const circuitId = uuidv4();
+        const newCircuitId = uuidv4();
+        circuitId = newCircuitId; // Store the ID to return it
+        
         const circuit: Circuit = {
-          id: circuitId,
+          id: newCircuitId,
           name: "AMRAP - 10 min",
           exercises: [],
           rounds: "AMRAP",
@@ -509,7 +528,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
-          circuitId: circuitId
+          circuitId: newCircuitId
         };
         
         const exercise1Id = uuidv4();
@@ -559,16 +578,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
     
     toast.success("AMRAP created");
+    return circuitId;
   };
   
-  const createTabata = (sessionId: string) => {
+  const createTabata = (sessionId: string): string => {
+    let circuitId = "";
+    
     setProgram((prevProgram) => {
       const updatedSessions = prevProgram.sessions.map((session) => {
         if (session.id !== sessionId) return session;
         
-        const circuitId = uuidv4();
+        const newCircuitId = uuidv4();
+        circuitId = newCircuitId; // Store the ID to return it
+        
         const circuit: Circuit = {
-          id: circuitId,
+          id: newCircuitId,
           name: "Tabata - 4 min",
           exercises: [],
           rounds: "8",
@@ -583,7 +607,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           sets: [{ id: uuidv4(), reps: "", weight: "", intensity: "", rest: "" }],
           notes: "",
           isCircuit: true,
-          circuitId: circuitId
+          circuitId: newCircuitId
         };
         
         const exerciseId = uuidv4();
@@ -611,6 +635,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
     
     toast.success("Tabata created");
+    return circuitId;
   };
   
   const updateCircuit = (sessionId: string, circuitId: string, updates: Partial<Circuit>) => {
@@ -840,7 +865,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success("Training album added to library");
   };
 
-  const loadSessionFromLibrary = (preset: WorkoutSession, weekId: string) => {
+  const loadSessionFromLibrary = (session: WorkoutSession, weekId: string) => {
     setProgram((prevProgram) => {
       const newSession = cloneSession(preset, weekId);
       
@@ -906,82 +931,4 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       return updatedProgram;
     });
     
-    toast.success(`Added training week "${preset.name}" to your program`);
-  };
-
-  const loadProgramFromLibrary = (preset: WorkoutProgram) => {
-    setProgram(preset);
-    setActiveWeekId(preset.weeks[0]?.id || null);
-    setActiveSessionId(preset.sessions[0]?.id || null);
-    toast.success(`Loaded training album: ${preset.name}`);
-  };
-
-  return (
-    <WorkoutContext.Provider
-      value={{
-        program,
-        activeSessionId,
-        activeWeekId,
-        setActiveSessionId,
-        setActiveWeekId,
-        updateSessionName,
-        updateWeekName,
-        updateExercise,
-        updateSet,
-        addExercise,
-        addSet,
-        deleteSet,
-        deleteExercise,
-        addSession,
-        addWeek,
-        deleteSession,
-        deleteWeek,
-        resetProgram,
-        loadSampleProgram,
-        createCircuit,
-        createSuperset,
-        createEMOM,
-        createAMRAP,
-        createTabata,
-        updateCircuit,
-        deleteCircuit,
-        addExerciseToCircuit,
-        removeExerciseFromCircuit,
-        saveSessionAsPreset,
-        saveWeekAsPreset,
-        saveProgramAsPreset,
-        loadSessionPreset,
-        loadWeekPreset,
-        loadProgramPreset,
-        getSessionPresets,
-        getWeekPresets,
-        getProgramPresets,
-        deleteSessionPreset,
-        deleteWeekPreset,
-        deleteProgramPreset,
-        saveSessionToLibrary,
-        saveWeekToLibrary,
-        saveProgramToLibrary,
-        loadSessionFromLibrary,
-        loadWeekFromLibrary,
-        loadProgramFromLibrary,
-        getSessionLibrary,
-        getWeekLibrary,
-        getProgramLibrary,
-        removeSessionFromLibrary,
-        removeWeekFromLibrary,
-        removeProgramFromLibrary,
-      }}
-    >
-      {children}
-    </WorkoutContext.Provider>
-  );
-}
-
-export function useWorkout() {
-  const context = useContext(WorkoutContext);
-  if (context === undefined) {
-    throw new Error("useWorkout must be used within a WorkoutProvider");
-  }
-  return context;
-}
+    toast
