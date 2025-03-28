@@ -30,10 +30,10 @@ const queryClient = new QueryClient();
 // Make sure each provider is properly nested
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <BrowserRouter>
-        <div className="dark">
-          <TooltipProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="dark">
             <Routes>
               <Route path="/auth" element={<Auth />} />
               
@@ -56,10 +56,10 @@ const App = () => (
             </Routes>
             <Toaster />
             <Sonner position="top-center" />
-          </TooltipProvider>
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+          </div>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
