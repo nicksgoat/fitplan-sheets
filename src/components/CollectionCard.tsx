@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import CollectionDetailDialog from "./CollectionDetailDialog";
+import { useLikes, LikeableItemType } from "@/hooks/useLikes";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Collection {
   id: string;
@@ -18,13 +20,16 @@ interface CollectionCardProps {
 }
 
 const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
-  const [isLiked, setIsLiked] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const { isItemLiked, toggleLike } = useLikes();
+  const { user } = useAuth();
   
-  const toggleLike = (e: React.MouseEvent) => {
+  const isLiked = user ? isItemLiked(collection.id, 'collection' as LikeableItemType) : false;
+  
+  const toggleLikeHandler = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsLiked(!isLiked);
+    toggleLike(collection.id, 'collection' as LikeableItemType);
   };
   
   // Generate a background gradient based on the collection type
@@ -52,7 +57,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
         <div className={`h-40 flex items-center justify-center ${getBgGradient(collection.type)}`}>
           <div className="absolute top-2 right-2 z-10">
             <button 
-              onClick={toggleLike} 
+              onClick={toggleLikeHandler} 
               className={`p-2 rounded-full ${isLiked ? 'bg-purple-500' : 'bg-gray-800 bg-opacity-60 hover:bg-gray-700'}`}
               aria-label={isLiked ? "Unlike" : "Like"}
             >
@@ -84,7 +89,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         isLiked={isLiked}
-        onLikeToggle={() => setIsLiked(!isLiked)}
+        onLikeToggle={() => toggleLike(collection.id, 'collection' as LikeableItemType)}
       />
     </>
   );

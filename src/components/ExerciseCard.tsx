@@ -5,19 +5,24 @@ import { Exercise } from "@/utils/exerciseLibrary";
 import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import ExerciseDetailDialog from "./ExerciseDetailDialog";
+import { useLikes, LikeableItemType } from "@/hooks/useLikes";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ExerciseCardProps {
   exercise: Exercise;
 }
 
 const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise }) => {
-  const [isLiked, setIsLiked] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const { isItemLiked, toggleLike } = useLikes();
+  const { user } = useAuth();
   
-  const toggleLike = (e: React.MouseEvent) => {
+  const isLiked = user ? isItemLiked(exercise.id, 'exercise' as LikeableItemType) : false;
+  
+  const toggleLikeHandler = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsLiked(!isLiked);
+    toggleLike(exercise.id, 'exercise' as LikeableItemType);
   };
   
   // Generate a background gradient based on the exercise category
@@ -51,7 +56,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise }) => {
         <div className={`h-48 flex items-center justify-center ${getBgGradient(exercise.category)}`}>
           <div className="absolute top-2 right-2 z-10">
             <button 
-              onClick={toggleLike} 
+              onClick={toggleLikeHandler} 
               className={`p-2 rounded-full ${isLiked ? 'bg-purple-500' : 'bg-gray-800 bg-opacity-60 hover:bg-gray-700'}`}
               aria-label={isLiked ? "Unlike" : "Like"}
             >
@@ -87,7 +92,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise }) => {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         isLiked={isLiked}
-        onLikeToggle={() => setIsLiked(!isLiked)}
+        onLikeToggle={() => toggleLike(exercise.id, 'exercise' as LikeableItemType)}
       />
     </>
   );
