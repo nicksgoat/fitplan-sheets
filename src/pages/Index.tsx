@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
 import WeekTabs from "@/components/WeekTabs";
@@ -20,6 +20,8 @@ const WorkoutApp: React.FC = () => {
     addSession
   } = useWorkout();
   
+  const [showWorkoutSheet, setShowWorkoutSheet] = useState(false);
+  
   if (!activeSessionId) return null;
   
   return (
@@ -28,15 +30,18 @@ const WorkoutApp: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <WeekTabs />
-            <Sheet>
+            <Sheet open={showWorkoutSheet} onOpenChange={setShowWorkoutSheet}>
               <SheetTrigger asChild>
                 <Button variant="default" size="sm" className="flex items-center gap-1">
                   <Plus className="h-4 w-4" />
                   <span>Create Workout</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-xl bg-dark-200 border-dark-300 p-0">
-                <CreateWorkoutSheet weekId={activeWeekId} />
+              <SheetContent className="w-full sm:max-w-4xl bg-dark-200 border-dark-300 p-0 overflow-y-auto">
+                <CreateWorkoutSheet 
+                  weekId={activeWeekId} 
+                  onSave={() => setShowWorkoutSheet(false)}
+                />
               </SheetContent>
             </Sheet>
           </div>

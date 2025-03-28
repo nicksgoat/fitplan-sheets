@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Button } from "@/components/ui/button";
@@ -13,9 +12,10 @@ import { CellCoordinate } from "@/hooks/useCellNavigation";
 
 interface CreateWorkoutSheetProps {
   weekId?: string;
+  onSave?: () => void;
 }
 
-const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId }) => {
+const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave }) => {
   const { addSession } = useWorkout();
 
   const [sessionName, setSessionName] = useState("New Session");
@@ -248,6 +248,11 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId }) => {
           notes: "",
         }
       ]);
+      
+      // Call the onSave callback if provided
+      if (onSave) {
+        onSave();
+      }
     }
   };
 
@@ -456,7 +461,6 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId }) => {
         
         <Button 
           variant="outline"
-
           className="mt-4 border-dark-400 text-gray-300"
           onClick={handleAddExercise}
         >
