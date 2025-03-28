@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise } from '@/types/exercise';
 import * as exerciseLibraryService from '@/services/exerciseLibraryService';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 // Hook for searching exercises
 export function useSearchExercises() {
@@ -61,10 +62,13 @@ export function useExercises() {
 
 // Hook for fetching custom exercises specifically
 export function useCustomExercises() {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['custom-exercises'],
-    queryFn: exerciseLibraryService.getCustomExercisesFromLocalStorage,
+    queryKey: ['custom-exercises', user?.id],
+    queryFn: () => exerciseLibraryService.getCustomExercises(user?.id),
     staleTime: 1 * 60 * 1000, // 1 minute
+    enabled: !!user
   });
 }
 
@@ -92,10 +96,11 @@ export function useExercisesWithVisuals() {
 // Hook for creating a custom exercise
 export function useCreateExercise() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: (exercise: Omit<Exercise, 'id'>) => 
-      exerciseLibraryService.addCustomExercise(exercise),
+      exerciseLibraryService.addCustomExercise({ ...exercise, userId: user?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
       queryClient.invalidateQueries({ queryKey: ['custom-exercises'] });
@@ -111,10 +116,11 @@ export function useCreateExercise() {
 // Hook for updating a custom exercise
 export function useUpdateExercise() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: ({ id, exercise }: { id: string, exercise: Partial<Exercise> }) => 
-      exerciseLibraryService.updateCustomExercise(id, exercise),
+      exerciseLibraryService.updateCustomExercise(id, { ...exercise, userId: user?.id }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['exercises'] });
       queryClient.invalidateQueries({ queryKey: ['custom-exercises'] });

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
 import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
@@ -20,6 +21,7 @@ export async function getAllExercises(): Promise<Exercise[]> {
         is_custom,
         user_id,
         image_url,
+        video_url,
         tags,
         difficulty,
         duration,
@@ -65,6 +67,7 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
         is_custom,
         user_id,
         image_url,
+        video_url,
         tags,
         difficulty,
         duration,
@@ -125,6 +128,7 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
         is_custom,
         user_id,
         image_url,
+        video_url,
         tags,
         difficulty,
         duration,
@@ -155,8 +159,8 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
   }
 }
 
-// Add a custom exercise - modified to use local storage instead of Supabase
-export async function addCustomExercise(exercise: Omit<Exercise, 'id'>): Promise<Exercise> {
+// Add a custom exercise - modified to use Supabase with local storage fallback
+export async function addCustomExercise(exercise: Omit<Exercise, 'id'> & { userId?: string }): Promise<Exercise> {
   try {
     // Try to add to Supabase first
     const { data, error } = await supabase
@@ -169,6 +173,7 @@ export async function addCustomExercise(exercise: Omit<Exercise, 'id'>): Promise
         description: exercise.description || '',
         instructions: exercise.instructions || '',
         is_custom: true,
+        user_id: exercise.userId || null,
         image_url: exercise.imageUrl || '',
         video_url: exercise.videoUrl || '',
         tags: exercise.tags || [],
@@ -209,6 +214,55 @@ function addCustomExerciseToLocalStorage(exercise: Omit<Exercise, 'id'>): Exerci
   return newExercise;
 }
 
+// Get custom exercises from Supabase or local storage
+export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
+  // If user is not logged in, just return local exercises
+  if (!userId) {
+    return getCustomExercisesFromLocalStorage();
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('exercise_library')
+      .select(`
+        id,
+        name,
+        primary_muscle,
+        secondary_muscles,
+        category,
+        description,
+        instructions,
+        is_custom,
+        user_id,
+        image_url,
+        video_url,
+        tags,
+        difficulty,
+        duration,
+        creator
+      `)
+      .eq('is_custom', true)
+      .eq('user_id', userId)
+      .order('name');
+    
+    if (error) {
+      console.error("Error fetching custom exercises from Supabase:", error);
+      // Fallback to local storage
+      return getCustomExercisesFromLocalStorage();
+    }
+    
+    // Combine Supabase exercises with local ones
+    const localExercises = getCustomExercisesFromLocalStorage();
+    const combinedExercises = [...data.map(mapDbExerciseToModel), ...localExercises];
+    
+    return combinedExercises;
+  } catch (error) {
+    console.error("Unexpected error fetching custom exercises:", error);
+    // Fallback to local storage
+    return getCustomExercisesFromLocalStorage();
+  }
+}
+
 // Get custom exercises from local storage
 export function getCustomExercisesFromLocalStorage(): Exercise[] {
   const stored = localStorage.getItem('fitbloom-custom-exercises');
@@ -216,7 +270,7 @@ export function getCustomExercisesFromLocalStorage(): Exercise[] {
 }
 
 // Update a custom exercise
-export async function updateCustomExercise(id: string, exercise: Partial<Exercise>): Promise<Exercise> {
+export async function updateCustomExercise(id: string, exercise: Partial<Exercise> & { userId?: string }): Promise<Exercise> {
   const updates: any = {};
   
   if (exercise.name !== undefined) updates.name = exercise.name;

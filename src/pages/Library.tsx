@@ -5,20 +5,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import ContentGrid from '@/components/ui/ContentGrid';
-import ContentCarousel from '@/components/ui/ContentCarousel';
 import CollectionCard from '@/components/ui/CollectionCard';
 import { useExercisesWithVisuals, useCustomExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
-import MainLayout from '@/components/layout/MainLayout';
+import { useAuth } from '@/hooks/useAuth';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Fetch exercises with visuals from Supabase
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
-  const { data: customExercises } = useCustomExercises();
+  const { data: customExercises, isLoading: isLoadingCustom } = useCustomExercises();
   
   // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
@@ -108,6 +108,21 @@ const Library = () => {
         </Button>
       </div>
 
+      {!user && (
+        <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4">
+          <p className="text-amber-800 dark:text-amber-200 text-sm">
+            You are not logged in. Exercises you create will be stored locally. 
+            <Button 
+              variant="link" 
+              className="text-amber-800 dark:text-amber-200 underline p-0 h-auto font-semibold"
+              onClick={() => navigate('/auth')}
+            >
+              Log in
+            </Button> to save them to your account.
+          </p>
+        </div>
+      )}
+
       <Tabs defaultValue="exercises" className="w-full">
         <TabsList className="mb-6 w-full overflow-x-auto scrollbar-hide flex">
           <TabsTrigger value="collections">Collections</TabsTrigger>
@@ -175,7 +190,11 @@ const Library = () => {
         </TabsContent>
 
         <TabsContent value="created" className="mt-4">
-          {filteredCustomExercises && filteredCustomExercises.length > 0 ? (
+          {isLoadingCustom ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+            </div>
+          ) : filteredCustomExercises && filteredCustomExercises.length > 0 ? (
             <ContentGrid items={filteredCustomExercises} />
           ) : (
             <div className="text-center py-10">
