@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -40,7 +41,8 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     addSet,
     deleteSet,
     deleteExercise,
-    addExerciseToCircuit
+    addExerciseToCircuit,
+    program
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
@@ -281,10 +283,8 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     
     addExercise(session.id);
     
-    const updatedSession = sessionCopy.id ? 
-      program.sessions.find(s => s.id === sessionCopy.id) : 
-      null;
-    
+    // Access program from the context
+    const updatedSession = program.sessions.find(s => s.id === sessionCopy.id);
     if (!updatedSession) return;
     
     const newExerciseIndex = updatedSession.exercises.length - 1;
