@@ -2,10 +2,10 @@
 import { useState, useCallback } from 'react';
 
 export interface CellCoordinate {
-  section: "exercise" | "set";
-  sectionIndex: number;
-  row: number;
-  col: number;
+  section?: "exercise" | "set";
+  sectionIndex?: number;
+  row?: number;
+  col?: number;
   rowIndex?: number;
   columnName?: string;
   exerciseId?: string;
