@@ -3,12 +3,17 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Tables } from '@/integrations/supabase/types';
 
 // Types for liked items
 export type LikeableItemType = 'exercise' | 'workout' | 'collection' | 'program';
 
-export interface LikedItem extends Tables.liked_items.Row {}
+export interface LikedItem {
+  id: string;
+  user_id: string;
+  item_id: string;
+  item_type: string;
+  created_at: string;
+}
 
 export function useLikes() {
   const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
