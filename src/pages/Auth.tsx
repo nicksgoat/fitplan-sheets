@@ -32,6 +32,12 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  
+  // Register phone state
+  const [registerPhone, setRegisterPhone] = useState("");
+  const [registerOtp, setRegisterOtp] = useState("");
+  const [registerOtpSent, setRegisterOtpSent] = useState(false);
+  const [registerAuthMethod, setRegisterAuthMethod] = useState<'email' | 'phone'>('email');
 
   const state = location.state as LocationState;
   const from = state?.from?.pathname || "/";
@@ -97,6 +103,32 @@ const Auth = () => {
       navigate(from, { replace: true });
     } catch (error) {
       console.error("Error verifying OTP:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegisterSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await requestOTP(registerPhone);
+      setRegisterOtpSent(true);
+    } catch (error) {
+      console.error("Error requesting registration OTP:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegisterVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await signInWithPhone(registerPhone, registerOtp);
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error("Error verifying registration OTP:", error);
     } finally {
       setIsLoading(false);
     }
@@ -315,59 +347,139 @@ const Auth = () => {
               </CardHeader>
               
               <CardContent>
-                <form onSubmit={handleEmailSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      required
-                      className="border-dark-300 bg-dark-300"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="register-password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
-                        className="border-dark-300 bg-dark-300 pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 text-gray-400 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  
+                <div className="flex justify-center space-x-2 mb-4">
                   <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={isLoading}
+                    type="button"
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setRegisterAuthMethod('email')}
                   >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Create Account
+                    Email
                   </Button>
-                </form>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setRegisterAuthMethod('phone')}
+                  >
+                    Phone
+                  </Button>
+                </div>
+                
+                {registerAuthMethod === 'email' ? (
+                  <form onSubmit={handleEmailSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email">Email</Label>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        required
+                        className="border-dark-300 bg-dark-300"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="register-password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          required
+                          className="border-dark-300 bg-dark-300 pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 text-gray-400 hover:text-white"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      Create Account
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={registerOtpSent ? handleRegisterVerifyOTP : handleRegisterSendOTP} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-phone">Phone Number</Label>
+                      <Input
+                        id="register-phone"
+                        type="tel"
+                        value={registerPhone}
+                        onChange={(e) => setRegisterPhone(e.target.value)}
+                        placeholder="+1234567890"
+                        required
+                        disabled={registerOtpSent}
+                        className="border-dark-300 bg-dark-300"
+                      />
+                    </div>
+                    
+                    {registerOtpSent && (
+                      <div className="space-y-2">
+                        <Label htmlFor="register-otp">Verification Code</Label>
+                        <InputOTP 
+                          value={registerOtp} 
+                          onChange={setRegisterOtp}
+                          maxLength={6}
+                          containerClassName="justify-center"
+                        >
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} className="border-dark-300 bg-dark-300" />
+                            <InputOTPSlot index={1} className="border-dark-300 bg-dark-300" />
+                            <InputOTPSlot index={2} className="border-dark-300 bg-dark-300" />
+                            <InputOTPSlot index={3} className="border-dark-300 bg-dark-300" />
+                            <InputOTPSlot index={4} className="border-dark-300 bg-dark-300" />
+                            <InputOTPSlot index={5} className="border-dark-300 bg-dark-300" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoading || (registerOtpSent && registerOtp.length !== 6)}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      {registerOtpSent ? "Verify Code" : "Send Verification Code"}
+                    </Button>
+                    
+                    {registerOtpSent && (
+                      <Button 
+                        type="button" 
+                        variant="link" 
+                        className="w-full"
+                        onClick={() => setRegisterOtpSent(false)}
+                      >
+                        Change Phone Number
+                      </Button>
+                    )}
+                  </form>
+                )}
                 
                 <div className="relative mt-6">
                   <div className="absolute inset-0 flex items-center">
