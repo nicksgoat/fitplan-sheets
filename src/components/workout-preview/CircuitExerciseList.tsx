@@ -12,7 +12,7 @@ interface CircuitExerciseListProps {
 }
 
 const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, circuitExercises }) => {
-  const { addExerciseToCircuit, program } = useWorkout();
+  const { addExerciseToCircuit, addExercise, program } = useWorkout();
   
   if (!circuitExercises || circuitExercises.length === 0) return null;
   
@@ -23,10 +23,12 @@ const CircuitExerciseList: React.FC<CircuitExerciseListProps> = ({ circuitId, ci
   
   const handleAddExercise = () => {
     if (sessionWithCircuit) {
-      // Open a dialog or implement the logic to add an exercise to this circuit
-      const dialogButton = document.querySelector('[data-dropdown-toggle="dropdown"]');
-      if (dialogButton instanceof HTMLElement) {
-        dialogButton.click();
+      // Add new exercise to the session
+      const newExerciseId = addExercise(sessionWithCircuit.id);
+      
+      // If exercise was added successfully, add it to the circuit
+      if (newExerciseId) {
+        addExerciseToCircuit(sessionWithCircuit.id, circuitId, newExerciseId);
       }
     }
   };
