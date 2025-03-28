@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek, UserMaxWeights } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek, UserMaxWeights, WeightType } from "@/types/workout";
 import { 
   createEmptyProgram, 
   addExerciseToSession, 
