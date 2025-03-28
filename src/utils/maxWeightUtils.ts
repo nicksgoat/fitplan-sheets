@@ -1,4 +1,3 @@
-
 import { UserMaxWeights, WeightType } from "@/types/workout";
 
 // Extract numeric value from weight string
@@ -191,4 +190,61 @@ export const percentageToWeight = (
   }
   
   return calculateWeightFromPercentage(normalizedMaxWeight, percentValue, targetWeightType);
+};
+// Enhanced function to set max weight for an exercise
+export const setMaxWeight = (
+  maxWeights: UserMaxWeights | undefined, 
+  exerciseName: string, 
+  weight: string, 
+  weightType: WeightType
+): UserMaxWeights => {
+  const normalizedMaxWeights = maxWeights || {};
+  
+  normalizedMaxWeights[exerciseName] = {
+    weight,
+    weightType
+  };
+  
+  return normalizedMaxWeights;
+};
+
+// Convert weight to percentage of max
+// Convert weight to percentage of max
+export const weightToPercentageOld = (
+  currentWeight: string, 
+  maxWeight: string, 
+  currentWeightType: WeightType,
+  maxWeightType: WeightType
+): string => {
+  const currentNumeric = extractNumericWeight(currentWeight);
+  const maxNumeric = extractNumericWeight(maxWeight);
+  
+  // Normalize weights if types are different
+  const normalizedCurrentNumeric = currentWeightType !== maxWeightType 
+    ? convertWeight(currentNumeric, currentWeightType, maxWeightType)
+    : currentNumeric;
+  
+  const percentage = Math.round((normalizedCurrentNumeric / maxNumeric) * 100);
+  return `${percentage}%`;
+};
+
+// Convert percentage to weight based on max
+// Convert percentage to weight based on max
+export const percentageToWeightOld = (
+  percentage: string, 
+  maxWeight: string, 
+  targetWeightType: WeightType,
+  maxWeightType: WeightType
+): string => {
+  const percentValue = parseInt(percentage.replace('%', ''));
+  const maxNumeric = extractNumericWeight(maxWeight);
+  
+  const calculatedWeight = (maxNumeric * percentValue) / 100;
+  
+  // Round to nearest 2.5 for pounds or 1 for kg
+  const roundedWeight = targetWeightType === 'pounds' 
+    ? Math.round(calculatedWeight / 2.5) * 2.5
+    : Math.round(calculatedWeight);
+  
+  return formatWeight(roundedWeight, targetWeightType);
 };
