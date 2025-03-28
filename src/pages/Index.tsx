@@ -75,10 +75,10 @@ const Index: React.FC = () => {
     );
   }
   
-  // Otherwise redirect to explore page
+  // Otherwise redirect to sheets page
   return (
     <MainLayout>
-      <Navigate to="/explore" replace />
+      <Navigate to="/sheets" replace />
     </MainLayout>
   );
 };

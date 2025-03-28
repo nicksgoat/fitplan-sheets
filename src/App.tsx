@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import Explore from "./pages/Explore";
 import Library from "./pages/Library";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
+import Sheets from "./pages/Sheets";
 import MainLayout from "./components/layout/MainLayout";
 // Keep the CSS import
 import "./index.css";
@@ -48,6 +50,14 @@ const App = () => (
                 element={
                   <AuthenticatedRoute>
                     <MainLayout><Library /></MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/sheets" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout><Sheets /></MainLayout>
                   </AuthenticatedRoute>
                 } 
               />
