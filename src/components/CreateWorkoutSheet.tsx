@@ -66,7 +66,8 @@ const CreateWorkoutSheet: React.FC<CreateWorkoutSheetProps> = ({ weekId, onSave 
         weekId: weekId
       };
       
-      // Pass the new session to addSession
+      // Looking at WorkoutContext, we need to check the function signature
+      // It appears addSession can accept (weekId, newSession) or just weekId
       addSession(weekId, newSession);
       
       if (onSave) {
