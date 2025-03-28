@@ -14,10 +14,8 @@ import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Sheets from "./pages/Sheets";
 import MainLayout from "./components/layout/MainLayout";
-// Keep the CSS import
 import "./index.css";
 
-// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,7 +31,7 @@ const App = () => (
                 path="/explore" 
                 element={
                   <AuthenticatedRoute>
-                    <MainLayout><Explore /></MainLayout>
+                    <Explore />
                   </AuthenticatedRoute>
                 } 
               />
@@ -41,7 +39,7 @@ const App = () => (
                 path="/library" 
                 element={
                   <AuthenticatedRoute>
-                    <MainLayout><Library /></MainLayout>
+                    <Library />
                   </AuthenticatedRoute>
                 } 
               />
@@ -49,7 +47,7 @@ const App = () => (
                 path="/liked" 
                 element={
                   <AuthenticatedRoute>
-                    <MainLayout><Liked /></MainLayout>
+                    <Liked />
                   </AuthenticatedRoute>
                 } 
               />
@@ -69,7 +67,6 @@ const App = () => (
                   </AuthenticatedRoute>
                 } 
               />
-              {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
