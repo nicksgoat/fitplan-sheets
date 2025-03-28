@@ -1,5 +1,6 @@
+
 import React from "react";
-import { ChevronRight, Plus, Trash2, Minus } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Exercise, IntensityType, WeightType, RepType, Set } from "@/types/workout";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -251,28 +252,19 @@ const CircuitExerciseRow: React.FC<CircuitExerciseRowProps> = ({
       
       <td className="border border-muted-foreground/20 p-2">
         <div className="flex justify-end space-x-2">
-          {exercise.sets.length <= 1 && (
-            <button
-              className="p-1 rounded-full hover:bg-secondary transition-colors"
-              onClick={() => addSet(sessionId, exercise.id)}
-              aria-label="Add set"
-            >
-              <Plus className="h-4 w-4 text-muted-foreground" />
-            </button>
-          )}
+          <button
+            className="p-1 rounded-full hover:bg-secondary transition-colors"
+            onClick={() => addSet(sessionId, exercise.id)}
+            aria-label="Add set"
+          >
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          </button>
           <button
             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
             onClick={() => deleteExercise(sessionId, exercise.id)}
             aria-label="Delete exercise"
           >
             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-          </button>
-          <button
-            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-            onClick={() => handleAddExerciseToCircuit(exercise.circuitId || '')}
-            aria-label="Add exercise to circuit"
-          >
-            <Plus className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
       </td>
