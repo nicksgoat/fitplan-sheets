@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -12,7 +11,8 @@ import {
   X, 
   Link, 
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,11 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { 
   useUpdateExercise, 
@@ -51,9 +56,7 @@ import {
 import { Exercise, ExerciseCategory, PrimaryMuscle, Difficulty } from '@/types/exercise';
 import { useAuth } from '@/hooks/useAuth';
 
-// Maximum video size (150MB)
-const MAX_VIDEO_SIZE = 150 * 1024 * 1024;
-// Allowed video file types
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 const formSchema = z.object({
@@ -107,8 +110,8 @@ const EditExercise: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
-  // Fetch the existing exercise data
   const { 
     data: exercise, 
     isLoading: isExerciseLoading, 
@@ -118,7 +121,6 @@ const EditExercise: React.FC = () => {
   const { uploadVideo, progress, isUploading } = useUploadExerciseVideo();
   const updateExerciseMutation = useUpdateExercise();
 
-  // Initialize form with exercise data once loaded
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -136,7 +138,6 @@ const EditExercise: React.FC = () => {
     }
   });
 
-  // Set form values once exercise data is loaded
   useEffect(() => {
     if (exercise) {
       form.reset({
@@ -156,7 +157,6 @@ const EditExercise: React.FC = () => {
       setSelectedSecondaryMuscles(exercise.secondaryMuscles || []);
       setSelectedTags(exercise.tags || []);
       
-      // Set video preview if available
       if (exercise.videoUrl) {
         setVideoPreviewUrl(exercise.videoUrl);
         setUploadTab('url');
@@ -165,13 +165,11 @@ const EditExercise: React.FC = () => {
   }, [exercise, form]);
 
   useEffect(() => {
-    // Update upload progress
     if (isUploading) {
       setUploadProgress(progress);
     }
   }, [progress, isUploading]);
 
-  // Handle file drop on upload area
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -181,41 +179,40 @@ const EditExercise: React.FC = () => {
       validateAndSetVideoFile(files[0]);
     }
   };
-  
-  // Prevent default drag behaviors
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
-  
-  // Validate video file
+
   const validateAndSetVideoFile = (file: File) => {
-    // Validate file type
+    setUploadError(null);
+    
     if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-      toast.error('Invalid file type. Please upload MP4, WebM, or QuickTime video.');
+      const errorMsg = 'Invalid file type. Please upload MP4, WebM, or QuickTime video.';
+      toast.error(errorMsg);
+      setUploadError(errorMsg);
       return;
     }
     
-    // Validate file size
     if (file.size > MAX_VIDEO_SIZE) {
-      toast.error('Video is too large. Maximum size is 150MB.');
+      const errorMsg = 'Video is too large. Maximum size is 50MB.';
+      toast.error(errorMsg);
+      setUploadError(errorMsg);
       return;
     }
     
-    // Set the file and create a preview URL
     setVideoFile(file);
     setVideoPreviewUrl(URL.createObjectURL(file));
   };
-  
-  // Handle file selection from browser dialog
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       validateAndSetVideoFile(files[0]);
     }
   };
-  
-  // Clear selected video
+
   const handleClearVideo = () => {
     setVideoFile(null);
     setVideoPreviewUrl('');
@@ -223,8 +220,7 @@ const EditExercise: React.FC = () => {
       fileInputRef.current.value = '';
     }
   };
-  
-  // Toggle secondary muscle selection
+
   const toggleSecondaryMuscle = (muscle: PrimaryMuscle) => {
     setSelectedSecondaryMuscles(prev => {
       if (prev.includes(muscle)) {
@@ -234,26 +230,23 @@ const EditExercise: React.FC = () => {
       }
     });
   };
-  
-  // Add a tag
+
   const handleAddTag = () => {
     if (tagInput.trim() && !selectedTags.includes(tagInput.trim())) {
       setSelectedTags(prev => [...prev, tagInput.trim()]);
       setTagInput('');
     }
   };
-  
-  // Remove a tag
+
   const handleRemoveTag = (tag: string) => {
     setSelectedTags(prev => prev.filter(t => t !== tag));
   };
-  
-  // Handle form submission
+
   const onSubmit = async (formData: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true);
+      setUploadError(null);
       
-      // If video file is selected, upload it first
       let finalVideoUrl = formData.videoUrl;
       
       if (uploadTab === 'file' && videoFile) {
@@ -262,15 +255,19 @@ const EditExercise: React.FC = () => {
           finalVideoUrl = await uploadVideo(videoFile, user?.id);
         } catch (error) {
           console.error('Error uploading video:', error);
-          toast.error('Failed to upload video. Please try again.');
           setIsSubmitting(false);
           setIsVideoUploading(false);
+          
+          if (error instanceof Error) {
+            setUploadError(error.message);
+          } else {
+            setUploadError('Failed to upload video. Please try again with a smaller file.');
+          }
           return;
         }
         setIsVideoUploading(false);
       }
       
-      // Prepare exercise data for update
       const exerciseData: Partial<Exercise> = {
         ...formData,
         secondaryMuscles: selectedSecondaryMuscles,
@@ -278,13 +275,11 @@ const EditExercise: React.FC = () => {
         videoUrl: finalVideoUrl || undefined,
       };
       
-      // Update the exercise
       await updateExerciseMutation.mutateAsync({ 
         id: id || '', 
         exercise: exerciseData 
       });
       
-      // Navigate back to library after successful update
       navigate('/library');
       
     } catch (error) {
@@ -293,13 +288,11 @@ const EditExercise: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-  
-  // Handle going back
+
   const handleBack = () => {
     navigate(-1);
   };
-  
-  // Show loading indicator while fetching exercise data
+
   if (isExerciseLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -308,8 +301,7 @@ const EditExercise: React.FC = () => {
       </div>
     );
   }
-  
-  // Show error message if exercise data couldn't be loaded
+
   if (exerciseError || !exercise) {
     return (
       <div className="p-6 flex flex-col items-center">
@@ -328,7 +320,75 @@ const EditExercise: React.FC = () => {
       </div>
     );
   }
-  
+
+  const renderFileTabContent = () => {
+    return (
+      <div className="pt-4">
+        <Alert variant="default" className="mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertTitle>Video Upload Guidelines</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 text-sm mt-2 space-y-1">
+              <li>Maximum file size: <strong>50MB</strong></li>
+              <li>Supported formats: MP4, WebM, QuickTime</li>
+              <li>For larger videos, use the URL option with YouTube or other video hosts</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/mp4,video/webm,video/quicktime"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+        
+        {uploadError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Upload Error</AlertTitle>
+            <AlertDescription>{uploadError}</AlertDescription>
+          </Alert>
+        )}
+        
+        {!videoPreviewUrl && (
+          <div
+            className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-secondary/10 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
+            <div className="flex flex-col items-center">
+              <Upload className="h-10 w-10 text-gray-400 mb-2" />
+              <p className="text-sm font-medium">Drop your video here or click to browse</p>
+              <p className="text-xs text-gray-500 mt-1">MP4, WebM or QuickTime, up to 50MB</p>
+            </div>
+          </div>
+        )}
+        
+        {videoPreviewUrl && (
+          <div className="relative mt-4 rounded-lg overflow-hidden">
+            <video 
+              src={videoPreviewUrl} 
+              controls 
+              className="w-full h-auto max-h-[300px]"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={handleClearVideo}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-3xl pb-20">
       <Button 
@@ -344,7 +404,6 @@ const EditExercise: React.FC = () => {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-lg font-medium mb-4">Basic Information</h2>
@@ -453,7 +512,6 @@ const EditExercise: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* Muscle Groups */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-lg font-medium mb-4">Targeted Muscles</h2>
@@ -549,7 +607,6 @@ const EditExercise: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* Description & Instructions */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-lg font-medium mb-4">Details</h2>
@@ -592,7 +649,6 @@ const EditExercise: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* Video Upload */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-lg font-medium mb-4">Video Demonstration (Optional)</h2>
@@ -603,48 +659,8 @@ const EditExercise: React.FC = () => {
                   <TabsTrigger value="url">Video URL</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="file" className="pt-4">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  
-                  {!videoPreviewUrl && (
-                    <div
-                      className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-secondary/10 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                    >
-                      <div className="flex flex-col items-center">
-                        <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                        <p className="text-sm font-medium">Drop your video here or click to browse</p>
-                        <p className="text-xs text-gray-500 mt-1">MP4, WebM or QuickTime, up to 150MB</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {videoPreviewUrl && (
-                    <div className="relative mt-4 rounded-lg overflow-hidden">
-                      <video 
-                        src={videoPreviewUrl} 
-                        controls 
-                        className="w-full h-auto max-h-[300px]"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={handleClearVideo}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                <TabsContent value="file">
+                  {renderFileTabContent()}
                 </TabsContent>
                 
                 <TabsContent value="url" className="pt-4">
@@ -681,7 +697,6 @@ const EditExercise: React.FC = () => {
             </CardContent>
           </Card>
           
-          {/* Submit Button */}
           <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-10">
             <div className="container mx-auto max-w-3xl flex justify-end">
               <Button 

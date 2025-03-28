@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Exercise, ExerciseCategory, PrimaryMuscle } from "@/types/exercise";
 import { exerciseLibrary as localExerciseLibrary } from "@/utils/exerciseLibrary";
@@ -170,6 +171,14 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
 // Upload video file to Supabase Storage
 export async function uploadExerciseVideo(file: File, userId?: string): Promise<string> {
   try {
+    // Check file size before attempting upload - reduce to 50MB max
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > MAX_SIZE) {
+      const errorMessage = 'Video size exceeds the maximum allowed size of 50MB. Please choose a smaller file or compress your video.';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
     // Create a unique filename using user ID (if available) and timestamp
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId || 'anonymous'}-${Date.now()}.${fileExt}`;
@@ -186,6 +195,11 @@ export async function uploadExerciseVideo(file: File, userId?: string): Promise<
       
     if (error) {
       console.error('Error uploading video:', error);
+      if (error.message.includes('Payload too large')) {
+        toast.error('Video file is too large. Maximum file size is 50MB.');
+      } else {
+        toast.error(`Failed to upload video: ${error.message}`);
+      }
       throw error;
     }
     
@@ -198,7 +212,7 @@ export async function uploadExerciseVideo(file: File, userId?: string): Promise<
     return publicUrl;
   } catch (error) {
     console.error('Unexpected error uploading video:', error);
-    toast.error('Failed to upload video. Please try again.');
+    toast.error('Failed to upload video. Please try again with a smaller file.');
     throw error;
   }
 }

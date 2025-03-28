@@ -87,7 +87,7 @@ export function useExercise(id: string) {
   });
 }
 
-// Hook for fetching exercises with their visuals (now just returns exercises with consolidated data)
+// Hook for fetching exercises with their visuals
 export function useExercisesWithVisuals() {
   return useExercises();
 }
@@ -98,13 +98,27 @@ export function useUploadExerciseVideo() {
   const [isUploading, setIsUploading] = useState(false);
   
   const uploadVideo = async (file: File, userId?: string) => {
+    if (!file) {
+      throw new Error('No file selected');
+    }
+
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('Video size exceeds the maximum allowed size of 50MB.');
+      throw new Error('File too large. Maximum size is 50MB.');
+    }
+    
     setIsUploading(true);
     setProgress(0);
     
     try {
-      // Start progress indicator
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 5, 95));
+        setProgress(prev => {
+          if (prev < 90) {
+            return prev + Math.random() * 5;
+          }
+          return prev;
+        });
       }, 300);
       
       const videoUrl = await exerciseLibraryService.uploadExerciseVideo(file, userId);
@@ -114,6 +128,15 @@ export function useUploadExerciseVideo() {
       
       return videoUrl;
     } catch (error) {
+      setProgress(0);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Payload too large')) {
+          toast.error('Video file is too large. Maximum file size is 50MB.');
+          throw new Error('Video file is too large. Maximum file size is 50MB.');
+        }
+      }
+      
       throw error;
     } finally {
       setIsUploading(false);
