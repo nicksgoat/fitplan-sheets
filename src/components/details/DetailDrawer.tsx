@@ -35,6 +35,11 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
         {item.type === 'program' && (
           <ProgramDetail item={item} onClose={handleClose} />
         )}
+        {item.type === 'collection' && (
+          // For collections, we'll use the Exercise detail as a fallback
+          // Later, you can create a dedicated CollectionDetail component
+          <ExerciseDetail item={item} onClose={handleClose} />
+        )}
       </DrawerContent>
     </Drawer>
   );

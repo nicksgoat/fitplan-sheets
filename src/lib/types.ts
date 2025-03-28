@@ -5,7 +5,7 @@ export interface ItemType {
   type: 'exercise' | 'workout' | 'program' | 'collection';
   creator: string;
   imageUrl: string;
-  videoUrl?: string; // Added videoUrl
+  videoUrl?: string;
   tags?: string[];
   duration?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
