@@ -15,15 +15,35 @@ interface ExerciseDetailProps {
 const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
 
-  return (
-    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
-      {/* Header Image */}
-      <div className="relative w-full h-48 md:h-64">
+  // Function to render media (image or video)
+  const renderMedia = () => {
+    if (item.videoUrl) {
+      return (
+        <video 
+          src={item.videoUrl} 
+          className="w-full h-full object-cover" 
+          controls
+          autoPlay={false}
+          playsInline
+          loop
+        />
+      );
+    } else {
+      return (
         <img
           src={item.imageUrl}
           alt={item.title}
           className="w-full h-full object-cover"
         />
+      );
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
+      {/* Header Media (Image or Video) */}
+      <div className="relative w-full h-48 md:h-64">
+        {renderMedia()}
         <Button 
           variant="ghost" 
           size="icon" 

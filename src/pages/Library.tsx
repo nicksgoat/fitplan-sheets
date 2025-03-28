@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +26,7 @@ const Library = () => {
     type: 'exercise',
     creator: exercise.creator || 'FitBloom',
     imageUrl: exercise.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+    videoUrl: exercise.videoUrl,
     tags: exercise.tags || [],
     duration: exercise.duration || '',
     difficulty: exercise.difficulty || 'beginner',

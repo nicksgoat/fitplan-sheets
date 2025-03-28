@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart } from 'lucide-react';
+import { Heart, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
@@ -26,6 +26,7 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
         type: 'exercise',
         creator: item.creator || 'FitBloom',
         imageUrl: item.imageUrl || 'https://placehold.co/600x400?text=No+Image',
+        videoUrl: item.videoUrl,
         duration: item.duration || '',
         tags: item.tags || [],
         difficulty: (item.difficulty as any) || 'beginner',
@@ -35,6 +36,7 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
     : item as ItemType;
   
   const imageUrl = normalizedItem.imageUrl;
+  const videoUrl = normalizedItem.videoUrl;
   const tags = normalizedItem.tags || [];
   const creator = normalizedItem.creator;
   const duration = normalizedItem.duration;
@@ -44,11 +46,24 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
     <DetailDrawer item={normalizedItem}>
       <Card className={cn("content-card h-full flex flex-col", className)}>
         <div className="relative">
-          <img 
-            src={imageUrl} 
-            alt={title} 
-            className="content-card-image h-[120px] w-full object-cover"
-          />
+          {videoUrl ? (
+            <div className="relative h-[120px] w-full">
+              <img 
+                src={imageUrl} 
+                alt={title} 
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Video className="h-8 w-8 text-white opacity-80" />
+              </div>
+            </div>
+          ) : (
+            <img 
+              src={imageUrl} 
+              alt={title} 
+              className="content-card-image h-[120px] w-full object-cover"
+            />
+          )}
           <Button 
             variant="ghost" 
             size="icon" 

@@ -31,6 +31,7 @@ import {
   PrimaryMuscle,
 } from '@/types/exercise';
 import { useCreateExercise } from '@/hooks/useExerciseLibrary';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Form validation schema using zod
 const formSchema = z.object({
@@ -47,6 +48,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   instructions: z.string().optional(),
   imageUrl: z.string().optional(),
+  videoUrl: z.string().optional(), // Added videoUrl
   difficulty: z.enum(['beginner', 'intermediate', 'advanced'] as const),
   duration: z.string().optional(),
 });
@@ -58,6 +60,7 @@ const CreateExercise: React.FC = () => {
   const { mutate: createExercise, isPending } = useCreateExercise();
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -68,6 +71,7 @@ const CreateExercise: React.FC = () => {
       description: '',
       instructions: '',
       imageUrl: '',
+      videoUrl: '',
       difficulty: 'beginner',
       duration: '',
     },
@@ -99,7 +103,8 @@ const CreateExercise: React.FC = () => {
       description: values.description,
       instructions: values.instructions,
       isCustom: true,
-      imageUrl: values.imageUrl,
+      imageUrl: mediaType === 'image' ? values.imageUrl : undefined,
+      videoUrl: mediaType === 'video' ? values.videoUrl : undefined,
       tags,
       difficulty: values.difficulty,
       duration: values.duration,
@@ -217,22 +222,56 @@ const CreateExercise: React.FC = () => {
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Image URL (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com/image.jpg" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Enter a URL for the exercise image
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Media Section */}
+          <div>
+            <FormLabel>Media</FormLabel>
+            <Tabs
+              defaultValue="image"
+              className="w-full"
+              onValueChange={(value) => setMediaType(value as 'image' | 'video')}
+            >
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="image">Image</TabsTrigger>
+                <TabsTrigger value="video">Video</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="image">
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Enter a URL for the exercise image
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+              
+              <TabsContent value="video">
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="https://example.com/video.mp4" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Enter a URL for the exercise video
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField

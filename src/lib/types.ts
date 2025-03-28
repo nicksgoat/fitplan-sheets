@@ -2,12 +2,13 @@
 export interface ItemType {
   id: string;
   title: string;
-  type: 'exercise' | 'workout' | 'program';
+  type: 'exercise' | 'workout' | 'program' | 'collection';
   creator: string;
   imageUrl: string;
-  duration: string;
+  videoUrl?: string; // Added videoUrl
   tags?: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  duration?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
   isFavorite: boolean;
   description?: string;
 }
