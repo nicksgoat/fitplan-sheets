@@ -23,6 +23,7 @@ export interface Exercise {
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
+  maxWeight?: string; // Added to store the user's max weight for this exercise
 }
 
 export interface Circuit {
@@ -55,6 +56,15 @@ export interface WorkoutProgram {
   name: string;
   sessions: WorkoutSession[];
   weeks: WorkoutWeek[]; // New weeks array
+  maxWeights?: UserMaxWeights; // Added to store user's max weights
+}
+
+// New interface for max weight storage by exercise name
+export interface UserMaxWeights {
+  [exerciseName: string]: {
+    weight: string;
+    weightType: WeightType;
+  };
 }
 
 export type CellType = 'name' | 'sets' | 'reps' | 'weight' | 'intensity' | 'rest' | 'notes';

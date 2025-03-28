@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
+import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek, UserMaxWeights } from "@/types/workout";
 import { 
   createEmptyProgram, 
   addExerciseToSession, 
@@ -42,6 +41,12 @@ import {
   deleteWeekPreset,
   deleteProgramPreset
 } from "@/utils/presets";
+import { 
+  updateMaxWeights, 
+  weightToPercentage, 
+  percentageToWeight, 
+  getMaxWeight 
+} from "@/utils/maxWeightUtils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -98,6 +103,10 @@ interface WorkoutContextType {
   removeSessionFromLibrary: (sessionId: string) => void;
   removeWeekFromLibrary: (weekId: string) => void;
   removeProgramFromLibrary: (programId: string) => void;
+  setMaxWeight: (exerciseName: string, weight: string, weightType: WeightType) => void;
+  getMaxWeightForExercise: (exerciseName: string) => { weight: string; weightType: WeightType } | null;
+  convertWeightToPercentage: (weight: string, exerciseName: string) => string;
+  convertPercentageToWeight: (percentage: string, exerciseName: string, targetWeightType: WeightType) => string;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -942,6 +951,44 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Loaded "${program.name}" program`);
   };
 
+  const setMaxWeight = (exerciseName: string, weight: string, weightType: WeightType) => {
+    setProgram((prevProgram) => {
+      const updatedMaxWeights = updateMaxWeights(
+        prevProgram.maxWeights, 
+        exerciseName, 
+        weight, 
+        weightType
+      );
+      
+      return {
+        ...prevProgram,
+        maxWeights: updatedMaxWeights
+      };
+    });
+    toast.success(`Max weight for ${exerciseName} updated`);
+  };
+  
+  const getMaxWeightForExercise = (exerciseName: string) => {
+    return getMaxWeight(exerciseName, program.maxWeights);
+  };
+  
+  const convertWeightToPercentage = (weight: string, exerciseName: string) => {
+    return weightToPercentage(weight, exerciseName, program.maxWeights);
+  };
+  
+  const convertPercentageToWeight = (
+    percentage: string, 
+    exerciseName: string, 
+    targetWeightType: WeightType
+  ) => {
+    return percentageToWeight(
+      percentage, 
+      exerciseName, 
+      targetWeightType, 
+      program.maxWeights
+    );
+  };
+
   return (
     <WorkoutContext.Provider
       value={{
@@ -996,7 +1043,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         getProgramLibrary,
         removeSessionFromLibrary,
         removeWeekFromLibrary,
-        removeProgramFromLibrary
+        removeProgramFromLibrary,
+        setMaxWeight,
+        getMaxWeightForExercise,
+        convertWeightToPercentage,
+        convertPercentageToWeight
       }}
     >
       {children}

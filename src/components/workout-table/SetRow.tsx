@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Minus } from "lucide-react";
 import { Set, Exercise } from "@/types/workout";
@@ -12,6 +11,7 @@ interface SetRowProps {
   set: Set;
   setIndex: number;
   exerciseIndex: number;
+  exerciseName: string;
   handleSetCellChange: (exerciseId: string, setId: string, field: keyof Set, value: string) => void;
   isCellFocused: (rowIndex: number, columnName: string, exerciseId: string, setIndex?: number) => boolean;
   handleCellFocus: (coordinate: CellCoordinate) => void;
@@ -32,6 +32,7 @@ const SetRow: React.FC<SetRowProps> = ({
   set,
   setIndex,
   exerciseIndex,
+  exerciseName,
   handleSetCellChange,
   isCellFocused,
   handleCellFocus,

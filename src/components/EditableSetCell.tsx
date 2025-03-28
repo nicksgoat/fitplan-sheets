@@ -27,6 +27,7 @@ interface EditableSetCellProps {
   hideRepTypeSelector?: boolean;
   hideIntensityTypeSelector?: boolean;
   hideWeightTypeSelector?: boolean;
+  exerciseName?: string; // New prop to pass exercise name to WeightInput
 }
 
 const EditableSetCell: React.FC<EditableSetCellProps> = ({
@@ -49,6 +50,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
   hideRepTypeSelector = false,
   hideIntensityTypeSelector = false,
   hideWeightTypeSelector = false,
+  exerciseName = "", // Default to empty string
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -140,6 +142,7 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
           placeholder={placeholder}
           isFocused={isFocused}
           hideSelector={hideWeightTypeSelector}
+          exerciseName={exerciseName} // Pass exercise name to WeightInput
         />
       </div>
     );

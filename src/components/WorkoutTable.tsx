@@ -355,6 +355,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                     handleRepTypeChange={handleRepTypeChange}
                     deleteSet={deleteSet}
                     sessionId={session.id}
+                    exerciseName={exercise.name}
                   />
                 ))}
               </React.Fragment>
