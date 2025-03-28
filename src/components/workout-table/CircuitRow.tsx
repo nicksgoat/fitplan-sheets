@@ -1,3 +1,4 @@
+
 import React from "react";
 import { ChevronRight, Plus, Trash2, RotateCcw } from "lucide-react";
 import { Circuit, Exercise } from "@/types/workout";
@@ -5,6 +6,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import EditableCell from "../EditableCell";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
+import { Button } from "@/components/ui/button";
 
 interface CircuitRowProps {
   exercise: Exercise;
@@ -86,6 +88,16 @@ const CircuitRow: React.FC<CircuitRowProps> = ({
       
       <td colSpan={4} className="border border-muted-foreground/20 p-2">
         <div className="flex justify-end space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="text-blue-400 p-0 h-auto hover:bg-transparent hover:text-blue-300"
+            onClick={() => handleAddExerciseToCircuit(exercise.id)}
+            aria-label="Add exercise to circuit"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Exercise
+          </Button>
           <button
             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
             onClick={() => handleAddExerciseToCircuit(exercise.id)}
