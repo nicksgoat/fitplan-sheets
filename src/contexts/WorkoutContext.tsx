@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Exercise, Set, WorkoutProgram, WorkoutSession, Circuit, WorkoutType, WorkoutWeek } from "@/types/workout";
 import { 
@@ -867,7 +868,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const loadSessionFromLibrary = (session: WorkoutSession, weekId: string) => {
     setProgram((prevProgram) => {
-      const newSession = cloneSession(preset, weekId);
+      const newSession = cloneSession(session, weekId);
       
       const updatedWeeks = prevProgram.weeks.map(week => {
         if (week.id === weekId) {
@@ -890,14 +891,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       return updatedProgram;
     });
     
-    toast.success(`Added "${preset.name}" to your program`);
+    toast.success(`Added "${session.name}" to your program`);
   };
 
-  const loadWeekFromLibrary = (preset: WorkoutWeek) => {
+  const loadWeekFromLibrary = (week: WorkoutWeek) => {
     setProgram((prevProgram) => {
       const newWeekId = generateId();
       const newWeek = {
-        ...preset,
+        ...week,
         id: newWeekId,
         order: prevProgram.weeks.length + 1,
         sessions: []
@@ -906,7 +907,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       const sessionsToAdd: WorkoutSession[] = [];
       const sessionIds: string[] = [];
       
-      preset.sessions.forEach(originalSessionId => {
+      week.sessions.forEach(originalSessionId => {
         const originalSession = getSessionLibrary().find(s => s.id === originalSessionId);
         if (originalSession) {
           const newSession = cloneSession(originalSession, newWeekId);
@@ -931,4 +932,82 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       return updatedProgram;
     });
     
-    toast
+    toast.success(`Added "${week.name}" to your program`);
+  };
+
+  const loadProgramFromLibrary = (program: WorkoutProgram) => {
+    setProgram(program);
+    setActiveWeekId(program.weeks[0]?.id || null);
+    setActiveSessionId(program.sessions[0]?.id || null);
+    toast.success(`Loaded "${program.name}" program`);
+  };
+
+  return (
+    <WorkoutContext.Provider
+      value={{
+        program,
+        activeSessionId,
+        activeWeekId,
+        setActiveSessionId,
+        setActiveWeekId,
+        updateSessionName,
+        updateWeekName,
+        updateExercise,
+        updateSet,
+        addExercise,
+        addSet,
+        deleteSet,
+        deleteExercise,
+        addSession,
+        addWeek,
+        deleteSession,
+        deleteWeek,
+        resetProgram,
+        loadSampleProgram,
+        createCircuit,
+        createSuperset,
+        createEMOM,
+        createAMRAP,
+        createTabata,
+        updateCircuit,
+        deleteCircuit,
+        addExerciseToCircuit,
+        removeExerciseFromCircuit,
+        saveSessionAsPreset,
+        saveWeekAsPreset,
+        saveProgramAsPreset,
+        loadSessionPreset,
+        loadWeekPreset,
+        loadProgramPreset,
+        getSessionPresets,
+        getWeekPresets,
+        getProgramPresets,
+        deleteSessionPreset,
+        deleteWeekPreset,
+        deleteProgramPreset,
+        saveSessionToLibrary,
+        saveWeekToLibrary,
+        saveProgramToLibrary,
+        loadSessionFromLibrary,
+        loadWeekFromLibrary,
+        loadProgramFromLibrary,
+        getSessionLibrary,
+        getWeekLibrary,
+        getProgramLibrary,
+        removeSessionFromLibrary,
+        removeWeekFromLibrary,
+        removeProgramFromLibrary
+      }}
+    >
+      {children}
+    </WorkoutContext.Provider>
+  );
+}
+
+export const useWorkout = () => {
+  const context = useContext(WorkoutContext);
+  if (context === undefined) {
+    throw new Error("useWorkout must be used within a WorkoutProvider");
+  }
+  return context;
+};
