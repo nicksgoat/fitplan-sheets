@@ -1,26 +1,18 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
 import WeekTabs from "@/components/WeekTabs";
 import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import CreateWorkoutSheet from "@/components/CreateWorkoutSheet";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const WorkoutApp: React.FC = () => {
   const { 
     program, 
-    activeSessionId,
-    activeWeekId,
-    addSession
+    activeSessionId
   } = useWorkout();
-  
-  const [showWorkoutSheet, setShowWorkoutSheet] = useState(false);
   
   if (!activeSessionId) return null;
   
@@ -28,26 +20,7 @@ const WorkoutApp: React.FC = () => {
     <div className="w-full max-w-screen-2xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <div className="flex justify-between items-center mb-6">
-            <WeekTabs />
-            <Sheet open={showWorkoutSheet} onOpenChange={setShowWorkoutSheet}>
-              <SheetTrigger asChild>
-                <Button variant="default" size="sm" className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" />
-                  <span>Create Workout</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full md:max-w-4xl bg-dark-200 border-dark-300 p-0 overflow-y-auto">
-                {activeWeekId && (
-                  <CreateWorkoutSheet 
-                    weekId={activeWeekId} 
-                    onSave={() => setShowWorkoutSheet(false)}
-                  />
-                )}
-              </SheetContent>
-            </Sheet>
-          </div>
-
+          <WeekTabs />
           <SessionTabs />
           <motion.div
             key={activeSessionId}

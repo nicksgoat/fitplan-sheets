@@ -53,7 +53,6 @@ export interface WorkoutWeek {
 export interface WorkoutProgram {
   id: string;
   name: string;
-  description?: string; // Added description property as optional
   sessions: WorkoutSession[];
   weeks: WorkoutWeek[]; // New weeks array
 }
