@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ItemType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart } from 'lucide-react';
+import { Heart, Edit, Play } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import LeaderboardTab from './LeaderboardTab';
 
@@ -14,6 +15,7 @@ interface ExerciseDetailProps {
 
 const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
+  const navigate = useNavigate();
 
   // Function to render media (image or video)
   const renderMedia = () => {
@@ -36,6 +38,15 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
           className="w-full h-full object-cover"
         />
       );
+    }
+  };
+
+  const handleEdit = () => {
+    // Close the detail drawer first
+    onClose();
+    // Navigate to the edit page with the exercise ID
+    if (item.id) {
+      navigate(`/edit-exercise/${item.id}`);
     }
   };
 
@@ -129,7 +140,22 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
         <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
           Close
         </Button>
+        
+        {/* Show Edit button only for custom exercises */}
+        {item.isCustom && (
+          <Button 
+            variant="secondary" 
+            size="lg" 
+            className="flex-1"
+            onClick={handleEdit}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        )}
+        
         <Button className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
+          <Play className="h-4 w-4 mr-2" />
           Start Exercise
         </Button>
       </div>

@@ -40,7 +40,7 @@ export interface Exercise {
   userId?: string;
   // Visual properties directly in the Exercise type
   imageUrl?: string;
-  videoUrl?: string; // Added videoUrl property
+  videoUrl?: string;
   tags?: string[];
   difficulty?: Difficulty;
   duration?: string;
