@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -276,15 +275,9 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleAddExerciseToCircuit = (circuitId: string) => {
-    const sessionCopy = { ...session };
-    
-    const circuit = sessionCopy.circuits.find(c => c.id === circuitId);
-    if (!circuit) return;
-    
     addExercise(session.id);
     
-    // Access program from the context
-    const updatedSession = program.sessions.find(s => s.id === sessionCopy.id);
+    const updatedSession = program.sessions.find(s => s.id === session.id);
     if (!updatedSession) return;
     
     const newExerciseIndex = updatedSession.exercises.length - 1;
