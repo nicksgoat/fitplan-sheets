@@ -59,6 +59,15 @@ export default {
 					row: 'hsl(var(--table-row))',
 					'row-alt': 'hsl(var(--table-row-alt))',
 					border: 'hsl(var(--table-border))'
+				},
+				dark: {
+					100: '#121212',
+					200: '#1e1e1e',
+					300: '#2d2d2d',
+					400: '#353535',
+					500: '#4a4a4a',
+					card: '#1a1a1a',
+					border: '#333333',
 				}
 			},
 			borderRadius: {

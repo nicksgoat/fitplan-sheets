@@ -28,39 +28,39 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.05 }}
       className={cn(
-        "mb-4 bg-white rounded-lg overflow-hidden",
-        exercise.isGroup && "bg-gray-50",
-        exercise.isCircuit && "bg-primary/5",
-        !exercise.isGroup && !exercise.isCircuit && "border border-gray-200 shadow-sm"
+        "mb-4 rounded-lg overflow-hidden",
+        exercise.isGroup && "bg-dark-200",
+        exercise.isCircuit && "bg-dark-200",
+        !exercise.isGroup && !exercise.isCircuit && "bg-dark-300 border border-dark-border"
       )}
     >
       <div className="p-3">
         <div className="flex justify-between items-center">
           <div>
             <h3 className={cn(
-              "font-medium truncate max-w-[200px]",
-              exercise.isGroup && "text-purple-600",
-              exercise.isCircuit && "text-primary",
-              exercise.name === "Superset" && "text-indigo-600",
-              exercise.name.includes("EMOM") && "text-green-600",
-              exercise.name.includes("AMRAP") && "text-amber-600",
-              exercise.name.includes("Tabata") && "text-rose-600",
-              exercise.name === "Finisher" && "text-orange-600",
-              exercise.name === "Cool down" && "text-blue-600"
+              "font-medium truncate max-w-[200px] text-white",
+              exercise.isGroup && "text-purple-400",
+              exercise.isCircuit && "text-blue-400",
+              exercise.name === "Superset" && "text-indigo-400",
+              exercise.name.includes("EMOM") && "text-green-400",
+              exercise.name.includes("AMRAP") && "text-amber-400",
+              exercise.name.includes("Tabata") && "text-rose-400",
+              exercise.name === "Finisher" && "text-orange-400",
+              exercise.name === "Cool down" && "text-blue-400"
             )}>
               {exercise.name}
             </h3>
             {!exercise.isCircuit && !exercise.isGroup && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-400">
                 {getRepRange(exercise)}
               </div>
             )}
           </div>
-          <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+          <ChevronRight className="h-5 w-5 text-gray-500 flex-shrink-0" />
         </div>
         
         {exercise.notes && (
-          <div className="text-sm text-gray-600 mt-2 italic line-clamp-2">
+          <div className="text-sm text-gray-400 mt-2 italic line-clamp-2">
             {exercise.notes}
           </div>
         )}
