@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { useCellNavigation } from "@/hooks/useCellNavigation";
+import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { 
   Table,
   TableBody,
@@ -113,9 +113,9 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     updateSet(session.id, exerciseId, setId, { weightType } as Partial<Set>);
   };
   
-  const handleCellFocus = (coordinate: CellCoordinate) => {
+  const handleCellFocus = useCallback((coordinate: CellCoordinate) => {
     focusCell(coordinate);
-  };
+  }, [focusCell]);
   
   const handleExerciseCellNavigate = (
     direction: "up" | "down" | "left" | "right",
