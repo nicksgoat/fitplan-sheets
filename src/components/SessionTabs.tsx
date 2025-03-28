@@ -10,14 +10,18 @@ import { Workout } from "@/types/workout";
 const SessionTabs: React.FC = () => {
   const { program, activeWorkoutId, activeWeekId, setActiveWorkoutId, addWorkout } = useWorkout();
   
+  if (!program) return null;
   if (!activeWeekId) return null;
   
   const currentWeek = program.weeks.find(w => w.id === activeWeekId);
   if (!currentWeek) return null;
   
+  // Safely get workouts in the current week
   const workoutsInWeek = currentWeek.workouts
-    .map(workoutId => program.workouts.find(s => s.id === workoutId))
-    .filter(workout => workout !== undefined) as Workout[];
+    ? currentWeek.workouts
+      .map(workoutId => program.workouts?.find(s => s.id === workoutId))
+      .filter(workout => workout !== undefined) as Workout[]
+    : [];
   
   if (workoutsInWeek.length <= 0) return null;
   
