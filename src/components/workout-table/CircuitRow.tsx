@@ -39,18 +39,6 @@ const CircuitRow: React.FC<CircuitRowProps> = ({
   sessionId,
 }) => {
   const isCircuit = exercise.isCircuit;
-  const { addExercise, addExerciseToCircuit } = useWorkout();
-  
-  const handleAddExercise = () => {
-    if (exercise.isCircuit && exercise.id) {
-      // Add a new exercise to the session and immediately add it to the circuit
-      addExercise(sessionId, undefined, (newExerciseId) => {
-        if (newExerciseId) {
-          addExerciseToCircuit(sessionId, exercise.id, newExerciseId);
-        }
-      });
-    }
-  };
   
   return (
     <motion.tr
@@ -105,7 +93,11 @@ const CircuitRow: React.FC<CircuitRowProps> = ({
             variant="ghost" 
             size="sm"
             className="text-blue-400 p-0 h-auto hover:bg-transparent hover:text-blue-300"
-            onClick={handleAddExercise}
+            onClick={() => {
+              if (exercise.id) {
+                handleAddExerciseToCircuit(exercise.id);
+              }
+            }}
             aria-label="Add exercise to circuit"
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -113,7 +105,11 @@ const CircuitRow: React.FC<CircuitRowProps> = ({
           </Button>
           <button
             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-            onClick={handleAddExercise}
+            onClick={() => {
+              if (exercise.id) {
+                handleAddExerciseToCircuit(exercise.id);
+              }
+            }}
             aria-label="Add exercise to circuit"
           >
             <Plus className="h-4 w-4 text-muted-foreground" />

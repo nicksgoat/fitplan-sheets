@@ -264,6 +264,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   const handleAddExerciseToCircuit = (circuitId: string) => {
     addExercise(session.id, undefined, (newExerciseId) => {
       if (newExerciseId) {
+        console.log("Adding exercise to circuit:", circuitId, newExerciseId);
         addExerciseToCircuit(session.id, circuitId, newExerciseId);
       }
     });
