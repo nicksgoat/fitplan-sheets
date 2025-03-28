@@ -15,6 +15,13 @@ import {
 import RepTypeSelector from "../RepTypeSelector";
 import IntensityTypeSelector from "../IntensityTypeSelector";
 import WeightTypeSelector from "../WeightTypeSelector";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ExerciseRowProps {
   exercise: Exercise;
@@ -63,6 +70,11 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
     handleWeightTypeChange(exercise.id, type);
   };
   
+  const handleRepTypeSelect = (type: RepType) => {
+    console.log("Exercise row rep type changed to:", type);
+    handleRepTypeChange(exercise.id, type);
+  };
+  
   return (
     <motion.tr
       initial={{ opacity: 0, y: 10 }}
@@ -104,87 +116,66 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs flex items-center gap-1 hover:bg-muted w-full justify-start"
-            >
+        <Select value={repType} onValueChange={handleRepTypeSelect}>
+          <SelectTrigger className="h-7 text-xs w-full">
+            <SelectValue>
               <RepTypeSelector
                 value={repType}
-                onChange={(type) => handleRepTypeChange(exercise.id, type)}
+                onChange={() => {}}
                 variant="minimal"
               />
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0 z-50" align="start" side="bottom">
-            <div className="p-0 max-h-[350px] overflow-y-auto">
-              <RepTypeSelector
-                value={repType}
-                onChange={(type) => handleRepTypeChange(exercise.id, type)}
-                onClose={() => {}}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-[350px] z-50 bg-popover">
+            <RepTypeSelector
+              value={repType}
+              onChange={handleRepTypeSelect}
+              onClose={() => {}}
+            />
+          </SelectContent>
+        </Select>
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs flex items-center gap-1 hover:bg-muted w-full justify-start"
-            >
+        <Select value={weightType} onValueChange={handleWeightTypeSelect}>
+          <SelectTrigger className="h-7 text-xs w-full">
+            <SelectValue>
               <WeightTypeSelector
                 value={weightType}
-                onChange={handleWeightTypeSelect}
+                onChange={() => {}}
                 variant="minimal"
               />
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0 z-50" align="start" side="bottom">
-            <div className="p-0 max-h-[300px] overflow-y-auto">
-              <WeightTypeSelector
-                value={weightType}
-                onChange={handleWeightTypeSelect}
-                onClose={() => {}}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] z-50 bg-popover">
+            <WeightTypeSelector
+              value={weightType}
+              onChange={handleWeightTypeSelect}
+              onClose={() => {}}
+            />
+          </SelectContent>
+        </Select>
       </td>
       
       <td className="border border-muted-foreground/20 p-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs flex items-center gap-1 hover:bg-muted w-full justify-start"
-            >
+        <Select value={intensityType} onValueChange={handleIntensityTypeSelect}>
+          <SelectTrigger className="h-7 text-xs w-full">
+            <SelectValue>
               <IntensityTypeSelector
                 value={intensityType}
-                onChange={handleIntensityTypeSelect}
+                onChange={() => {}}
                 variant="minimal"
               />
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0 z-50" align="start" side="bottom">
-            <div className="p-0 max-h-[300px] overflow-y-auto">
-              <IntensityTypeSelector
-                value={intensityType}
-                onChange={handleIntensityTypeSelect}
-                onClose={() => {}}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] z-50 bg-popover">
+            <IntensityTypeSelector
+              value={intensityType}
+              onChange={handleIntensityTypeSelect}
+              onClose={() => {}}
+            />
+          </SelectContent>
+        </Select>
       </td>
       
       <td className="border border-muted-foreground/20 p-2"></td>

@@ -40,7 +40,28 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
     }
   };
   
+  // Get the weight type from the exercise
+  const weightType = exercise.weightType || 'pounds';
+  
+  // Function to get appropriate color based on weight type
+  const getWeightColor = (type: string) => {
+    switch (type) {
+      case 'pounds':
+        return 'text-blue-400';
+      case 'kilos':
+        return 'text-green-400';
+      case 'distance-m':
+      case 'distance-ft':
+      case 'distance-yd':
+      case 'distance-mi':
+        return 'text-purple-400';
+      default:
+        return 'text-blue-400';
+    }
+  };
+  
   const intensityColor = getIntensityColor(intensityType);
+  const weightColor = getWeightColor(weightType);
   
   return (
     <div>
@@ -63,7 +84,7 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
                 <TableCell className={`h-8 py-1 px-1 text-center truncate ${intensityColor}`}>
                   {set.intensity || "—"}
                 </TableCell>
-                <TableCell className="h-8 py-1 px-1 text-center text-blue-400 truncate">
+                <TableCell className={`h-8 py-1 px-1 text-center truncate ${weightColor}`}>
                   {set.weight ? (
                     Array.isArray(set.weight.split(',')) && set.weight.split(',')[idx]
                       ? set.weight.split(',')[idx].trim()
