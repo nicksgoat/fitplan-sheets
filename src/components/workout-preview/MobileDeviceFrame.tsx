@@ -7,12 +7,14 @@ interface MobileDeviceFrameProps {
   children: ReactNode;
   title: string;
   subtitle: string;
+  className?: string; // Add className prop
 }
 
 const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({ 
   children, 
   title,
-  subtitle
+  subtitle,
+  className
 }) => {
   return (
     <div className="relative w-full p-4 flex justify-center">
@@ -41,7 +43,7 @@ const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({
             <p className="text-lg mb-3 text-gray-400 italic">{subtitle}</p>
           </div>
           
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className={`h-[500px] ${className}`}>
             {children}
           </ScrollArea>
         </div>
