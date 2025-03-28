@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Exercise, ExerciseVisual, ExerciseWithVisual } from '@/types/exercise';
@@ -50,9 +51,11 @@ export function useExercises() {
     queryFn: exerciseLibraryService.getAllExercises,
     retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error) => {
-      console.error('Error fetching exercises:', error);
-      toast.error('Failed to fetch exercises. Using local data.');
+    onSettled: (data, error) => {
+      if (error) {
+        console.error('Error fetching exercises:', error);
+        toast.error('Failed to fetch exercises. Using local data.');
+      }
     }
   });
 }
@@ -64,9 +67,11 @@ export function useExercise(id: string) {
     queryFn: () => exerciseLibraryService.getExerciseById(id),
     enabled: !!id,
     retry: 1,
-    onError: (error) => {
-      console.error(`Error fetching exercise ${id}:`, error);
-      toast.error('Failed to fetch exercise details. Using local data if available.');
+    onSettled: (data, error) => {
+      if (error) {
+        console.error(`Error fetching exercise ${id}:`, error);
+        toast.error('Failed to fetch exercise details. Using local data if available.');
+      }
     }
   });
 }
@@ -78,9 +83,11 @@ export function useExerciseVisuals() {
     queryFn: exerciseVisualsService.getAllExerciseVisuals,
     retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error) => {
-      console.error('Error fetching exercise visuals:', error);
-      toast.error('Failed to fetch exercise visuals. Using default images.');
+    onSettled: (data, error) => {
+      if (error) {
+        console.error('Error fetching exercise visuals:', error);
+        toast.error('Failed to fetch exercise visuals. Using default images.');
+      }
     }
   });
 }
@@ -92,9 +99,11 @@ export function useExerciseVisualsByTags(tags: string[]) {
     queryFn: () => exerciseVisualsService.getExerciseVisualsByTags(tags),
     enabled: tags.length > 0,
     retry: 1,
-    onError: (error) => {
-      console.error('Error fetching exercise visuals by tags:', error);
-      toast.error('Failed to filter exercises by tags. Using default images.');
+    onSettled: (data, error) => {
+      if (error) {
+        console.error('Error fetching exercise visuals by tags:', error);
+        toast.error('Failed to filter exercises by tags. Using default images.');
+      }
     }
   });
 }
