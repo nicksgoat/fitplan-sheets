@@ -1,4 +1,3 @@
-
 import { Exercise, Set, WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 
 export function generateId(): string {
@@ -143,6 +142,8 @@ export function addSetToExercise(
         reps: lastSet.reps,
         weight: lastSet.weight,
         intensity: lastSet.intensity,
+        intensityType: lastSet.intensityType,
+        weightType: lastSet.weightType,
         rest: lastSet.rest,
       };
       
