@@ -1,124 +1,59 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Pencil, Save } from "lucide-react";
-import { cn } from "@/lib/utils";
-import CircuitControls from "./CircuitControls";
+import { Save } from "lucide-react";
+import SaveWorkoutDialog from "./SaveWorkoutDialog";
 
 interface WorkoutSessionHeaderProps {
   sessionId: string;
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, updateWorkoutName, addExercise, deleteWorkout } = useWorkout();
-  const workout = program?.workouts.find((s) => s.id === sessionId);
+  const { program, updateWorkout } = useWorkout();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(workout?.name || "");
-  const inputRef = useRef<HTMLInputElement>(null);
+  if (!program) return null;
   
-  useEffect(() => {
-    if (workout) {
-      setTitle(workout.name);
-    }
-  }, [workout]);
+  const session = program.workouts.find((s) => s.id === sessionId);
   
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
+  if (!session) return null;
   
-  const handleSave = () => {
-    if (workout && title.trim() !== "") {
-      updateWorkoutName(sessionId, title);
-      setIsEditing(false);
-    }
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateWorkout(sessionId, (draft) => {
+      draft.name = e.target.value;
+    });
   };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSave();
-    } else if (e.key === "Escape") {
-      setIsEditing(false);
-      setTitle(workout?.name || "");
-    }
-  };
-  
-  if (!workout) return null;
   
   return (
-    <div className="session-header flex justify-between mb-4">
-      <div className="flex items-center gap-2">
-        {!isEditing ? (
-          <h2 className="text-lg font-medium flex items-center">
-            {title || `Day ${workout.day} Session`}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-2 h-6 w-6 p-0"
-              onClick={() => setIsEditing(true)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          </h2>
-        ) : (
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              className={cn(
-                "bg-white rounded-md px-2 py-1 text-base",
-                "border border-border focus:border-primary focus:ring-1 focus:ring-primary",
-                "w-[200px]"
-              )}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-              placeholder={`Day ${workout.day} Session`}
-            />
-            <Button size="sm" variant="ghost" onClick={handleSave}>
-              <Save className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <div className="text-xs text-muted-foreground">Day {workout.day}</div>
+    <div className="p-4 border-b border-dark-300 flex justify-between items-center">
+      <div className="flex-1">
+        <input
+          type="text"
+          value={session.name}
+          onChange={handleNameChange}
+          className="bg-transparent border-none outline-none text-white text-xl font-semibold focus:ring-1 focus:ring-purple-500 px-2 py-1 rounded w-full"
+          placeholder="Workout Name"
+        />
       </div>
       
-      <div className="flex items-center gap-2">
-        <CircuitControls sessionId={sessionId} />
-        
-        <Button
-          variant="ghost"
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
           size="sm"
-          className="text-xs"
-          onClick={() => addExercise(sessionId)}
+          className="text-white border-gray-600 hover:bg-dark-300"
+          onClick={() => setSaveDialogOpen(true)}
         >
-          <Plus className="h-4 w-4 mr-1" />
-          Add Exercise
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive"
-          onClick={() => {
-            // We need to find the weekId for this workout
-            const weekId = workout.weekId || program?.weeks.find(w => 
-              w.workouts.includes(sessionId)
-            )?.id;
-            
-            if (weekId) {
-              deleteWorkout(weekId, sessionId);
-            }
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
+          <Save className="h-4 w-4 mr-2" />
+          Save to Library
         </Button>
       </div>
+      
+      <SaveWorkoutDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        workoutId={sessionId}
+      />
     </div>
   );
 };

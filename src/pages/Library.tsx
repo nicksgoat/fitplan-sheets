@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,7 @@ import { useExercisesWithVisuals, useCustomExercises } from '@/hooks/useExercise
 import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
+import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -84,6 +86,8 @@ const Library = () => {
     
     if (currentTab === 'exercises') {
       navigate('/create-exercise');
+    } else if (currentTab === 'workouts') {
+      navigate('/sheets');
     } else {
       navigate('/create-exercise');
     }
@@ -105,7 +109,7 @@ const Library = () => {
       {!user && (
         <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4">
           <p className="text-amber-800 dark:text-amber-200 text-sm">
-            You are not logged in. Exercises you create will be stored locally. 
+            You are not logged in. Items you create will be stored locally. 
             <Button 
               variant="link" 
               className="text-amber-800 dark:text-amber-200 underline p-0 h-auto font-semibold"
@@ -166,18 +170,16 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="workouts" className="mt-4">
-          <div className="text-center py-10">
-            <p className="text-gray-400">No workouts saved yet.</p>
-            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
-              Create Workout
-            </Button>
-          </div>
+          <WorkoutsLibraryTab />
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">
           <div className="text-center py-10">
             <p className="text-gray-400">No programs saved yet.</p>
-            <Button className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm">
+            <Button 
+              className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+              onClick={() => navigate('/sheets')}
+            >
               Create Program
             </Button>
           </div>

@@ -4,6 +4,8 @@ import { Exercise } from "@/types/exercise";
 import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useSearchExercises } from "@/hooks/useExerciseLibrary";
+import { Badge } from "@/components/ui/badge";
+import { Dumbbell } from "lucide-react";
 
 interface ExerciseSearchProps {
   value: string;
@@ -13,6 +15,7 @@ interface ExerciseSearchProps {
   autoFocus?: boolean;
   placeholder?: string;
   className?: string;
+  showMetadata?: boolean;
 }
 
 const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
@@ -22,7 +25,8 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   onBlur,
   autoFocus = false,
   placeholder = "Search exercises...",
-  className
+  className,
+  showMetadata = true
 }) => {
   const { searchResults, loading, setQuery } = useSearchExercises();
   const [showResults, setShowResults] = useState(false);
@@ -106,7 +110,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       {showResults && searchResults.length > 0 && (
         <div 
           ref={resultsRef}
-          className="fixed z-[100] w-[240px] max-h-[300px] overflow-y-auto bg-popover border rounded-md shadow-md"
+          className="fixed z-[100] w-[320px] max-h-[300px] overflow-y-auto bg-popover border rounded-md shadow-md"
           style={{ 
             left: inputRef.current ? inputRef.current.getBoundingClientRect().left : 0,
             top: inputRef.current ? inputRef.current.getBoundingClientRect().bottom + 5 : 0
@@ -123,10 +127,27 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                     className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center"
                     onClick={() => handleSelectExercise(exercise)}
                   >
-                    <div className="flex-1">
-                      <div className="font-medium">{exercise.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {exercise.primaryMuscle} • {exercise.category}
+                    <div className="flex items-center w-full">
+                      {exercise.imageUrl ? (
+                        <div className="h-8 w-8 mr-2 rounded bg-cover bg-center" style={{ backgroundImage: `url(${exercise.imageUrl})` }} />
+                      ) : (
+                        <div className="h-8 w-8 mr-2 rounded bg-gray-700 flex items-center justify-center">
+                          <Dumbbell className="h-4 w-4 text-gray-400" />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1">
+                        <div className="font-medium">{exercise.name}</div>
+                        {showMetadata && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge variant="outline" className="text-xs px-1 py-0 bg-gray-800 text-gray-300">
+                              {exercise.primaryMuscle}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs px-1 py-0 bg-gray-800 text-gray-300">
+                              {exercise.category}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -138,6 +159,6 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       )}
     </div>
   );
-}
+};
 
 export default ExerciseSearch;
