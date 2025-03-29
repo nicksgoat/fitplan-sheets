@@ -11,6 +11,7 @@ import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
+import { WorkoutProvider } from '@/contexts/WorkoutContext';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -170,7 +171,9 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="workouts" className="mt-4">
-          <WorkoutsLibraryTab />
+          <WorkoutProvider>
+            <WorkoutsLibraryTab />
+          </WorkoutProvider>
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">
