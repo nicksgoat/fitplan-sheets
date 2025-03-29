@@ -7,18 +7,18 @@ import { Exercise } from '@/types/exercise';
 interface ContentGridProps {
   items: (ItemType | Exercise)[];
   className?: string;
-  columns?: number;
 }
 
 const ContentGrid = ({ 
   items, 
-  className,
-  columns = 6 
+  className
 }: ContentGridProps) => {
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-${columns} gap-3 md:gap-4 ${className || ''}`}>
+    <div className={`flex flex-wrap gap-3 md:gap-4 ${className || ''}`}>
       {items.map((item) => (
-        <ContentCard key={item.id} item={item} />
+        <div key={item.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px]">
+          <ContentCard item={item} />
+        </div>
       ))}
     </div>
   );

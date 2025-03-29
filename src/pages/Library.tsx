@@ -15,11 +15,9 @@ const Library = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Fetch exercises with visuals from Supabase
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
   const { data: customExercises, isLoading: isLoadingCustom } = useCustomExercises();
   
-  // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
     id: exercise.id,
     title: exercise.name,
@@ -35,7 +33,6 @@ const Library = () => {
     isCustom: false
   })) || [];
   
-  // Transform our custom exercise data to match the ItemType format
   const customExerciseItems: ItemType[] = customExercises?.map((exercise: Exercise) => ({
     id: exercise.id,
     title: exercise.name,
@@ -51,21 +48,18 @@ const Library = () => {
     isCustom: true
   })) || [];
   
-  // Filter exercises based on active category
   const filteredExercises = activeCategory 
     ? exerciseItems.filter(item => 
         item.tags?.some(tag => tag.toLowerCase() === activeCategory.toLowerCase())
       )
     : exerciseItems;
     
-  // Filter custom exercises
   const filteredCustomExercises = activeCategory 
     ? customExerciseItems.filter(item => 
         item.tags?.some(tag => tag.toLowerCase() === activeCategory.toLowerCase())
       )
     : customExerciseItems;
   
-  // Mock collections with proper type
   const mockCollections: CollectionType[] = [
     {
       id: '1',
@@ -91,7 +85,6 @@ const Library = () => {
     if (currentTab === 'exercises') {
       navigate('/create-exercise');
     } else {
-      // Default to creating exercises for now
       navigate('/create-exercise');
     }
   };
@@ -141,7 +134,7 @@ const Library = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="exercises" className="mt-4">
+        <TabsContent value="exercises" className="mt-4 overflow-x-auto">
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
@@ -190,7 +183,7 @@ const Library = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="created" className="mt-4">
+        <TabsContent value="created" className="mt-4 overflow-x-auto">
           {isLoadingCustom ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
