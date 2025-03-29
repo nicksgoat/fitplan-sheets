@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -31,6 +30,7 @@ interface WorkoutContextProps {
   addWeek: () => void;
   addCircuit: (workoutId: string) => void;
   addExercise: (workoutId: string, libraryExerciseId?: string) => void;
+  addExerciseToWorkout: (workoutId: string) => void;
   duplicateExercise: (workoutId: string, exerciseId: string) => void;
   addSet: (workoutId: string, exerciseId: string) => void;
   deleteSet: (workoutId: string, exerciseId: string, setId: string) => void;
@@ -44,7 +44,6 @@ interface WorkoutContextProps {
   getExerciseDetails: (exerciseId: string) => (Exercise & { libraryData?: LibraryExercise }) | null;
   moveWorkout: (workoutId: string, weekId: string, newWeekId: string) => void;
   moveWeek: (weekId: string, newIndex: number) => void;
-  // Add missing functions that are used in the components
   createCircuit: (workoutId: string) => void;
   createSuperset: (workoutId: string) => void;
   createEMOM: (workoutId: string) => void;
@@ -86,7 +85,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   const [activeWorkoutId, setActiveWorkoutId] = useState<string | null>(null);
   const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
   
-  // Storage for library items
   const [workoutLibrary, setWorkoutLibrary] = useState<Workout[]>([]);
   const [weekLibrary, setWeekLibrary] = useState<WorkoutWeek[]>([]);
   const [programLibrary, setProgramLibrary] = useState<WorkoutProgram[]>([]);
@@ -247,6 +245,30 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
   }, [updateProgram, libraryExercises]);
 
+  const addExerciseToWorkout = useCallback((workoutId: string) => {
+    const newExercise: Exercise = {
+      id: uuidv4(),
+      name: "New Exercise",
+      sets: [
+        {
+          id: uuidv4(),
+          reps: "",
+          weight: "",
+          intensity: "",
+          rest: "",
+        },
+      ],
+      notes: "",
+    };
+
+    updateProgram((draft) => {
+      const workout = draft.workouts.find((w) => w.id === workoutId);
+      if (workout) {
+        workout.exercises.push(newExercise);
+      }
+    });
+  }, [updateProgram]);
+
   const duplicateExercise = useCallback((workoutId: string, exerciseId: string) => {
     updateProgram((draft) => {
       const workout = draft.workouts.find((w) => w.id === workoutId);
@@ -354,13 +376,11 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
 
   const moveWorkout = useCallback((workoutId: string, weekId: string, newWeekId: string) => {
     updateProgram(draft => {
-      // Remove workout from old week
       const oldWeek = draft.weeks.find(w => w.id === weekId);
       if (oldWeek) {
         oldWeek.workouts = oldWeek.workouts.filter(w => w !== workoutId);
       }
 
-      // Add workout to new week
       const newWeek = draft.weeks.find(w => w.id === newWeekId);
       if (newWeek) {
         newWeek.workouts.push(workoutId);
@@ -373,13 +393,9 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       const weekIndex = draft.weeks.findIndex(w => w.id === weekId);
 
       if (weekIndex !== -1 && newIndex >= 0 && newIndex < draft.weeks.length) {
-        // Remove the week from its current position
         const [movedWeek] = draft.weeks.splice(weekIndex, 1);
-
-        // Insert the week at the new index
         draft.weeks.splice(newIndex, 0, movedWeek);
 
-        // Update the order of all weeks to reflect the new order
         draft.weeks.forEach((week, index) => {
           week.order = index;
         });
@@ -387,12 +403,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
   }, [updateProgram]);
 
-  // Circuit-related functions
   const createCircuit = useCallback((workoutId: string) => {
     const circuitId = uuidv4();
     
     updateWorkout(workoutId, (workout) => {
-      // Create a circuit container exercise
       const circuitExercise: Exercise = {
         id: circuitId,
         name: "Circuit",
@@ -402,10 +416,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         circuitId,
       };
       
-      // Add circuit to workout
       workout.exercises.push(circuitExercise);
       
-      // Add two sample exercises to the circuit
       const exercise1: Exercise = {
         id: uuidv4(),
         name: "Exercise 1",
@@ -432,7 +444,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const circuitId = uuidv4();
     
     updateWorkout(workoutId, (workout) => {
-      // Create a superset container exercise
       const circuitExercise: Exercise = {
         id: circuitId,
         name: "Superset",
@@ -442,10 +453,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         circuitId,
       };
       
-      // Add superset to workout
       workout.exercises.push(circuitExercise);
       
-      // Add two sample exercises to the superset
       const exercise1: Exercise = {
         id: uuidv4(),
         name: "Exercise A",
@@ -472,7 +481,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const circuitId = uuidv4();
     
     updateWorkout(workoutId, (workout) => {
-      // Create an EMOM container exercise
       const circuitExercise: Exercise = {
         id: circuitId,
         name: "EMOM - 10 min",
@@ -482,10 +490,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         circuitId,
       };
       
-      // Add EMOM to workout
       workout.exercises.push(circuitExercise);
       
-      // Add two sample exercises to the EMOM
       const exercise1: Exercise = {
         id: uuidv4(),
         name: "Even Minutes",
@@ -512,7 +518,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const circuitId = uuidv4();
     
     updateWorkout(workoutId, (workout) => {
-      // Create an AMRAP container exercise
       const circuitExercise: Exercise = {
         id: circuitId,
         name: "AMRAP - 12 min",
@@ -522,10 +527,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         circuitId,
       };
       
-      // Add AMRAP to workout
       workout.exercises.push(circuitExercise);
       
-      // Add three sample exercises to the AMRAP
       const exercise1: Exercise = {
         id: uuidv4(),
         name: "Exercise 1",
@@ -561,7 +564,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const circuitId = uuidv4();
     
     updateWorkout(workoutId, (workout) => {
-      // Create a Tabata container exercise
       const circuitExercise: Exercise = {
         id: circuitId,
         name: "Tabata - 4 min",
@@ -571,10 +573,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         circuitId,
       };
       
-      // Add Tabata to workout
       workout.exercises.push(circuitExercise);
       
-      // Add one sample exercise to the Tabata
       const exercise1: Exercise = {
         id: uuidv4(),
         name: "Tabata Exercise",
@@ -589,7 +589,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
   }, [updateWorkout]);
   
-  // Sample program loading
   const loadSampleProgram = useCallback(() => {
     const sampleProgram: WorkoutProgram = {
       id: uuidv4(),
@@ -647,7 +646,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       weeks: [],
     };
     
-    // Create a week
     const week: WorkoutWeek = {
       id: uuidv4(),
       name: "Week 1",
@@ -655,7 +653,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       workouts: [],
     };
     
-    // Add workout IDs to the week
     for (const workout of sampleProgram.workouts) {
       week.workouts.push(workout.id);
       workout.weekId = week.id;
@@ -674,7 +671,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     setActiveWeekId(null);
   }, []);
   
-  // Library Management Functions
   const saveWorkoutToLibrary = useCallback((workoutId: string, name: string) => {
     if (!program) return;
     
@@ -696,18 +692,15 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const weekToSave = program.weeks.find(w => w.id === weekId);
     if (!weekToSave) return;
     
-    // Get all workouts in this week
     const weekWorkouts = weekToSave.workouts.map(
       wId => program.workouts.find(w => w.id === wId)
     ).filter(Boolean) as Workout[];
     
-    // Create new copies of all workouts with new IDs
     const newWorkouts = weekWorkouts.map(workout => ({
       ...workout,
       id: uuidv4()
     }));
     
-    // Create a new week with the new workout IDs
     const savedWeek = {
       ...weekToSave,
       id: uuidv4(),
@@ -715,14 +708,12 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       workouts: newWorkouts.map(w => w.id)
     };
     
-    // Save both the week and its workouts
     setWeekLibrary(prev => [...prev, savedWeek]);
   }, [program]);
   
   const saveProgramToLibrary = useCallback((name: string) => {
     if (!program) return;
     
-    // Create a deep copy with new IDs
     const savedProgram = {
       ...program,
       id: uuidv4(),
@@ -766,7 +757,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       workouts: []
     };
     
-    // Get the workouts for this week from the library
     const weekWorkouts = week.workouts.map(wId => {
       const foundWorkout = workoutLibrary.find(w => w.id === wId);
       if (foundWorkout) {
@@ -787,7 +777,6 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       return null;
     }).filter(Boolean) as Workout[];
     
-    // Update the week with the new workout IDs
     newWeek.workouts = weekWorkouts.map(w => w.id);
     
     updateProgram(draft => {
@@ -855,6 +844,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         addWeek,
         addCircuit,
         addExercise,
+        addExerciseToWorkout,
         duplicateExercise,
         addSet,
         deleteSet,
