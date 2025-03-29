@@ -3,6 +3,8 @@ import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CellCoordinate } from "@/hooks/useCellNavigation";
 import ExerciseSearch from "./ExerciseSearch";
+import { Exercise as LibraryExercise } from "@/types/exercise";
+import { getDefaultExerciseConfig } from "@/utils/exerciseConverters";
 
 interface EditableCellProps {
   value: string;
@@ -15,6 +17,7 @@ interface EditableCellProps {
   onFocus: (coordinate: CellCoordinate) => void;
   onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
   isExerciseName?: boolean;
+  onExerciseSelect?: (exercise: LibraryExercise) => void;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -28,6 +31,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   onFocus,
   onNavigate,
   isExerciseName = false,
+  onExerciseSelect,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -76,6 +80,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
     }
   };
   
+  const handleExerciseSelect = (exercise: LibraryExercise) => {
+    if (onExerciseSelect) {
+      // Apply default configuration based on exercise category
+      onExerciseSelect(exercise);
+    }
+  };
+  
   // Special rendering for exercise name with search functionality
   if (isExerciseName) {
     return (
@@ -90,6 +101,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
         <ExerciseSearch
           value={value}
           onChange={onChange}
+          onSelect={handleExerciseSelect}
           autoFocus={isFocused}
           placeholder={placeholder}
           className={className}

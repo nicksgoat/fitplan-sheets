@@ -23,6 +23,8 @@ export interface Exercise {
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
+  // Reference to the original library exercise
+  libraryExerciseId?: string;
 }
 
 export interface Circuit {

@@ -46,3 +46,13 @@ export interface Exercise {
   duration?: string;
   creator?: string;
 }
+
+// Helper type for workout integration
+export interface EnrichedWorkoutExercise {
+  workoutExerciseId: string;
+  libraryExerciseId: string;
+  name: string;
+  primaryMuscle: PrimaryMuscle;
+  category: ExerciseCategory;
+  // Additional workout-specific properties can be added here
+}

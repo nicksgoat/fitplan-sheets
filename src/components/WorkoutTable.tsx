@@ -2,6 +2,7 @@
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
+import { Exercise as LibraryExercise } from "@/types/exercise";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import EditableCell from "./EditableCell";
 import EditableSetCell from "./EditableSetCell";
@@ -11,6 +12,7 @@ import WeightTypeSelector from "./WeightTypeSelector";
 import { useCellNavigation, CellCoordinate } from "@/hooks/useCellNavigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { libraryToWorkoutExercise, getDefaultExerciseConfig } from "@/utils/exerciseConverters";
 import { 
   Table,
   TableBody,
@@ -85,6 +87,26 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   const handleExerciseCellChange = (exerciseId: string, field: keyof Exercise, value: string) => {
     updateExercise(session.id, exerciseId, { [field]: value } as Partial<Exercise>);
+  };
+  
+  const handleExerciseSelect = (exerciseId: string, libraryExercise: LibraryExercise) => {
+    // Find the existing exercise to retain its current state
+    const existingExercise = session.exercises.find(e => e.id === exerciseId);
+    
+    if (existingExercise) {
+      // Apply default configurations based on the exercise category
+      const defaults = getDefaultExerciseConfig(libraryExercise.category);
+      
+      updateExercise(session.id, exerciseId, {
+        name: libraryExercise.name,
+        notes: existingExercise.notes || libraryExercise.description || '',
+        libraryExerciseId: libraryExercise.id,
+        // Only apply defaults if not already set
+        repType: existingExercise.repType || defaults.repType,
+        intensityType: existingExercise.intensityType || defaults.intensityType,
+        weightType: existingExercise.weightType || defaults.weightType
+      });
+    }
   };
   
   const handleSetCellChange = (exerciseId: string, setId: string, field: keyof Set, value: string) => {
@@ -353,6 +375,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           })
                         }
                         isExerciseName={true}
+                        onExerciseSelect={(libraryExercise) => handleExerciseSelect(exercise.id, libraryExercise)}
                       />
                       
                       {isCircuit && circuit && (
