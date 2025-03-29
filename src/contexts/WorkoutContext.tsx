@@ -162,11 +162,34 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   );
 
   const addWorkout = useCallback((weekId: string) => {
+    let nextDayNumber = 1;
+    
+    updateProgram((draft) => {
+      const week = draft.weeks.find(w => w.id === weekId);
+      if (week) {
+        const workoutsInWeek = week.workouts
+          .map(id => draft.workouts.find(w => w.id === id))
+          .filter(Boolean) as Workout[];
+        
+        if (workoutsInWeek.length >= 7) {
+          return;
+        }
+        
+        const usedDays = workoutsInWeek.map(w => w.day);
+        for (let i = 1; i <= 7; i++) {
+          if (!usedDays.includes(i)) {
+            nextDayNumber = i;
+            break;
+          }
+        }
+      }
+    });
+
     const newWorkoutId = uuidv4();
     const newWorkout: Workout = {
       id: newWorkoutId,
-      name: "New Workout",
-      day: 1,
+      name: `Day ${nextDayNumber}`,
+      day: nextDayNumber,
       exercises: [
         {
           id: uuidv4(),

@@ -20,7 +20,7 @@ const WorkoutApp: React.FC = () => {
     setActiveWorkoutId
   } = useWorkout();
   
-  // Initialize with Week 1 and Session 1 when the component loads
+  // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
     // Only initialize if there are no weeks yet
     if (program && program.weeks.length === 0) {
@@ -43,7 +43,7 @@ const WorkoutApp: React.FC = () => {
         <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
           <h2 className="text-xl font-semibold mb-4">Create Your First Workout</h2>
           <p className="text-gray-400 mb-6">
-            Start by creating your first workout session to begin building your training program.
+            Start by creating your first workout day to begin building your training program.
           </p>
           <Button 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,10 @@ const WorkoutsLibraryTab: React.FC = () => {
             >
               <div className="p-4">
                 <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-semibold text-white mb-2">{workout.name}</h3>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Day {workout.day}</div>
+                    <h3 className="text-lg font-semibold text-white mb-2">{workout.name}</h3>
+                  </div>
                   <Button 
                     variant="ghost" 
                     size="icon"
