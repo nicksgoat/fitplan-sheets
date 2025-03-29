@@ -43,6 +43,8 @@ export interface Workout {
   exercises: Exercise[];
   circuits: Circuit[];
   weekId?: string; // Field to associate workout with a week
+  savedAt?: string; // Timestamp when the workout was saved to library
+  lastModified?: string; // Timestamp when the workout was last modified
 }
 
 export interface WorkoutWeek {
@@ -50,6 +52,8 @@ export interface WorkoutWeek {
   name: string;
   order: number;
   workouts: string[]; // Array of workout IDs
+  savedAt?: string; // Timestamp when the week was saved to library
+  lastModified?: string; // Timestamp when the week was last modified
 }
 
 export interface WorkoutProgram {
@@ -57,6 +61,8 @@ export interface WorkoutProgram {
   name: string;
   workouts: Workout[];
   weeks: WorkoutWeek[]; // Weeks array
+  savedAt?: string; // Timestamp when the program was saved to library
+  lastModified?: string; // Timestamp when the program was last modified
 }
 
 // For backward compatibility
@@ -93,3 +99,4 @@ export type WeightType =
   | 'distance-ft'   // Distance in feet (e.g., "50ft")
   | 'distance-yd'   // Distance in yards (e.g., "25yd")
   | 'distance-mi';  // Distance in miles (e.g., "0.5mi")
+

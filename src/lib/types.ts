@@ -12,6 +12,8 @@ export interface ItemType {
   isFavorite: boolean;
   description?: string;
   isCustom?: boolean;
+  savedAt?: string; // Added timestamp when the item was saved
+  lastModified?: string; // Added timestamp when the item was last modified
 }
 
 export interface CollectionType {
