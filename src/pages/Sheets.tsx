@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
 import WeekTabs from "@/components/WeekTabs";
@@ -20,7 +20,20 @@ const WorkoutApp: React.FC = () => {
     setActiveWorkoutId
   } = useWorkout();
   
-  // Handle empty state - no program or empty program
+  // Initialize with Week 1 and Session 1 when the component loads
+  useEffect(() => {
+    // Only initialize if there are no weeks yet
+    if (program && program.weeks.length === 0) {
+      const newWeekId = addWeek();
+      if (newWeekId) {
+        const newWorkoutId = addWorkout(newWeekId);
+        setActiveWeekId(newWeekId);
+        setActiveWorkoutId(newWorkoutId);
+      }
+    }
+  }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId]);
+  
+  // Handle empty state - no program or empty program (this is a fallback)
   if (!program || program.weeks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -33,19 +46,11 @@ const WorkoutApp: React.FC = () => {
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             onClick={() => {
               // Create a new week
-              addWeek();
-              // Once the week is created, we need to add a workout to it
-              const newWeekId = program?.weeks[0]?.id;
+              const newWeekId = addWeek();
               if (newWeekId) {
-                addWorkout(newWeekId);
+                const newWorkoutId = addWorkout(newWeekId);
                 setActiveWeekId(newWeekId);
-                
-                // Set the active workout after it's created
-                setTimeout(() => {
-                  if (program?.workouts.length > 0) {
-                    setActiveWorkoutId(program.workouts[0].id);
-                  }
-                }, 0);
+                setActiveWorkoutId(newWorkoutId);
               }
             }}
           >
