@@ -41,18 +41,10 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
                   {set.intensity || "—"}
                 </TableCell>
                 <TableCell className="h-8 py-1 px-1 text-center text-blue-400 truncate">
-                  {set.weight ? (
-                    Array.isArray(set.weight.split(',')) && set.weight.split(',')[idx]
-                      ? set.weight.split(',')[idx].trim()
-                      : set.weight
-                  ) : "—"}
+                  {set.weight || "—"}
                 </TableCell>
                 <TableCell className="h-8 py-1 px-1 text-center truncate text-white">
-                  {set.reps ? (
-                    Array.isArray(set.reps.split(',')) && set.reps.split(',')[idx]
-                      ? set.reps.split(',')[idx].trim()
-                      : set.reps
-                  ) : "—"}
+                  {set.reps || "—"}
                 </TableCell>
               </TableRow>
             ))}
