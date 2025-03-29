@@ -7,14 +7,62 @@ import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const WorkoutApp: React.FC = () => {
   const { 
     program, 
-    activeWorkoutId
+    activeWorkoutId,
+    addWeek,
+    addWorkout,
+    setActiveWeekId,
+    setActiveWorkoutId
   } = useWorkout();
   
-  if (!program || !activeWorkoutId) return null;
+  // Handle empty state - no program or empty program
+  if (!program || program.weeks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Create Your First Workout</h2>
+          <p className="text-gray-400 mb-6">
+            Start by creating your first workout session to begin building your training program.
+          </p>
+          <Button 
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            onClick={() => {
+              // Create a new week
+              addWeek();
+              // Once the week is created, we need to add a workout to it
+              const newWeekId = program?.weeks[0]?.id;
+              if (newWeekId) {
+                addWorkout(newWeekId);
+                setActiveWeekId(newWeekId);
+                
+                // Set the active workout after it's created
+                setTimeout(() => {
+                  if (program?.workouts.length > 0) {
+                    setActiveWorkoutId(program.workouts[0].id);
+                  }
+                }, 0);
+              }
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Workout
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // If we have a program but no active workout selected
+  if (!activeWorkoutId && program.workouts.length > 0) {
+    // Auto-select the first workout
+    setActiveWorkoutId(program.workouts[0].id);
+    return <div className="text-center py-4">Loading workout...</div>;
+  }
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">

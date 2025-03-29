@@ -162,27 +162,47 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   );
 
   const addWorkout = useCallback((weekId: string) => {
+    const newWorkoutId = uuidv4();
     const newWorkout: Workout = {
-      id: uuidv4(),
+      id: newWorkoutId,
       name: "New Workout",
       day: 1,
-      exercises: [],
+      exercises: [
+        {
+          id: uuidv4(),
+          name: "New Exercise",
+          sets: [
+            {
+              id: uuidv4(),
+              reps: "",
+              weight: "",
+              intensity: "",
+              rest: "",
+            },
+          ],
+          notes: "",
+        }
+      ],
       circuits: [],
+      weekId: weekId,
     };
 
     updateProgram((draft) => {
       draft.workouts.push(newWorkout);
       const week = draft.weeks.find(w => w.id === weekId);
       if (week) {
-        week.workouts.push(newWorkout.id);
+        week.workouts.push(newWorkoutId);
       }
     });
+    
+    return newWorkoutId;
   }, [updateProgram]);
 
   const addWeek = useCallback(() => {
+    const newWeekId = uuidv4();
     const newWeek: WorkoutWeek = {
-      id: uuidv4(),
-      name: "New Week",
+      id: newWeekId,
+      name: "Week 1",
       order: program?.weeks.length || 0,
       workouts: [],
     };
@@ -190,6 +210,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     updateProgram((draft) => {
       draft.weeks.push(newWeek);
     });
+    
+    return newWeekId;
   }, [updateProgram, program?.weeks.length]);
 
   const addCircuit = useCallback((workoutId: string) => {
