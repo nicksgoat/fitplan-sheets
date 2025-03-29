@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 import SaveWorkoutDialog from "./SaveWorkoutDialog";
 
 interface WorkoutSessionHeaderProps {
@@ -10,7 +10,7 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, updateWorkout } = useWorkout();
+  const { program, updateWorkout, addExerciseToWorkout } = useWorkout();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   
   if (!program) return null;
@@ -23,6 +23,10 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
     updateWorkout(sessionId, (draft) => {
       draft.name = e.target.value;
     });
+  };
+
+  const handleAddExercise = () => {
+    addExerciseToWorkout(sessionId);
   };
   
   return (
@@ -46,6 +50,16 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
         >
           <Save className="h-4 w-4 mr-2" />
           Save to Library
+        </Button>
+        
+        <Button 
+          variant="default" 
+          size="sm"
+          className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+          onClick={handleAddExercise}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Exercise
         </Button>
       </div>
       
