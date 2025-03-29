@@ -25,10 +25,13 @@ const WorkoutApp: React.FC = () => {
     // Only initialize if there are no weeks yet
     if (program && program.weeks.length === 0) {
       const newWeekId = addWeek();
-      if (newWeekId) {
+      // Check if newWeekId is a string before using it
+      if (typeof newWeekId === 'string') {
         const newWorkoutId = addWorkout(newWeekId);
         setActiveWeekId(newWeekId);
-        setActiveWorkoutId(newWorkoutId);
+        if (typeof newWorkoutId === 'string') {
+          setActiveWorkoutId(newWorkoutId);
+        }
       }
     }
   }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId]);
@@ -47,10 +50,13 @@ const WorkoutApp: React.FC = () => {
             onClick={() => {
               // Create a new week
               const newWeekId = addWeek();
-              if (newWeekId) {
+              // Check if newWeekId is a string before using it
+              if (typeof newWeekId === 'string') {
                 const newWorkoutId = addWorkout(newWeekId);
                 setActiveWeekId(newWeekId);
-                setActiveWorkoutId(newWorkoutId);
+                if (typeof newWorkoutId === 'string') {
+                  setActiveWorkoutId(newWorkoutId);
+                }
               }
             }}
           >
