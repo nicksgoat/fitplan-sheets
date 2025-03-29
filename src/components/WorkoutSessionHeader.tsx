@@ -12,7 +12,7 @@ interface WorkoutSessionHeaderProps {
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
   const { program, updateWorkoutName, addExercise, deleteWorkout } = useWorkout();
-  const workout = program.workouts.find((s) => s.id === sessionId);
+  const workout = program?.workouts.find((s) => s.id === sessionId);
   
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(workout?.name || "");
@@ -105,7 +105,16 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
           variant="ghost"
           size="sm"
           className="text-destructive hover:text-destructive"
-          onClick={() => deleteWorkout(sessionId)}
+          onClick={() => {
+            // We need to find the weekId for this workout
+            const weekId = workout.weekId || program?.weeks.find(w => 
+              w.workouts.includes(sessionId)
+            )?.id;
+            
+            if (weekId) {
+              deleteWorkout(weekId, sessionId);
+            }
+          }}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
