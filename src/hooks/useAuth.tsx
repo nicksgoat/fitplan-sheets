@@ -10,6 +10,9 @@ interface AuthContextProps {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithPhone: (phone: string) => Promise<void>;
+  verifyPhoneCode: (phone: string, code: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -88,6 +91,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+      
+      // Success message will be shown after redirect
+    } catch (err) {
+      console.error('Google sign in error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithPhone = async (phone: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOtp({ 
+        phone,
+        options: {
+          channel: 'sms'
+        }
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+      
+      toast.success('Verification code sent to your phone');
+    } catch (err) {
+      console.error('Phone sign in error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyPhoneCode = async (phone: string, code: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.verifyOtp({
+        phone,
+        token: code,
+        type: 'sms'
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+      
+      toast.success('Signed in successfully');
+    } catch (err) {
+      console.error('Phone verification error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
@@ -113,6 +187,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
+    signInWithPhone,
+    verifyPhoneCode,
     loading
   };
 
