@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { produce } from "immer"; // Fixed import to use named import
+import { produce } from "immer";
 import {
   WorkoutProgram,
   Workout,
@@ -18,7 +18,7 @@ import {
 import { useExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise as LibraryExercise } from '@/types/exercise';
 import { libraryToWorkoutExercise } from '@/utils/exerciseConverters';
-import { toast } from "sonner"; // Import toast from sonner directly at the top of the file
+import { toast } from "sonner";
 
 interface WorkoutContextProps {
   program: WorkoutProgram | null;
@@ -970,4 +970,79 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   }, [programLibrary]);
   
   const removeWorkoutFromLibrary = useCallback((id: string) => {
-    setWorkoutLibrary(prev => prev.filter(w => w
+    setWorkoutLibrary(prev => prev.filter(w => w.id !== id));
+    const library = getWorkoutLibrary().filter(w => w.id !== id);
+    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
+    toast.success('Workout removed from library');
+  }, []);
+  
+  const removeWeekFromLibrary = useCallback((id: string) => {
+    setWeekLibrary(prev => prev.filter(w => w.id !== id));
+    const library = getWeekLibrary().filter(w => w.id !== id);
+    localStorage.setItem(WEEK_LIBRARY_KEY, JSON.stringify(library));
+    toast.success('Week removed from library');
+  }, []);
+  
+  const removeProgramFromLibrary = useCallback((id: string) => {
+    setProgramLibrary(prev => prev.filter(p => p.id !== id));
+    const library = getProgramLibrary().filter(p => p.id !== id);
+    localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
+    toast.success('Program removed from library');
+  }, []);
+
+  return (
+    <WorkoutContext.Provider value={{
+      program,
+      activeWorkoutId,
+      activeWeekId,
+      setActiveWorkoutId,
+      setActiveWeekId,
+      setProgram,
+      addWorkout,
+      addWeek,
+      addCircuit,
+      addExercise,
+      addExerciseToWorkout,
+      duplicateExercise,
+      addSet,
+      deleteSet,
+      deleteExercise,
+      deleteWorkout,
+      updateProgram,
+      updateWorkout,
+      updateWeek,
+      updateExercise,
+      updateSet,
+      getExerciseDetails,
+      moveWorkout,
+      moveWeek,
+      createCircuit,
+      createSuperset,
+      createEMOM,
+      createAMRAP,
+      createTabata,
+      resetProgram,
+      loadSampleProgram,
+      saveWorkoutToLibrary,
+      saveWeekToLibrary,
+      saveProgramToLibrary,
+      loadWorkoutFromLibrary,
+      loadWeekFromLibrary,
+      loadProgramFromLibrary,
+      getWorkoutLibrary,
+      getWeekLibrary,
+      getProgramLibrary,
+      removeWorkoutFromLibrary,
+      removeWeekFromLibrary,
+      removeProgramFromLibrary,
+      updateWorkoutName,
+      updateWeekName,
+    }}>
+      {children}
+    </WorkoutContext.Provider>
+  );
+};
+
+export const useWorkoutContext = () => {
+  return useContext(WorkoutContext);
+};
