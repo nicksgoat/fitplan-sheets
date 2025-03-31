@@ -66,3 +66,26 @@ export function useWorkoutLibraryExercises(workoutId: string) {
     hasWorkout: !!workoutExercises.length
   };
 }
+
+/**
+ * Validate a workout loaded from the library to ensure it has all necessary data
+ */
+export function validateWorkoutData(workout: any): boolean {
+  if (!workout) return false;
+  
+  // Check for minimum expected properties
+  if (!workout.id || !workout.name || !Array.isArray(workout.exercises)) {
+    console.error('Workout is missing essential properties', workout);
+    return false;
+  }
+  
+  // Check exercises
+  for (const exercise of workout.exercises) {
+    if (!exercise.id || !exercise.name || !Array.isArray(exercise.sets)) {
+      console.error('Exercise is missing essential properties', exercise);
+      return false;
+    }
+  }
+  
+  return true;
+}

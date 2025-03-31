@@ -796,91 +796,119 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   }, [program]);
   
   const loadWorkoutFromLibrary = useCallback((workout: Workout, weekId: string): string => {
-    const workoutCopy = JSON.parse(JSON.stringify(workout));
-    
-    const circuitIdMap = new Map<string, string>();
-    const groupIdMap = new Map<string, string>();
-    const exerciseIdMap = new Map<string, string>();
-    
-    const newExercises = workoutCopy.exercises.map(ex => {
-      const newId = uuidv4();
-      exerciseIdMap.set(ex.id, newId);
+    try {
+      console.log('Starting to load workout from library:', workout);
       
-      if (ex.isCircuit && ex.circuitId) {
-        const newCircuitId = uuidv4();
-        circuitIdMap.set(ex.circuitId, newCircuitId);
+      if (!workout || !workout.exercises || !Array.isArray(workout.exercises)) {
+        console.error('Invalid workout data when loading from library:', workout);
+        throw new Error('Invalid workout data');
       }
       
-      if (ex.isGroup && ex.id) {
-        const newGroupId = uuidv4();
-        groupIdMap.set(ex.id, newGroupId);
-      }
+      const workoutCopy = JSON.parse(JSON.stringify(workout));
       
-      return {
-        ...ex,
-        id: newId,
-        sets: ex.sets.map(set => ({
+      const circuitIdMap = new Map<string, string>();
+      const groupIdMap = new Map<string, string>();
+      const exerciseIdMap = new Map<string, string>();
+      
+      const newExercises = workoutCopy.exercises.map((ex: Exercise) => {
+        if (!ex) {
+          console.error('Found null exercise in workout:', workoutCopy.id);
+          return null;
+        }
+        
+        const newId = uuidv4();
+        exerciseIdMap.set(ex.id, newId);
+        
+        if (ex.isCircuit && ex.circuitId) {
+          const newCircuitId = uuidv4();
+          circuitIdMap.set(ex.circuitId, newCircuitId);
+        }
+        
+        if (ex.isGroup && ex.id) {
+          const newGroupId = uuidv4();
+          groupIdMap.set(ex.id, newGroupId);
+        }
+        
+        const newSets = Array.isArray(ex.sets) ? ex.sets.map(set => ({
           ...set,
           id: uuidv4()
-        }))
-      };
-    });
-    
-    const updatedExercises = newExercises.map(ex => {
-      const updatedEx = { ...ex };
-      
-      if (ex.circuitId) {
-        const newCircuitId = circuitIdMap.get(ex.circuitId);
-        if (newCircuitId) {
-          updatedEx.circuitId = newCircuitId;
-        }
-      }
-      
-      if (ex.groupId) {
-        const newGroupId = groupIdMap.get(ex.groupId);
-        if (newGroupId) {
-          updatedEx.groupId = newGroupId;
-        }
-      }
-      
-      return updatedEx;
-    });
-    
-    const newWorkout = {
-      ...workoutCopy,
-      id: uuidv4(),
-      weekId: weekId,
-      exercises: updatedExercises
-    };
-    
-    if (newWorkout.circuits && newWorkout.circuits.length > 0) {
-      newWorkout.circuits = newWorkout.circuits.map(circuit => {
-        const newCircuitId = circuitIdMap.get(circuit.id) || uuidv4();
-        const newExerciseIds = circuit.exercises.map(oldId => {
-          return exerciseIdMap.get(oldId) || oldId;
-        });
+        })) : [];
         
         return {
-          ...circuit,
-          id: newCircuitId,
-          exercises: newExerciseIds
+          ...ex,
+          id: newId,
+          sets: newSets
         };
-      });
-    }
-    
-    updateProgram(draft => {
-      draft.workouts.push(newWorkout);
+      }).filter(Boolean);
       
-      const week = draft.weeks.find(w => w.id === weekId);
-      if (week) {
-        week.workouts.push(newWorkout.id);
+      const updatedExercises = newExercises.map((ex: Exercise) => {
+        const updatedEx = { ...ex };
+        
+        if (ex.circuitId) {
+          const newCircuitId = circuitIdMap.get(ex.circuitId);
+          if (newCircuitId) {
+            updatedEx.circuitId = newCircuitId;
+          }
+        }
+        
+        if (ex.groupId) {
+          const newGroupId = groupIdMap.get(ex.groupId);
+          if (newGroupId) {
+            updatedEx.groupId = newGroupId;
+          }
+        }
+        
+        return updatedEx;
+      });
+      
+      const newWorkout: Workout = {
+        ...workoutCopy,
+        id: uuidv4(),
+        weekId: weekId,
+        exercises: updatedExercises
+      };
+      
+      if (newWorkout.circuits && newWorkout.circuits.length > 0) {
+        newWorkout.circuits = newWorkout.circuits.map(circuit => {
+          const newCircuitId = circuitIdMap.get(circuit.id) || uuidv4();
+          
+          const newExerciseIds = Array.isArray(circuit.exercises) 
+            ? circuit.exercises.map(oldId => exerciseIdMap.get(oldId) || oldId)
+            : [];
+          
+          return {
+            ...circuit,
+            id: newCircuitId,
+            exercises: newExerciseIds
+          };
+        });
       }
-    });
-    
-    console.log('Loaded workout from library:', newWorkout);
-    return newWorkout.id;
+      
+      console.log('Final workout to be added to program:', newWorkout);
+      
+      updateProgram(draft => {
+        if (!draft.workouts) {
+          draft.workouts = [];
+        }
+        draft.workouts.push(newWorkout);
+        
+        const week = draft.weeks.find(w => w.id === weekId);
+        if (week) {
+          if (!week.workouts) {
+            week.workouts = [];
+          }
+          week.workouts.push(newWorkout.id);
+        }
+      });
+      
+      return newWorkout.id;
+    } catch (error) {
+      console.error('Error loading workout from library:', error);
+      toast.error('Failed to load workout: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      throw error;
+    }
   }, [updateProgram]);
-  
+
   const loadWeekFromLibrary = useCallback((week: WorkoutWeek) => {
     const newWeekId = uuidv4();
     const newWeek = {

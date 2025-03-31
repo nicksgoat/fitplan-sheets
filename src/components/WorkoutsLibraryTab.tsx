@@ -26,7 +26,6 @@ const WorkoutsLibraryTab: React.FC = () => {
     activeWorkoutId
   } = useWorkout();
   
-  // Load workouts from library
   useEffect(() => {
     try {
       const libraryWorkouts = getWorkoutLibrary();
@@ -60,12 +59,15 @@ const WorkoutsLibraryTab: React.FC = () => {
   
   const handleUseWorkout = (workout: Workout) => {
     try {
-      // Create a week if none exists in the program
+      if (!workout || !workout.exercises || !Array.isArray(workout.exercises)) {
+        toast.error("Invalid workout data. This workout may be corrupted.");
+        return;
+      }
+      
       let weekId: string;
       
       if (!program || program.weeks.length === 0) {
         const newWeekId = addWeek();
-        // Check if addWeek returned a valid ID
         if (typeof newWeekId !== 'string') {
           toast.error("Could not create a new week");
           return;
@@ -77,16 +79,11 @@ const WorkoutsLibraryTab: React.FC = () => {
       
       console.log('Loading workout into program:', workout);
       
-      // Load the workout into the Sheets system
       const workoutId = loadWorkoutFromLibrary(workout, weekId);
       
-      // Check if workoutId is a valid string
       if (typeof workoutId === 'string') {
-        // Set the active week and workout IDs
         setActiveWeekId(weekId);
         setActiveWorkoutId(workoutId);
-        
-        // Navigate to Sheets and notify the user
         navigate("/sheets");
         toast.success("Workout loaded into Sheets");
       } else {
@@ -110,10 +107,7 @@ const WorkoutsLibraryTab: React.FC = () => {
       return;
     }
     
-    // Add the workout to the library
     addWorkoutToLibrary(currentWorkout);
-    
-    // Refresh the list
     setWorkouts(getWorkoutLibrary());
     toast.success("Current workout saved to library");
   };
@@ -129,14 +123,11 @@ const WorkoutsLibraryTab: React.FC = () => {
       return "No exercises";
     }
     
-    // Group exercises by primary muscle if possible
     const muscleGroups: Record<string, number> = {};
     
     workout.exercises.forEach(exercise => {
-      // Skip circuit headers
       if (exercise.isCircuit) return;
       
-      // Try to extract a muscle group from the name
       let muscleGroup = "Other";
       
       const lowerName = exercise.name.toLowerCase();
@@ -157,7 +148,6 @@ const WorkoutsLibraryTab: React.FC = () => {
       muscleGroups[muscleGroup] = (muscleGroups[muscleGroup] || 0) + 1;
     });
     
-    // Format as a summary
     return Object.entries(muscleGroups)
       .map(([group, count]) => `${group}: ${count}`)
       .join(", ");

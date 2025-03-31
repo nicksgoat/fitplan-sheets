@@ -22,14 +22,37 @@ export function addWorkoutToLibrary(workout: Workout): void {
     workoutToSave.savedAt = new Date().toISOString();
     workoutToSave.lastModified = new Date().toISOString();
     
-    // Store library exercise references in each exercise
+    // Ensure all exercises have consistent data
     workoutToSave.exercises = workoutToSave.exercises.map((exercise: any) => {
       // If an exercise already has a libraryExerciseId, keep it
       if (!exercise.libraryExerciseId) {
         // In the future, we'd look up in the Supabase database to find matching exercises
         exercise.libraryExerciseId = null;
       }
-      return exercise;
+      
+      // Ensure all properties exist to prevent loading issues
+      return {
+        ...exercise,
+        sets: exercise.sets.map((set: any) => ({
+          id: set.id || uuidv4(),
+          reps: set.reps || "",
+          weight: set.weight || "",
+          intensity: set.intensity || "",
+          rest: set.rest || "",
+          intensityType: set.intensityType || undefined,
+          weightType: set.weightType || undefined
+        })),
+        notes: exercise.notes || "",
+        repType: exercise.repType || undefined,
+        intensityType: exercise.intensityType || undefined,
+        weightType: exercise.weightType || undefined,
+        isCircuit: !!exercise.isCircuit,
+        isInCircuit: !!exercise.isInCircuit,
+        circuitId: exercise.circuitId || undefined,
+        circuitOrder: exercise.circuitOrder || undefined,
+        isGroup: !!exercise.isGroup,
+        groupId: exercise.groupId || undefined
+      };
     });
     
     console.log('Saving workout to library:', workoutToSave);
@@ -109,16 +132,46 @@ export function removeProgramFromLibrary(programId: string): void {
 
 // Update item in library
 export function updateWorkoutInLibrary(workout: Workout): void {
-  const library = getWorkoutLibrary();
-  const index = library.findIndex(w => w.id === workout.id);
-  
-  if (index !== -1) {
-    // Create a deep copy
-    const updatedWorkout = JSON.parse(JSON.stringify(workout));
-    updatedWorkout.lastModified = new Date().toISOString();
+  try {
+    const library = getWorkoutLibrary();
+    const index = library.findIndex(w => w.id === workout.id);
     
-    library[index] = updatedWorkout;
-    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
+    if (index !== -1) {
+      // Create a deep copy
+      const updatedWorkout = JSON.parse(JSON.stringify(workout));
+      updatedWorkout.lastModified = new Date().toISOString();
+      
+      // Ensure all exercises have consistent data similar to addWorkoutToLibrary
+      updatedWorkout.exercises = updatedWorkout.exercises.map((exercise: any) => {
+        return {
+          ...exercise,
+          sets: exercise.sets.map((set: any) => ({
+            id: set.id || uuidv4(),
+            reps: set.reps || "",
+            weight: set.weight || "",
+            intensity: set.intensity || "",
+            rest: set.rest || "",
+            intensityType: set.intensityType || undefined,
+            weightType: set.weightType || undefined
+          })),
+          notes: exercise.notes || "",
+          repType: exercise.repType || undefined,
+          intensityType: exercise.intensityType || undefined,
+          weightType: exercise.weightType || undefined,
+          isCircuit: !!exercise.isCircuit,
+          isInCircuit: !!exercise.isInCircuit,
+          circuitId: exercise.circuitId || undefined,
+          circuitOrder: exercise.circuitOrder || undefined,
+          isGroup: !!exercise.isGroup,
+          groupId: exercise.groupId || undefined
+        };
+      });
+      
+      library[index] = updatedWorkout;
+      localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
+    }
+  } catch (error) {
+    console.error('Error updating workout in library:', error);
   }
 }
 
