@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -52,31 +51,34 @@ const WorkoutsLibraryTab: React.FC = () => {
   
   const handleUseWorkout = (workout: Workout) => {
     // Create a week if none exists in the program
-    let weekId = "";
+    let weekId: string;
     
     if (!program || program.weeks.length === 0) {
-      weekId = addWeek() || "";
+      const newWeekId = addWeek();
+      // Check if addWeek returned a valid ID
+      if (typeof newWeekId !== 'string') {
+        toast.error("Could not create a new week");
+        return;
+      }
+      weekId = newWeekId;
     } else {
       weekId = program.weeks[0].id;
     }
     
     // Load the workout into the Sheets system
-    if (weekId) {
-      const workoutId = loadWorkoutFromLibrary(workout, weekId);
+    const workoutId = loadWorkoutFromLibrary(workout, weekId);
+    
+    // Check if workoutId is a valid string
+    if (typeof workoutId === 'string') {
+      // Set the active week and workout IDs
+      setActiveWeekId(weekId);
+      setActiveWorkoutId(workoutId);
       
-      if (workoutId !== undefined) {
-        // Set the active week and workout IDs
-        setActiveWeekId(weekId);
-        setActiveWorkoutId(workoutId);
-        
-        // Navigate to Sheets and notify the user
-        navigate("/sheets");
-        toast.success("Workout loaded into Sheets");
-      } else {
-        toast.error("Failed to load workout");
-      }
+      // Navigate to Sheets and notify the user
+      navigate("/sheets");
+      toast.success("Workout loaded into Sheets");
     } else {
-      toast.error("Could not create or find a week");
+      toast.error("Failed to load workout");
     }
   };
   

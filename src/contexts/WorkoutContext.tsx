@@ -768,7 +768,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     setProgramLibrary(prev => [...prev, savedProgram]);
   }, [program]);
   
-  const loadWorkoutFromLibrary = useCallback((workout: Workout, weekId: string) => {
+  const loadWorkoutFromLibrary = useCallback((workout: Workout, weekId: string): string => {
     const newWorkout = {
       ...workout,
       id: uuidv4(),
