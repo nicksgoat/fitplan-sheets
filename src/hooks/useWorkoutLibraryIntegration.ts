@@ -68,10 +68,14 @@ export function useWorkoutLibraryExercises(workoutId: string) {
 }
 
 /**
- * Validates a workout loaded from the library to ensure it has all necessary data
+ * Deep validation of a workout loaded from the library to ensure it has all necessary data
+ * This is a more thorough validation than what we had before
  */
 export function validateWorkoutData(workout: any): boolean {
-  if (!workout) return false;
+  if (!workout) {
+    console.error('Workout is null or undefined');
+    return false;
+  }
   
   // Check for minimum expected properties
   if (!workout.id || !workout.name || !Array.isArray(workout.exercises)) {
@@ -79,10 +83,90 @@ export function validateWorkoutData(workout: any): boolean {
     return false;
   }
   
-  // Check exercises
+  // Check exercises deeply
   for (const exercise of workout.exercises) {
-    if (!exercise.id || !exercise.name || !Array.isArray(exercise.sets)) {
+    if (!exercise.id || !exercise.name) {
       console.error('Exercise is missing essential properties', exercise);
+      return false;
+    }
+    
+    // Ensure sets array exists
+    if (!Array.isArray(exercise.sets)) {
+      console.error('Exercise sets is not an array', exercise);
+      return false;
+    }
+    
+    // Check each set
+    for (const set of exercise.sets) {
+      if (!set.id) {
+        console.error('Set is missing id', set);
+        return false;
+      }
+      
+      // Ensure all set properties exist, even if empty strings
+      if (typeof set.reps !== 'string' || 
+          typeof set.weight !== 'string' || 
+          typeof set.intensity !== 'string' || 
+          typeof set.rest !== 'string') {
+        console.error('Set is missing required properties', set);
+        return false;
+      }
+    }
+    
+    // Ensure notes exists even if empty
+    if (typeof exercise.notes !== 'string') {
+      console.error('Exercise notes is missing', exercise);
+      return false;
+    }
+  }
+  
+  // Ensure circuits array exists
+  if (!Array.isArray(workout.circuits)) {
+    console.error('Workout circuits is not an array', workout);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Compare a saved workout from library with current workout
+ * This helps detect if the workout was properly loaded with all data
+ */
+export function checkWorkoutLoaded(libraryWorkout: Workout, currentWorkout: Workout | null): boolean {
+  if (!currentWorkout) {
+    console.error('Current workout is null, loading failed');
+    return false;
+  }
+  
+  // Check if exercises match in number
+  if (libraryWorkout.exercises.length !== currentWorkout.exercises.length) {
+    console.error('Exercise count mismatch', {
+      libraryCount: libraryWorkout.exercises.length,
+      currentCount: currentWorkout.exercises.length
+    });
+    return false;
+  }
+  
+  // Check if exercises have the same names - a basic check
+  const libraryNames = libraryWorkout.exercises.map(e => e.name.toLowerCase().trim());
+  const currentNames = currentWorkout.exercises.map(e => e.name.toLowerCase().trim());
+  
+  if (JSON.stringify(libraryNames) !== JSON.stringify(currentNames)) {
+    console.error('Exercise names mismatch', {
+      libraryNames,
+      currentNames
+    });
+    return false;
+  }
+  
+  // Check if the first exercise has the same number of sets
+  if (libraryWorkout.exercises[0] && currentWorkout.exercises[0]) {
+    if (libraryWorkout.exercises[0].sets.length !== currentWorkout.exercises[0].sets.length) {
+      console.error('First exercise sets count mismatch', {
+        librarySets: libraryWorkout.exercises[0].sets.length,
+        currentSets: currentWorkout.exercises[0].sets.length
+      });
       return false;
     }
   }
@@ -91,28 +175,45 @@ export function validateWorkoutData(workout: any): boolean {
 }
 
 /**
- * Compare a saved workout from library with current workout
- * This helps detect if the workout was properly loaded
+ * Helper function to ensure workout has all required data structures
+ * even if some parts are empty/default
  */
-export function checkWorkoutLoaded(libraryWorkout: Workout, currentWorkout: Workout | null): boolean {
-  if (!currentWorkout) return false;
+export function ensureCompleteWorkoutStructure(workout: Workout): Workout {
+  // Create a deep copy to avoid reference issues
+  const completeWorkout = JSON.parse(JSON.stringify(workout));
   
-  // Check if exercises match in number
-  if (libraryWorkout.exercises.length !== currentWorkout.exercises.length) {
-    console.log('Exercise count mismatch', {
-      libraryCount: libraryWorkout.exercises.length,
-      currentCount: currentWorkout.exercises.length
-    });
-    return false;
+  // Ensure circuits exists
+  if (!Array.isArray(completeWorkout.circuits)) {
+    completeWorkout.circuits = [];
   }
   
-  // Quick check on name and basic properties
-  if (libraryWorkout.name !== currentWorkout.name) {
-    console.log('Workout name mismatch', {
-      libraryName: libraryWorkout.name,
-      currentName: currentWorkout.name
-    });
-  }
+  // Ensure each exercise has complete structure
+  completeWorkout.exercises = completeWorkout.exercises.map((exercise: WorkoutExercise) => {
+    return {
+      id: exercise.id,
+      name: exercise.name || "",
+      sets: Array.isArray(exercise.sets) ? exercise.sets.map(set => ({
+        id: set.id,
+        reps: set.reps || "",
+        weight: set.weight || "",
+        intensity: set.intensity || "",
+        rest: set.rest || "",
+        intensityType: set.intensityType,
+        weightType: set.weightType
+      })) : [],
+      notes: exercise.notes || "",
+      libraryExerciseId: exercise.libraryExerciseId,
+      repType: exercise.repType,
+      intensityType: exercise.intensityType,
+      weightType: exercise.weightType,
+      isCircuit: !!exercise.isCircuit,
+      isInCircuit: !!exercise.isInCircuit,
+      circuitId: exercise.circuitId,
+      circuitOrder: exercise.circuitOrder,
+      isGroup: !!exercise.isGroup,
+      groupId: exercise.groupId
+    };
+  });
   
-  return true;
+  return completeWorkout;
 }

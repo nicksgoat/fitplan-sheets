@@ -117,18 +117,34 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
   localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
 }
 
-// Get from library
+// Get from library with more thorough validation
 export function getWorkoutLibrary(): Workout[] {
   try {
     const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
     const workouts = data ? JSON.parse(data) : [];
     
-    // Do a quick validation of the data
+    // Validate each workout
     return workouts.filter((workout: any) => {
+      // Basic structural validation
       if (!workout || !workout.id || !workout.name || !Array.isArray(workout.exercises)) {
         console.warn('Filtered out invalid workout from library:', workout);
         return false;
       }
+      
+      // Check that exercises have the minimum structure
+      for (const exercise of workout.exercises) {
+        if (!exercise || !exercise.id || !exercise.name) {
+          console.warn('Workout has invalid exercise:', exercise);
+          return false;
+        }
+        
+        // Make sure sets exists and is an array
+        if (!Array.isArray(exercise.sets)) {
+          console.warn('Exercise missing sets array:', exercise);
+          return false;
+        }
+      }
+      
       return true;
     });
   } catch (error) {
