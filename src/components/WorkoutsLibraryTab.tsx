@@ -55,7 +55,7 @@ const WorkoutsLibraryTab: React.FC = () => {
     let weekId = "";
     
     if (!program || program.weeks.length === 0) {
-      weekId = addWeek();
+      weekId = addWeek() || "";
     } else {
       weekId = program.weeks[0].id;
     }
@@ -64,7 +64,7 @@ const WorkoutsLibraryTab: React.FC = () => {
     if (weekId) {
       const workoutId = loadWorkoutFromLibrary(workout, weekId);
       
-      if (workoutId) {
+      if (workoutId !== undefined) {
         // Set the active week and workout IDs
         setActiveWeekId(weekId);
         setActiveWorkoutId(workoutId);
