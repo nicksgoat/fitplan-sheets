@@ -10,24 +10,11 @@ import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
 
 interface ContentCardProps {
-  item?: Exercise | ItemType;
+  item: Exercise | ItemType;
   className?: string;
-  children?: React.ReactNode;
 }
 
-const ContentCard = ({ item, className, children }: ContentCardProps) => {
-  // If children are provided, render them directly
-  if (children) {
-    return (
-      <Card className={cn("content-card h-full flex flex-col", className)}>
-        {children}
-      </Card>
-    );
-  }
-  
-  // If no item is provided, return null
-  if (!item) return null;
-  
+const ContentCard = ({ item, className }: ContentCardProps) => {
   // Determine if item is Exercise or ItemType
   const isExercise = 'primaryMuscle' in item;
   

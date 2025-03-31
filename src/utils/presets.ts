@@ -1,4 +1,3 @@
-
 import { WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 import { Exercise as LibraryExercise } from "@/types/exercise";
 import { v4 as uuidv4 } from "uuid";
@@ -6,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 // Local storage keys
 const PROGRAM_LIBRARY_KEY = "fitplan-program-library";
 const WEEK_LIBRARY_KEY = "fitplan-week-library";
-const WORKOUT_LIBRARY_KEY = "fitplan-workout-library";
+const WORKOUT_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
 
 // Preset keys - for backward compatibility
 const PROGRAM_PRESETS_KEY = "fitplan-program-presets";
@@ -15,64 +14,26 @@ const WORKOUT_PRESETS_KEY = "fitplan-workout-presets";
 
 // Save to library
 export function addWorkoutToLibrary(workout: Workout): void {
-  try {
-    // Create a deep copy to avoid reference issues
-    const workoutToSave = JSON.parse(JSON.stringify(workout));
-    
-    // Add metadata for tracking
-    workoutToSave.savedAt = new Date().toISOString();
-    workoutToSave.lastModified = new Date().toISOString();
-    
-    // Ensure all exercises have consistent data
-    workoutToSave.exercises = workoutToSave.exercises.map((exercise: any) => {
-      // If an exercise already has a libraryExerciseId, keep it
-      if (!exercise.libraryExerciseId) {
-        // In the future, we'd look up in the Supabase database to find matching exercises
-        exercise.libraryExerciseId = null;
-      }
-      
-      // Ensure all properties exist to prevent loading issues
-      return {
-        ...exercise,
-        sets: exercise.sets.map((set: any) => ({
-          id: set.id || uuidv4(),
-          reps: set.reps || "",
-          weight: set.weight || "",
-          intensity: set.intensity || "",
-          rest: set.rest || "",
-          intensityType: set.intensityType || undefined,
-          weightType: set.weightType || undefined
-        })),
-        notes: exercise.notes || "",
-        repType: exercise.repType || undefined,
-        intensityType: exercise.intensityType || undefined,
-        weightType: exercise.weightType || undefined,
-        isCircuit: !!exercise.isCircuit,
-        isInCircuit: !!exercise.isInCircuit,
-        circuitId: exercise.circuitId || undefined,
-        circuitOrder: exercise.circuitOrder || undefined,
-        isGroup: !!exercise.isGroup,
-        groupId: exercise.groupId || undefined
-      };
-    });
-    
-    console.log('Saving workout to library:', workoutToSave);
-    
-    const library = getWorkoutLibrary();
-    
-    // Check if workout with same ID already exists and update it
-    const existingIndex = library.findIndex(w => w.id === workoutToSave.id);
-    if (existingIndex !== -1) {
-      library[existingIndex] = workoutToSave;
-    } else {
-      library.push(workoutToSave);
+  // Create a deep copy to avoid reference issues
+  const workoutToSave = JSON.parse(JSON.stringify(workout));
+  
+  // Add metadata for tracking
+  workoutToSave.savedAt = new Date().toISOString();
+  workoutToSave.lastModified = new Date().toISOString();
+  
+  // Store library exercise references in each exercise
+  workoutToSave.exercises = workoutToSave.exercises.map((exercise: any) => {
+    // If an exercise already has a libraryExerciseId, keep it
+    if (!exercise.libraryExerciseId) {
+      // In the future, we'd look up in the Supabase database to find matching exercises
+      exercise.libraryExerciseId = null;
     }
-    
-    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
-  } catch (error) {
-    console.error('Error saving workout to library:', error);
-    throw new Error('Failed to save workout to library');
-  }
+    return exercise;
+  });
+  
+  const library = getWorkoutLibrary();
+  library.push(workoutToSave);
+  localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
 }
 
 export function addWeekToLibrary(week: WorkoutWeek): void {
@@ -84,15 +45,7 @@ export function addWeekToLibrary(week: WorkoutWeek): void {
   weekToSave.lastModified = new Date().toISOString();
   
   const library = getWeekLibrary();
-  
-  // Check if week with same ID already exists and update it
-  const existingIndex = library.findIndex(w => w.id === weekToSave.id);
-  if (existingIndex !== -1) {
-    library[existingIndex] = weekToSave;
-  } else {
-    library.push(weekToSave);
-  }
-  
+  library.push(weekToSave);
   localStorage.setItem(WEEK_LIBRARY_KEY, JSON.stringify(library));
 }
 
@@ -105,91 +58,24 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
   programToSave.lastModified = new Date().toISOString();
   
   const library = getProgramLibrary();
-  
-  // Check if program with same ID already exists and update it
-  const existingIndex = library.findIndex(p => p.id === programToSave.id);
-  if (existingIndex !== -1) {
-    library[existingIndex] = programToSave;
-  } else {
-    library.push(programToSave);
-  }
-  
+  library.push(programToSave);
   localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
 }
 
-// Get from library with more thorough validation
+// Get from library
 export function getWorkoutLibrary(): Workout[] {
-  try {
-    const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
-    const workouts = data ? JSON.parse(data) : [];
-    
-    // Validate each workout
-    return workouts.filter((workout: any) => {
-      // Basic structural validation
-      if (!workout || !workout.id || !workout.name || !Array.isArray(workout.exercises)) {
-        console.warn('Filtered out invalid workout from library:', workout);
-        return false;
-      }
-      
-      // Check that exercises have the minimum structure
-      for (const exercise of workout.exercises) {
-        if (!exercise || !exercise.id || !exercise.name) {
-          console.warn('Workout has invalid exercise:', exercise);
-          return false;
-        }
-        
-        // Make sure sets exists and is an array
-        if (!Array.isArray(exercise.sets)) {
-          console.warn('Exercise missing sets array:', exercise);
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  } catch (error) {
-    console.error('Error retrieving workout library:', error);
-    return [];
-  }
+  const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
 export function getWeekLibrary(): WorkoutWeek[] {
-  try {
-    const data = localStorage.getItem(WEEK_LIBRARY_KEY);
-    const weeks = data ? JSON.parse(data) : [];
-    
-    // Do a quick validation of the data
-    return weeks.filter((week: any) => {
-      if (!week || !week.id || !week.name || !Array.isArray(week.workouts)) {
-        console.warn('Filtered out invalid week from library:', week);
-        return false;
-      }
-      return true;
-    });
-  } catch (error) {
-    console.error('Error retrieving week library:', error);
-    return [];
-  }
+  const data = localStorage.getItem(WEEK_LIBRARY_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
 export function getProgramLibrary(): WorkoutProgram[] {
-  try {
-    const data = localStorage.getItem(PROGRAM_LIBRARY_KEY);
-    const programs = data ? JSON.parse(data) : [];
-    
-    // Do a quick validation of the data
-    return programs.filter((program: any) => {
-      if (!program || !program.id || !program.name ||
-          !Array.isArray(program.workouts) || !Array.isArray(program.weeks)) {
-        console.warn('Filtered out invalid program from library:', program);
-        return false;
-      }
-      return true;
-    });
-  } catch (error) {
-    console.error('Error retrieving program library:', error);
-    return [];
-  }
+  const data = localStorage.getItem(PROGRAM_LIBRARY_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
 // Remove from library
@@ -210,46 +96,16 @@ export function removeProgramFromLibrary(programId: string): void {
 
 // Update item in library
 export function updateWorkoutInLibrary(workout: Workout): void {
-  try {
-    const library = getWorkoutLibrary();
-    const index = library.findIndex(w => w.id === workout.id);
+  const library = getWorkoutLibrary();
+  const index = library.findIndex(w => w.id === workout.id);
+  
+  if (index !== -1) {
+    // Create a deep copy
+    const updatedWorkout = JSON.parse(JSON.stringify(workout));
+    updatedWorkout.lastModified = new Date().toISOString();
     
-    if (index !== -1) {
-      // Create a deep copy
-      const updatedWorkout = JSON.parse(JSON.stringify(workout));
-      updatedWorkout.lastModified = new Date().toISOString();
-      
-      // Ensure all exercises have consistent data similar to addWorkoutToLibrary
-      updatedWorkout.exercises = updatedWorkout.exercises.map((exercise: any) => {
-        return {
-          ...exercise,
-          sets: exercise.sets.map((set: any) => ({
-            id: set.id || uuidv4(),
-            reps: set.reps || "",
-            weight: set.weight || "",
-            intensity: set.intensity || "",
-            rest: set.rest || "",
-            intensityType: set.intensityType || undefined,
-            weightType: set.weightType || undefined
-          })),
-          notes: exercise.notes || "",
-          repType: exercise.repType || undefined,
-          intensityType: exercise.intensityType || undefined,
-          weightType: exercise.weightType || undefined,
-          isCircuit: !!exercise.isCircuit,
-          isInCircuit: !!exercise.isInCircuit,
-          circuitId: exercise.circuitId || undefined,
-          circuitOrder: exercise.circuitOrder || undefined,
-          isGroup: !!exercise.isGroup,
-          groupId: exercise.groupId || undefined
-        };
-      });
-      
-      library[index] = updatedWorkout;
-      localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
-    }
-  } catch (error) {
-    console.error('Error updating workout in library:', error);
+    library[index] = updatedWorkout;
+    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
   }
 }
 
@@ -364,10 +220,10 @@ export function createLibraryWorkout(name: string, exercises: any[] = []): Worko
     day: 1,
     exercises: exercises.map(exercise => ({
       ...exercise,
-      id: exercise.id || uuidv4(),
+      id: uuidv4(),
       sets: (exercise.sets || [{ reps: '', weight: '', intensity: '', rest: '' }]).map((set: any) => ({
         ...set,
-        id: set.id || uuidv4()
+        id: uuidv4()
       }))
     })),
     circuits: [],

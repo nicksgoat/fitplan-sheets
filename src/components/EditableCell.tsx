@@ -15,7 +15,7 @@ interface EditableCellProps {
   coordinate: CellCoordinate;
   isFocused: boolean;
   onFocus: (coordinate: CellCoordinate) => void;
-  onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean, currentCoord?: CellCoordinate) => void;
+  onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
   isExerciseName?: boolean;
   onExerciseSelect?: (exercise: LibraryExercise) => void;
 }
@@ -80,6 +80,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
     }
   };
   
+  const handleExerciseSelect = (exercise: LibraryExercise) => {
+    if (onExerciseSelect) {
+      // Apply default configuration based on exercise category
+      onExerciseSelect(exercise);
+    }
+  };
+  
   // Special rendering for exercise name with search functionality
   if (isExerciseName) {
     return (
@@ -94,7 +101,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
         <ExerciseSearch
           value={value}
           onChange={onChange}
-          onSelect={onExerciseSelect}
+          onSelect={handleExerciseSelect}
           autoFocus={isFocused}
           placeholder={placeholder}
           className={className}
