@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
@@ -14,6 +15,7 @@ const WorkoutApp: React.FC = () => {
     program, 
     activeWorkoutId,
     addWeek,
+    addWorkout,
     setActiveWeekId,
     setActiveWorkoutId
   } = useWorkout();
