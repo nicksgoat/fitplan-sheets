@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Google, Phone, ArrowRight } from 'lucide-react';
+import { Phone, ArrowRight, Globe } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
@@ -165,7 +165,7 @@ export default function Auth() {
                     disabled={loading}
                     className="flex items-center justify-center gap-2"
                   >
-                    <Google className="h-4 w-4" />
+                    <Globe className="h-4 w-4" />
                     Google
                   </Button>
                   <Button 
@@ -234,7 +234,7 @@ export default function Auth() {
                     disabled={loading}
                     className="flex items-center justify-center gap-2"
                   >
-                    <Google className="h-4 w-4" />
+                    <Globe className="h-4 w-4" />
                     Google
                   </Button>
                   <Button 

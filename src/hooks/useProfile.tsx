@@ -1,118 +1,118 @@
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, SocialLink } from '@/types/profile';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { Profile, SocialLink } from '@/types/profile';
 
-export function useProfile(profileId?: string) {
+export const useProfile = (profileId?: string) => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
-
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  
   // Determine which profile ID to use
   const targetProfileId = profileId || user?.id;
-
-  useEffect(() => {
-    if (!targetProfileId) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', targetProfileId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-          toast.error('Failed to load profile');
-        } else {
-          // Parse JSON social links if they exist
-          let profileData = { ...data };
-          if (profileData.social_links) {
-            try {
-              // Handle both string JSON and already parsed objects
-              if (typeof profileData.social_links === 'string') {
-                profileData.social_links = JSON.parse(profileData.social_links);
-              }
-              
-              // Ensure it's an array of SocialLink objects
-              if (!Array.isArray(profileData.social_links)) {
-                profileData.social_links = Object.entries(profileData.social_links).map(
-                  ([platform, url]) => ({ platform, url })
-                );
-              }
-            } catch (e) {
-              console.error('Error parsing social links:', e);
-              profileData.social_links = [];
-            }
-          } else {
-            profileData.social_links = [];
-          }
-          
-          setProfile(profileData);
-          setIsCurrentUser(user?.id === targetProfileId);
-        }
-      } catch (err) {
-        console.error('Unexpected error fetching profile:', err);
-        toast.error('An unexpected error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [targetProfileId, user?.id]);
-
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user || !isCurrentUser) {
-      toast.error('You can only update your own profile');
-      return { success: false };
-    }
-
-    try {
-      setLoading(true);
+  
+  // Fetch profile data
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', targetProfileId],
+    queryFn: async () => {
+      if (!targetProfileId) return null;
       
-      // Prepare social links for storage if they exist in updates
-      let updatesToApply = { ...updates };
-      if (updatesToApply.social_links) {
-        updatesToApply.social_links = updatesToApply.social_links as unknown as object;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', targetProfileId)
+        .single();
+      
+      if (error) {
+        toast.error('Failed to load profile');
+        throw error;
+      }
+      
+      // Ensure social_links is an array
+      return {
+        ...data,
+        social_links: data.social_links || []
+      } as Profile;
+    },
+    enabled: !!targetProfileId,
+  });
+  
+  // Update profile data
+  const { mutate: updateProfile, isPending: isUpdating } = useMutation({
+    mutationFn: async (updatedProfile: Partial<Profile>) => {
+      if (!targetProfileId) throw new Error('No profile ID provided');
+      
+      // Make sure social_links is properly formatted
+      let profileData = { ...updatedProfile };
+      if (profileData.social_links && !Array.isArray(profileData.social_links)) {
+        profileData.social_links = [];
       }
       
       const { error } = await supabase
         .from('profiles')
-        .update(updatesToApply)
-        .eq('id', user.id);
-
+        .update(profileData)
+        .eq('id', targetProfileId);
+      
       if (error) {
-        console.error('Error updating profile:', error);
         toast.error('Failed to update profile');
-        return { success: false, error };
+        throw error;
       }
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      
+      return true;
+    },
+    onSuccess: () => {
       toast.success('Profile updated successfully');
-      return { success: true };
-    } catch (err) {
-      console.error('Unexpected error updating profile:', err);
-      toast.error('An unexpected error occurred');
-      return { success: false, error: err };
-    } finally {
-      setLoading(false);
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['profile', targetProfileId] });
+    },
+    onError: (error) => {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
     }
+  });
+  
+  // Add social link
+  const addSocialLink = (newLink: SocialLink) => {
+    if (!profile) return;
+    
+    const updatedLinks = [...(profile.social_links || []), newLink];
+    updateProfile({ social_links: updatedLinks });
   };
-
+  
+  // Remove social link
+  const removeSocialLink = (index: number) => {
+    if (!profile?.social_links) return;
+    
+    const updatedLinks = [...profile.social_links];
+    updatedLinks.splice(index, 1);
+    updateProfile({ social_links: updatedLinks });
+  };
+  
+  // Update social link
+  const updateSocialLink = (index: number, updatedLink: SocialLink) => {
+    if (!profile?.social_links) return;
+    
+    const updatedLinks = [...profile.social_links];
+    updatedLinks[index] = updatedLink;
+    updateProfile({ social_links: updatedLinks });
+  };
+  
+  const isOwnProfile = user?.id === targetProfileId;
+  
   return {
     profile,
-    loading,
-    isCurrentUser,
-    updateProfile
+    isLoading,
+    error,
+    isEditing,
+    setIsEditing,
+    updateProfile,
+    isUpdating,
+    isOwnProfile,
+    addSocialLink,
+    removeSocialLink,
+    updateSocialLink
   };
-}
+};
