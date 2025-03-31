@@ -1,11 +1,12 @@
+
 // Fix for WorkoutsLibraryTab.tsx
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight, Plus, PlayCircle, BookmarkIcon, Clock, FolderPlus } from "lucide-react";
-import { ContentCard } from "@/components/ui/ContentCard";
-import { ContentGrid } from "@/components/ui/ContentGrid";
+import ContentCard from "@/components/ui/ContentCard";
+import ContentGrid from "@/components/ui/ContentGrid";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Workout } from "@/types/workout";
 
@@ -24,7 +25,7 @@ export default function WorkoutsLibraryTab({ onClose }: WorkoutsLibraryTabProps)
   
   const handleAddWorkout = (workout: Workout) => {
     if (activeWeekId) {
-      loadWorkoutFromLibrary(workout, activeWeekId);
+      loadWorkoutFromLibrary(workout);
       if (onClose) onClose();
     }
   };
@@ -37,7 +38,7 @@ export default function WorkoutsLibraryTab({ onClose }: WorkoutsLibraryTabProps)
       </div>
       
       {workouts.length > 0 ? (
-        <ContentGrid>
+        <ContentGrid items={workouts}>
           {workouts.map((workout) => (
             <ContentCard key={workout.id}>
               <CardHeader>
