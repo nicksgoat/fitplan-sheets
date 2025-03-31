@@ -1,21 +1,19 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Link, Settings, ExternalLink, Edit2, Save, X } from 'lucide-react';
+import { ExternalLink, Edit2 } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/hooks/useAuth';
-import { SocialLink, Profile } from '@/types/profile';
 import ProfileStats from '@/components/profile/ProfileStats';
 import ContentGrid from '@/components/ui/ContentGrid';
 import { ItemType } from '@/lib/types';
 import { Exercise } from '@/types/exercise';
+import EditProfileForm from '@/components/profile/EditProfileForm';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import SocialLinksDisplay from '@/components/profile/SocialLinksDisplay';
+import { profileCardStyles } from '@/styles/AssetLibrary';
 
 // Define local type for mock data
 type MockItemType = Omit<ItemType, 'difficulty'> & {
@@ -24,32 +22,33 @@ type MockItemType = Omit<ItemType, 'difficulty'> & {
 
 const ProfilePage: React.FC = () => {
   const { profileId } = useParams<{ profileId: string }>();
-  const { profile, isLoading, isEditing, setIsEditing, updateProfile, isUpdating, isOwnProfile } = useProfile(profileId);
-  const [editForm, setEditForm] = useState<Partial<Profile>>({});
+  const { 
+    profile, 
+    isLoading, 
+    isEditing, 
+    setIsEditing, 
+    updateProfile, 
+    isUpdating, 
+    isOwnProfile 
+  } = useProfile(profileId);
   
-  // Form handling
+  // Handle edit modal
   const handleEditStart = () => {
-    setEditForm({
-      display_name: profile?.display_name || '',
-      username: profile?.username || '',
-      bio: profile?.bio || '',
-      website: profile?.website || '',
-    });
     setIsEditing(true);
   };
   
-  const handleCancel = () => {
+  const handleEditClose = () => {
     setIsEditing(false);
-    setEditForm({});
   };
   
-  const handleSave = () => {
-    updateProfile(editForm);
-  };
-  
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+  const handleProfileUpdate = async (updates) => {
+    try {
+      await updateProfile(updates);
+      return { success: true };
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      return { success: false };
+    }
   };
   
   if (isLoading) {
@@ -130,133 +129,52 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="container mx-auto py-6 px-4">
       {/* Profile Header */}
-      <div className="mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-              {/* Avatar */}
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-2xl font-bold text-primary">
-                {profile?.display_name?.[0] || profile?.username?.[0] || '?'}
-              </div>
+      <Card className={profileCardStyles()}>
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+            <ProfileHeader 
+              profile={profile}
+              isCurrentUser={isOwnProfile}
+              onEdit={handleEditStart}
+            />
+            
+            <div className="md:ml-6 flex-1 text-center md:text-left">
+              {profile?.website && (
+                <a 
+                  href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="mt-2 flex items-center gap-1 text-blue-500 hover:text-blue-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {profile.website}
+                </a>
+              )}
               
-              {/* Profile Info */}
-              <div className="flex-1 text-center md:text-left">
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="display_name" className="text-sm font-medium">Display Name</label>
-                      <Input 
-                        id="display_name"
-                        name="display_name"
-                        value={editForm.display_name || ''}
-                        onChange={handleFormChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="username" className="text-sm font-medium">Username</label>
-                      <Input 
-                        id="username"
-                        name="username"
-                        value={editForm.username || ''}
-                        onChange={handleFormChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="bio" className="text-sm font-medium">Bio</label>
-                      <Textarea 
-                        id="bio"
-                        name="bio"
-                        value={editForm.bio || ''}
-                        onChange={handleFormChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="website" className="text-sm font-medium">Website</label>
-                      <Input 
-                        id="website"
-                        name="website"
-                        value={editForm.website || ''}
-                        onChange={handleFormChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button onClick={handleSave} disabled={isUpdating} className="flex-1">
-                        <Save className="mr-2 h-4 w-4" />
-                        Save
-                      </Button>
-                      <Button variant="outline" onClick={handleCancel} className="flex-1">
-                        <X className="mr-2 h-4 w-4" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                      <h1 className="text-2xl font-bold">{profile?.display_name || profile?.username || 'Anonymous'}</h1>
-                      
-                      {isOwnProfile && (
-                        <Button variant="outline" size="sm" onClick={handleEditStart}>
-                          <Edit2 className="mr-2 h-4 w-4" />
-                          Edit Profile
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {profile?.username && (
-                      <p className="text-muted-foreground">@{profile.username}</p>
-                    )}
-                    
-                    {profile?.bio && (
-                      <p className="mt-2">{profile.bio}</p>
-                    )}
-                    
-                    {profile?.website && (
-                      <a 
-                        href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="mt-2 flex items-center text-blue-500 hover:text-blue-700"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        {profile.website}
-                      </a>
-                    )}
-                    
-                    {/* Social Links */}
-                    {profile?.social_links && profile.social_links.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {profile.social_links.map((link, index) => (
-                          <Badge key={index} variant="outline" className="flex items-center">
-                            <Link className="h-3 w-3 mr-1" />
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
-                              {link.platform}
-                            </a>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              {/* Social Links */}
+              <SocialLinksDisplay socialLinks={profile?.social_links} />
+              
+              {isOwnProfile && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleEditStart}
+                  className="mt-4"
+                >
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Profile Stats */}
       <ProfileStats 
-        workoutsCount={mockWorkouts.length} 
-        programsCount={mockPrograms.length}
-        savedCount={mockSaved.length}
+        workoutsCount={workoutsForGrid.length} 
+        programsCount={programsForGrid.length}
+        savedCount={savedForGrid.length}
       />
       
       {/* Profile Content */}
@@ -268,6 +186,7 @@ const ProfilePage: React.FC = () => {
           {isOwnProfile && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         
+        {/* Workouts Tab */}
         <TabsContent value="workouts">
           <h2 className="text-xl font-semibold mb-4">My Workouts</h2>
           {workoutsForGrid.length > 0 ? (
@@ -282,6 +201,7 @@ const ProfilePage: React.FC = () => {
           )}
         </TabsContent>
         
+        {/* Programs Tab */}
         <TabsContent value="programs">
           <h2 className="text-xl font-semibold mb-4">My Programs</h2>
           {programsForGrid.length > 0 ? (
@@ -296,6 +216,7 @@ const ProfilePage: React.FC = () => {
           )}
         </TabsContent>
         
+        {/* Saved Tab */}
         <TabsContent value="saved">
           <h2 className="text-xl font-semibold mb-4">Saved Items</h2>
           {savedForGrid.length > 0 ? (
@@ -307,6 +228,7 @@ const ProfilePage: React.FC = () => {
           )}
         </TabsContent>
         
+        {/* Settings Tab */}
         {isOwnProfile && (
           <TabsContent value="settings">
             <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
@@ -332,6 +254,14 @@ const ProfilePage: React.FC = () => {
           </TabsContent>
         )}
       </Tabs>
+      
+      {/* Edit Profile Form Dialog */}
+      <EditProfileForm
+        profile={profile}
+        isOpen={isEditing}
+        onClose={handleEditClose}
+        onSave={handleProfileUpdate}
+      />
     </div>
   );
 };

@@ -21,52 +21,86 @@ export const useProfile = (profileId?: string) => {
     queryFn: async () => {
       if (!targetProfileId) return null;
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', targetProfileId)
-        .single();
-      
-      if (error) {
-        toast.error('Failed to load profile');
-        throw error;
-      }
-      
-      // Parse social_links from JSON to SocialLink[] if it exists
-      let socialLinks: SocialLink[] = [];
-      if (data.social_links) {
-        try {
-          // Handle both string and array cases
-          if (typeof data.social_links === 'string') {
-            socialLinks = JSON.parse(data.social_links) as SocialLink[];
-          } else if (Array.isArray(data.social_links)) {
-            // Ensure each item has the required properties
-            socialLinks = (data.social_links as any[]).map(link => ({
-              platform: link.platform || '',
-              url: link.url || '',
-              icon: link.icon
-            }));
-          } else if (typeof data.social_links === 'object') {
-            // Handle case where it might be a single object
-            const link = data.social_links as any;
-            if (link.platform && link.url) {
-              socialLinks = [{ 
-                platform: link.platform, 
-                url: link.url,
-                icon: link.icon
-              }];
-            }
-          }
-        } catch (e) {
-          console.error('Error parsing social links:', e);
-          socialLinks = [];
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', targetProfileId)
+          .single();
+        
+        if (error) {
+          console.error('Profile fetch error:', error);
+          throw error;
         }
+        
+        if (!data) {
+          console.log('No profile found, creating default profile');
+          // Return a default profile to avoid UI errors
+          return {
+            id: targetProfileId,
+            username: user?.email || user?.phone || 'user',
+            display_name: null,
+            bio: null,
+            avatar_url: null,
+            website: null,
+            social_links: [],
+            created_at: new Date().toISOString(),
+            updated_at: null
+          } as Profile;
+        }
+        
+        // Parse social_links from JSON to SocialLink[] if it exists
+        let socialLinks: SocialLink[] = [];
+        if (data.social_links) {
+          try {
+            // Handle both string and array cases
+            if (typeof data.social_links === 'string') {
+              socialLinks = JSON.parse(data.social_links) as SocialLink[];
+            } else if (Array.isArray(data.social_links)) {
+              // Ensure each item has the required properties
+              socialLinks = (data.social_links as any[]).map(link => ({
+                platform: link.platform || '',
+                url: link.url || '',
+                icon: link.icon
+              }));
+            } else if (typeof data.social_links === 'object') {
+              // Handle case where it might be a single object
+              const link = data.social_links as any;
+              if (link.platform && link.url) {
+                socialLinks = [{ 
+                  platform: link.platform, 
+                  url: link.url,
+                  icon: link.icon
+                }];
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing social links:', e);
+            socialLinks = [];
+          }
+        }
+        
+        return {
+          ...data,
+          social_links: socialLinks
+        } as Profile;
+      } catch (error) {
+        console.error('Error in profile query:', error);
+        toast.error('Failed to load profile');
+        
+        // Return fallback profile to prevent UI errors
+        return {
+          id: targetProfileId,
+          username: user?.email || user?.phone || 'user',
+          display_name: null,
+          bio: null,
+          avatar_url: null,
+          website: null,
+          social_links: [],
+          created_at: new Date().toISOString(),
+          updated_at: null
+        } as Profile;
       }
-      
-      return {
-        ...data,
-        social_links: socialLinks
-      } as Profile;
     },
     enabled: !!targetProfileId,
   });

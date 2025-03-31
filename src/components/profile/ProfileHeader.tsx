@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Profile } from '@/types/profile';
 import { Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { profileAvatarStyles } from '@/styles/AssetLibrary';
 
 interface ProfileHeaderProps {
   profile: Profile | null;
@@ -33,11 +34,11 @@ const ProfileHeader = ({ profile, isCurrentUser, onEdit }: ProfileHeaderProps) =
   };
 
   return (
-    <div className="relative flex flex-col items-center text-center px-4 py-6 mb-6">
+    <div className="flex flex-col items-center text-center">
       <div className="relative mb-4">
-        <Avatar className="h-24 w-24 border-2 border-white shadow-md">
+        <Avatar className={profileAvatarStyles()}>
           <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name || 'User'} />
-          <AvatarFallback className="text-xl bg-fitbloom-purple text-white">
+          <AvatarFallback className="text-xl bg-primary/10 text-primary">
             {getInitials()}
           </AvatarFallback>
         </Avatar>
@@ -63,7 +64,7 @@ const ProfileHeader = ({ profile, isCurrentUser, onEdit }: ProfileHeaderProps) =
       )}
       
       {profile.bio && (
-        <p className="text-sm md:text-base max-w-md">
+        <p className="text-sm md:text-base max-w-md mt-2">
           {profile.bio}
         </p>
       )}
