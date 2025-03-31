@@ -48,7 +48,9 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   
   const handleDayChange = (value: string) => {
     // Update the workout day property
-    updateWorkout(sessionId, { day: parseInt(value, 10) });
+    if (session) {
+      updateWorkout(sessionId, { dayNum: parseInt(value, 10) });
+    }
   };
   
   const handleAddExercise = () => {

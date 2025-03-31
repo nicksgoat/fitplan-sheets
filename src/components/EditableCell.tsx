@@ -94,7 +94,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
         <ExerciseSearch
           value={value}
           onChange={onChange}
-          onSelect={handleExerciseSelect}
+          onSelect={onExerciseSelect}
           autoFocus={isFocused}
           placeholder={placeholder}
           className={className}
