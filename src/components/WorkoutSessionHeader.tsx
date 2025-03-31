@@ -19,7 +19,7 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { updateWorkoutName, updateWorkoutDay, addExercise, program } = useWorkout();
+  const { updateWorkoutName, updateWorkout, addExercise, program } = useWorkout();
   
   const session = program?.workouts.find((s) => s.id === sessionId);
   
@@ -47,7 +47,10 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   };
   
   const handleDayChange = (value: string) => {
-    updateWorkoutDay(sessionId, parseInt(value, 10));
+    // Use updateWorkout instead of updateWorkoutDay
+    updateWorkout(sessionId, (workout) => {
+      workout.day = parseInt(value, 10);
+    });
   };
   
   const handleAddExercise = () => {
