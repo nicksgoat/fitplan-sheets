@@ -1,3 +1,4 @@
+
 import { WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 import { Exercise as LibraryExercise } from "@/types/exercise";
 import { v4 as uuidv4 } from "uuid";
@@ -58,7 +59,15 @@ export function addWorkoutToLibrary(workout: Workout): void {
     console.log('Saving workout to library:', workoutToSave);
     
     const library = getWorkoutLibrary();
-    library.push(workoutToSave);
+    
+    // Check if workout with same ID already exists and update it
+    const existingIndex = library.findIndex(w => w.id === workoutToSave.id);
+    if (existingIndex !== -1) {
+      library[existingIndex] = workoutToSave;
+    } else {
+      library.push(workoutToSave);
+    }
+    
     localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
   } catch (error) {
     console.error('Error saving workout to library:', error);
@@ -75,7 +84,15 @@ export function addWeekToLibrary(week: WorkoutWeek): void {
   weekToSave.lastModified = new Date().toISOString();
   
   const library = getWeekLibrary();
-  library.push(weekToSave);
+  
+  // Check if week with same ID already exists and update it
+  const existingIndex = library.findIndex(w => w.id === weekToSave.id);
+  if (existingIndex !== -1) {
+    library[existingIndex] = weekToSave;
+  } else {
+    library.push(weekToSave);
+  }
+  
   localStorage.setItem(WEEK_LIBRARY_KEY, JSON.stringify(library));
 }
 
@@ -88,7 +105,15 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
   programToSave.lastModified = new Date().toISOString();
   
   const library = getProgramLibrary();
-  library.push(programToSave);
+  
+  // Check if program with same ID already exists and update it
+  const existingIndex = library.findIndex(p => p.id === programToSave.id);
+  if (existingIndex !== -1) {
+    library[existingIndex] = programToSave;
+  } else {
+    library.push(programToSave);
+  }
+  
   localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
 }
 
@@ -97,7 +122,15 @@ export function getWorkoutLibrary(): Workout[] {
   try {
     const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
     const workouts = data ? JSON.parse(data) : [];
-    return workouts;
+    
+    // Do a quick validation of the data
+    return workouts.filter((workout: any) => {
+      if (!workout || !workout.id || !workout.name || !Array.isArray(workout.exercises)) {
+        console.warn('Filtered out invalid workout from library:', workout);
+        return false;
+      }
+      return true;
+    });
   } catch (error) {
     console.error('Error retrieving workout library:', error);
     return [];
@@ -105,13 +138,42 @@ export function getWorkoutLibrary(): Workout[] {
 }
 
 export function getWeekLibrary(): WorkoutWeek[] {
-  const data = localStorage.getItem(WEEK_LIBRARY_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(WEEK_LIBRARY_KEY);
+    const weeks = data ? JSON.parse(data) : [];
+    
+    // Do a quick validation of the data
+    return weeks.filter((week: any) => {
+      if (!week || !week.id || !week.name || !Array.isArray(week.workouts)) {
+        console.warn('Filtered out invalid week from library:', week);
+        return false;
+      }
+      return true;
+    });
+  } catch (error) {
+    console.error('Error retrieving week library:', error);
+    return [];
+  }
 }
 
 export function getProgramLibrary(): WorkoutProgram[] {
-  const data = localStorage.getItem(PROGRAM_LIBRARY_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(PROGRAM_LIBRARY_KEY);
+    const programs = data ? JSON.parse(data) : [];
+    
+    // Do a quick validation of the data
+    return programs.filter((program: any) => {
+      if (!program || !program.id || !program.name ||
+          !Array.isArray(program.workouts) || !Array.isArray(program.weeks)) {
+        console.warn('Filtered out invalid program from library:', program);
+        return false;
+      }
+      return true;
+    });
+  } catch (error) {
+    console.error('Error retrieving program library:', error);
+    return [];
+  }
 }
 
 // Remove from library
@@ -286,10 +348,10 @@ export function createLibraryWorkout(name: string, exercises: any[] = []): Worko
     day: 1,
     exercises: exercises.map(exercise => ({
       ...exercise,
-      id: uuidv4(),
+      id: exercise.id || uuidv4(),
       sets: (exercise.sets || [{ reps: '', weight: '', intensity: '', rest: '' }]).map((set: any) => ({
         ...set,
-        id: uuidv4()
+        id: set.id || uuidv4()
       }))
     })),
     circuits: [],

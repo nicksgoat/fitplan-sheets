@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { useExercise } from '@/hooks/useExerciseLibrary';
 import { Exercise as LibraryExercise } from '@/types/exercise';
-import { Exercise as WorkoutExercise } from '@/types/workout';
+import { Exercise as WorkoutExercise, Workout } from '@/types/workout';
 import { toast } from 'sonner';
 
 /**
@@ -68,7 +68,7 @@ export function useWorkoutLibraryExercises(workoutId: string) {
 }
 
 /**
- * Validate a workout loaded from the library to ensure it has all necessary data
+ * Validates a workout loaded from the library to ensure it has all necessary data
  */
 export function validateWorkoutData(workout: any): boolean {
   if (!workout) return false;
@@ -85,6 +85,33 @@ export function validateWorkoutData(workout: any): boolean {
       console.error('Exercise is missing essential properties', exercise);
       return false;
     }
+  }
+  
+  return true;
+}
+
+/**
+ * Compare a saved workout from library with current workout
+ * This helps detect if the workout was properly loaded
+ */
+export function checkWorkoutLoaded(libraryWorkout: Workout, currentWorkout: Workout | null): boolean {
+  if (!currentWorkout) return false;
+  
+  // Check if exercises match in number
+  if (libraryWorkout.exercises.length !== currentWorkout.exercises.length) {
+    console.log('Exercise count mismatch', {
+      libraryCount: libraryWorkout.exercises.length,
+      currentCount: currentWorkout.exercises.length
+    });
+    return false;
+  }
+  
+  // Quick check on name and basic properties
+  if (libraryWorkout.name !== currentWorkout.name) {
+    console.log('Workout name mismatch', {
+      libraryName: libraryWorkout.name,
+      currentName: currentWorkout.name
+    });
   }
   
   return true;
