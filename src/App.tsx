@@ -14,6 +14,7 @@ import Library from "./pages/Library";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Sheets from "./pages/Sheets";
+import Profile from "./pages/Profile";
 import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
 import MainLayout from "./components/layout/MainLayout";
@@ -77,6 +78,24 @@ const App = () => (
                       <Sheets />
                     </MainLayout>
                   </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <AuthenticatedRoute>
+                    <MainLayout>
+                      <Profile />
+                    </MainLayout>
+                  </AuthenticatedRoute>
+                } 
+              />
+              <Route 
+                path="/profile/:profileId" 
+                element={
+                  <MainLayout>
+                    <Profile />
+                  </MainLayout>
                 } 
               />
               <Route 
