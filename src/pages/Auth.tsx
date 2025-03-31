@@ -10,13 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Phone, ArrowRight, Globe } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import CountryCodeSelect from '@/components/CountryCodeSelect';
 
 export default function Auth() {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle, signInWithPhone, verifyPhoneCode, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
@@ -74,9 +76,12 @@ export default function Auth() {
     e.preventDefault();
     setError(null);
     
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + phoneNumber.replace(/^0+/, '');
+    
     try {
-      await signInWithPhone(phone);
-      setCurrentPhone(phone);
+      await signInWithPhone(fullPhoneNumber);
+      setCurrentPhone(fullPhoneNumber);
       setIsPhoneDialogOpen(false);
       setIsVerificationOpen(true);
     } catch (err) {
@@ -272,15 +277,21 @@ export default function Auth() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  placeholder="+1234567890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">Include country code (e.g., +1 for US)</p>
+                <div className="flex gap-2">
+                  <CountryCodeSelect 
+                    value={countryCode}
+                    onChange={setCountryCode}
+                  />
+                  <Input
+                    id="phone"
+                    placeholder="123456789"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="flex-1"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Enter your phone number without any dashes or spaces</p>
               </div>
               {error && <p className="text-destructive text-sm">{error}</p>}
             </div>
