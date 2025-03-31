@@ -367,13 +367,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         coordinate={{ rowIndex: exerciseIndex, columnName: "name", exerciseId: exercise.id }}
                         isFocused={isCellFocused(exerciseIndex, "name", exercise.id)}
                         onFocus={handleCellFocus}
-                        onNavigate={(direction, shiftKey) => 
-                          handleExerciseCellNavigate(direction, shiftKey, { 
-                            rowIndex: exerciseIndex, 
-                            columnName: "name", 
-                            exerciseId: exercise.id 
-                          })
-                        }
+                        onNavigate={handleExerciseCellNavigate}
                         isExerciseName={true}
                         onExerciseSelect={(libraryExercise) => handleExerciseSelect(exercise.id, libraryExercise)}
                       />
@@ -488,13 +482,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           coordinate={{ rowIndex: exerciseIndex, columnName: "notes", exerciseId: exercise.id }}
                           isFocused={isCellFocused(exerciseIndex, "notes", exercise.id)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleExerciseCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "notes", 
-                              exerciseId: exercise.id 
-                            })
-                          }
+                          onNavigate={handleExerciseCellNavigate}
                         />
                       </td>
                     
@@ -568,14 +556,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onRepTypeChange={(type) => handleRepTypeChange(exercise.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "reps", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideRepTypeSelector={true}
                         />
                       </td>
@@ -596,14 +577,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onWeightTypeChange={(type) => handleSetWeightTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "weight", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideWeightTypeSelector={true}
                         />
                       </td>
@@ -624,14 +598,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onIntensityTypeChange={(type) => handleSetIntensityTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "intensity", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "intensity", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideIntensityTypeSelector={true}
                         />
                       </td>
@@ -649,14 +616,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           }}
                           isFocused={isCellFocused(exerciseIndex, "rest", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "rest", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                         />
                       </td>
                       
@@ -709,14 +669,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onRepTypeChange={(type) => handleRepTypeChange(exercise.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "reps", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "reps", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideRepTypeSelector={true}
                         />
                       </td>
@@ -737,14 +690,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onWeightTypeChange={(type) => handleSetWeightTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "weight", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "weight", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideWeightTypeSelector={true}
                         />
                       </td>
@@ -765,14 +711,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           onIntensityTypeChange={(type) => handleSetIntensityTypeChange(exercise.id, set.id, type)}
                           isFocused={isCellFocused(exerciseIndex, "intensity", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "intensity", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                           hideIntensityTypeSelector={true}
                         />
                       </td>
@@ -790,14 +729,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                           }}
                           isFocused={isCellFocused(exerciseIndex, "rest", exercise.id, setIndex)}
                           onFocus={handleCellFocus}
-                          onNavigate={(direction, shiftKey) => 
-                            handleSetCellNavigate(direction, shiftKey, { 
-                              rowIndex: exerciseIndex, 
-                              columnName: "rest", 
-                              exerciseId: exercise.id,
-                              setIndex: setIndex
-                            })
-                          }
+                          onNavigate={handleSetCellNavigate}
                         />
                       </td>
                       
