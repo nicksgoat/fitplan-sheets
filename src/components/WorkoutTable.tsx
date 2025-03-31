@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -85,7 +86,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   }, [session.exercises]);
   
   const handleExerciseCellChange = (exerciseId: string, field: keyof Exercise, value: string) => {
-    updateExercise(exerciseId, { [field]: value } as Partial<Exercise>);
+    updateExercise(exerciseId, { [field]: value });
   };
   
   const handleExerciseSelect = (exerciseId: string, libraryExercise: LibraryExercise) => {
@@ -109,41 +110,41 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleSetCellChange = (exerciseId: string, setId: string, field: keyof Set, value: string) => {
-    updateSet(exerciseId, setId, { [field]: value } as Partial<Set>);
+    updateSet(exerciseId, setId, { [field]: value });
   };
   
   const handleRepTypeChange = (exerciseId: string, repType: RepType) => {
-    updateExercise(exerciseId, { repType } as Partial<Exercise>);
+    updateExercise(exerciseId, { repType });
   };
   
   const handleIntensityTypeChange = (exerciseId: string, intensityType: IntensityType) => {
-    updateExercise(exerciseId, { intensityType } as Partial<Exercise>);
+    updateExercise(exerciseId, { intensityType });
     
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
       exercise.sets.forEach(set => {
-        updateSet(exerciseId, set.id, { intensityType } as Partial<Set>);
+        updateSet(exerciseId, set.id, { intensityType });
       });
     }
   };
   
   const handleSetIntensityTypeChange = (exerciseId: string, setId: string, intensityType: IntensityType) => {
-    updateSet(exerciseId, setId, { intensityType } as Partial<Set>);
+    updateSet(exerciseId, setId, { intensityType });
   };
   
   const handleWeightTypeChange = (exerciseId: string, weightType: WeightType) => {
-    updateExercise(exerciseId, { weightType } as Partial<Exercise>);
+    updateExercise(exerciseId, { weightType });
     
     const exercise = session.exercises.find(e => e.id === exerciseId);
     if (exercise) {
       exercise.sets.forEach(set => {
-        updateSet(exerciseId, set.id, { weightType } as Partial<Set>);
+        updateSet(exerciseId, set.id, { weightType });
       });
     }
   };
   
   const handleSetWeightTypeChange = (exerciseId: string, setId: string, weightType: WeightType) => {
-    updateSet(exerciseId, setId, { weightType } as Partial<Set>);
+    updateSet(exerciseId, setId, { weightType });
   };
   
   const handleCellFocus = (coordinate: CellCoordinate) => {
@@ -501,14 +502,14 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         <div className="flex justify-end space-x-2">
                           <button
                             className="p-1 rounded-full hover:bg-secondary transition-colors"
-                            onClick={() => addSet(session.id, exercise.id)}
+                            onClick={() => addSet(exercise.id)}
                             aria-label="Add set"
                           >
                             <Plus className="h-4 w-4 text-muted-foreground" />
                           </button>
                           <button
                             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-                            onClick={() => deleteExercise(session.id, exercise.id)}
+                            onClick={() => deleteExercise(exercise.id)}
                             aria-label="Delete exercise"
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
@@ -524,7 +525,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         <div className="flex justify-end space-x-2">
                           <button
                             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-                            onClick={() => deleteExercise(session.id, exercise.id)}
+                            onClick={() => deleteExercise(exercise.id)}
                             aria-label="Delete circuit"
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
@@ -665,7 +666,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         {exercise.sets.length > 1 && (
                           <button
                             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                            onClick={() => deleteSet(session.id, exercise.id, set.id)}
+                            onClick={() => deleteSet(exercise.id, set.id)}
                             aria-label="Delete set"
                           >
                             <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
@@ -806,3 +807,23 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                         {exercise.sets.length > 1 && (
                           <button
                             className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                            onClick={() => deleteSet(exercise.id, set.id)}
+                            aria-label="Delete set"
+                          >
+                            <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
+export default WorkoutTable;
