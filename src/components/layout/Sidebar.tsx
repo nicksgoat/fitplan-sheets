@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   mobileFooter?: boolean;
@@ -19,6 +20,7 @@ const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
   const navItems = [
     { name: 'Home', path: '/explore', icon: <Home className="h-5 w-5" /> },
@@ -27,6 +29,14 @@ const Sidebar = ({
     { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
     { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (mobileFooter) {
     return (
@@ -90,28 +100,33 @@ const Sidebar = ({
           ))}
         </ul>
       </nav>
-      <div className={cn(
-        "p-6",
-        collapsed && "p-4"
-      )}>
-        {!collapsed ? (
-          <Link to="/profile">
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-900">
-              <User className="h-5 w-5" />
-              <span className="ml-3">Profile</span>
-            </Button>
-          </Link>
-        ) : (
-          <Link to="/profile">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-center text-white hover:bg-gray-900"
-              title="Profile"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
-        )}
+      <div className="p-4 border-t border-gray-800 space-y-2">
+        <Link to="/profile">
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "w-full text-white hover:bg-gray-900",
+              collapsed ? "justify-center px-2" : "justify-start"
+            )}
+            title={collapsed ? "Profile" : undefined}
+          >
+            <User className="h-5 w-5" />
+            {!collapsed && <span className="ml-3">Profile</span>}
+          </Button>
+        </Link>
+        
+        <Button 
+          variant="ghost"
+          onClick={handleLogout}
+          className={cn(
+            "w-full text-white hover:bg-gray-900 hover:text-red-400",
+            collapsed ? "justify-center px-2" : "justify-start"
+          )}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <LogOut className="h-5 w-5" />
+          {!collapsed && <span className="ml-3">Logout</span>}
+        </Button>
       </div>
       {onToggleCollapse && (
         <div className="p-4 border-t border-gray-800">
