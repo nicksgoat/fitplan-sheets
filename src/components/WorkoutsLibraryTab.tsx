@@ -1,5 +1,4 @@
 
-// Fix for WorkoutsLibraryTab.tsx
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,7 @@ export default function WorkoutsLibraryTab({ onClose }: WorkoutsLibraryTabProps)
       </div>
       
       {workouts.length > 0 ? (
-        <ContentGrid items={workouts}>
+        <ContentGrid>
           {workouts.map((workout) => (
             <ContentCard key={workout.id}>
               <CardHeader>
