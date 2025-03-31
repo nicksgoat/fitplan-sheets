@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, CalendarDays, ExternalLink, Info } from "lucide-react";
-import { getWorkoutLibrary, removeWorkoutFromLibrary } from "@/utils/presets";
+import { Plus, Trash2, CalendarDays, ExternalLink, Info, Save, Clock } from "lucide-react";
+import { getWorkoutLibrary, removeWorkoutFromLibrary, addWorkoutToLibrary, updateWorkoutInLibrary } from "@/utils/presets";
 import { Workout } from "@/types/workout";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useWorkout } from "@/contexts/WorkoutContext";
+import { Badge } from "@/components/ui/badge";
 
 const WorkoutsLibraryTab: React.FC = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -21,7 +23,8 @@ const WorkoutsLibraryTab: React.FC = () => {
     setActiveWeekId, 
     setActiveWorkoutId,
     addWeek,
-    program
+    program,
+    activeWorkoutId
   } = useWorkout();
   
   // Load workouts from library
@@ -82,6 +85,27 @@ const WorkoutsLibraryTab: React.FC = () => {
     }
   };
   
+  // Function to save current workout to library
+  const handleSaveCurrentWorkout = () => {
+    if (!program || !activeWorkoutId) {
+      toast.error("No active workout to save");
+      return;
+    }
+    
+    const currentWorkout = program.workouts.find(w => w.id === activeWorkoutId);
+    if (!currentWorkout) {
+      toast.error("Could not find the current workout");
+      return;
+    }
+    
+    // Add the workout to the library
+    addWorkoutToLibrary(currentWorkout);
+    
+    // Refresh the list
+    setWorkouts(getWorkoutLibrary());
+    toast.success("Current workout saved to library");
+  };
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown date";
     const date = new Date(dateString);
@@ -127,8 +151,23 @@ const WorkoutsLibraryTab: React.FC = () => {
       .join(", ");
   };
   
+  // If we're on the Sheets page, show a button to save current workout
+  const isOnSheetsPage = window.location.pathname === "/sheets";
+  
   return (
     <div className="space-y-6">
+      {isOnSheetsPage && activeWorkoutId && (
+        <div className="mb-4">
+          <Button 
+            className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            onClick={handleSaveCurrentWorkout}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Current Workout to Library
+          </Button>
+        </div>
+      )}
+      
       {workouts.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-gray-400 mb-4">You haven't saved any workouts to your library yet.</p>
@@ -197,6 +236,12 @@ const WorkoutsLibraryTab: React.FC = () => {
                     <CalendarDays className="h-3 w-3 mr-1" />
                     <span>Saved: {formatDate(workout.savedAt)}</span>
                   </div>
+                  {workout.lastModified && (
+                    <div className="flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      <span>Modified: {formatDate(workout.lastModified)}</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mb-4 space-y-1">
