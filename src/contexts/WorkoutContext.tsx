@@ -791,6 +791,8 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         week.workouts.push(newWorkout.id);
       }
     });
+    
+    return newWorkout.id;
   }, [updateProgram]);
   
   const loadWeekFromLibrary = useCallback((week: WorkoutWeek) => {
