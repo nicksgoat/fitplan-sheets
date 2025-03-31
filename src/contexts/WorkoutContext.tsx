@@ -18,6 +18,7 @@ import {
 import { useExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise as LibraryExercise } from '@/types/exercise';
 import { libraryToWorkoutExercise } from '@/utils/exerciseConverters';
+import { toast } from "sonner"; // Import toast from sonner directly at the top of the file
 
 interface WorkoutContextProps {
   program: WorkoutProgram | null;
@@ -969,88 +970,4 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   }, [programLibrary]);
   
   const removeWorkoutFromLibrary = useCallback((id: string) => {
-    setWorkoutLibrary(prev => prev.filter(w => w.id !== id));
-  }, []);
-  
-  const removeWeekFromLibrary = useCallback((id: string) => {
-    setWeekLibrary(prev => prev.filter(w => w.id !== id));
-  }, []);
-  
-  const removeProgramFromLibrary = useCallback((id: string) => {
-    setProgramLibrary(prev => prev.filter(p => p.id !== id));
-  }, []);
-  
-  const updateWorkoutName = useCallback((workoutId: string, name: string) => {
-    updateWorkout(workoutId, (workout) => {
-      workout.name = name;
-    });
-  }, [updateWorkout]);
-  
-  const updateWeekName = useCallback((weekId: string, name: string) => {
-    updateWeek(weekId, (week) => {
-      week.name = name;
-    });
-  }, [updateWeek]);
-
-  return (
-    <WorkoutContext.Provider
-      value={{
-        program,
-        activeWorkoutId,
-        activeWeekId,
-        setActiveWorkoutId,
-        setActiveWeekId,
-        setProgram,
-        addWorkout,
-        addWeek,
-        addCircuit,
-        addExercise,
-        addExerciseToWorkout,
-        duplicateExercise,
-        addSet,
-        deleteSet,
-        deleteExercise,
-        deleteWorkout,
-        updateProgram,
-        updateWorkout,
-        updateWeek,
-        updateExercise,
-        updateSet,
-        getExerciseDetails,
-        moveWorkout,
-        moveWeek,
-        createCircuit,
-        createSuperset,
-        createEMOM,
-        createAMRAP,
-        createTabata,
-        resetProgram,
-        loadSampleProgram,
-        saveWorkoutToLibrary,
-        saveWeekToLibrary,
-        saveProgramToLibrary,
-        loadWorkoutFromLibrary,
-        loadWeekFromLibrary,
-        loadProgramFromLibrary,
-        getWorkoutLibrary,
-        getWeekLibrary,
-        getProgramLibrary,
-        removeWorkoutFromLibrary,
-        removeWeekFromLibrary,
-        removeProgramFromLibrary,
-        updateWorkoutName,
-        updateWeekName,
-      }}
-    >
-      {children}
-    </WorkoutContext.Provider>
-  );
-};
-
-export const useWorkout = () => {
-  const context = useContext(WorkoutContext);
-  if (!context) {
-    throw new Error("useWorkout must be used within a WorkoutProvider");
-  }
-  return context;
-};
+    setWorkoutLibrary(prev => prev.filter(w => w
