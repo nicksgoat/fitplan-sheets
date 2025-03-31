@@ -31,10 +31,25 @@ export const useProfile = (profileId?: string) => {
         throw error;
       }
       
-      // Ensure social_links is an array
+      // Parse social_links from JSON to SocialLink[] if it exists
+      let socialLinks: SocialLink[] = [];
+      if (data.social_links) {
+        try {
+          // Handle both string and array cases
+          if (typeof data.social_links === 'string') {
+            socialLinks = JSON.parse(data.social_links);
+          } else {
+            socialLinks = data.social_links as SocialLink[];
+          }
+        } catch (e) {
+          console.error('Error parsing social links:', e);
+          socialLinks = [];
+        }
+      }
+      
       return {
         ...data,
-        social_links: data.social_links || []
+        social_links: socialLinks
       } as Profile;
     },
     enabled: !!targetProfileId,
@@ -45,11 +60,8 @@ export const useProfile = (profileId?: string) => {
     mutationFn: async (updatedProfile: Partial<Profile>) => {
       if (!targetProfileId) throw new Error('No profile ID provided');
       
-      // Make sure social_links is properly formatted
-      let profileData = { ...updatedProfile };
-      if (profileData.social_links && !Array.isArray(profileData.social_links)) {
-        profileData.social_links = [];
-      }
+      // Convert social_links to the format expected by Supabase
+      const profileData = { ...updatedProfile };
       
       const { error } = await supabase
         .from('profiles')

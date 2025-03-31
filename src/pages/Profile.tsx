@@ -13,7 +13,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { SocialLink, Profile } from '@/types/profile';
 import ProfileStats from '@/components/profile/ProfileStats';
-import { ContentGrid } from '@/components/ui/ContentGrid';
+import ContentGrid from '@/components/ui/ContentGrid';
 
 // Define type for content items
 type ItemType = {
