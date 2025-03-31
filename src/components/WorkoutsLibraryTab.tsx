@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,14 @@ const WorkoutsLibraryTab: React.FC = () => {
   
   // Load workouts from library
   useEffect(() => {
-    setWorkouts(getWorkoutLibrary());
+    try {
+      const libraryWorkouts = getWorkoutLibrary();
+      console.log('Loaded workouts from library:', libraryWorkouts);
+      setWorkouts(libraryWorkouts);
+    } catch (error) {
+      console.error('Error loading workouts from library:', error);
+      toast.error('Failed to load workouts from library');
+    }
   }, []);
   
   const handleDeleteWorkout = (workoutId: string) => {
@@ -53,39 +59,45 @@ const WorkoutsLibraryTab: React.FC = () => {
   };
   
   const handleUseWorkout = (workout: Workout) => {
-    // Create a week if none exists in the program
-    let weekId: string;
-    
-    if (!program || program.weeks.length === 0) {
-      const newWeekId = addWeek();
-      // Check if addWeek returned a valid ID
-      if (typeof newWeekId !== 'string') {
-        toast.error("Could not create a new week");
-        return;
-      }
-      weekId = newWeekId;
-    } else {
-      weekId = program.weeks[0].id;
-    }
-    
-    // Load the workout into the Sheets system
-    const workoutId = loadWorkoutFromLibrary(workout, weekId);
-    
-    // Check if workoutId is a valid string
-    if (typeof workoutId === 'string') {
-      // Set the active week and workout IDs
-      setActiveWeekId(weekId);
-      setActiveWorkoutId(workoutId);
+    try {
+      // Create a week if none exists in the program
+      let weekId: string;
       
-      // Navigate to Sheets and notify the user
-      navigate("/sheets");
-      toast.success("Workout loaded into Sheets");
-    } else {
-      toast.error("Failed to load workout");
+      if (!program || program.weeks.length === 0) {
+        const newWeekId = addWeek();
+        // Check if addWeek returned a valid ID
+        if (typeof newWeekId !== 'string') {
+          toast.error("Could not create a new week");
+          return;
+        }
+        weekId = newWeekId;
+      } else {
+        weekId = program.weeks[0].id;
+      }
+      
+      console.log('Loading workout into program:', workout);
+      
+      // Load the workout into the Sheets system
+      const workoutId = loadWorkoutFromLibrary(workout, weekId);
+      
+      // Check if workoutId is a valid string
+      if (typeof workoutId === 'string') {
+        // Set the active week and workout IDs
+        setActiveWeekId(weekId);
+        setActiveWorkoutId(workoutId);
+        
+        // Navigate to Sheets and notify the user
+        navigate("/sheets");
+        toast.success("Workout loaded into Sheets");
+      } else {
+        toast.error("Failed to load workout");
+      }
+    } catch (error) {
+      console.error('Error using workout:', error);
+      toast.error('Failed to load workout: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
   
-  // Function to save current workout to library
   const handleSaveCurrentWorkout = () => {
     if (!program || !activeWorkoutId) {
       toast.error("No active workout to save");
@@ -151,7 +163,6 @@ const WorkoutsLibraryTab: React.FC = () => {
       .join(", ");
   };
   
-  // If we're on the Sheets page, show a button to save current workout
   const isOnSheetsPage = window.location.pathname === "/sheets";
   
   return (
@@ -267,7 +278,6 @@ const WorkoutsLibraryTab: React.FC = () => {
         </div>
       )}
       
-      {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-dark-200 text-white border-dark-300">
           <DialogHeader>
@@ -290,7 +300,6 @@ const WorkoutsLibraryTab: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Workout details dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <DialogContent className="bg-dark-200 text-white border-dark-300 max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>

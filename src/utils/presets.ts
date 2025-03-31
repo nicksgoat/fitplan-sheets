@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 // Local storage keys
 const PROGRAM_LIBRARY_KEY = "fitplan-program-library";
 const WEEK_LIBRARY_KEY = "fitplan-week-library";
-const WORKOUT_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
+const WORKOUT_LIBRARY_KEY = "fitplan-workout-library";
 
 // Preset keys - for backward compatibility
 const PROGRAM_PRESETS_KEY = "fitplan-program-presets";
@@ -14,26 +14,33 @@ const WORKOUT_PRESETS_KEY = "fitplan-workout-presets";
 
 // Save to library
 export function addWorkoutToLibrary(workout: Workout): void {
-  // Create a deep copy to avoid reference issues
-  const workoutToSave = JSON.parse(JSON.stringify(workout));
-  
-  // Add metadata for tracking
-  workoutToSave.savedAt = new Date().toISOString();
-  workoutToSave.lastModified = new Date().toISOString();
-  
-  // Store library exercise references in each exercise
-  workoutToSave.exercises = workoutToSave.exercises.map((exercise: any) => {
-    // If an exercise already has a libraryExerciseId, keep it
-    if (!exercise.libraryExerciseId) {
-      // In the future, we'd look up in the Supabase database to find matching exercises
-      exercise.libraryExerciseId = null;
-    }
-    return exercise;
-  });
-  
-  const library = getWorkoutLibrary();
-  library.push(workoutToSave);
-  localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
+  try {
+    // Create a deep copy to avoid reference issues
+    const workoutToSave = JSON.parse(JSON.stringify(workout));
+    
+    // Add metadata for tracking
+    workoutToSave.savedAt = new Date().toISOString();
+    workoutToSave.lastModified = new Date().toISOString();
+    
+    // Store library exercise references in each exercise
+    workoutToSave.exercises = workoutToSave.exercises.map((exercise: any) => {
+      // If an exercise already has a libraryExerciseId, keep it
+      if (!exercise.libraryExerciseId) {
+        // In the future, we'd look up in the Supabase database to find matching exercises
+        exercise.libraryExerciseId = null;
+      }
+      return exercise;
+    });
+    
+    console.log('Saving workout to library:', workoutToSave);
+    
+    const library = getWorkoutLibrary();
+    library.push(workoutToSave);
+    localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
+  } catch (error) {
+    console.error('Error saving workout to library:', error);
+    throw new Error('Failed to save workout to library');
+  }
 }
 
 export function addWeekToLibrary(week: WorkoutWeek): void {
@@ -64,8 +71,14 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
 
 // Get from library
 export function getWorkoutLibrary(): Workout[] {
-  const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
+    const workouts = data ? JSON.parse(data) : [];
+    return workouts;
+  } catch (error) {
+    console.error('Error retrieving workout library:', error);
+    return [];
+  }
 }
 
 export function getWeekLibrary(): WorkoutWeek[] {
