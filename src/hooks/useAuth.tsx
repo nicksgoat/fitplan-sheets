@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,8 @@ interface AuthContextProps {
   signInWithGoogle: () => Promise<void>;
   signInWithPhone: (phone: string) => Promise<void>;
   verifyPhoneCode: (phone: string, code: string) => Promise<void>;
+  signUpWithPhone: (phone: string, password: string, code: string) => Promise<void>;
+  signInWithPhonePassword: (phone: string, password: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -162,6 +163,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUpWithPhone = async (phone: string, password: string, code: string) => {
+    try {
+      setLoading(true);
+      
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        phone,
+        token: code,
+        type: 'sms'
+      });
+      
+      if (verifyError) {
+        toast.error(verifyError.message);
+        throw verifyError;
+      }
+      
+      const { error: updateError } = await supabase.auth.updateUser({
+        password
+      });
+      
+      if (updateError) {
+        toast.error(updateError.message);
+        throw updateError;
+      }
+      
+      toast.success('Account created with phone and password');
+    } catch (err) {
+      console.error('Phone sign up error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithPhonePassword = async (phone: string, password: string) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        phone,
+        password
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+      
+      toast.success('Signed in successfully');
+    } catch (err) {
+      console.error('Phone and password sign in error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
@@ -190,6 +247,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle,
     signInWithPhone,
     verifyPhoneCode,
+    signUpWithPhone,
+    signInWithPhonePassword,
     loading
   };
 

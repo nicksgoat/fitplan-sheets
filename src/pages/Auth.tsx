@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,23 +7,72 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Phone, ArrowRight, Globe } from 'lucide-react';
+import { Phone, ArrowRight, Globe, Key, Smartphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import CountryCodeSelect from '@/components/CountryCodeSelect';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const phoneSignInSchema = z.object({
+  phone: z.string().min(1, "Phone number is required"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+});
+
+const phoneVerifySchema = z.object({
+  phone: z.string().min(1, "Phone number is required"),
+  code: z.string().length(6, "Verification code must be 6 digits"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+});
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithGoogle, signInWithPhone, verifyPhoneCode, loading } = useAuth();
+  const { 
+    signIn, 
+    signUp, 
+    signInWithGoogle, 
+    signInWithPhone, 
+    verifyPhoneCode, 
+    signUpWithPhone,
+    signInWithPhonePassword,
+    loading 
+  } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [countryCode, setCountryCode] = useState('+1');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Dialog states
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isPhonePasswordOpen, setIsPhonePasswordOpen] = useState(false);
+  const [isPhoneSignUpOpen, setIsPhoneSignUpOpen] = useState(false);
+  
   const [verificationCode, setVerificationCode] = useState('');
   const [currentPhone, setCurrentPhone] = useState('');
+  const [phonePassword, setPhonePassword] = useState('');
+
+  // Forms
+  const phoneSignInForm = useForm<z.infer<typeof phoneSignInSchema>>({
+    resolver: zodResolver(phoneSignInSchema),
+    defaultValues: {
+      phone: '',
+      password: ''
+    }
+  });
+
+  const phoneVerifyForm = useForm<z.infer<typeof phoneVerifySchema>>({
+    resolver: zodResolver(phoneVerifySchema),
+    defaultValues: {
+      phone: '',
+      code: '',
+      password: ''
+    }
+  });
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +158,75 @@ export default function Auth() {
     }
   };
 
+  // Handle phone password sign in
+  const handlePhonePasswordSignIn = async (values: z.infer<typeof phoneSignInSchema>) => {
+    setError(null);
+    
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + values.phone.replace(/^0+/, '');
+    
+    try {
+      await signInWithPhonePassword(fullPhoneNumber, values.password);
+      setIsPhonePasswordOpen(false);
+      navigate('/');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred during sign in');
+      }
+    }
+  };
+
+  // Handle phone verification and sign up with password
+  const handlePhoneSignUp = async (values: z.infer<typeof phoneVerifySchema>) => {
+    setError(null);
+    
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + values.phone.replace(/^0+/, '');
+    
+    try {
+      await signUpWithPhone(fullPhoneNumber, values.password, values.code);
+      setIsPhoneSignUpOpen(false);
+      navigate('/');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred during sign up');
+      }
+    }
+  };
+
+  // Handle initial phone verification for sign up
+  const handleStartPhoneSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + phoneNumber.replace(/^0+/, '');
+    
+    try {
+      await signInWithPhone(fullPhoneNumber);
+      setCurrentPhone(fullPhoneNumber);
+      phoneVerifyForm.setValue('phone', fullPhoneNumber);
+      setIsPhoneDialogOpen(false);
+      setIsPhoneSignUpOpen(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred with phone verification');
+      }
+    }
+  };
+
+  // Show phone password sign in dialog
+  const showPhonePasswordSignIn = () => {
+    phoneSignInForm.reset();
+    setIsPhonePasswordOpen(true);
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-md">
@@ -161,7 +280,7 @@ export default function Auth() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <Button 
                     type="button" 
                     variant="outline"
@@ -180,7 +299,17 @@ export default function Auth() {
                     className="flex items-center justify-center gap-2"
                   >
                     <Phone className="h-4 w-4" />
-                    Phone
+                    Phone OTP
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={showPhonePasswordSignIn}
+                    disabled={loading}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Key className="h-4 w-4" />
+                    Phone+Pass
                   </Button>
                 </div>
               </CardContent>
@@ -244,11 +373,11 @@ export default function Auth() {
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => setIsPhoneDialogOpen(true)}
+                    onClick={handleStartPhoneSignUp}
                     disabled={loading}
                     className="flex items-center justify-center gap-2"
                   >
-                    <Phone className="h-4 w-4" />
+                    <Smartphone className="h-4 w-4" />
                     Phone
                   </Button>
                 </div>
@@ -263,7 +392,7 @@ export default function Auth() {
         </Tabs>
       </Card>
       
-      {/* Phone Number Dialog */}
+      {/* Phone OTP Dialog */}
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -339,6 +468,149 @@ export default function Auth() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phone + Password Sign In Dialog */}
+      <Dialog open={isPhonePasswordOpen} onOpenChange={setIsPhonePasswordOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sign in with phone and password</DialogTitle>
+            <DialogDescription>
+              Enter your phone number and password to sign in.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...phoneSignInForm}>
+            <form onSubmit={phoneSignInForm.handleSubmit(handlePhonePasswordSignIn)} className="space-y-4">
+              <div className="space-y-4">
+                <FormField
+                  control={phoneSignInForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <div className="flex gap-2">
+                        <CountryCodeSelect 
+                          value={countryCode}
+                          onChange={setCountryCode}
+                        />
+                        <FormControl>
+                          <Input 
+                            placeholder="123456789" 
+                            {...field} 
+                            className="flex-1" 
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={phoneSignInForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Your password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {error && <p className="text-destructive text-sm">{error}</p>}
+              </div>
+              
+              <DialogFooter>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phone Sign Up Dialog */}
+      <Dialog open={isPhoneSignUpOpen} onOpenChange={setIsPhoneSignUpOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete your phone registration</DialogTitle>
+            <DialogDescription>
+              Enter the verification code sent to your phone and create a password.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...phoneVerifyForm}>
+            <form onSubmit={phoneVerifyForm.handleSubmit(handlePhoneSignUp)} className="space-y-4">
+              <FormField
+                control={phoneVerifyForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col items-center">
+                    <FormLabel>Verification Code</FormLabel>
+                    <FormControl>
+                      <InputOTP
+                        maxLength={6}
+                        value={field.value}
+                        onChange={field.onChange}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={phoneVerifyForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Create Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Choose a password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Password must be at least 6 characters
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {error && <p className="text-destructive text-sm">{error}</p>}
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? 'Creating Account...' : 'Complete Sign Up'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
