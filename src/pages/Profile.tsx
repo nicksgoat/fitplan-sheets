@@ -14,19 +14,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { SocialLink, Profile } from '@/types/profile';
 import ProfileStats from '@/components/profile/ProfileStats';
 import ContentGrid from '@/components/ui/ContentGrid';
+import { ItemType } from '@/lib/types';
+import { Exercise } from '@/types/exercise';
 
-// Define type for content items
-type ItemType = {
-  id: string;
-  title: string;
-  type: "workout" | "program" | "exercise" | "collection";
-  creator: string;
-  imageUrl: string;
-  tags: string[];
-  difficulty: string;
-  isFavorite: boolean;
-  duration: string;
-  description: string;
+// Define local type for mock data
+type MockItemType = Omit<ItemType, 'difficulty'> & {
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
 };
 
 const ProfilePage: React.FC = () => {
@@ -72,7 +65,7 @@ const ProfilePage: React.FC = () => {
   }
   
   // Mock data for workouts, programs, etc.
-  const mockWorkouts: ItemType[] = [
+  const mockWorkouts: MockItemType[] = [
     {
       id: '1',
       title: 'Full Body Strength',
@@ -99,7 +92,7 @@ const ProfilePage: React.FC = () => {
     },
   ];
   
-  const mockPrograms: ItemType[] = [
+  const mockPrograms: MockItemType[] = [
     {
       id: '3',
       title: '8-Week Muscle Builder',
@@ -114,7 +107,7 @@ const ProfilePage: React.FC = () => {
     },
   ];
   
-  const mockSaved: ItemType[] = [
+  const mockSaved: MockItemType[] = [
     {
       id: '4',
       title: 'Yoga Flow',
@@ -128,6 +121,11 @@ const ProfilePage: React.FC = () => {
       description: 'Flowing yoga sequence to improve flexibility and mindfulness.'
     },
   ];
+  
+  // Convert mock data to the expected type for ContentGrid
+  const workoutsForGrid: (ItemType | Exercise)[] = mockWorkouts as unknown as ItemType[];
+  const programsForGrid: (ItemType | Exercise)[] = mockPrograms as unknown as ItemType[];
+  const savedForGrid: (ItemType | Exercise)[] = mockSaved as unknown as ItemType[];
   
   return (
     <div className="container mx-auto py-6 px-4">
@@ -272,8 +270,8 @@ const ProfilePage: React.FC = () => {
         
         <TabsContent value="workouts">
           <h2 className="text-xl font-semibold mb-4">My Workouts</h2>
-          {mockWorkouts.length > 0 ? (
-            <ContentGrid items={mockWorkouts} />
+          {workoutsForGrid.length > 0 ? (
+            <ContentGrid items={workoutsForGrid} />
           ) : (
             <div className="text-center py-12 bg-muted/20 rounded-lg">
               <p>No workouts created yet</p>
@@ -286,8 +284,8 @@ const ProfilePage: React.FC = () => {
         
         <TabsContent value="programs">
           <h2 className="text-xl font-semibold mb-4">My Programs</h2>
-          {mockPrograms.length > 0 ? (
-            <ContentGrid items={mockPrograms} />
+          {programsForGrid.length > 0 ? (
+            <ContentGrid items={programsForGrid} />
           ) : (
             <div className="text-center py-12 bg-muted/20 rounded-lg">
               <p>No programs created yet</p>
@@ -300,8 +298,8 @@ const ProfilePage: React.FC = () => {
         
         <TabsContent value="saved">
           <h2 className="text-xl font-semibold mb-4">Saved Items</h2>
-          {mockSaved.length > 0 ? (
-            <ContentGrid items={mockSaved} />
+          {savedForGrid.length > 0 ? (
+            <ContentGrid items={savedForGrid} />
           ) : (
             <div className="text-center py-12 bg-muted/20 rounded-lg">
               <p>No saved items yet</p>
