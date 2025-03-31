@@ -23,7 +23,8 @@ const WeekTabs: React.FC = () => {
   
   const handleAddWeek = () => {
     const newWeekId = addWeek();
-    if (newWeekId) {
+    // Ensure newWeekId is a string before using it
+    if (typeof newWeekId === 'string') {
       setActiveWeekId(newWeekId);
       
       // Find the newly created week and activate its first workout
