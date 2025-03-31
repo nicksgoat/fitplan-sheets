@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,7 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { updateWorkoutName, updateWorkout, addExercise, program } = useWorkout();
+  const { program, updateWorkout, updateWorkoutName, addExercise } = useWorkout();
   
   const session = program?.workouts.find((s) => s.id === sessionId);
   
@@ -47,7 +46,6 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   };
   
   const handleDayChange = (value: string) => {
-    // Use updateWorkout instead of updateWorkoutDay
     updateWorkout(sessionId, (workout) => {
       workout.day = parseInt(value, 10);
     });
