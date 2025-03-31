@@ -20,6 +20,10 @@ import { Exercise as LibraryExercise } from '@/types/exercise';
 import { libraryToWorkoutExercise } from '@/utils/exerciseConverters';
 import { toast } from "sonner";
 
+const WORKOUT_LIBRARY_KEY = 'workout-library';
+const WEEK_LIBRARY_KEY = 'week-library';
+const PROGRAM_LIBRARY_KEY = 'program-library';
+
 interface WorkoutContextProps {
   program: WorkoutProgram | null;
   activeWorkoutId: string | null;
@@ -27,8 +31,8 @@ interface WorkoutContextProps {
   setActiveWorkoutId: (workoutId: string | null) => void;
   setActiveWeekId: (weekId: string | null) => void;
   setProgram: (program: WorkoutProgram | null) => void;
-  addWorkout: (weekId: string) => void;
-  addWeek: () => void;
+  addWorkout: (weekId: string) => void | string;
+  addWeek: () => void | string;
   addCircuit: (workoutId: string) => void;
   addExercise: (workoutId: string, libraryExerciseId?: string) => void;
   addExerciseToWorkout: (workoutId: string) => void;
@@ -55,7 +59,7 @@ interface WorkoutContextProps {
   saveWorkoutToLibrary: (workoutId: string, name: string) => void;
   saveWeekToLibrary: (weekId: string, name: string) => void;
   saveProgramToLibrary: (name: string) => void;
-  loadWorkoutFromLibrary: (workout: Workout, weekId: string) => void;
+  loadWorkoutFromLibrary: (workout: Workout, weekId: string) => string | void;
   loadWeekFromLibrary: (week: WorkoutWeek) => void;
   loadProgramFromLibrary: (program: WorkoutProgram) => void;
   getWorkoutLibrary: () => Workout[];
@@ -971,24 +975,36 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   
   const removeWorkoutFromLibrary = useCallback((id: string) => {
     setWorkoutLibrary(prev => prev.filter(w => w.id !== id));
-    const library = getWorkoutLibrary().filter(w => w.id !== id);
+    const library = workoutLibrary.filter(w => w.id !== id);
     localStorage.setItem(WORKOUT_LIBRARY_KEY, JSON.stringify(library));
     toast.success('Workout removed from library');
-  }, []);
+  }, [workoutLibrary]);
   
   const removeWeekFromLibrary = useCallback((id: string) => {
     setWeekLibrary(prev => prev.filter(w => w.id !== id));
-    const library = getWeekLibrary().filter(w => w.id !== id);
+    const library = weekLibrary.filter(w => w.id !== id);
     localStorage.setItem(WEEK_LIBRARY_KEY, JSON.stringify(library));
     toast.success('Week removed from library');
-  }, []);
+  }, [weekLibrary]);
   
   const removeProgramFromLibrary = useCallback((id: string) => {
     setProgramLibrary(prev => prev.filter(p => p.id !== id));
-    const library = getProgramLibrary().filter(p => p.id !== id);
+    const library = programLibrary.filter(p => p.id !== id);
     localStorage.setItem(PROGRAM_LIBRARY_KEY, JSON.stringify(library));
     toast.success('Program removed from library');
-  }, []);
+  }, [programLibrary]);
+
+  const updateWorkoutName = useCallback((workoutId: string, name: string) => {
+    updateWorkout(workoutId, (workout) => {
+      workout.name = name;
+    });
+  }, [updateWorkout]);
+
+  const updateWeekName = useCallback((weekId: string, name: string) => {
+    updateWeek(weekId, (week) => {
+      week.name = name;
+    });
+  }, [updateWeek]);
 
   return (
     <WorkoutContext.Provider value={{
@@ -1041,6 +1057,14 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
       {children}
     </WorkoutContext.Provider>
   );
+};
+
+export const useWorkout = () => {
+  const context = useContext(WorkoutContext);
+  if (context === undefined) {
+    throw new Error("useWorkout must be used within a WorkoutProvider");
+  }
+  return context;
 };
 
 export const useWorkoutContext = () => {
