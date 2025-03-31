@@ -103,6 +103,7 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           user_id: string | null
+          video_url: string | null
         }
         Insert: {
           category: Database["public"]["Enums"]["exercise_category"]
@@ -123,6 +124,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           user_id?: string | null
+          video_url?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["exercise_category"]
@@ -143,6 +145,7 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           user_id?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }

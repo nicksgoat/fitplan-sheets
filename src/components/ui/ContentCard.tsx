@@ -58,8 +58,8 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
                 alt={title} 
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <Video className="h-8 w-8 text-white opacity-80" />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <Video className="h-8 w-8 text-white" />
               </div>
             </div>
           ) : (
@@ -97,9 +97,10 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
               {tag}
             </Badge>
           ))}
-          {isStorageVideo && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
-              Uploaded
+          {videoUrl && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-0.5">
+              <Video className="h-2 w-2" />
+              Video
             </Badge>
           )}
         </CardFooter>

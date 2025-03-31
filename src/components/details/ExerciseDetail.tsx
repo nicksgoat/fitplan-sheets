@@ -20,21 +20,23 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
   const renderMedia = () => {
     if (item.videoUrl) {
       return (
-        <video 
-          src={item.videoUrl} 
-          className="w-full h-full object-cover" 
-          controls
-          autoPlay={false}
-          playsInline
-          loop
-        />
+        <div className="relative w-full h-48 md:h-64 bg-black flex items-center justify-center">
+          <video 
+            src={item.videoUrl} 
+            className="w-full h-full max-h-full object-contain" 
+            controls
+            autoPlay={false}
+            playsInline
+            loop
+          />
+        </div>
       );
     } else {
       return (
         <img
           src={item.imageUrl}
           alt={item.title}
-          className="w-full h-full object-cover"
+          className="w-full h-48 md:h-64 object-cover"
         />
       );
     }
@@ -50,7 +52,7 @@ const ExerciseDetail: React.FC<ExerciseDetailProps> = ({ item, onClose }) => {
 
   return (
     <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
-      <div className="relative w-full h-48 md:h-64">
+      <div className="relative">
         {renderMedia()}
         <Button 
           variant="ghost" 

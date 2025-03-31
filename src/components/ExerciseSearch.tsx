@@ -5,7 +5,7 @@ import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useSearchExercises } from "@/hooks/useExerciseLibrary";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Loader2 } from "lucide-react";
+import { Dumbbell, Loader2, Video } from "lucide-react";
 import { toast } from "sonner";
 
 interface ExerciseSearchProps {
@@ -161,6 +161,12 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                             {exercise.isCustom && (
                               <Badge variant="outline" className="text-xs px-1 py-0 bg-green-800 text-green-300">
                                 Custom
+                              </Badge>
+                            )}
+                            {exercise.videoUrl && (
+                              <Badge variant="outline" className="text-xs px-1 py-0 bg-blue-800 text-blue-300 flex items-center">
+                                <Video className="h-3 w-3 mr-1" />
+                                Video
                               </Badge>
                             )}
                           </div>
