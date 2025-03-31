@@ -89,18 +89,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleExerciseSelect = (exerciseId: string, libraryExercise: LibraryExercise) => {
-    // Find the existing exercise to retain its current state
     const existingExercise = session.exercises.find(e => e.id === exerciseId);
     
     if (existingExercise) {
-      // Apply default configurations based on the exercise category
       const defaults = getDefaultExerciseConfig(libraryExercise.category);
       
       updateExercise(exerciseId, {
         name: libraryExercise.name,
         notes: existingExercise.notes || libraryExercise.description || '',
         libraryExerciseId: libraryExercise.id,
-        // Only apply defaults if not already set
         repType: existingExercise.repType || defaults.repType,
         intensityType: existingExercise.intensityType || defaults.intensityType,
         weightType: existingExercise.weightType || defaults.weightType
@@ -152,9 +149,10 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   const handleExerciseCellNavigate = (
     direction: "up" | "down" | "left" | "right",
-    shiftKey: boolean,
-    currentCoord: CellCoordinate
+    shiftKey: boolean
   ) => {
+    if (!focusedCell) return;
+    const currentCoord = focusedCell;
     const { rowIndex, columnName, exerciseId } = currentCoord;
     const exercises = session.exercises;
     const currentExerciseIndex = exercises.findIndex(e => e.id === exerciseId);
@@ -211,9 +209,10 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   const handleSetCellNavigate = (
     direction: "up" | "down" | "left" | "right",
-    shiftKey: boolean,
-    currentCoord: CellCoordinate
+    shiftKey: boolean
   ) => {
+    if (!focusedCell) return;
+    const currentCoord = focusedCell;
     const { rowIndex, columnName, exerciseId, setIndex } = currentCoord;
     
     if (setIndex === undefined) return;
