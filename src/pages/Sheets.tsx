@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
@@ -15,7 +14,6 @@ const WorkoutApp: React.FC = () => {
     program, 
     activeWorkoutId,
     addWeek,
-    addWorkout,
     setActiveWeekId,
     setActiveWorkoutId
   } = useWorkout();
@@ -27,14 +25,17 @@ const WorkoutApp: React.FC = () => {
       const newWeekId = addWeek();
       // Check if newWeekId is a string before using it
       if (typeof newWeekId === 'string') {
-        const newWorkoutId = addWorkout(newWeekId);
         setActiveWeekId(newWeekId);
-        if (typeof newWorkoutId === 'string') {
-          setActiveWorkoutId(newWorkoutId);
+        
+        // Find the new week that was just created
+        const newWeek = program.weeks.find(w => w.id === newWeekId);
+        if (newWeek && newWeek.workouts.length > 0) {
+          // Set the first workout in the week as active
+          setActiveWorkoutId(newWeek.workouts[0]);
         }
       }
     }
-  }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId]);
+  }, [program, addWeek, setActiveWeekId, setActiveWorkoutId]);
   
   // Handle empty state - no program or empty program (this is a fallback)
   if (!program || program.weeks.length === 0) {

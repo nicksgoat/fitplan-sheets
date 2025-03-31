@@ -258,10 +258,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     updateProgram((draft) => {
       draft.weeks.push(newWeek);
       draft.workouts.push(newWorkout);
-      const week = draft.weeks.find(w => w.id === newWeekId);
-      if (week) {
-        week.workouts.push(newWorkoutId);
-      }
+      draft.weeks[draft.weeks.length - 1].workouts.push(newWorkoutId);
     });
     
     return newWeekId;
