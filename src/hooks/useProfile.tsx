@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Profile, SocialLink } from '@/types/profile';
+import { Json } from '@/integrations/supabase/types';
 
 export const useProfile = (profileId?: string) => {
   const { user } = useAuth();
@@ -75,13 +76,13 @@ export const useProfile = (profileId?: string) => {
     mutationFn: async (updatedProfile: Partial<Profile>) => {
       if (!targetProfileId) throw new Error('No profile ID provided');
       
-      // Convert social_links to JSON for Supabase
-      const profileData = { ...updatedProfile };
+      // Prepare a copy of the profile for submission
+      const profileData: Record<string, any> = { ...updatedProfile };
       
-      // Convert SocialLink[] to a JSON-compatible format
+      // Convert SocialLink[] to JSON string for Supabase
       if (profileData.social_links) {
-        const socialLinksJson = JSON.stringify(profileData.social_links);
-        profileData.social_links = socialLinksJson as any;
+        // Convert the SocialLink[] to a stringified JSON for storage
+        profileData.social_links = JSON.stringify(profileData.social_links);
       }
       
       const { error } = await supabase
@@ -90,6 +91,7 @@ export const useProfile = (profileId?: string) => {
         .eq('id', targetProfileId);
       
       if (error) {
+        console.error('Error updating profile:', error);
         toast.error('Failed to update profile');
         throw error;
       }
