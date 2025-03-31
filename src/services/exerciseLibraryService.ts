@@ -31,19 +31,16 @@ export async function getAllExercises(): Promise<Exercise[]> {
     
     if (error) {
       console.error("Error fetching exercises from Supabase:", error);
+      toast.error(`Database error: ${error.message}. Using local data.`);
       // Fallback to local data
-      console.log("Using local exercise library as fallback");
       return localExerciseLibrary;
     }
     
-    if (data.length === 0) {
-      console.warn("No exercises found in Supabase, using local data");
-      return localExerciseLibrary;
-    }
-    
+    // Return database data regardless of whether it's empty or not
     return data.map(mapDbExerciseToModel);
   } catch (error) {
     console.error("Unexpected error fetching exercises:", error);
+    toast.error(`Connection error. Using local data.`);
     // Fallback to local data in case of any error
     return localExerciseLibrary;
   }
@@ -79,14 +76,15 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
     
     if (error) {
       console.error("Error searching exercises from Supabase:", error);
+      toast.error(`Search error: ${error.message}. Using local search.`);
       // Fallback to local search
-      console.log("Using local exercise search as fallback");
       return searchLocalExercises(query);
     }
     
     return data.map(mapDbExerciseToModel);
   } catch (error) {
     console.error("Unexpected error searching exercises:", error);
+    toast.error('Search connection error. Using local search.');
     // Fallback to local search in case of any error
     return searchLocalExercises(query);
   }
@@ -114,15 +112,7 @@ function searchLocalExercises(query: string): Exercise[] {
 
 // Get exercise by ID with fallback
 export async function getExerciseById(id: string): Promise<Exercise | null> {
-  // First check if we can find it in local storage for custom exercises
-  const localCustomExercises = getCustomExercisesFromLocalStorage();
-  const localCustomExercise = localCustomExercises.find(e => e.id === id);
-  
-  if (localCustomExercise) {
-    console.log("Found exercise in local storage:", localCustomExercise);
-    return localCustomExercise;
-  }
-  
+  // First try the database
   try {
     const { data, error } = await supabase
       .from('exercise_library')
@@ -148,24 +138,27 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
     
     if (error) {
       console.error("Error fetching exercise:", error);
-      // Check if we can find it in local data
-      const localExercise = localExerciseLibrary.find(e => e.id === id);
-      return localExercise || null;
+      toast.error(`Database error fetching exercise: ${error.message}`);
+    } else if (data) {
+      return mapDbExerciseToModel(data);
     }
-    
-    if (!data) {
-      // Check if we can find it in local data
-      const localExercise = localExerciseLibrary.find(e => e.id === id);
-      return localExercise || null;
-    }
-    
-    return mapDbExerciseToModel(data);
   } catch (error) {
     console.error("Unexpected error fetching exercise:", error);
-    // Check if we can find it in local data
-    const localExercise = localExerciseLibrary.find(e => e.id === id);
-    return localExercise || null;
+    toast.error('Connection error fetching exercise');
   }
+  
+  // Then check if we can find it in local storage for custom exercises
+  const localCustomExercises = getCustomExercisesFromLocalStorage();
+  const localCustomExercise = localCustomExercises.find(e => e.id === id);
+  
+  if (localCustomExercise) {
+    console.log("Found exercise in local storage:", localCustomExercise);
+    return localCustomExercise;
+  }
+  
+  // Finally, check local library data
+  const localExercise = localExerciseLibrary.find(e => e.id === id);
+  return localExercise || null;
 }
 
 // Upload video file to Supabase Storage
@@ -244,13 +237,16 @@ export async function addCustomExercise(exercise: Omit<Exercise, 'id'> & { userI
     
     if (error) {
       console.error("Error adding custom exercise to Supabase:", error);
+      toast.error(`Error saving to database: ${error.message}. Saving locally instead.`);
       // Fallback to local storage
       return addCustomExerciseToLocalStorage(exercise);
     }
     
+    toast.success('Exercise created successfully in database');
     return mapDbExerciseToModel(data);
   } catch (error) {
     console.error("Unexpected error adding custom exercise:", error);
+    toast.error('Connection error saving exercise. Saving locally instead.');
     // Fallback to local storage
     return addCustomExerciseToLocalStorage(exercise);
   }
@@ -277,11 +273,6 @@ export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
   // Always get local exercises first
   const localExercises = getCustomExercisesFromLocalStorage();
   
-  // If user is not logged in, just return local exercises
-  if (!userId) {
-    return localExercises;
-  }
-  
   try {
     const { data, error } = await supabase
       .from('exercise_library')
@@ -303,16 +294,16 @@ export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
         creator
       `)
       .eq('is_custom', true)
-      .eq('user_id', userId)
       .order('name');
     
     if (error) {
       console.error("Error fetching custom exercises from Supabase:", error);
+      toast.error(`Error loading custom exercises: ${error.message}`);
       // Return local exercises as fallback
       return localExercises;
     }
     
-    // Combine Supabase exercises with local ones that aren't in Supabase
+    // Prioritize database exercises, but include unique local ones
     const supabaseExercises = data.map(mapDbExerciseToModel);
     const supabaseIds = supabaseExercises.map(e => e.id);
     const uniqueLocalExercises = localExercises.filter(e => !supabaseIds.includes(e.id));
@@ -320,6 +311,7 @@ export async function getCustomExercises(userId?: string): Promise<Exercise[]> {
     return [...supabaseExercises, ...uniqueLocalExercises];
   } catch (error) {
     console.error("Unexpected error fetching custom exercises:", error);
+    toast.error('Connection error loading custom exercises');
     // Fallback to local storage
     return localExercises;
   }
@@ -333,50 +325,51 @@ export function getCustomExercisesFromLocalStorage(): Exercise[] {
 
 // Update a custom exercise
 export async function updateCustomExercise(id: string, exercise: Partial<Exercise> & { userId?: string }): Promise<Exercise> {
-  // First check if this is a local exercise
-  const localExercises = getCustomExercisesFromLocalStorage();
-  const isLocalExercise = localExercises.some(e => e.id === id);
-  
-  if (isLocalExercise) {
-    return updateCustomExerciseInLocalStorage(id, exercise);
-  }
-  
-  const updates: any = {};
-  
-  if (exercise.name !== undefined) updates.name = exercise.name;
-  if (exercise.primaryMuscle !== undefined) updates.primary_muscle = exercise.primaryMuscle;
-  if (exercise.secondaryMuscles !== undefined) updates.secondary_muscles = exercise.secondaryMuscles;
-  if (exercise.category !== undefined) updates.category = exercise.category;
-  if (exercise.description !== undefined) updates.description = exercise.description;
-  if (exercise.instructions !== undefined) updates.instructions = exercise.instructions;
-  if (exercise.imageUrl !== undefined) updates.image_url = exercise.imageUrl;
-  if (exercise.videoUrl !== undefined) updates.video_url = exercise.videoUrl;
-  if (exercise.tags !== undefined) updates.tags = exercise.tags;
-  if (exercise.difficulty !== undefined) updates.difficulty = exercise.difficulty;
-  if (exercise.duration !== undefined) updates.duration = exercise.duration;
-  if (exercise.creator !== undefined) updates.creator = exercise.creator;
-  
+  // First try to update in Supabase
   try {
+    const updates: any = {};
+    
+    if (exercise.name !== undefined) updates.name = exercise.name;
+    if (exercise.primaryMuscle !== undefined) updates.primary_muscle = exercise.primaryMuscle;
+    if (exercise.secondaryMuscles !== undefined) updates.secondary_muscles = exercise.secondaryMuscles;
+    if (exercise.category !== undefined) updates.category = exercise.category;
+    if (exercise.description !== undefined) updates.description = exercise.description;
+    if (exercise.instructions !== undefined) updates.instructions = exercise.instructions;
+    if (exercise.imageUrl !== undefined) updates.image_url = exercise.imageUrl;
+    if (exercise.videoUrl !== undefined) updates.video_url = exercise.videoUrl;
+    if (exercise.tags !== undefined) updates.tags = exercise.tags;
+    if (exercise.difficulty !== undefined) updates.difficulty = exercise.difficulty;
+    if (exercise.duration !== undefined) updates.duration = exercise.duration;
+    if (exercise.creator !== undefined) updates.creator = exercise.creator;
+    
     const { data, error } = await supabase
       .from('exercise_library')
       .update(updates)
       .eq('id', id)
-      .eq('is_custom', true)
       .select()
       .single();
     
     if (error) {
-      console.error("Error updating custom exercise in Supabase:", error);
-      // Fallback to local storage
-      return updateCustomExerciseInLocalStorage(id, exercise);
+      console.error("Error updating exercise in Supabase:", error);
+      toast.error(`Database error updating exercise: ${error.message}`);
+    } else if (data) {
+      toast.success('Exercise updated successfully in database');
+      return mapDbExerciseToModel(data);
     }
-    
-    return mapDbExerciseToModel(data);
   } catch (error) {
-    console.error("Unexpected error updating custom exercise:", error);
-    // Fallback to local storage
+    console.error("Unexpected error updating exercise:", error);
+    toast.error('Connection error updating exercise');
+  }
+  
+  // Then check if it's in local storage and update there
+  const localExercises = getCustomExercisesFromLocalStorage();
+  const index = localExercises.findIndex(e => e.id === id);
+  
+  if (index !== -1) {
     return updateCustomExerciseInLocalStorage(id, exercise);
   }
+  
+  throw new Error('Exercise not found in database or local storage');
 }
 
 // Local storage fallback for updating a custom exercise
@@ -399,40 +392,37 @@ function updateCustomExerciseInLocalStorage(id: string, exerciseUpdates: Partial
 
 // Delete a custom exercise
 export async function deleteCustomExercise(id: string): Promise<void> {
-  // First check if this is a local exercise
-  const localExercises = getCustomExercisesFromLocalStorage();
-  const isLocalExercise = localExercises.some(e => e.id === id);
-  
-  // If it's local, delete it from localStorage regardless
-  if (isLocalExercise) {
-    deleteCustomExerciseFromLocalStorage(id);
-  }
-  
-  // Then try to delete from Supabase if it exists there too
+  // Try to delete from Supabase first
   try {
     const { error } = await supabase
       .from('exercise_library')
       .delete()
-      .eq('id', id)
-      .eq('is_custom', true);
+      .eq('id', id);
     
     if (error) {
-      console.error("Error deleting custom exercise from Supabase:", error);
-      // If we already deleted from local storage, just return
-      if (isLocalExercise) return;
-      
-      // Otherwise try to delete from local storage as fallback
+      console.error("Error deleting exercise from Supabase:", error);
+      toast.error(`Database error deleting exercise: ${error.message}`);
+    } else {
+      toast.success('Exercise deleted successfully from database');
+      // If successfully deleted from DB, also remove from local storage if it exists there
       deleteCustomExerciseFromLocalStorage(id);
       return;
     }
   } catch (error) {
-    console.error("Unexpected error deleting custom exercise:", error);
-    // If we already deleted from local storage, just return
-    if (isLocalExercise) return;
-    
-    // Otherwise try to delete from local storage as fallback
-    deleteCustomExerciseFromLocalStorage(id);
+    console.error("Unexpected error deleting exercise:", error);
+    toast.error('Connection error deleting exercise');
   }
+  
+  // Then try to delete from local storage as fallback
+  const localExercises = getCustomExercisesFromLocalStorage();
+  const isLocalExercise = localExercises.some(e => e.id === id);
+  
+  if (isLocalExercise) {
+    deleteCustomExerciseFromLocalStorage(id);
+    return;
+  }
+  
+  throw new Error('Exercise not found in database or local storage');
 }
 
 // Local storage fallback for deleting a custom exercise
@@ -441,7 +431,7 @@ function deleteCustomExerciseFromLocalStorage(id: string): void {
   const filteredExercises = customExercises.filter(e => e.id !== id);
   
   localStorage.setItem('fitbloom-custom-exercises', JSON.stringify(filteredExercises));
-  toast.success('Exercise deleted successfully (from local storage)');
+  toast.success('Exercise deleted successfully from local storage');
 }
 
 // Map database exercise to our model

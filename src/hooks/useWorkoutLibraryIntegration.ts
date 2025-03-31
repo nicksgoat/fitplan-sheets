@@ -4,6 +4,7 @@ import { useWorkout } from '@/contexts/WorkoutContext';
 import { useExercise } from '@/hooks/useExerciseLibrary';
 import { Exercise as LibraryExercise } from '@/types/exercise';
 import { Exercise as WorkoutExercise } from '@/types/workout';
+import { toast } from 'sonner';
 
 /**
  * Hook to get library exercise data for a workout exercise
@@ -25,9 +26,16 @@ export function useWorkoutExerciseLibraryData(workoutExerciseId: string) {
   }, [exerciseDetails]);
   
   // Use the library hook if we have an ID
-  const { data: libraryExercise, isLoading } = useExercise(
+  const { data: libraryExercise, isLoading, error } = useExercise(
     libraryExerciseId || ''
   );
+  
+  // Log errors but don't show toast to user to avoid spamming
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching library exercise:', error);
+    }
+  }, [error]);
   
   return {
     workoutExercise: exerciseDetails,

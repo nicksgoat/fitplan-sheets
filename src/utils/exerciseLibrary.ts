@@ -1,3 +1,4 @@
+
 // Exercise categories
 export type ExerciseCategory = 
   | "barbell"
@@ -36,9 +37,16 @@ export interface Exercise {
   category: ExerciseCategory;
   description?: string;
   instructions?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  tags?: string[];
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  duration?: string;
+  creator?: string;
+  isCustom?: boolean;
 }
 
-// Sample exercise library
+// Sample exercise library - used ONLY as fallback when database is unavailable
 export const exerciseLibrary: Exercise[] = [
   {
     id: "bb-bench-press",
@@ -213,30 +221,30 @@ export const exerciseLibrary: Exercise[] = [
   }
 ];
 
-// Local storage key for custom exercises
-const CUSTOM_EXERCISES_KEY = "fitplan-custom-exercises";
+// Local storage key for custom exercises - this is only used as a fallback when database is unavailable
+const CUSTOM_EXERCISES_KEY = "fitbloom-custom-exercises";
 
-// Get all exercises including custom ones
-export function getAllExercises(): Exercise[] {
-  const customExercises = getCustomExercises();
-  return [...exerciseLibrary, ...customExercises];
-}
+// NOTE: These functions are deprecated and only used as fallbacks
+// The main implementation is in exerciseLibraryService.ts
 
 // Get custom exercises from local storage
 export function getCustomExercises(): Exercise[] {
+  console.warn("Using local storage fallback for custom exercises - this should only happen if database connection fails");
   const data = localStorage.getItem(CUSTOM_EXERCISES_KEY);
   return data ? JSON.parse(data) : [];
 }
 
 // Add a custom exercise to local storage
 export function addCustomExercise(exercise: Exercise): void {
+  console.warn("Using local storage fallback for adding custom exercise - this should only happen if database connection fails");
   const customExercises = getCustomExercises();
   customExercises.push(exercise);
   localStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(customExercises));
 }
 
-// Search exercises by name
+// Search exercises by name - local fallback only
 export function searchExercises(query: string): Exercise[] {
+  console.warn("Using local search fallback - this should only happen if database connection fails");
   if (!query || query.trim() === '') return [];
   
   const normalizedQuery = query.toLowerCase().trim();
@@ -255,4 +263,11 @@ export function searchExercises(query: string): Exercise[] {
     // Then sort alphabetically
     return a.name.localeCompare(b.name);
   }).slice(0, 10); // Limit to 10 results
+}
+
+// Get all exercises including custom ones - local fallback only
+export function getAllExercises(): Exercise[] {
+  console.warn("Using local fallback for all exercises - this should only happen if database connection fails");
+  const customExercises = getCustomExercises();
+  return [...exerciseLibrary, ...customExercises];
 }

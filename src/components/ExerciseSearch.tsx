@@ -5,7 +5,8 @@ import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useSearchExercises } from "@/hooks/useExerciseLibrary";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ExerciseSearchProps {
   value: string;
@@ -65,7 +66,11 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
-    setShowResults(true);
+    if (newValue.trim().length > 0) {
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
   };
   
   const handleSelectExercise = (exercise: Exercise) => {
@@ -77,7 +82,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   };
   
   const handleInputFocus = () => {
-    if (value && searchResults.length > 0) {
+    if (value && value.trim().length > 0) {
       setShowResults(true);
     }
   };
@@ -107,7 +112,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
         placeholder={placeholder}
       />
       
-      {showResults && searchResults.length > 0 && (
+      {showResults && (
         <div 
           ref={resultsRef}
           className="fixed z-[100] w-[320px] max-h-[300px] overflow-y-auto bg-popover border rounded-md shadow-md"
@@ -119,7 +124,14 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           <Command className="rounded-lg border shadow-md">
             <div className="p-0 overflow-y-auto">
               {loading ? (
-                <div className="p-2 text-sm text-center">Searching...</div>
+                <div className="p-4 text-sm text-center flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Searching...
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="p-4 text-sm text-center text-muted-foreground">
+                  No exercises found
+                </div>
               ) : (
                 searchResults.map((exercise) => (
                   <div
@@ -146,6 +158,11 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                             <Badge variant="outline" className="text-xs px-1 py-0 bg-gray-800 text-gray-300">
                               {exercise.category}
                             </Badge>
+                            {exercise.isCustom && (
+                              <Badge variant="outline" className="text-xs px-1 py-0 bg-green-800 text-green-300">
+                                Custom
+                              </Badge>
+                            )}
                           </div>
                         )}
                       </div>
