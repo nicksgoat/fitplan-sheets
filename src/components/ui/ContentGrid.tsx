@@ -30,14 +30,12 @@ const ContentGrid: React.FC<ContentGridProps> = ({
     <div className={`flex flex-wrap gap-3 md:gap-4 ${className || ''}`}>
       {items?.map((item) => {
         // Check what type of item this is (Workout, Exercise, or ItemType)
-        // and render accordingly
         if ('exercises' in item) {
           // This is a workout
           const workout = item as Workout;
           return (
             <div key={workout.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px]">
-              {/* Use ContentCard in a way that it accepts a workout */}
-              <ContentCard>
+              <ContentCard key={workout.id}>
                 <div className="p-4">
                   <h3 className="font-medium">{workout.name}</h3>
                   <p className="text-sm text-muted-foreground">{workout.exercises.length} Exercises</p>
@@ -45,11 +43,18 @@ const ContentGrid: React.FC<ContentGridProps> = ({
               </ContentCard>
             </div>
           );
-        } else {
-          // This is an Exercise or ItemType
+        } else if ('primaryMuscle' in item || 'category' in item) {
+          // This is an Exercise
           return (
             <div key={item.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px]">
-              <ContentCard item={item as (Exercise | ItemType)} />
+              <ContentCard item={item as Exercise} />
+            </div>
+          );
+        } else {
+          // This is an ItemType
+          return (
+            <div key={item.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px]">
+              <ContentCard item={item as ItemType} />
             </div>
           );
         }

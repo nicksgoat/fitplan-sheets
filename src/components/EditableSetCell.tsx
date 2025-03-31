@@ -16,7 +16,7 @@ interface EditableSetCellProps {
   coordinate: CellCoordinate;
   isFocused: boolean;
   onFocus: (coordinate: CellCoordinate) => void;
-  onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean) => void;
+  onNavigate: (direction: "up" | "down" | "left" | "right", shiftKey: boolean, currentCoord: CellCoordinate) => void;
   columnName?: string;
   repType?: RepType;
   onRepTypeChange?: (type: RepType) => void;
@@ -71,29 +71,29 @@ const EditableSetCell: React.FC<EditableSetCellProps> = ({
     // Navigation with arrow keys
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      onNavigate("up", e.shiftKey);
+      onNavigate("up", e.shiftKey, coordinate);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      onNavigate("down", e.shiftKey);
+      onNavigate("down", e.shiftKey, coordinate);
     } else if (e.key === "ArrowLeft") {
       // Only navigate left if at the beginning of input
       if (inputRef.current && inputRef.current.selectionStart === 0) {
         e.preventDefault();
-        onNavigate("left", e.shiftKey);
+        onNavigate("left", e.shiftKey, coordinate);
       }
     } else if (e.key === "ArrowRight") {
       // Only navigate right if at the end of input
       if (inputRef.current && 
           inputRef.current.selectionStart === inputRef.current.value.length) {
         e.preventDefault();
-        onNavigate("right", e.shiftKey);
+        onNavigate("right", e.shiftKey, coordinate);
       }
     } else if (e.key === "Tab") {
       e.preventDefault();
-      onNavigate(e.shiftKey ? "left" : "right", false);
+      onNavigate(e.shiftKey ? "left" : "right", false, coordinate);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      onNavigate(e.shiftKey ? "up" : "down", false);
+      onNavigate(e.shiftKey ? "up" : "down", false, coordinate);
     }
   };
   
