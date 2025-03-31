@@ -225,13 +225,43 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     const newWeekId = uuidv4();
     const newWeek: WorkoutWeek = {
       id: newWeekId,
-      name: "Week 1",
+      name: `Week ${program?.weeks.length + 1 || 1}`,
       order: program?.weeks.length || 0,
       workouts: [],
     };
 
+    const newWorkoutId = uuidv4();
+    const newWorkout: Workout = {
+      id: newWorkoutId,
+      name: "Day 1",
+      day: 1,
+      exercises: [
+        {
+          id: uuidv4(),
+          name: "New Exercise",
+          sets: [
+            {
+              id: uuidv4(),
+              reps: "",
+              weight: "",
+              intensity: "",
+              rest: "",
+            },
+          ],
+          notes: "",
+        }
+      ],
+      circuits: [],
+      weekId: newWeekId,
+    };
+
     updateProgram((draft) => {
       draft.weeks.push(newWeek);
+      draft.workouts.push(newWorkout);
+      const week = draft.weeks.find(w => w.id === newWeekId);
+      if (week) {
+        week.workouts.push(newWorkoutId);
+      }
     });
     
     return newWeekId;
