@@ -19,12 +19,14 @@ const SessionTabs: React.FC = () => {
   
   if (!program) return null;
   if (!activeWeekId) return null;
+  if (!program.weeks) return null;
+  if (!program.workouts) return null;
   
-  const currentWeek = program.weeks?.find(w => w.id === activeWeekId);
+  const currentWeek = program.weeks.find(w => w.id === activeWeekId);
   if (!currentWeek) return null;
   
   // Safely get workouts in the current week
-  const workoutsInWeek = currentWeek.workouts && program.workouts
+  const workoutsInWeek = currentWeek.workouts
     ? currentWeek.workouts
       .map(workoutId => program.workouts?.find(s => s.id === workoutId))
       .filter(workout => workout !== undefined) as Workout[]
