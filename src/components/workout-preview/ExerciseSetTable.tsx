@@ -2,7 +2,7 @@
 import React from 'react';
 import { Exercise, Set } from "@/types/workout";
 import { formatRestTime } from "@/utils/workoutPreviewUtils";
-import { Clock, Plus } from "lucide-react";
+import { Clock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
 
 interface ExerciseSetTableProps {
@@ -19,35 +18,9 @@ interface ExerciseSetTableProps {
 }
 
 const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
-  const { addSet, updateWorkout } = useWorkout();
+  const { updateWorkout } = useWorkout();
   
   if (!exercise.sets || exercise.sets.length === 0) return null;
-
-  const handleDuplicateSet = (exerciseId: string, setIndex: number) => {
-    if (!exercise.sets) return;
-    
-    // We need to find the workout that contains this exercise first
-    // This is a workaround since we don't have the workoutId directly
-    updateWorkout(exerciseId, (draft) => {
-      const setToDuplicate = exercise.sets[setIndex];
-      const newSet: Set = {
-        id: Math.random().toString(36).substring(2, 9), // Simple ID generation
-        reps: setToDuplicate.reps || "",
-        weight: setToDuplicate.weight || "",
-        intensity: setToDuplicate.intensity || "",
-        intensityType: setToDuplicate.intensityType,
-        weightType: setToDuplicate.weightType,
-        repType: setToDuplicate.repType,
-        rest: setToDuplicate.rest || "",
-      };
-      
-      // Insert the new set after the current one
-      const exerciseInWorkout = draft.exercises.find(e => e.id === exerciseId);
-      if (exerciseInWorkout) {
-        exerciseInWorkout.sets.splice(setIndex + 1, 0, newSet);
-      }
-    });
-  };
   
   return (
     <>
@@ -61,7 +34,6 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
                 {exercise.sets[0]?.weight ? "Weight" : "—"}
               </TableHead>
               <TableHead className="h-8 w-[25%] font-medium text-center text-xs p-1 text-gray-400">Reps</TableHead>
-              <TableHead className="h-8 w-10 font-medium text-center text-xs p-1 text-gray-400"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -76,16 +48,6 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
                 </TableCell>
                 <TableCell className="h-8 py-1 px-1 text-center truncate text-white">
                   {set.reps || "—"}
-                </TableCell>
-                <TableCell className="h-8 py-1 px-1 text-center">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
-                    onClick={() => handleDuplicateSet(exercise.id, idx)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
