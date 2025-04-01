@@ -29,13 +29,17 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface WorkoutTableProps {
-  session: WorkoutSession;
+  session?: WorkoutSession;
+  exercise?: Exercise;
+  workoutId?: string;
+  onNameChange?: (name: string) => void;
+  onNotesChange?: (notes: string) => void;
 }
 
 const exerciseColumnOrder: ExerciseCellType[] = ["name", "notes"];
 const setColumnOrder: SetCellType[] = ["reps", "weight", "intensity", "rest"];
 
-const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
+const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutId, onNameChange, onNotesChange }) => {
   const { 
     updateExercise, 
     updateSet,
@@ -47,6 +51,157 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
   
+  // If we're only dealing with a single exercise
+  if (exercise && workoutId) {
+    return (
+      <div className="workout-container">
+        <Table className="workout-table border-collapse w-full" ref={tableRef}>
+          <TableHeader>
+            <TableRow className="bg-muted/40">
+              <TableHead className="border border-muted-foreground/20 p-2 text-center" style={{ width: "40px" }}>#</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Set</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Reps</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Weight</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Intensity</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2 numeric-cell text-center">Rest</TableHead>
+              <TableHead className="border border-muted-foreground/20 p-2" style={{ width: "70px" }}>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {exercise.sets.map((set, setIndex) => {
+              const repType = exercise.repType || 'fixed';
+              const setIntensityType = set.intensityType || exercise.intensityType || 'rpe';
+              const setWeightType = set.weightType || exercise.weightType || 'pounds';
+              
+              return (
+                <motion.tr
+                  key={`${exercise.id}-${set.id}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.1, delay: 0.05 + setIndex * 0.02 }}
+                  className="set-row group"
+                >
+                  <td className="border border-muted-foreground/20 p-2 text-center">{setIndex + 1}</td>
+                  <td className="border border-muted-foreground/20 p-2 set-number">Set {setIndex + 1}</td>
+                  
+                  <td className="border border-muted-foreground/20 p-2">
+                    <EditableSetCell
+                      value={set.reps}
+                      onChange={(value) => updateSet(workoutId, exercise.id, set.id, { reps: value })}
+                      placeholder="Reps"
+                      coordinate={{ 
+                        rowIndex: 0, 
+                        columnName: "reps", 
+                        exerciseId: exercise.id,
+                        setIndex: setIndex
+                      }}
+                      columnName="reps"
+                      repType={repType}
+                      onRepTypeChange={(type) => updateExercise(workoutId, exercise.id, { repType: type })}
+                      isFocused={isCellFocused(0, "reps", exercise.id, setIndex)}
+                      onFocus={focusCell}
+                      hideRepTypeSelector={true}
+                    />
+                  </td>
+                  
+                  <td className="border border-muted-foreground/20 p-2">
+                    <EditableSetCell
+                      value={set.weight}
+                      onChange={(value) => updateSet(workoutId, exercise.id, set.id, { weight: value })}
+                      placeholder="Weight"
+                      coordinate={{ 
+                        rowIndex: 0, 
+                        columnName: "weight", 
+                        exerciseId: exercise.id,
+                        setIndex: setIndex
+                      }}
+                      columnName="weight"
+                      weightType={setWeightType}
+                      onWeightTypeChange={(type) => updateSet(workoutId, exercise.id, set.id, { weightType: type })}
+                      isFocused={isCellFocused(0, "weight", exercise.id, setIndex)}
+                      onFocus={focusCell}
+                      hideWeightTypeSelector={true}
+                    />
+                  </td>
+                  
+                  <td className="border border-muted-foreground/20 p-2">
+                    <EditableSetCell
+                      value={set.intensity}
+                      onChange={(value) => updateSet(workoutId, exercise.id, set.id, { intensity: value })}
+                      placeholder="Intensity"
+                      coordinate={{ 
+                        rowIndex: 0, 
+                        columnName: "intensity", 
+                        exerciseId: exercise.id,
+                        setIndex: setIndex
+                      }}
+                      columnName="intensity"
+                      intensityType={setIntensityType}
+                      onIntensityTypeChange={(type) => updateSet(workoutId, exercise.id, set.id, { intensityType: type })}
+                      isFocused={isCellFocused(0, "intensity", exercise.id, setIndex)}
+                      onFocus={focusCell}
+                      hideIntensityTypeSelector={true}
+                    />
+                  </td>
+                  
+                  <td className="border border-muted-foreground/20 p-2">
+                    <EditableSetCell
+                      value={set.rest}
+                      onChange={(value) => updateSet(workoutId, exercise.id, set.id, { rest: value })}
+                      placeholder="Rest"
+                      coordinate={{ 
+                        rowIndex: 0, 
+                        columnName: "rest", 
+                        exerciseId: exercise.id,
+                        setIndex: setIndex
+                      }}
+                      isFocused={isCellFocused(0, "rest", exercise.id, setIndex)}
+                      onFocus={focusCell}
+                    />
+                  </td>
+                  
+                  <td className="border border-muted-foreground/20 p-2">
+                    {exercise.sets.length > 1 && (
+                      <button
+                        className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                        onClick={() => deleteSet(workoutId, exercise.id, set.id)}
+                        aria-label="Delete set"
+                      >
+                        <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    )}
+                    {exercise.sets.length === 1 && (
+                      <button
+                        className="p-1 rounded-full hover:bg-secondary transition-colors"
+                        onClick={() => addSet(workoutId, exercise.id)}
+                        aria-label="Add set"
+                      >
+                        <Plus className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )}
+                    {setIndex === exercise.sets.length - 1 && (
+                      <button
+                        className="p-1 rounded-full hover:bg-secondary transition-colors ml-1"
+                        onClick={() => addSet(workoutId, exercise.id)}
+                        aria-label="Add another set"
+                      >
+                        <Plus className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </td>
+                </motion.tr>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+  
+  // If we don't have a session, return nothing
+  if (!session) return null;
+  
+  // Original full workout table implementation for session
   const organizedExercises = React.useMemo(() => {
     const result: Exercise[] = [];
     const circuitMap = new Map<string, Exercise[]>();

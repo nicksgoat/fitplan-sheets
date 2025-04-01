@@ -1,9 +1,8 @@
-
 import React, { useState, useRef } from "react";
 import { Workout, Exercise } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import ExerciseRow from "@/components/ExerciseRow";
-import SessionHeader from "@/components/SessionHeader";
+import WorkoutSessionHeader from "@/components/WorkoutSessionHeader";
 import CircuitControls from "@/components/CircuitControls";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,7 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
 
   return (
     <div className="mb-16">
-      <SessionHeader workout={workout} />
+      <WorkoutSessionHeader workout={workout} />
       
       <div className="flex justify-between items-center my-4">
         <div className="flex items-center space-x-2">
