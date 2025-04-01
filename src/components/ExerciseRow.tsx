@@ -64,6 +64,11 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
     updateExercise(workoutId, exercise.id, { notes });
   };
 
+  // Stop propagation for editable name field to prevent collapsing
+  const handleNameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className={cn(
       "border border-gray-800 rounded-lg overflow-hidden bg-dark-200",
@@ -71,14 +76,14 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
       exercise.isGroup && "border-purple-800 bg-purple-950/20"
     )}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-gray-800/30">
-          <div className="flex items-center">
+        <div className="flex items-center justify-between w-full p-3 hover:bg-gray-800/30">
+          <div className="flex items-center flex-grow" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? (
-              <ChevronDown className="h-5 w-5 text-gray-500 mr-2" />
+              <ChevronDown className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
             ) : (
-              <ChevronRight className="h-5 w-5 text-gray-500 mr-2" />
+              <ChevronRight className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
             )}
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-grow" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-2">
                 <span 
                   className={cn(
@@ -86,6 +91,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
                     exercise.isCircuit && "text-blue-300", 
                     exercise.isGroup && "text-purple-300"
                   )}
+                  onClick={handleNameClick}
                 >
                   {exercise.name || "Unnamed Exercise"}
                 </span>
@@ -117,7 +123,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             {exercise.isCircuit && (
               <Badge variant="outline" className="mr-2">
                 <Timer className="h-3 w-3 mr-1" />
@@ -149,7 +155,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CollapsibleTrigger>
+        </div>
 
         <CollapsibleContent>
           <div className="p-3 pt-0">
