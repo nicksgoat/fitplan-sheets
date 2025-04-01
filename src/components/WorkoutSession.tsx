@@ -24,10 +24,24 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
     return <EmptyState />;
   }
 
+  if (!program.workouts) {
+    return <EmptyState title="No workouts found" description="There are no workouts in this program yet." />;
+  }
+
   const workout = program.workouts.find((workout) => workout.id === sessionId);
 
   if (!workout) {
     return <EmptyState title="Workout not found" description="The selected workout could not be found." />;
+  }
+
+  // Ensure workout.exercises is defined
+  if (!workout.exercises) {
+    workout.exercises = [];
+  }
+
+  // Ensure workout.circuits is defined
+  if (!workout.circuits) {
+    workout.circuits = [];
   }
 
   // Create a map of circuit IDs to their exercises

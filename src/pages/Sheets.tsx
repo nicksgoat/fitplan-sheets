@@ -24,7 +24,7 @@ const WorkoutApp: React.FC = () => {
   // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
     // Only initialize if there are no weeks yet
-    if (program && program.weeks.length === 0) {
+    if (program && program.weeks && program.weeks.length === 0) {
       const newWeekId = addWeek("programId");
       // Check if newWeekId is a string before using it
       if (typeof newWeekId === 'string') {
@@ -32,7 +32,7 @@ const WorkoutApp: React.FC = () => {
         
         // Find the new week that was just created
         const newWeek = program.weeks.find(w => w.id === newWeekId);
-        if (newWeek && newWeek.workouts.length > 0) {
+        if (newWeek && newWeek.workouts && newWeek.workouts.length > 0) {
           // Set the first workout in the week as active
           setActiveWorkoutId(newWeek.workouts[0]);
         }
@@ -41,7 +41,7 @@ const WorkoutApp: React.FC = () => {
   }, [program, addWeek, setActiveWeekId, setActiveWorkoutId]);
   
   // Handle empty state - no program or empty program (this is a fallback)
-  if (!program || program.weeks.length === 0) {
+  if (!program) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
@@ -70,6 +70,16 @@ const WorkoutApp: React.FC = () => {
         </div>
       </div>
     );
+  }
+  
+  // Add null check for program.weeks
+  if (!program.weeks) {
+    return <div className="text-center py-4">Loading workout program...</div>;
+  }
+  
+  // Add null check for program.workouts
+  if (!program.workouts) {
+    return <div className="text-center py-4">Loading workouts...</div>;
   }
   
   // If we have a program but no active workout selected
