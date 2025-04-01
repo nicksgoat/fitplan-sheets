@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils";
 import { getOrganizedExercises } from "@/utils/workoutPreviewUtils";
 import MobileDeviceFrame from "./workout-preview/MobileDeviceFrame";
 import ExerciseCard from "./workout-preview/ExerciseCard";
-import { useExercise } from "@/hooks/useExerciseLibrary";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { BookmarkPlus } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface WorkoutMobilePreviewProps {
   sessionId: string;

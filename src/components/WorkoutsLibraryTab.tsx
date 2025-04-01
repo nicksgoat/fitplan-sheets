@@ -14,7 +14,7 @@ const WorkoutsLibraryTab: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { loadWorkoutFromLibrary, setActiveWeekId, setActiveWorkoutId } = useWorkout();
+  const { loadWorkoutFromLibrary, addWeek, setActiveWeekId, setActiveWorkoutId } = useWorkout();
   
   // Load workouts from library
   useEffect(() => {
@@ -37,15 +37,21 @@ const WorkoutsLibraryTab: React.FC = () => {
   };
   
   const handleUseWorkout = (workout: Workout) => {
-    // Navigate to Sheets and set up the workout
-    navigate("/sheets");
+    // Create a new week if necessary
+    const newWeekId = addWeek();
     
-    // Create a temporary week if needed
-    // This functionality would be expanded in a full implementation
-    toast.info("Opening workout in sheets...");
-    
-    // This is a placeholder for now - in a full implementation
-    // we would properly set up the workout in the context
+    if (typeof newWeekId === 'string') {
+      // Load the workout into our program
+      loadWorkoutFromLibrary(workout, newWeekId);
+      
+      // Navigate to Sheets and set up the workout
+      navigate("/sheets");
+      setActiveWeekId(newWeekId);
+      
+      toast.success("Workout loaded successfully");
+    } else {
+      toast.error("Could not create a new week");
+    }
   };
   
   const formatDate = (dateString?: string) => {

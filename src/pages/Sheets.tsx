@@ -22,22 +22,36 @@ const WorkoutApp: React.FC = () => {
   
   // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
-    // Only initialize if there are no weeks yet
-    if (program && program.weeks.length === 0) {
-      const newWeekId = addWeek();
-      // Check if newWeekId is a string before using it
-      if (typeof newWeekId === 'string') {
-        const newWorkoutId = addWorkout(newWeekId);
-        setActiveWeekId(newWeekId);
-        if (typeof newWorkoutId === 'string') {
-          setActiveWorkoutId(newWorkoutId);
+    // Only initialize if the program exists but has no weeks yet
+    if (program) {
+      if (program.weeks.length === 0) {
+        const newWeekId = addWeek();
+        // Check if newWeekId is a string before using it
+        if (typeof newWeekId === 'string') {
+          const newWorkoutId = addWorkout(newWeekId);
+          setActiveWeekId(newWeekId);
+          if (typeof newWorkoutId === 'string') {
+            setActiveWorkoutId(newWorkoutId);
+          }
+        }
+      } else if (program.weeks.length > 0 && !activeWorkoutId) {
+        // If we have weeks but no active workout, set the first week and workout
+        setActiveWeekId(program.weeks[0].id);
+        
+        // Find first workout in the active week
+        const firstWeekWorkouts = program.weeks[0].workouts;
+        if (firstWeekWorkouts.length > 0) {
+          setActiveWorkoutId(firstWeekWorkouts[0]);
+        } else if (program.workouts.length > 0) {
+          // If no workouts in first week, use the first workout regardless of week
+          setActiveWorkoutId(program.workouts[0].id);
         }
       }
     }
-  }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId]);
+  }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId, activeWorkoutId]);
   
   // Handle empty state - no program or empty program (this is a fallback)
-  if (!program || program.weeks.length === 0) {
+  if (!program) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
@@ -68,11 +82,64 @@ const WorkoutApp: React.FC = () => {
     );
   }
   
-  // If we have a program but no active workout selected
-  if (!activeWorkoutId && program.workouts.length > 0) {
-    // Auto-select the first workout
-    setActiveWorkoutId(program.workouts[0].id);
-    return <div className="text-center py-4">Loading workout...</div>;
+  // If we have a program but no weeks
+  if (program.weeks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
+          <h2 className="text-xl font-semibold mb-4">Create Your First Week</h2>
+          <p className="text-gray-400 mb-6">
+            Start by creating your first week to organize your workouts.
+          </p>
+          <Button 
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            onClick={() => {
+              // Create a new week
+              const newWeekId = addWeek();
+              // Check if newWeekId is a string before using it
+              if (typeof newWeekId === 'string') {
+                const newWorkoutId = addWorkout(newWeekId);
+                setActiveWeekId(newWeekId);
+                if (typeof newWorkoutId === 'string') {
+                  setActiveWorkoutId(newWorkoutId);
+                }
+              }
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Week
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // If we have a program and weeks but no active workout selected
+  if (!activeWorkoutId) {
+    return (
+      <div className="flex flex-col space-y-4">
+        <WeekTabs />
+        <div className="text-center py-8">
+          <p className="text-gray-400 mb-4">No workout selected</p>
+          <Button
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            onClick={() => {
+              if (program.weeks.length > 0) {
+                const activeWeekId = program.weeks[0].id;
+                const newWorkoutId = addWorkout(activeWeekId);
+                setActiveWeekId(activeWeekId);
+                if (typeof newWorkoutId === 'string') {
+                  setActiveWorkoutId(newWorkoutId);
+                }
+              }
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Workout
+          </Button>
+        </div>
+      </div>
+    );
   }
   
   return (
