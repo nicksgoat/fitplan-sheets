@@ -28,6 +28,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useWorkoutExerciseLibraryData } from "@/hooks/useWorkoutLibraryIntegration";
 import { Badge as BadgeIcon } from "lucide-react";
+import ExerciseSearch from "@/components/ExerciseSearch";
+import { Exercise as LibraryExercise } from "@/types/exercise";
+import { getDefaultExerciseConfig } from "@/utils/exerciseConverters";
 
 interface ExerciseRowProps {
   exercise: Exercise;
@@ -44,6 +47,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
 }) => {
   const { deleteExercise, duplicateExercise, updateExercise } = useWorkout();
   const [isOpen, setIsOpen] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
   const { libraryExercise } = useWorkoutExerciseLibraryData(exercise.id);
 
   const handleDeleteExercise = () => {
@@ -67,6 +71,27 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
   // Stop propagation for editable name field to prevent collapsing
   const handleNameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsEditingName(true);
+  };
+
+  // Handle selection of an exercise from the library
+  const handleExerciseSelect = (libraryExercise: LibraryExercise) => {
+    // Get default configuration based on exercise type
+    const defaultConfig = getDefaultExerciseConfig(libraryExercise.category);
+    
+    // Update the exercise with data from the library
+    updateExercise(workoutId, exercise.id, {
+      name: libraryExercise.name,
+      notes: libraryExercise.instructions || '',
+      libraryExerciseId: libraryExercise.id,
+      // Apply any default configurations if available
+      repType: defaultConfig?.repType || exercise.repType,
+      weightType: defaultConfig?.weightType || exercise.weightType,
+      intensityType: defaultConfig?.intensityType || exercise.intensityType
+    });
+    
+    setIsEditingName(false);
+    toast.success(`Loaded "${libraryExercise.name}" from library`);
   };
 
   return (
@@ -85,16 +110,34 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({
             )}
             <div className="flex flex-col flex-grow" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-2">
-                <span 
-                  className={cn(
-                    "font-medium text-white",
-                    exercise.isCircuit && "text-blue-300", 
-                    exercise.isGroup && "text-purple-300"
-                  )}
-                  onClick={handleNameClick}
-                >
-                  {exercise.name || "Unnamed Exercise"}
-                </span>
+                {isEditingName ? (
+                  <div className="min-w-[200px]" onClick={(e) => e.stopPropagation()}>
+                    <ExerciseSearch
+                      value={exercise.name || ""}
+                      onChange={handleNameChange}
+                      onSelect={handleExerciseSelect}
+                      onBlur={() => setIsEditingName(false)}
+                      autoFocus={true}
+                      placeholder="Search exercises..."
+                      className={cn(
+                        "font-medium text-white",
+                        exercise.isCircuit && "text-blue-300", 
+                        exercise.isGroup && "text-purple-300"
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <span 
+                    className={cn(
+                      "font-medium text-white cursor-pointer",
+                      exercise.isCircuit && "text-blue-300", 
+                      exercise.isGroup && "text-purple-300"
+                    )}
+                    onClick={handleNameClick}
+                  >
+                    {exercise.name || "Unnamed Exercise"}
+                  </span>
+                )}
                 
                 {libraryExercise && (
                   <Badge variant="outline" className="ml-1 text-xs px-1 py-0 flex items-center gap-1">
