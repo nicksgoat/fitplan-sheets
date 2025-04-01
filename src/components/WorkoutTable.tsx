@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -42,10 +43,11 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
   const { 
     updateExercise, 
     updateSet,
-    addExercise, 
+    addExercise,
     addSet,
     deleteSet,
-    deleteExercise 
+    deleteExercise,
+    program
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
@@ -59,6 +61,28 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
     ) => {
       // In single exercise view, we don't need complex navigation
       // This is just a placeholder to satisfy the type requirement
+    };
+
+    // Custom function to add a set with previous set data
+    const handleAddSetWithCopy = () => {
+      if (exercise.sets.length > 0) {
+        // Get the last set
+        const lastSet = exercise.sets[exercise.sets.length - 1];
+        // Copy the data from the last set
+        const newSetData = {
+          reps: lastSet.reps,
+          weight: lastSet.weight,
+          intensity: lastSet.intensity,
+          rest: lastSet.rest,
+          intensityType: lastSet.intensityType,
+          weightType: lastSet.weightType
+        };
+        // Add the new set with copied data
+        addSet(workoutId, exercise.id, newSetData);
+      } else {
+        // If there are no sets, just add a new empty set
+        addSet(workoutId, exercise.id);
+      }
     };
 
     return (
@@ -185,7 +209,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                     {exercise.sets.length === 1 && (
                       <button
                         className="p-1 rounded-full hover:bg-secondary transition-colors"
-                        onClick={() => addSet(workoutId, exercise.id)}
+                        onClick={handleAddSetWithCopy}
                         aria-label="Add set"
                       >
                         <Plus className="h-4 w-4 text-muted-foreground" />
@@ -194,7 +218,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                     {setIndex === exercise.sets.length - 1 && (
                       <button
                         className="p-1 rounded-full hover:bg-secondary transition-colors ml-1"
-                        onClick={() => addSet(workoutId, exercise.id)}
+                        onClick={handleAddSetWithCopy}
                         aria-label="Add another set"
                       >
                         <Plus className="h-4 w-4 text-muted-foreground" />
