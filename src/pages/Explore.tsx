@@ -7,9 +7,9 @@ import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import { getWorkoutLibrary, getProgramLibrary } from '@/utils/presets';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useLibrary } from '@/contexts/LibraryContext';
 
 const Explore = () => {
   const allCategories = [
@@ -22,15 +22,15 @@ const Explore = () => {
   
   // Use the same data hook as the Library page
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
+  const { workouts, programs } = useLibrary();
   
-  // Get real workout and program data from library
+  // Transform our data to match the ItemType format
   const [workoutItems, setWorkoutItems] = useState<ItemType[]>([]);
   const [programItems, setProgramItems] = useState<ItemType[]>([]);
   
-  // Load library data
   useEffect(() => {
     // Transform workout library data to ItemType format
-    const workouts = getWorkoutLibrary().map(workout => ({
+    const workoutItemsList = workouts.map(workout => ({
       id: workout.id,
       title: workout.name,
       type: 'workout' as const,
@@ -46,10 +46,10 @@ const Explore = () => {
       lastModified: workout.lastModified
     }));
     
-    setWorkoutItems(workouts);
+    setWorkoutItems(workoutItemsList);
     
     // Transform program library data to ItemType format
-    const programs = getProgramLibrary().map(program => ({
+    const programItemsList = programs.map(program => ({
       id: program.id,
       title: program.name,
       type: 'program' as const,
@@ -65,8 +65,8 @@ const Explore = () => {
       lastModified: program.lastModified
     }));
     
-    setProgramItems(programs);
-  }, []);
+    setProgramItems(programItemsList);
+  }, [workouts, programs]);
   
   // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({

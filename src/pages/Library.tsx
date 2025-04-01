@@ -12,6 +12,7 @@ import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
+import { LibraryProvider } from '@/contexts/LibraryContext';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);

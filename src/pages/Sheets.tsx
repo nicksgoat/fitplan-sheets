@@ -9,6 +9,7 @@ import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { LibraryProvider } from "@/contexts/LibraryContext";
 
 const WorkoutApp: React.FC = () => {
   const { 

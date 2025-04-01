@@ -1,132 +1,46 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import AuthenticatedRoute from "@/components/AuthenticatedRoute";
+import MainLayout from "./components/layout/MainLayout";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import Explore from "./pages/Explore";
 import Library from "./pages/Library";
+import Explore from "./pages/Explore";
+import Sheets from "./pages/Sheets";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
-import Sheets from "./pages/Sheets";
-import Profile from "./pages/Profile";
+import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
-import MainLayout from "./components/layout/MainLayout";
+import { LibraryProvider } from "./contexts/LibraryContext";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+function App() {
+  return (
+    <LibraryProvider>
       <BrowserRouter>
-        <div className="dark">
-          <TooltipProvider>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<Index />} />
-              <Route 
-                path="/explore" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Explore />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/library" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Library />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/liked" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Liked />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/search" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Search />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/sheets" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Sheets />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <Profile />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/profile/:profileId" 
-                element={
-                  <MainLayout>
-                    <Profile />
-                  </MainLayout>
-                } 
-              />
-              <Route 
-                path="/create-exercise" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <CreateExercise />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route 
-                path="/edit-exercise/:id" 
-                element={
-                  <AuthenticatedRoute>
-                    <MainLayout>
-                      <EditExercise />
-                    </MainLayout>
-                  </AuthenticatedRoute>
-                } 
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-            <Sonner position="top-center" />
-          </TooltipProvider>
-        </div>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Index />} />
+            <Route path="library" element={<Library />} />
+            <Route path="explore" element={<Explore />} />
+            <Route path="sheets" element={<Sheets />} />
+            <Route path="auth" element={<Auth />} />
+            <Route path="liked" element={<Liked />} />
+            <Route path="search" element={<Search />} />
+            <Route path="profile" element={
+              <AuthenticatedRoute>
+                <Profile />
+              </AuthenticatedRoute>
+            } />
+            <Route path="create-exercise" element={<CreateExercise />} />
+            <Route path="edit-exercise/:id" element={<EditExercise />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    </LibraryProvider>
+  );
+}
 
 export default App;

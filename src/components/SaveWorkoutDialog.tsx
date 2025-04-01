@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { addWorkoutToLibrary } from "@/utils/presets";
+import { useLibrary } from "@/contexts/LibraryContext";
 import { toast } from "sonner";
 
 interface SaveWorkoutDialogProps {
@@ -16,6 +16,7 @@ interface SaveWorkoutDialogProps {
 
 const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogProps) => {
   const { program } = useWorkout();
+  const { saveWorkout } = useLibrary();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   
@@ -42,10 +43,9 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
         name: name.trim()
       };
       
-      // Save to local library
-      addWorkoutToLibrary(workoutToSave);
+      // Save to library using the context
+      saveWorkout(workoutToSave);
       
-      toast.success("Workout saved to your library");
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving workout:", error);

@@ -1,25 +1,20 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, CalendarDays, ExternalLink } from "lucide-react";
-import { getWorkoutLibrary, removeWorkoutFromLibrary } from "@/utils/presets";
 import { Workout } from "@/types/workout";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWorkout } from "@/contexts/WorkoutContext";
+import { useLibrary } from "@/contexts/LibraryContext";
 
 const WorkoutsLibraryTab: React.FC = () => {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
   const { loadWorkoutFromLibrary, addWeek, setActiveWeekId, setActiveWorkoutId } = useWorkout();
-  
-  // Load workouts from library
-  useEffect(() => {
-    setWorkouts(getWorkoutLibrary());
-  }, []);
+  const { workouts, removeWorkout } = useLibrary();
   
   const handleDeleteWorkout = (workoutId: string) => {
     setWorkoutToDelete(workoutId);
@@ -28,8 +23,7 @@ const WorkoutsLibraryTab: React.FC = () => {
   
   const confirmDelete = () => {
     if (workoutToDelete) {
-      removeWorkoutFromLibrary(workoutToDelete);
-      setWorkouts(getWorkoutLibrary());
+      removeWorkout(workoutToDelete);
       toast.success("Workout removed from library");
       setDeleteDialogOpen(false);
       setWorkoutToDelete(null);

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
+import { useLibrary } from "@/contexts/LibraryContext";
 import { PlusCircle, RefreshCw, Layers, Library, Music, AlbumIcon, ListMusic, FileText, Disc, X, GripVertical, Edit, Trash2, Save, Database } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,22 +28,25 @@ const WorkoutHeader: React.FC = () => {
     activeWorkoutId,
     resetProgram, 
     loadSampleProgram,
-    saveWorkoutToLibrary,
-    saveWeekToLibrary,
-    saveProgramToLibrary,
     loadWorkoutFromLibrary,
     loadWeekFromLibrary,
     loadProgramFromLibrary,
-    getWorkoutLibrary,
-    getWeekLibrary,
-    getProgramLibrary,
-    removeWorkoutFromLibrary,
-    removeWeekFromLibrary,
-    removeProgramFromLibrary,
     program,
     updateWorkoutName,
     updateWeekName,
   } = useWorkout();
+  
+  const {
+    workouts: workoutLibrary,
+    weeks: weekLibrary,
+    programs: programLibrary,
+    saveWorkout,
+    saveWeek,
+    saveProgram,
+    removeWorkout,
+    removeWeek,
+    removeProgram
+  } = useLibrary();
   
   const [isWorkoutDialogOpen, setIsWorkoutDialogOpen] = useState(false);
   const [isWeekDialogOpen, setIsWeekDialogOpen] = useState(false);
@@ -55,10 +59,6 @@ const WorkoutHeader: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState<{id: string, type: string, name: string} | null>(null);
   
-  const workoutLibrary = getWorkoutLibrary();
-  const weekLibrary = getWeekLibrary();
-  const programLibrary = getProgramLibrary();
-
   const handleDragStart = (e: React.DragEvent, item: any, type: string) => {
     setDraggedItem({...item, type});
     e.dataTransfer.setData("application/json", JSON.stringify({id: item.id, type}));
@@ -103,23 +103,29 @@ const WorkoutHeader: React.FC = () => {
 
   const handleSaveWorkoutToLibrary = () => {
     if (activeWorkoutId && libraryItemName) {
-      saveWorkoutToLibrary(activeWorkoutId, libraryItemName);
-      setLibraryItemName("");
-      setIsWorkoutDialogOpen(false);
+      const workoutToSave = program.workouts.find(w => w.id === activeWorkoutId);
+      if (workoutToSave) {
+        saveWorkout(workoutToSave, libraryItemName);
+        setLibraryItemName("");
+        setIsWorkoutDialogOpen(false);
+      }
     }
   };
   
   const handleSaveWeekToLibrary = () => {
     if (activeWeekId && libraryItemName) {
-      saveWeekToLibrary(activeWeekId, libraryItemName);
-      setLibraryItemName("");
-      setIsWeekDialogOpen(false);
+      const weekToSave = program.weeks.find(w => w.id === activeWeekId);
+      if (weekToSave) {
+        saveWeek(weekToSave, libraryItemName);
+        setLibraryItemName("");
+        setIsWeekDialogOpen(false);
+      }
     }
   };
   
   const handleSaveProgramToLibrary = () => {
     if (libraryItemName) {
-      saveProgramToLibrary(libraryItemName);
+      saveProgram(program, libraryItemName);
       setLibraryItemName("");
       setIsProgramDialogOpen(false);
     }
@@ -129,11 +135,11 @@ const WorkoutHeader: React.FC = () => {
     if (!itemToDelete) return;
     
     if (itemToDelete.type === "workout") {
-      removeWorkoutFromLibrary(itemToDelete.id);
+      removeWorkout(itemToDelete.id);
     } else if (itemToDelete.type === "week") {
-      removeWeekFromLibrary(itemToDelete.id);
+      removeWeek(itemToDelete.id);
     } else if (itemToDelete.type === "program") {
-      removeProgramFromLibrary(itemToDelete.id);
+      removeProgram(itemToDelete.id);
     }
     
     setItemToDelete(null);
