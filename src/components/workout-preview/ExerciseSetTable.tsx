@@ -26,8 +26,9 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
   const handleDuplicateSet = (exerciseId: string, setIndex: number) => {
     if (!exercise.sets) return;
     
-    // Find the workout that contains this exercise
-    updateWorkout(exercise.id, (draft) => {
+    // We need to find the workout that contains this exercise first
+    // This is a workaround since we don't have the workoutId directly
+    updateWorkout(exerciseId, (draft) => {
       const setToDuplicate = exercise.sets[setIndex];
       const newSet: Set = {
         id: Math.random().toString(36).substring(2, 9), // Simple ID generation
@@ -41,7 +42,10 @@ const ExerciseSetTable: React.FC<ExerciseSetTableProps> = ({ exercise }) => {
       };
       
       // Insert the new set after the current one
-      draft.sets.splice(setIndex + 1, 0, newSet);
+      const exerciseInWorkout = draft.exercises.find(e => e.id === exerciseId);
+      if (exerciseInWorkout) {
+        exerciseInWorkout.sets.splice(setIndex + 1, 0, newSet);
+      }
     });
   };
   
