@@ -9,6 +9,7 @@ import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import PublicLibraryInfo from "@/components/PublicLibraryInfo";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -105,6 +106,9 @@ const WorkoutApp: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Public Library Info Widget */}
+      <PublicLibraryInfo />
     </div>
   );
 };

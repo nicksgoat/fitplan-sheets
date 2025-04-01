@@ -100,3 +100,14 @@ export type WeightType =
   | 'distance-yd'   // Distance in yards (e.g., "25yd")
   | 'distance-mi';  // Distance in miles (e.g., "0.5mi")
 
+// Added properties for public workout library integration
+export interface WorkoutMetadata {
+  isPublic?: boolean;
+  userId?: string;
+  creator?: string;
+  likeCount?: number;
+  category?: string;
+  tags?: string[];
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  estimatedDuration?: string;
+}

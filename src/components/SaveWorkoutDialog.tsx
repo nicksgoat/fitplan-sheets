@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { addWorkoutToLibrary } from "@/utils/presets";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SaveWorkoutDialogProps {
   open: boolean;
@@ -16,7 +18,9 @@ interface SaveWorkoutDialogProps {
 
 const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogProps) => {
   const { program } = useWorkout();
+  const { user } = useAuth();
   const [name, setName] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Get the current workout
@@ -39,13 +43,17 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
       // Create a copy of the workout with the new name
       const workoutToSave = {
         ...workout,
-        name: name.trim()
+        name: name.trim(),
+        isPublic: isPublic,
+        userId: user?.id,
+        creator: user?.email || "Anonymous",
+        savedAt: new Date().toISOString()
       };
       
       // Save to local library
       addWorkoutToLibrary(workoutToSave);
       
-      toast.success("Workout saved to your library");
+      toast.success(`Workout saved ${isPublic ? 'to public library' : 'to your library'}`);
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving workout:", error);
@@ -59,9 +67,9 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-dark-200 text-white border-dark-300">
         <DialogHeader>
-          <DialogTitle>Save Workout to Library</DialogTitle>
+          <DialogTitle>Save Workout</DialogTitle>
           <DialogDescription className="text-gray-400">
-            This workout will be saved to your library for future use.
+            This workout will be saved for future use.
           </DialogDescription>
         </DialogHeader>
         
@@ -77,6 +85,23 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
               defaultValue={workout?.name || ""}
             />
           </div>
+          
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="public-switch" className="text-sm">
+              Make this workout public
+            </Label>
+            <Switch
+              id="public-switch"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
+          </div>
+          
+          {isPublic && !user && (
+            <p className="text-amber-400 text-sm">
+              Note: You're not logged in. Your workout will be saved publicly but anonymously.
+            </p>
+          )}
         </div>
         
         <DialogFooter>
@@ -88,7 +113,7 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
             disabled={saving || !name.trim()}
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
           >
-            {saving ? "Saving..." : "Save to Library"}
+            {saving ? "Saving..." : isPublic ? "Publish to Library" : "Save to Library"}
           </Button>
         </DialogFooter>
       </DialogContent>

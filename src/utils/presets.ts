@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 // Local storage keys
 const PROGRAM_LIBRARY_KEY = "fitplan-program-library";
 const WEEK_LIBRARY_KEY = "fitplan-week-library";
-const WORKOUT_LIBRARY_KEY = "fitplan-workout-library"; // Updated name
+const WORKOUT_LIBRARY_KEY = "fitplan-workout-library";
 
 // Preset keys - for backward compatibility
 const PROGRAM_PRESETS_KEY = "fitplan-program-presets";
@@ -66,6 +66,11 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
 export function getWorkoutLibrary(): Workout[] {
   const data = localStorage.getItem(WORKOUT_LIBRARY_KEY);
   return data ? JSON.parse(data) : [];
+}
+
+export function getPublicWorkoutLibrary(): Workout[] {
+  const workouts = getWorkoutLibrary();
+  return workouts.filter(w => w.isPublic === true);
 }
 
 export function getWeekLibrary(): WorkoutWeek[] {
