@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Exercise } from "@/types/exercise";
 import { Command } from "@/components/ui/command";
@@ -45,7 +44,6 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   }, [autoFocus]);
   
   useEffect(() => {
-    // Close results when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (
         resultsRef.current && 
@@ -88,7 +86,6 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   };
   
   const handleInputBlur = () => {
-    // Delayed to allow click on result
     setTimeout(() => {
       if (onBlur) {
         onBlur();
@@ -104,15 +101,20 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           type="text"
           className={cn(
             "w-full px-2 py-1 bg-transparent outline-none",
-            "placeholder:text-muted-foreground placeholder:absolute placeholder:left-2 placeholder:top-1/2 placeholder:-translate-y-1/2",
             className
           )}
           value={value}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder={placeholder}
+          placeholder=""
         />
+        
+        {!value && (
+          <div className="absolute inset-0 flex items-center pointer-events-none px-2 py-1 text-muted-foreground">
+            {placeholder}
+          </div>
+        )}
       </div>
       
       {showResults && (
