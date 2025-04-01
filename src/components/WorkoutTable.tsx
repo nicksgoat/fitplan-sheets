@@ -1,6 +1,5 @@
-
 import React, { useRef } from "react";
-import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
+import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown, Copy } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
 import { Exercise as LibraryExercise } from "@/types/exercise";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -42,7 +41,8 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
     addExercise, 
     addSet,
     deleteSet,
-    deleteExercise 
+    deleteExercise,
+    updateWorkout
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
@@ -90,18 +90,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   };
   
   const handleExerciseSelect = (exerciseId: string, libraryExercise: LibraryExercise) => {
-    // Find the existing exercise to retain its current state
     const existingExercise = session.exercises.find(e => e.id === exerciseId);
     
     if (existingExercise) {
-      // Apply default configurations based on the exercise category
       const defaults = getDefaultExerciseConfig(libraryExercise.category);
       
       updateExercise(session.id, exerciseId, {
         name: libraryExercise.name,
         notes: existingExercise.notes || libraryExercise.description || '',
         libraryExerciseId: libraryExercise.id,
-        // Only apply defaults if not already set
         repType: existingExercise.repType || defaults.repType,
         intensityType: existingExercise.intensityType || defaults.intensityType,
         weightType: existingExercise.weightType || defaults.weightType
@@ -292,6 +289,27 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
       columnName: targetExerciseColumn || setColumnOrder[newColIndex],
       exerciseId: targetExercise.id,
       setIndex: targetExerciseColumn ? undefined : newSetIndex
+    });
+  };
+  
+  const handleDuplicateSet = (exerciseId: string, setIndex: number) => {
+    updateWorkout(session.id, (draft) => {
+      const exercise = draft.exercises.find(e => e.id === exerciseId);
+      if (exercise && exercise.sets.length > setIndex) {
+        const setToDuplicate = exercise.sets[setIndex];
+        const newSet: Set = {
+          id: Math.random().toString(36).substring(2, 9),
+          reps: setToDuplicate.reps || "",
+          weight: setToDuplicate.weight || "",
+          intensity: setToDuplicate.intensity || "",
+          intensityType: setToDuplicate.intensityType,
+          weightType: setToDuplicate.weightType,
+          repType: setToDuplicate.repType,
+          rest: setToDuplicate.rest || "",
+        };
+        
+        exercise.sets.splice(setIndex + 1, 0, newSet);
+      }
     });
   };
   
@@ -663,15 +681,25 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                       <td className="border border-muted-foreground/20 p-2"></td>
                       
                       <td className="border border-muted-foreground/20 p-2">
-                        {exercise.sets.length > 1 && (
+                        <div className="flex space-x-1">
                           <button
-                            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                            onClick={() => deleteSet(session.id, exercise.id, set.id)}
-                            aria-label="Delete set"
+                            className="p-1 rounded-full hover:bg-secondary transition-colors"
+                            onClick={() => handleDuplicateSet(exercise.id, setIndex)}
+                            aria-label="Duplicate set"
                           >
-                            <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            <Copy className="h-3 w-3 text-muted-foreground hover:text-primary" />
                           </button>
-                        )}
+                          
+                          {exercise.sets.length > 1 && (
+                            <button
+                              className="p-1 rounded-full hover:bg-muted transition-colors"
+                              onClick={() => deleteSet(session.id, exercise.id, set.id)}
+                              aria-label="Delete set"
+                            >
+                              <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </motion.tr>
                   );
@@ -804,24 +832,35 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
                       <td className="border border-muted-foreground/20 p-2"></td>
                       
                       <td className="border border-muted-foreground/20 p-2">
-                        {exercise.sets.length > 1 && (
-                          <button
-                            className="p-1 rounded-full hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                            onClick={() => deleteSet(session.id, exercise.id, set.id)}
-                            aria-label="Delete set"
-                          >
-                            <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        )}
-                        {exercise.sets.length === 1 && (
+                        <div className="flex space-x-1">
                           <button
                             className="p-1 rounded-full hover:bg-secondary transition-colors"
-                            onClick={() => addSet(session.id, exercise.id)}
-                            aria-label="Add set"
+                            onClick={() => handleDuplicateSet(exercise.id, setIndex)}
+                            aria-label="Duplicate set"
                           >
-                            <Plus className="h-4 w-4 text-muted-foreground" />
+                            <Copy className="h-3 w-3 text-muted-foreground hover:text-primary" />
                           </button>
-                        )}
+                          
+                          {exercise.sets.length > 1 && (
+                            <button
+                              className="p-1 rounded-full hover:bg-muted transition-colors"
+                              onClick={() => deleteSet(session.id, exercise.id, set.id)}
+                              aria-label="Delete set"
+                            >
+                              <Minus className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          )}
+                          
+                          {exercise.sets.length === 1 && (
+                            <button
+                              className="p-1 rounded-full hover:bg-secondary transition-colors"
+                              onClick={() => addSet(session.id, exercise.id)}
+                              aria-label="Add set"
+                            >
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </motion.tr>
                   );
