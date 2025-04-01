@@ -31,21 +31,9 @@ const WorkoutsLibraryTab: React.FC = () => {
   };
   
   const handleUseWorkout = (workout: Workout) => {
-    // Create a new week if necessary
-    const newWeekId = addWeek();
-    
-    if (typeof newWeekId === 'string') {
-      // Load the workout into our program
-      loadWorkoutFromLibrary(workout, newWeekId);
-      
-      // Navigate to Sheets and set up the workout
-      navigate("/sheets");
-      setActiveWeekId(newWeekId);
-      
-      toast.success("Workout loaded successfully");
-    } else {
-      toast.error("Could not create a new week");
-    }
+    // Navigate to Sheets directly with the workout ID
+    navigate(`/sheets?workoutId=${workout.id}`);
+    toast.success("Workout loaded successfully");
   };
   
   const formatDate = (dateString?: string) => {

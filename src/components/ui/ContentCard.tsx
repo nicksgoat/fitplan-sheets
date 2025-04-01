@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
+import { useWorkout } from '@/contexts/WorkoutContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentCardProps {
   item: Exercise | ItemType;
@@ -16,6 +18,9 @@ interface ContentCardProps {
 }
 
 const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
+  const navigate = useNavigate();
+  const { loadWorkoutFromLibrary, addWeek, setActiveWeekId } = useWorkout();
+  
   // Determine if item is Exercise or ItemType
   const isExercise = 'primaryMuscle' in item;
   
@@ -47,12 +52,26 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   // Check if it's a Supabase Storage URL for videos
   const isStorageVideo = videoUrl && videoUrl.includes('storage.googleapis.com') && 
                          videoUrl.includes('exercise-videos');
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+
+    // Handle workout and program clicks to navigate to sheets
+    if (normalizedItem.type === 'workout') {
+      navigate(`/sheets?workoutId=${normalizedItem.id}`);
+    } else if (normalizedItem.type === 'program') {
+      navigate(`/sheets?programId=${normalizedItem.id}`);
+    }
+  };
   
   return (
     <DetailDrawer item={normalizedItem}>
       <Card 
         className={cn("content-card h-full flex flex-col", className)}
-        onClick={onClick}
+        onClick={handleCardClick}
       >
         <div className="relative">
           {videoUrl ? (
