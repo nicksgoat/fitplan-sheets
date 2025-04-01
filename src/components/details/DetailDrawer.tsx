@@ -5,6 +5,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import ExerciseDetail from './ExerciseDetail';
 import WorkoutDetail from './WorkoutDetail';
 import ProgramDetail from './ProgramDetail';
+import { useLibrary } from '@/contexts/LibraryContext';
 
 interface DetailDrawerProps {
   item: ItemType;
@@ -13,6 +14,16 @@ interface DetailDrawerProps {
 
 const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
   const [open, setOpen] = React.useState(false);
+  const { workouts, programs } = useLibrary();
+
+  // Find the actual complete workout or program data from the library
+  const workoutData = item.type === 'workout' 
+    ? workouts.find(workout => workout.id === item.id)
+    : undefined;
+    
+  const programData = item.type === 'program' 
+    ? programs.find(program => program.id === item.id)
+    : undefined;
 
   const handleClose = () => {
     setOpen(false);
@@ -30,10 +41,10 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
         {item.type === 'workout' && (
-          <WorkoutDetail item={item} onClose={handleClose} />
+          <WorkoutDetail item={item} workoutData={workoutData} onClose={handleClose} />
         )}
         {item.type === 'program' && (
-          <ProgramDetail item={item} onClose={handleClose} />
+          <ProgramDetail item={item} programData={programData} onClose={handleClose} />
         )}
         {item.type === 'collection' && (
           // For collections, we'll use the Exercise detail as a fallback

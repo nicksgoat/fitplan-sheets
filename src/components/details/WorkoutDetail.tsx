@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { ItemType } from '@/lib/types';
+import { Workout } from '@/types/workout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Heart, ChevronDown } from 'lucide-react';
+import { Clock, Heart, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeaderboardTab from './LeaderboardTab';
 import { 
@@ -12,84 +13,17 @@ import {
   CollapsibleTrigger 
 } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface WorkoutDetailProps {
   item: ItemType;
+  workoutData?: Workout;
   onClose: () => void;
 }
 
-interface ExerciseSet {
-  number: number;
-  target: string;
-  weight: number;
-  reps: number;
-  restTime?: number;
-}
-
-interface Exercise {
-  id: number;
-  name: string;
-  sets: number;
-  reps: number;
-  instructions?: string;
-  setDetails: ExerciseSet[];
-}
-
-const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
+const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
   const [openExercises, setOpenExercises] = useState<number[]>([]);
-
-  // Sample exercise data - in a real app this would come from your backend
-  const exercises: Exercise[] = [
-    {
-      id: 1,
-      name: "Back Squat",
-      sets: 3,
-      reps: 12,
-      instructions: "Keep your heels down and drive your knees out over your toes",
-      setDetails: [
-        { number: 1, target: "—", weight: 95, reps: 12, restTime: 60 },
-        { number: 2, target: "—", weight: 115, reps: 12, restTime: 60 },
-        { number: 3, target: "—", weight: 115, reps: 12, restTime: 60 },
-      ]
-    },
-    {
-      id: 2,
-      name: "Push-ups",
-      sets: 3,
-      reps: 15,
-      instructions: "Keep your core tight and elbows close to your body",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 15, restTime: 45 },
-        { number: 2, target: "—", weight: 0, reps: 15, restTime: 45 },
-        { number: 3, target: "—", weight: 0, reps: 15, restTime: 45 },
-      ]
-    },
-    {
-      id: 3,
-      name: "Planks",
-      sets: 3,
-      reps: 30,
-      instructions: "Keep your body in a straight line from head to heels",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 30, restTime: 30 },
-        { number: 2, target: "—", weight: 0, reps: 30, restTime: 30 },
-        { number: 3, target: "—", weight: 0, reps: 30, restTime: 30 },
-      ]
-    },
-    {
-      id: 4,
-      name: "Lunges",
-      sets: 3,
-      reps: 12,
-      instructions: "Step forward and lower your back knee toward the ground",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 12, restTime: 45 },
-        { number: 2, target: "—", weight: 0, reps: 12, restTime: 45 },
-        { number: 3, target: "—", weight: 0, reps: 12, restTime: 45 },
-      ]
-    }
-  ];
 
   const toggleExercise = (exerciseId: number) => {
     setOpenExercises(prev => 
@@ -142,6 +76,16 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
       <div className="p-4 space-y-4 flex-1">
         {activeTab === "details" ? (
           <>
+            {!workoutData && (
+              <Alert variant="destructive" className="bg-amber-900/20 border-amber-800 mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Workout data not found</AlertTitle>
+                <AlertDescription>
+                  This workout may have been deleted or is not available in your library.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div>
               <div className="flex justify-between items-start mb-1">
                 <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{item.type}</span>
@@ -176,68 +120,81 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
             {/* Exercises in this workout */}
             <div className="mt-6">
               <h2 className="font-semibold mb-2">Exercises</h2>
-              <div className="space-y-3">
-                {exercises.map((exercise) => (
-                  <Collapsible 
-                    key={exercise.id} 
-                    open={openExercises.includes(exercise.id)}
-                    onOpenChange={() => toggleExercise(exercise.id)}
-                    className="rounded-lg bg-gray-900 overflow-hidden"
-                  >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-3 text-left">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded bg-gray-800 flex items-center justify-center text-xs">
-                          {exercise.id}
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium">{exercise.name}</h3>
-                          <p className="text-xs text-fitbloom-text-medium">{exercise.sets} sets, {exercise.reps} reps</p>
-                        </div>
-                      </div>
-                      <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${openExercises.includes(exercise.id) ? 'rotate-180' : ''}`} />
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent className="px-3 pb-4">
-                      {exercise.instructions && (
-                        <p className="text-xs italic text-gray-400 mb-3">{exercise.instructions}</p>
-                      )}
-                      
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-b border-gray-800">
-                            <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Set</TableHead>
-                            <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Target</TableHead>
-                            <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Weight</TableHead>
-                            <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Reps</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {exercise.setDetails.map((set) => (
-                            <TableRow key={set.number} className="border-b border-gray-800">
-                              <TableCell className="py-2 px-2 text-xs font-medium text-amber-500">{set.number}</TableCell>
-                              <TableCell className="py-2 px-2 text-xs">{set.target}</TableCell>
-                              <TableCell className="py-2 px-2 text-xs text-blue-400">
-                                {set.weight > 0 ? set.weight : '—'}
-                              </TableCell>
-                              <TableCell className="py-2 px-2 text-xs">{set.reps}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      
-                      {/* Rest Times */}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {exercise.setDetails.map((set) => set.restTime && (
-                          <div key={`rest-${set.number}`} className="flex items-center text-xs text-blue-400">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>Set {set.number}: {set.restTime}s</span>
+              
+              {workoutData && workoutData.exercises.length > 0 ? (
+                <div className="space-y-3">
+                  {workoutData.exercises.map((exercise, idx) => (
+                    <Collapsible 
+                      key={exercise.id} 
+                      open={openExercises.includes(idx)}
+                      onOpenChange={() => toggleExercise(idx)}
+                      className="rounded-lg bg-gray-900 overflow-hidden"
+                    >
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-3 text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded bg-gray-800 flex items-center justify-center text-xs">
+                            {idx + 1}
                           </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
+                          <div>
+                            <h3 className="text-sm font-medium">{exercise.name}</h3>
+                            <p className="text-xs text-fitbloom-text-medium">
+                              {exercise.sets.length} sets
+                              {exercise.isCircuit && " • Circuit"}
+                              {exercise.isGroup && " • Group"}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${openExercises.includes(idx) ? 'rotate-180' : ''}`} />
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent className="px-3 pb-4">
+                        {exercise.notes && (
+                          <p className="text-xs italic text-gray-400 mb-3">{exercise.notes}</p>
+                        )}
+                        
+                        {exercise.sets.length > 0 && !exercise.isCircuit && !exercise.isGroup && (
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-b border-gray-800">
+                                <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Set</TableHead>
+                                <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Reps</TableHead>
+                                <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Weight</TableHead>
+                                <TableHead className="py-2 px-2 text-xs font-medium text-gray-400">Rest</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {exercise.sets.map((set, setIdx) => (
+                                <TableRow key={set.id} className="border-b border-gray-800">
+                                  <TableCell className="py-2 px-2 text-xs font-medium text-amber-500">{setIdx + 1}</TableCell>
+                                  <TableCell className="py-2 px-2 text-xs">{set.reps || '-'}</TableCell>
+                                  <TableCell className="py-2 px-2 text-xs text-blue-400">
+                                    {set.weight || '-'}
+                                  </TableCell>
+                                  <TableCell className="py-2 px-2 text-xs">{set.rest || '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                        
+                        {exercise.isCircuit && (
+                          <p className="text-xs text-gray-300 mt-3">
+                            This is a circuit exercise. See the workout sheet for full details.
+                          </p>
+                        )}
+                        
+                        {exercise.isGroup && (
+                          <p className="text-xs text-gray-300 mt-3">
+                            This is a group exercise. See the workout sheet for full details.
+                          </p>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No exercises found in this workout.</p>
+              )}
             </div>
           </>
         ) : (

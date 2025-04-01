@@ -1,68 +1,32 @@
 
 import React, { useState } from 'react';
 import { ItemType } from '@/lib/types';
+import { WorkoutProgram, Workout } from '@/types/workout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Heart } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Calendar, Clock, Heart, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import LeaderboardTab from './LeaderboardTab';
 import WorkoutDetail from './WorkoutDetail';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useLibrary } from '@/contexts/LibraryContext';
 
 interface ProgramDetailProps {
   item: ItemType;
+  programData?: WorkoutProgram;
   onClose: () => void;
 }
 
-const PROGRAM_WEEKS = {
-  'p1': 4, // 30-Day Strength Challenge
-  'p2': 8, // Couch to 5K
-  'p3': 3, // Mobility Mastery
-  'p4': 12, // Athlete Performance
-  'p5': 8, // Body Transformation
-  'p6': 6, // Yoga Journey
-  // Default value
-  'default': 4
-};
-
-const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, onClose }) => {
+const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, programData, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
   const [activeWeek, setActiveWeek] = useState<number>(1);
-  const [selectedWorkout, setSelectedWorkout] = useState<ItemType | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<{ itemType: ItemType, workoutData?: Workout } | null>(null);
+  const { workouts } = useLibrary();
   
-  const totalWeeks = PROGRAM_WEEKS[item.id as keyof typeof PROGRAM_WEEKS] || PROGRAM_WEEKS.default;
-
-  // Sample workout data that would come from your backend in a real app
-  const getWorkoutForWeek = (weekIndex: number, workoutNum: number): ItemType => {
-    // Generate a basic workout object based on the week and workout number
-    const workoutTitles = [
-      ["Upper Body Focus", "Lower Body Power", "Core & Cardio"],
-      ["Full Body HIIT", "Recovery & Mobility", "Strength Challenge"],
-      ["Strength Circuit", "Conditioning", "Active Recovery"]
-    ];
-    
-    const title = workoutTitles[weekIndex % 3][workoutNum - 1];
-    const duration = ["45 min", "50 min", "30 min", "40 min", "35 min", "45 min"][((weekIndex * 3) + workoutNum - 1) % 6];
-    
-    return {
-      id: `w${weekIndex}${workoutNum}`,
-      title: title,
-      type: 'workout',
-      creator: item.creator,
-      imageUrl: item.imageUrl, // Use the same image as the program or replace with workout specific image
-      duration: duration,
-      tags: item.tags,
-      difficulty: item.difficulty,
-      isFavorite: false,
-      description: `This is a ${title} workout from ${item.title}. Follow along with the guided exercises for a complete session.`
-    };
-  };
-
-  const handleWorkoutClick = (weekIndex: number, workoutNum: number) => {
-    const workout = getWorkoutForWeek(weekIndex, workoutNum);
-    setSelectedWorkout(workout);
-  };
+  // Get total weeks
+  const totalWeeks = programData?.weeks?.length || 0;
 
   // Handle the embla carousel API
   const handleCarouselApiChange = (api: any) => {
@@ -73,6 +37,42 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, onClose }) => {
       const selectedIndex = api.selectedScrollSnap();
       setActiveWeek(selectedIndex + 1);
     });
+  };
+  
+  // Find workout by ID
+  const getWorkoutById = (id: string): Workout | undefined => {
+    if (programData?.workouts) {
+      return programData.workouts.find(w => w.id === id);
+    }
+    return workouts.find(w => w.id === id);
+  };
+  
+  // Handle workout click to show detail
+  const handleWorkoutClick = (workoutId: string) => {
+    const workout = getWorkoutById(workoutId);
+    if (workout) {
+      // Create an ItemType from the workout for display
+      const workoutItem: ItemType = {
+        id: workout.id,
+        title: workout.name,
+        type: 'workout',
+        creator: 'You',
+        imageUrl: 'https://placehold.co/600x400?text=Workout',
+        tags: ['Workout', 'Custom'],
+        duration: `${workout.exercises.length} exercises`,
+        difficulty: 'intermediate',
+        isFavorite: false,
+        description: `Day ${workout.day} workout with ${workout.exercises.length} exercises`,
+        isCustom: true,
+        savedAt: workout.savedAt,
+        lastModified: workout.lastModified
+      };
+      
+      setSelectedWorkout({ 
+        itemType: workoutItem,
+        workoutData: workout
+      });
+    }
   };
 
   return (
@@ -119,6 +119,16 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, onClose }) => {
         <div className="p-4 space-y-4 flex-1">
           {activeTab === "details" ? (
             <>
+              {!programData && (
+                <Alert variant="destructive" className="bg-amber-900/20 border-amber-800 mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Program data not found</AlertTitle>
+                  <AlertDescription>
+                    This program may have been deleted or is not available in your library.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div>
                 <div className="flex justify-between items-start mb-1">
                   <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{item.type}</span>
@@ -171,61 +181,68 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, onClose }) => {
               </div>
 
               {/* Workouts in this program by week - with swipeable carousel */}
-              <div className="mt-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="font-semibold">Weekly Workouts</h2>
-                  <span className="text-sm text-fitbloom-purple">Week {activeWeek} of {totalWeeks}</span>
-                </div>
-                
-                <div className="relative">
-                  <Carousel 
-                    opts={{
-                      align: 'start',
-                      loop: false,
-                    }}
-                    setApi={handleCarouselApiChange}
-                    className="w-full"
-                  >
-                    <CarouselContent>
-                      {Array.from({ length: totalWeeks }).map((_, weekIndex) => (
-                        <CarouselItem key={weekIndex} className="basis-full">
-                          <div className="space-y-3">
-                            <div className="bg-gray-900 rounded-lg px-4 py-3 mb-4">
-                              <h3 className="text-sm font-bold text-center">Week {weekIndex + 1}</h3>
-                            </div>
-                            {[1, 2, 3].map((workoutNum) => (
-                              <div 
-                                key={`${weekIndex+1}-${workoutNum}`} 
-                                className="flex items-center gap-3 bg-gray-900 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
-                                onClick={() => handleWorkoutClick(weekIndex, workoutNum)}
-                              >
-                                <div className="h-10 w-10 rounded-md bg-gray-800 flex items-center justify-center font-medium">
-                                  W{workoutNum}
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-sm font-medium">
-                                    {weekIndex === 0 
-                                      ? ["Upper Body Focus", "Lower Body Power", "Core & Cardio"][workoutNum-1] 
-                                      : weekIndex === 1 
-                                        ? ["Full Body HIIT", "Recovery & Mobility", "Strength Challenge"][workoutNum-1]
-                                        : ["Strength Circuit", "Conditioning", "Active Recovery"][workoutNum-1]}
-                                  </h3>
-                                  <p className="text-xs text-fitbloom-text-medium mt-1">
-                                    {["7 exercises • 45 min", "6 exercises • 50 min", "8 exercises • 30 min", 
-                                      "5 exercises • 40 min", "6 exercises • 35 min", "7 exercises • 45 min"][((weekIndex*3)+workoutNum-1) % 6]}
-                                  </p>
-                                </div>
+              {programData && totalWeeks > 0 ? (
+                <div className="mt-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="font-semibold">Weekly Workouts</h2>
+                    <span className="text-sm text-fitbloom-purple">Week {activeWeek} of {totalWeeks}</span>
+                  </div>
+                  
+                  <div className="relative">
+                    <Carousel 
+                      opts={{
+                        align: 'start',
+                        loop: false,
+                      }}
+                      setApi={handleCarouselApiChange}
+                      className="w-full"
+                    >
+                      <CarouselContent>
+                        {programData.weeks.map((week, weekIndex) => (
+                          <CarouselItem key={week.id} className="basis-full">
+                            <div className="space-y-3">
+                              <div className="bg-gray-900 rounded-lg px-4 py-3 mb-4">
+                                <h3 className="text-sm font-bold text-center">{week.name}</h3>
                               </div>
-                            ))}
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 bg-gray-900/80 hover:bg-gray-800/90 border-gray-700" />
-                    <CarouselNext className="right-0 top-1/2 -translate-y-1/2 bg-gray-900/80 hover:bg-gray-800/90 border-gray-700" />
-                  </Carousel>
+                              
+                              {week.workouts.length > 0 ? (
+                                week.workouts.map((workoutId, workoutIndex) => {
+                                  const workout = getWorkoutById(workoutId);
+                                  return workout ? (
+                                    <div 
+                                      key={workoutId} 
+                                      className="flex items-center gap-3 bg-gray-900 rounded-lg p-3 cursor-pointer hover:bg-gray-800 transition-colors"
+                                      onClick={() => handleWorkoutClick(workoutId)}
+                                    >
+                                      <div className="h-10 w-10 rounded-md bg-gray-800 flex items-center justify-center font-medium">
+                                        D{workout.day}
+                                      </div>
+                                      <div className="flex-1">
+                                        <h3 className="text-sm font-medium">{workout.name}</h3>
+                                        <p className="text-xs text-fitbloom-text-medium mt-1">
+                                          {workout.exercises.length} exercises
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ) : null;
+                                })
+                              ) : (
+                                <p className="text-sm text-center text-gray-400 py-4">No workouts in this week</p>
+                              )}
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="left-0 top-1/2 -translate-y-1/2 bg-gray-900/80 hover:bg-gray-800/90 border-gray-700" />
+                      <CarouselNext className="right-0 top-1/2 -translate-y-1/2 bg-gray-900/80 hover:bg-gray-800/90 border-gray-700" />
+                    </Carousel>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-6">
+                  <p className="text-sm text-gray-400 text-center py-4">No weeks found in this program</p>
+                </div>
+              )}
             </>
           ) : (
             <LeaderboardTab itemTitle={item.title} itemType={item.type} />
@@ -252,7 +269,8 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, onClose }) => {
         }}>
           <DialogContent className="p-0 border-0 max-w-4xl bg-transparent shadow-none">
             <WorkoutDetail 
-              item={selectedWorkout} 
+              item={selectedWorkout.itemType} 
+              workoutData={selectedWorkout.workoutData}
               onClose={() => setSelectedWorkout(null)} 
             />
           </DialogContent>
