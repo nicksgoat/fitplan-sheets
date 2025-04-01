@@ -47,10 +47,8 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   };
   
   const handleDayChange = (value: string) => {
-    // Use updateWorkout instead of updateWorkoutDay
-    updateWorkout(sessionId, (workout) => {
-      workout.day = parseInt(value, 10);
-    });
+    // Use updateWorkout with proper type
+    updateWorkout(sessionId, { day: parseInt(value, 10) });
   };
   
   const handleAddExercise = () => {

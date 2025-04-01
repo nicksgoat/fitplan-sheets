@@ -25,7 +25,7 @@ const WorkoutApp: React.FC = () => {
   useEffect(() => {
     // Only initialize if there are no weeks yet
     if (program && program.weeks.length === 0) {
-      const newWeekId = addWeek();
+      const newWeekId = addWeek("programId");
       // Check if newWeekId is a string before using it
       if (typeof newWeekId === 'string') {
         setActiveWeekId(newWeekId);
@@ -53,7 +53,7 @@ const WorkoutApp: React.FC = () => {
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             onClick={() => {
               // Create a new week
-              const newWeekId = addWeek();
+              const newWeekId = addWeek("programId");
               // Check if newWeekId is a string before using it
               if (typeof newWeekId === 'string') {
                 const newWorkoutId = addWorkout(newWeekId);

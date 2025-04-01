@@ -16,10 +16,10 @@ export interface Exercise {
   notes: string;
   isCircuit?: boolean;
   isInCircuit?: boolean;
-  circuitId?: string;
-  circuitOrder?: number;
+  circuitId?: string | null;
+  circuitOrder?: number | null;
   isGroup?: boolean;
-  groupId?: string;
+  groupId?: string | null;
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
