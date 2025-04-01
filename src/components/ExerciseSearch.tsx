@@ -98,19 +98,22 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   
   return (
     <div className="relative w-full">
-      <input
-        ref={inputRef}
-        type="text"
-        className={cn(
-          "w-full px-2 py-1 bg-transparent outline-none",
-          className
-        )}
-        value={value}
-        onChange={handleInputChange}
-        onFocus={handleInputFocus}
-        onBlur={handleInputBlur}
-        placeholder={placeholder}
-      />
+      <div className="relative w-full">
+        <input
+          ref={inputRef}
+          type="text"
+          className={cn(
+            "w-full px-2 py-1 bg-transparent outline-none",
+            "placeholder:text-muted-foreground placeholder:absolute placeholder:left-2 placeholder:top-1/2 placeholder:-translate-y-1/2",
+            className
+          )}
+          value={value}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          placeholder={placeholder}
+        />
+      </div>
       
       {showResults && (
         <div 
