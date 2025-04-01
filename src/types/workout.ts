@@ -16,10 +16,10 @@ export interface Exercise {
   notes: string;
   isCircuit?: boolean;
   isInCircuit?: boolean;
-  circuitId?: string | null;
-  circuitOrder?: number | null;
+  circuitId?: string;
+  circuitOrder?: number;
   isGroup?: boolean;
-  groupId?: string | null;
+  groupId?: string;
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
@@ -45,10 +45,6 @@ export interface Workout {
   weekId?: string; // Field to associate workout with a week
   savedAt?: string; // Timestamp when the workout was saved to library
   lastModified?: string; // Timestamp when the workout was last modified
-  isPublic?: boolean; // Flag to indicate if workout is public
-  userId?: string; // User ID of the workout creator
-  creator?: string; // Name of the workout creator
-  imageUrl?: string; // URL for the workout image
 }
 
 export interface WorkoutWeek {
@@ -104,14 +100,3 @@ export type WeightType =
   | 'distance-yd'   // Distance in yards (e.g., "25yd")
   | 'distance-mi';  // Distance in miles (e.g., "0.5mi")
 
-// Added properties for public workout library integration
-export interface WorkoutMetadata {
-  isPublic?: boolean;
-  userId?: string;
-  creator?: string;
-  likeCount?: number;
-  category?: string;
-  tags?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  estimatedDuration?: string;
-}

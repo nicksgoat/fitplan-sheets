@@ -19,8 +19,6 @@ const SessionTabs: React.FC = () => {
   
   if (!program) return null;
   if (!activeWeekId) return null;
-  if (!program.weeks) return null;
-  if (!program.workouts) return null;
   
   const currentWeek = program.weeks.find(w => w.id === activeWeekId);
   if (!currentWeek) return null;

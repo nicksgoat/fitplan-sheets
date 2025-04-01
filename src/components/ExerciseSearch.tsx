@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Exercise } from "@/types/exercise";
 import { Command } from "@/components/ui/command";
@@ -44,6 +45,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   }, [autoFocus]);
   
   useEffect(() => {
+    // Close results when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (
         resultsRef.current && 
@@ -86,6 +88,7 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   };
   
   const handleInputBlur = () => {
+    // Delayed to allow click on result
     setTimeout(() => {
       if (onBlur) {
         onBlur();
@@ -95,27 +98,19 @@ const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   
   return (
     <div className="relative w-full">
-      <div className="relative w-full">
-        <input
-          ref={inputRef}
-          type="text"
-          className={cn(
-            "w-full px-2 py-1 bg-transparent outline-none",
-            className
-          )}
-          value={value}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          placeholder=""
-        />
-        
-        {!value && (
-          <div className="absolute inset-0 flex items-center pointer-events-none px-2 py-1 text-muted-foreground">
-            {placeholder}
-          </div>
+      <input
+        ref={inputRef}
+        type="text"
+        className={cn(
+          "w-full px-2 py-1 bg-transparent outline-none",
+          className
         )}
-      </div>
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder={placeholder}
+      />
       
       {showResults && (
         <div 

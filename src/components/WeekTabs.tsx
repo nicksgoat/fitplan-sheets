@@ -16,22 +16,8 @@ const WeekTabs: React.FC = () => {
     
     // Find the first workout in this week and make it active
     const week = program.weeks.find(w => w.id === weekId);
-    if (week && week.workouts && week.workouts.length > 0) {
+    if (week && week.workouts.length > 0) {
       setActiveWorkoutId(week.workouts[0]);
-    }
-  };
-  
-  const handleAddWeek = () => {
-    const newWeekId = addWeek("programId");
-    // Ensure newWeekId is a string before using it
-    if (typeof newWeekId === 'string') {
-      setActiveWeekId(newWeekId);
-      
-      // Find the newly created week and activate its first workout
-      const newWeek = program.weeks.find(w => w.id === newWeekId);
-      if (newWeek && newWeek.workouts && newWeek.workouts.length > 0) {
-        setActiveWorkoutId(newWeek.workouts[0]);
-      }
     }
   };
   
@@ -68,7 +54,7 @@ const WeekTabs: React.FC = () => {
           variant="ghost" 
           size="sm" 
           className="px-2 flex items-center gap-1 text-gray-400 hover:text-gray-200 hover:bg-dark-300"
-          onClick={handleAddWeek}
+          onClick={() => addWeek()}
         >
           <Plus className="h-4 w-4" />
           <span className="text-xs">Add Week</span>

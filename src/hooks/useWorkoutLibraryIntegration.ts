@@ -3,10 +3,8 @@ import { useEffect, useState } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { useExercise } from '@/hooks/useExerciseLibrary';
 import { Exercise as LibraryExercise } from '@/types/exercise';
-import { Exercise as WorkoutExercise, Workout } from '@/types/workout';
+import { Exercise as WorkoutExercise } from '@/types/workout';
 import { toast } from 'sonner';
-import { addWorkoutToLibrary, getWorkoutLibrary } from '@/utils/presets';
-import { ItemType } from '@/lib/types';
 
 /**
  * Hook to get library exercise data for a workout exercise
@@ -66,79 +64,5 @@ export function useWorkoutLibraryExercises(workoutId: string) {
   return {
     workoutExercises,
     hasWorkout: !!workoutExercises.length
-  };
-}
-
-/**
- * Hook to get all public workout library items
- */
-export function usePublicWorkoutLibrary() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [workoutItems, setWorkoutItems] = useState<ItemType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchPublicWorkouts = () => {
-      setIsLoading(true);
-      try {
-        // Get all workouts from the library
-        const allWorkouts = getWorkoutLibrary();
-        
-        // Filter for public workouts
-        const publicWorkouts = allWorkouts.filter(workout => workout.isPublic === true);
-        
-        setWorkouts(publicWorkouts);
-
-        // Convert workouts to ItemType format for ContentCard compatibility
-        const formattedWorkouts = publicWorkouts.map(workout => ({
-          id: workout.id,
-          title: workout.name,
-          type: 'workout' as const,
-          creator: workout.creator || 'Anonymous',
-          imageUrl: workout.imageUrl || `https://source.unsplash.com/random/300x200?fitness-${workout.id.substring(0, 8)}`,
-          tags: workout.exercises.slice(0, 3).map(ex => ex.name),
-          duration: `${workout.exercises.length} exercises`,
-          difficulty: 'intermediate' as const,
-          isFavorite: false,
-          description: `A workout with ${workout.exercises.length} exercises`,
-          savedAt: workout.savedAt,
-          lastModified: workout.lastModified
-        }));
-        
-        setWorkoutItems(formattedWorkouts);
-      } catch (error) {
-        console.error('Error fetching public workouts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchPublicWorkouts();
-  }, []);
-  
-  const saveWorkout = (workout: Workout) => {
-    try {
-      // Create a deep copy of the workout to ensure all data is captured
-      const workoutCopy = JSON.parse(JSON.stringify({ 
-        ...workout, 
-        isPublic: false,
-        lastModified: new Date().toISOString()
-      })) as Workout;
-      
-      addWorkoutToLibrary(workoutCopy);
-      toast.success('Workout saved to your library');
-      return true;
-    } catch (error) {
-      console.error('Error saving workout to library:', error);
-      toast.error('Failed to save workout to your library');
-      return false;
-    }
-  };
-  
-  return {
-    workouts,
-    workoutItems,
-    isLoading,
-    saveWorkout
   };
 }

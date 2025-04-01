@@ -1,122 +1,26 @@
 
-import React, { useState, useRef } from "react";
-import { Workout, Exercise } from "@/types/workout";
+import React from "react";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import ExerciseRow from "@/components/ExerciseRow";
-import WorkoutSessionHeader from "@/components/WorkoutSessionHeader";
-import CircuitControls from "@/components/CircuitControls";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import EmptyState from "@/components/EmptyState";
+import WorkoutSessionHeader from "./WorkoutSessionHeader";
+import WorkoutTable from "./WorkoutTable";
 
 interface WorkoutSessionProps {
   sessionId: string;
 }
 
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
-  const { program, addExercise } = useWorkout();
-  const [addingExercise, setAddingExercise] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  if (!program) {
-    return <EmptyState />;
-  }
-
-  if (!program.workouts) {
-    return <EmptyState title="No workouts found" description="There are no workouts in this program yet." />;
-  }
-
-  const workout = program.workouts.find((workout) => workout.id === sessionId);
-
-  if (!workout) {
-    return <EmptyState title="Workout not found" description="The selected workout could not be found." />;
-  }
-
-  // Ensure workout.exercises is defined
-  if (!workout.exercises) {
-    workout.exercises = [];
-  }
-
-  // Ensure workout.circuits is defined
-  if (!workout.circuits) {
-    workout.circuits = [];
-  }
-
-  // Create a map of circuit IDs to their exercises
-  const circuitMap = new Map<string, Exercise[]>();
-  workout.exercises.forEach(exercise => {
-    if (exercise.isInCircuit && exercise.circuitId) {
-      if (!circuitMap.has(exercise.circuitId)) {
-        circuitMap.set(exercise.circuitId, []);
-      }
-      circuitMap.get(exercise.circuitId)?.push(exercise);
-    }
-  });
-
-  // Get all exercises that aren't in circuits
-  const nonCircuitExercises = workout.exercises.filter(
-    exercise => !exercise.isInCircuit || !exercise.circuitId
-  );
-
-  const handleAddExercise = () => {
-    setAddingExercise(true);
-    addExercise(sessionId);
-    
-    // Scroll to bottom after adding
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      setAddingExercise(false);
-    }, 100);
-    
-    toast.success("Exercise added");
-  };
-
+  const { program } = useWorkout();
+  
+  if (!program || !program.workouts) return null;
+  
+  const session = program.workouts.find((s) => s.id === sessionId);
+  
+  if (!session) return null;
+  
   return (
-    <div className="mb-16">
+    <div className="session-card bg-dark-200 border border-dark-300 rounded-lg overflow-hidden shadow-md">
       <WorkoutSessionHeader sessionId={sessionId} />
-      
-      <div className="flex justify-between items-center my-4">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddExercise}
-            className="flex items-center gap-1"
-            disabled={addingExercise}
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Exercise</span>
-          </Button>
-        </div>
-        
-        <CircuitControls sessionId={sessionId} />
-      </div>
-      
-      <div className="space-y-4">
-        <AnimatePresence initial={false}>
-          {nonCircuitExercises.map((exercise, index) => (
-            <motion.div
-              key={exercise.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-              transition={{ duration: 0.2 }}
-            >
-              <ExerciseRow
-                key={exercise.id}
-                exercise={exercise}
-                workoutId={sessionId}
-                index={index}
-                circuitMap={circuitMap}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-      
-      <div ref={bottomRef} />
+      <WorkoutTable session={session} />
     </div>
   );
 };

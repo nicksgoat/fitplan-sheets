@@ -1,79 +1,54 @@
-
 import React, {
   createContext,
   useState,
-  useEffect,
   useContext,
-  ReactNode,
+  useCallback,
+  useEffect,
 } from "react";
-import { v4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
+import { produce } from "immer"; // Fixed import to use named import
 import {
   WorkoutProgram,
-  WorkoutWeek,
   Workout,
   Exercise,
+  WorkoutWeek,
+  Circuit,
   Set,
-  RepType,
-  IntensityType,
-  WeightType,
-  WorkoutType,
-  Circuit
 } from "@/types/workout";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { toast } from "sonner";
-import { addWorkoutToLibrary, getWorkoutLibrary } from "@/utils/presets";
+import { useExercises } from '@/hooks/useExerciseLibrary';
+import { Exercise as LibraryExercise } from '@/types/exercise';
+import { libraryToWorkoutExercise } from '@/utils/exerciseConverters';
 
-// WorkoutContextType interface
-interface WorkoutContextType {
-  // State
+interface WorkoutContextProps {
   program: WorkoutProgram | null;
-  activeWeekId: string | null;
   activeWorkoutId: string | null;
-  
-  // Setters
-  setProgram: React.Dispatch<React.SetStateAction<WorkoutProgram | null>>;
-  setActiveWeekId: (weekId: string | null) => void;
+  activeWeekId: string | null;
   setActiveWorkoutId: (workoutId: string | null) => void;
-  
-  // CRUD operations for workout structures
-  addWeek: (programId?: string) => string;
-  addWorkout: (weekId: string) => string;
-  addExercise: (workoutId: string) => void;
-  addSet: (workoutId: string, exerciseId: string, initialData?: Partial<Set>) => void;
-  
-  updateWeek: (weekId: string, updates: Partial<WorkoutWeek>) => void;
-  updateWorkout: (workoutId: string, updates: Partial<Workout> | ((workout: Workout) => void)) => void;
-  updateWorkoutName: (workoutId: string, name: string) => void;
-  updateWeekName: (weekId: string, name: string) => void;
-  
-  updateExercise: (
-    workoutId: string,
-    exerciseId: string,
-    updates: Partial<Exercise>
-  ) => void;
-  updateSet: (
-    workoutId: string,
-    exerciseId: string,
-    setId: string,
-    updates: Partial<Set>
-  ) => void;
-  
-  deleteWeek: (programId: string, weekId: string) => void;
-  deleteWorkout: (weekId: string, workoutId: string) => void;
-  deleteExercise: (workoutId: string, exerciseId: string) => void;
-  deleteSet: (workoutId: string, exerciseId: string, setId: string) => void;
-  
-  duplicateWorkout: (weekId: string, workoutId: string) => void;
+  setActiveWeekId: (weekId: string | null) => void;
+  setProgram: (program: WorkoutProgram | null) => void;
+  addWorkout: (weekId: string) => void;
+  addWeek: () => void;
+  addCircuit: (workoutId: string) => void;
+  addExercise: (workoutId: string, libraryExerciseId?: string) => void;
+  addExerciseToWorkout: (workoutId: string) => void;
   duplicateExercise: (workoutId: string, exerciseId: string) => void;
-  
-  // Circuit operations
+  addSet: (workoutId: string, exerciseId: string) => void;
+  deleteSet: (workoutId: string, exerciseId: string, setId: string) => void;
+  deleteExercise: (workoutId: string, exerciseId: string) => void;
+  deleteWorkout: (weekId: string, workoutId: string) => void;
+  updateProgram: (updater: (draft: WorkoutProgram) => void) => void;
+  updateWorkout: (workoutId: string, updater: (draft: Workout) => void) => void;
+  updateWeek: (weekId: string, updater: (draft: WorkoutWeek) => void) => void;
+  updateExercise: (workoutId: string, exerciseId: string, updates: Partial<Exercise>) => void;
+  updateSet: (workoutId: string, exerciseId: string, setId: string, updates: Partial<Set>) => void;
+  getExerciseDetails: (exerciseId: string) => (Exercise & { libraryData?: LibraryExercise }) | null;
+  moveWorkout: (workoutId: string, weekId: string, newWeekId: string) => void;
+  moveWeek: (weekId: string, newIndex: number) => void;
   createCircuit: (workoutId: string) => void;
   createSuperset: (workoutId: string) => void;
   createEMOM: (workoutId: string) => void;
   createAMRAP: (workoutId: string) => void;
   createTabata: (workoutId: string) => void;
-  
-  // Library operations
   resetProgram: () => void;
   loadSampleProgram: () => void;
   saveWorkoutToLibrary: (workoutId: string, name: string) => void;
@@ -85,1140 +60,881 @@ interface WorkoutContextType {
   getWorkoutLibrary: () => Workout[];
   getWeekLibrary: () => WorkoutWeek[];
   getProgramLibrary: () => WorkoutProgram[];
-  removeWorkoutFromLibrary: (workoutId: string) => void;
-  removeWeekFromLibrary: (weekId: string) => void;
-  removeProgramFromLibrary: (programId: string) => void;
-  
-  // Utility operations
-  getExerciseDetails: (exerciseId: string) => Exercise | undefined;
+  removeWorkoutFromLibrary: (id: string) => void;
+  removeWeekFromLibrary: (id: string) => void;
+  removeProgramFromLibrary: (id: string) => void;
+  updateWorkoutName: (workoutId: string, name: string) => void;
+  updateWeekName: (weekId: string, name: string) => void;
 }
 
-const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
+const WorkoutContext = createContext<WorkoutContextProps | undefined>(undefined);
 
 interface WorkoutProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) => {
-  // Main program state
-  const [program, setProgram] = useLocalStorage<WorkoutProgram | null>(
-    "workoutProgram",
-    null
-  );
-  
-  // Active state trackers
-  const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
+const initialProgramState: WorkoutProgram = {
+  id: "default-program-id",
+  name: "My Workout Program",
+  workouts: [],
+  weeks: [],
+};
+
+export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) => {
+  const [program, setProgram] = useState<WorkoutProgram | null>(initialProgramState);
   const [activeWorkoutId, setActiveWorkoutId] = useState<string | null>(null);
-
-  // Initialize program if it doesn't exist
-  useEffect(() => {
-    if (!program) {
-      const initialProgram: WorkoutProgram = {
-        id: v4(),
-        name: "New Program",
-        weeks: [],
-        workouts: []
-      };
-      
-      setProgram(initialProgram);
-    }
-  }, [setProgram, program]);
-
-  const addWeek = (programId?: string) => {
-    let newWeekId = "";
-    
-    setProgram((prev) => {
-      if (!prev) return prev;
-
-      const newWeek: WorkoutWeek = {
-        id: v4(),
-        name: `Week ${prev.weeks.length + 1}`,
-        workouts: [],
-        order: prev.weeks.length + 1
-      };
-      
-      newWeekId = newWeek.id;
-      
-      return {
-        ...prev,
-        weeks: [...prev.weeks, newWeek],
-      };
-    });
-    
-    return newWeekId;
-  };
-
-  const addWorkout = (weekId: string) => {
-    let newWorkoutId = "";
-    
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      // Find the week
-      const week = prev.weeks.find(w => w.id === weekId);
-      if (!week) return prev;
-      
-      // Create new workout
-      const newWorkout: Workout = {
-        id: v4(),
-        name: `Day ${week.workouts.length + 1} Workout`,
-        day: week.workouts.length + 1,
-        exercises: [],
-        circuits: [],
-        weekId: weekId
-      };
-      
-      newWorkoutId = newWorkout.id;
-      
-      // Update week's workout list
-      const updatedWeeks = prev.weeks.map(w => {
-        if (w.id !== weekId) return w;
-        return {
-          ...w,
-          workouts: [...w.workouts, newWorkout.id]
-        };
+  const [activeWeekId, setActiveWeekId] = useState<string | null>(null);
+  
+  const [workoutLibrary, setWorkoutLibrary] = useState<Workout[]>([]);
+  const [weekLibrary, setWeekLibrary] = useState<WorkoutWeek[]>([]);
+  const [programLibrary, setProgramLibrary] = useState<WorkoutProgram[]>([]);
+  
+  const { data: libraryExercises } = useExercises();
+  
+  const updateProgram = useCallback(
+    (updater: (draft: WorkoutProgram) => void) => {
+      setProgram((prevProgram) => {
+        if (!prevProgram) {
+          console.warn("Attempted to update a null program. This might indicate an issue with program initialization.");
+          return null;
+        }
+        return produce(prevProgram, updater);
       });
-      
-      // Add workout to program's workout array
-      return {
-        ...prev,
-        weeks: updatedWeeks,
-        workouts: [...prev.workouts, newWorkout]
-      };
+    },
+    []
+  );
+
+  const updateWorkout = useCallback(
+    (workoutId: string, updater: (draft: Workout) => void) => {
+      updateProgram((draft) => {
+        const workoutIndex = draft.workouts.findIndex((w) => w.id === workoutId);
+        if (workoutIndex !== -1) {
+          updater(draft.workouts[workoutIndex]);
+        }
+      });
+    },
+    [updateProgram]
+  );
+
+  const updateWeek = useCallback(
+    (weekId: string, updater: (draft: WorkoutWeek) => void) => {
+      updateProgram((draft) => {
+        const weekIndex = draft.weeks.findIndex((week) => week.id === weekId);
+        if (weekIndex !== -1) {
+          updater(draft.weeks[weekIndex]);
+        }
+      });
+    },
+    [updateProgram]
+  );
+
+  const updateExercise = useCallback(
+    (workoutId: string, exerciseId: string, updates: Partial<Exercise>) => {
+      updateWorkout(workoutId, (workout) => {
+        const exerciseIndex = workout.exercises.findIndex((e) => e.id === exerciseId);
+        if (exerciseIndex !== -1) {
+          workout.exercises[exerciseIndex] = {
+            ...workout.exercises[exerciseIndex],
+            ...updates,
+          };
+        }
+      });
+    },
+    [updateWorkout]
+  );
+
+  const updateSet = useCallback(
+    (workoutId: string, exerciseId: string, setId: string, updates: Partial<Set>) => {
+      updateWorkout(workoutId, (workout) => {
+        const exercise = workout.exercises.find((e) => e.id === exerciseId);
+        if (exercise) {
+          const setIndex = exercise.sets.findIndex((s) => s.id === setId);
+          if (setIndex !== -1) {
+            exercise.sets[setIndex] = {
+              ...exercise.sets[setIndex],
+              ...updates,
+            };
+          }
+        }
+      });
+    },
+    [updateWorkout]
+  );
+
+  const addWorkout = useCallback((weekId: string) => {
+    let nextDayNumber = 1;
+    
+    updateProgram((draft) => {
+      const week = draft.weeks.find(w => w.id === weekId);
+      if (week) {
+        const workoutsInWeek = week.workouts
+          .map(id => draft.workouts.find(w => w.id === id))
+          .filter(Boolean) as Workout[];
+        
+        if (workoutsInWeek.length >= 7) {
+          return;
+        }
+        
+        const usedDays = workoutsInWeek.map(w => w.day);
+        for (let i = 1; i <= 7; i++) {
+          if (!usedDays.includes(i)) {
+            nextDayNumber = i;
+            break;
+          }
+        }
+      }
+    });
+
+    const newWorkoutId = uuidv4();
+    const newWorkout: Workout = {
+      id: newWorkoutId,
+      name: `Day ${nextDayNumber}`,
+      day: nextDayNumber,
+      exercises: [
+        {
+          id: uuidv4(),
+          name: "New Exercise",
+          sets: [
+            {
+              id: uuidv4(),
+              reps: "",
+              weight: "",
+              intensity: "",
+              rest: "",
+            },
+          ],
+          notes: "",
+        }
+      ],
+      circuits: [],
+      weekId: weekId,
+    };
+
+    updateProgram((draft) => {
+      draft.workouts.push(newWorkout);
+      const week = draft.weeks.find(w => w.id === weekId);
+      if (week) {
+        week.workouts.push(newWorkoutId);
+      }
     });
     
     return newWorkoutId;
-  };
+  }, [updateProgram]);
 
-  const addExercise = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      // Find the workout
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      // Create new exercise
-      const newExercise: Exercise = {
-        id: v4(),
-        name: "New Exercise",
-        sets: [{ id: v4(), reps: "", weight: "", intensity: "", rest: "" }],
-        isCircuit: false,
-        isInCircuit: false,
-        circuitId: null,
-        circuitOrder: null,
-        notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds",
-      };
-      
-      // Update workout with new exercise
-      const updatedWorkout = {
-        ...prev.workouts[workoutIndex],
-        exercises: [...prev.workouts[workoutIndex].exercises, newExercise]
-      };
-      
-      // Update workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
+  const addWeek = useCallback(() => {
+    const newWeekId = uuidv4();
+    const newWeek: WorkoutWeek = {
+      id: newWeekId,
+      name: "Week 1",
+      order: program?.weeks.length || 0,
+      workouts: [],
+    };
+
+    updateProgram((draft) => {
+      draft.weeks.push(newWeek);
     });
-  };
+    
+    return newWeekId;
+  }, [updateProgram, program?.weeks.length]);
 
-  // Add this custom function to the context provider that supports copying data from the previous set
-  const addSet = (workoutId: string, exerciseId: string, initialData?: Partial<Set>) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      // Find workout and exercise
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      const exerciseIndex = workout.exercises.findIndex(e => e.id === exerciseId);
-      if (exerciseIndex === -1) return prev;
-      
-      const exercise = workout.exercises[exerciseIndex];
-      
-      // Create a new set with either initial data or empty values
-      const newSet: Set = {
-        id: v4(),
-        reps: initialData?.reps || "",
-        weight: initialData?.weight || "",
-        intensity: initialData?.intensity || "",
-        rest: initialData?.rest || "",
-        intensityType: initialData?.intensityType || exercise.intensityType || "rpe",
-        weightType: initialData?.weightType || exercise.weightType || "pounds",
-      };
-      
-      // Update exercise with new set
-      const updatedExercise = {
-        ...exercise,
-        sets: [...exercise.sets, newSet]
-      };
-      
-      // Update workout's exercises
-      const updatedExercises = [...workout.exercises];
-      updatedExercises[exerciseIndex] = updatedExercise;
-      
-      // Update workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      // Update workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
+  const addCircuit = useCallback((workoutId: string) => {
+    const newCircuit: Circuit = {
+      id: uuidv4(),
+      name: "New Circuit",
+      exercises: [],
+    };
+
+    updateWorkout(workoutId, (workout) => {
+      workout.circuits.push(newCircuit);
     });
-  };
-
-  const updateWeek = (weekId: string, updates: Partial<WorkoutWeek>) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-
-      const updatedWeeks = prev.weeks.map((week) => {
-        if (week.id !== weekId) return week;
-        return { ...week, ...updates };
-      });
-
-      return {
-        ...prev,
-        weeks: updatedWeeks,
-      };
-    });
-  };
+  }, [updateWorkout]);
   
-  const updateWeekName = (weekId: string, name: string) => {
-    updateWeek(weekId, { name });
-  };
-
-  const updateWorkout = (workoutId: string, updates: Partial<Workout> | ((workout: Workout) => void)) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
+  const addExercise = useCallback((workoutId: string, libraryExerciseId?: string) => {
+    if (libraryExerciseId && libraryExercises) {
+      const libraryExercise = libraryExercises.find(e => e.id === libraryExerciseId);
       
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const updatedWorkouts = [...prev.workouts];
-      
-      if (typeof updates === 'function') {
-        // Updates is a function that modifies the workout
-        const workoutCopy = { ...updatedWorkouts[workoutIndex] };
-        updates(workoutCopy);
-        updatedWorkouts[workoutIndex] = workoutCopy;
-      } else {
-        // Updates is a partial workout object
-        updatedWorkouts[workoutIndex] = {
-          ...updatedWorkouts[workoutIndex],
-          ...updates
-        };
+      if (libraryExercise) {
+        const workoutExercise = libraryToWorkoutExercise(libraryExercise);
+        
+        updateProgram(draft => {
+          const workout = draft.workouts.find(w => w.id === workoutId);
+          if (workout) {
+            workout.exercises.push(workoutExercise);
+          }
+        });
+        
+        return;
       }
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-  
-  const updateWorkoutName = (workoutId: string, name: string) => {
-    updateWorkout(workoutId, { name });
-  };
-
-  const updateExercise = (
-    workoutId: string,
-    exerciseId: string,
-    updates: Partial<Exercise>
-  ) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      const updatedExercises = workout.exercises.map((exercise) => {
-        if (exercise.id !== exerciseId) return exercise;
-        return { ...exercise, ...updates };
-      });
-
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-
-  const updateSet = (
-    workoutId: string,
-    exerciseId: string,
-    setId: string,
-    updates: Partial<Set>
-  ) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      const exerciseIndex = workout.exercises.findIndex(e => e.id === exerciseId);
-      if (exerciseIndex === -1) return prev;
-      
-      const exercise = workout.exercises[exerciseIndex];
-      
-      // Update the specific set
-      const updatedSets = exercise.sets.map((set) => {
-        if (set.id !== setId) return set;
-        return { ...set, ...updates };
-      });
-      
-      // Update the exercise with the new sets
-      const updatedExercise = {
-        ...exercise,
-        sets: updatedSets
-      };
-      
-      // Update the workout's exercises
-      const updatedExercises = [...workout.exercises];
-      updatedExercises[exerciseIndex] = updatedExercise;
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-
-  const deleteWeek = (programId: string, weekId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-
-      // Remove all workouts that belong to this week
-      const workoutsToRemove = prev.weeks.find(w => w.id === weekId)?.workouts || [];
-      const updatedWorkouts = prev.workouts.filter(w => !workoutsToRemove.includes(w.id));
-      
-      // Remove the week
-      const updatedWeeks = prev.weeks.filter(week => week.id !== weekId);
-
-      return {
-        ...prev,
-        weeks: updatedWeeks,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-
-  const deleteWorkout = (weekId: string, workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      // Update the week to remove the workout reference
-      const updatedWeeks = prev.weeks.map(week => {
-        if (week.id !== weekId) return week;
-        return {
-          ...week,
-          workouts: week.workouts.filter(id => id !== workoutId)
-        };
-      });
-      
-      // Remove the actual workout from the workouts array
-      const updatedWorkouts = prev.workouts.filter(w => w.id !== workoutId);
-
-      return {
-        ...prev,
-        weeks: updatedWeeks,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-
-  const deleteExercise = (workoutId: string, exerciseId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Filter out the exercise to delete
-      const updatedExercises = workout.exercises.filter(e => e.id !== exerciseId);
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-
-  const deleteSet = (workoutId: string, exerciseId: string, setId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      const exerciseIndex = workout.exercises.findIndex(e => e.id === exerciseId);
-      if (exerciseIndex === -1) return prev;
-      
-      const exercise = workout.exercises[exerciseIndex];
-      
-      // Filter out the set to delete
-      const updatedSets = exercise.sets.filter(s => s.id !== setId);
-      
-      // Ensure at least one set remains
-      if (updatedSets.length === 0) {
-        // If no sets would remain, add a blank one
-        updatedSets.push({
-          id: v4(),
+    }
+    
+    const newExercise: Exercise = {
+      id: uuidv4(),
+      name: "New Exercise",
+      sets: [
+        {
+          id: uuidv4(),
           reps: "",
           weight: "",
           intensity: "",
-          rest: ""
+          rest: "",
+        },
+      ],
+      notes: "",
+    };
+
+    updateProgram((draft) => {
+      const workout = draft.workouts.find((w) => w.id === workoutId);
+      if (workout) {
+        workout.exercises.push(newExercise);
+      }
+    });
+  }, [updateProgram, libraryExercises]);
+
+  const addExerciseToWorkout = useCallback((workoutId: string) => {
+    const newExercise: Exercise = {
+      id: uuidv4(),
+      name: "New Exercise",
+      sets: [
+        {
+          id: uuidv4(),
+          reps: "",
+          weight: "",
+          intensity: "",
+          rest: "",
+        },
+      ],
+      notes: "",
+    };
+
+    updateProgram((draft) => {
+      const workout = draft.workouts.find((w) => w.id === workoutId);
+      if (workout) {
+        workout.exercises.push(newExercise);
+      }
+    });
+  }, [updateProgram]);
+
+  const duplicateExercise = useCallback((workoutId: string, exerciseId: string) => {
+    updateProgram((draft) => {
+      const workout = draft.workouts.find((w) => w.id === workoutId);
+      if (workout) {
+        const exerciseToDuplicate = workout.exercises.find((e) => e.id === exerciseId);
+        if (exerciseToDuplicate) {
+          const newExercise: Exercise = {
+            ...exerciseToDuplicate,
+            id: uuidv4(),
+            sets: exerciseToDuplicate.sets.map((set) => ({
+              ...set,
+              id: uuidv4(),
+            })),
+          };
+          workout.exercises.push(newExercise);
+        }
+      }
+    });
+  }, [updateProgram]);
+
+  const addSet = useCallback((workoutId: string, exerciseId: string) => {
+    const newSet: Set = {
+      id: uuidv4(),
+      reps: "",
+      weight: "",
+      intensity: "",
+      rest: "",
+    };
+
+    updateProgram((draft) => {
+      const workout = draft.workouts.find((w) => w.id === workoutId);
+      if (workout) {
+        const exercise = workout.exercises.find((e) => e.id === exerciseId);
+        if (exercise) {
+          exercise.sets.push(newSet);
+        }
+      }
+    });
+  }, [updateProgram]);
+
+  const deleteSet = useCallback(
+    (workoutId: string, exerciseId: string, setId: string) => {
+      updateProgram((draft) => {
+        const workout = draft.workouts.find((w) => w.id === workoutId);
+        if (workout) {
+          const exercise = workout.exercises.find((e) => e.id === exerciseId);
+          if (exercise) {
+            exercise.sets = exercise.sets.filter((set) => set.id !== setId);
+          }
+        }
+      });
+    },
+    [updateProgram]
+  );
+
+  const deleteExercise = useCallback(
+    (workoutId: string, exerciseId: string) => {
+      updateProgram((draft) => {
+        const workout = draft.workouts.find((w) => w.id === workoutId);
+        if (workout) {
+          workout.exercises = workout.exercises.filter((e) => e.id !== exerciseId);
+        }
+      });
+    },
+    [updateProgram]
+  );
+
+  const deleteWorkout = useCallback((weekId: string, workoutId: string) => {
+    updateProgram((draft) => {
+      draft.workouts = draft.workouts.filter((w) => w.id !== workoutId);
+      const week = draft.weeks.find(w => w.id === weekId);
+      if (week) {
+        week.workouts = week.workouts.filter(w => w !== workoutId);
+      }
+    });
+  }, [updateProgram]);
+  
+  const getExerciseDetails = useCallback((exerciseId: string) => {
+    if (!program) return null;
+    
+    let foundExercise: Exercise | undefined;
+    
+    for (const workout of program.workouts) {
+      foundExercise = workout.exercises.find(e => e.id === exerciseId);
+      if (foundExercise) break;
+    }
+    
+    if (!foundExercise) return null;
+    
+    if (foundExercise.libraryExerciseId && libraryExercises) {
+      const libraryExercise = libraryExercises.find(
+        e => e.id === foundExercise!.libraryExerciseId
+      );
+      
+      if (libraryExercise) {
+        return {
+          ...foundExercise,
+          libraryData: libraryExercise
+        };
+      }
+    }
+    
+    return foundExercise;
+  }, [program, libraryExercises]);
+
+  const moveWorkout = useCallback((workoutId: string, weekId: string, newWeekId: string) => {
+    updateProgram(draft => {
+      const oldWeek = draft.weeks.find(w => w.id === weekId);
+      if (oldWeek) {
+        oldWeek.workouts = oldWeek.workouts.filter(w => w !== workoutId);
+      }
+
+      const newWeek = draft.weeks.find(w => w.id === newWeekId);
+      if (newWeek) {
+        newWeek.workouts.push(workoutId);
+      }
+    });
+  }, [updateProgram]);
+
+  const moveWeek = useCallback((weekId: string, newIndex: number) => {
+    updateProgram(draft => {
+      const weekIndex = draft.weeks.findIndex(w => w.id === weekId);
+
+      if (weekIndex !== -1 && newIndex >= 0 && newIndex < draft.weeks.length) {
+        const [movedWeek] = draft.weeks.splice(weekIndex, 1);
+        draft.weeks.splice(newIndex, 0, movedWeek);
+
+        draft.weeks.forEach((week, index) => {
+          week.order = index;
         });
       }
-      
-      // Update the exercise
-      const updatedExercise = {
-        ...exercise,
-        sets: updatedSets
-      };
-      
-      // Update the workout's exercises
-      const updatedExercises = [...workout.exercises];
-      updatedExercises[exerciseIndex] = updatedExercise;
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
     });
-  };
+  }, [updateProgram]);
 
-  const duplicateWorkout = (weekId: string, workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      // Find the week and workout to duplicate
-      const week = prev.weeks.find(w => w.id === weekId);
-      const workoutToDuplicate = prev.workouts.find(w => w.id === workoutId);
-      
-      if (!week || !workoutToDuplicate) return prev;
-      
-      // Create a deep copy of the workout with new IDs
-      const duplicatedWorkout: Workout = {
-        ...workoutToDuplicate,
-        id: v4(),
-        name: `${workoutToDuplicate.name} (Copy)`,
-        day: week.workouts.length + 1,
-        exercises: workoutToDuplicate.exercises.map(exercise => ({
-          ...exercise,
-          id: v4(),
-          sets: exercise.sets.map(set => ({ ...set, id: v4() })),
-        })),
-        circuits: workoutToDuplicate.circuits.map(circuit => ({
-          ...circuit,
-          id: v4()
-        }))
+  const createCircuit = useCallback((workoutId: string) => {
+    const circuitId = uuidv4();
+    
+    updateWorkout(workoutId, (workout) => {
+      const circuitExercise: Exercise = {
+        id: circuitId,
+        name: "Circuit",
+        sets: [],
+        notes: "Perform exercises in sequence with minimal rest",
+        isCircuit: true,
+        circuitId,
       };
       
-      // Update the week to include the new workout
-      const updatedWeeks = prev.weeks.map(w => {
-        if (w.id !== weekId) return w;
-        return {
-          ...w,
-          workouts: [...w.workouts, duplicatedWorkout.id]
-        };
-      });
+      workout.exercises.push(circuitExercise);
       
-      // Add the new workout to the workouts array
-      return {
-        ...prev,
-        weeks: updatedWeeks,
-        workouts: [...prev.workouts, duplicatedWorkout]
-      };
-    });
-  };
-
-  const duplicateExercise = (workoutId: string, exerciseId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      const exerciseToDuplicate = workout.exercises.find(e => e.id === exerciseId);
-      
-      if (!exerciseToDuplicate) return prev;
-      
-      // Create a deep copy of the exercise with new IDs
-      const duplicatedExercise: Exercise = {
-        ...exerciseToDuplicate,
-        id: v4(),
-        name: `${exerciseToDuplicate.name} (Copy)`,
-        sets: exerciseToDuplicate.sets.map(set => ({ ...set, id: v4() })),
-      };
-      
-      // Update the workout with the new exercise
-      const updatedExercises = [...workout.exercises, duplicatedExercise];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: updatedExercises
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-  
-  // Circuit creation methods
-  const createCircuit = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Create a new circuit
-      const newCircuit: Circuit = {
-        id: v4(),
-        name: "New Circuit",
-        exercises: [],
-        rounds: "3",
-        restBetweenExercises: "30s",
-        restBetweenRounds: "60s"
-      };
-      
-      // Create two new exercises for the circuit
       const exercise1: Exercise = {
-        id: v4(),
-        name: "Circuit Exercise 1",
-        sets: [{ id: v4(), reps: "10", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 0,
+        id: uuidv4(),
+        name: "Exercise 1",
+        sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "30s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
+        isInCircuit: true,
+        circuitId,
       };
       
       const exercise2: Exercise = {
-        id: v4(),
-        name: "Circuit Exercise 2",
-        sets: [{ id: v4(), reps: "10", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 1,
+        id: uuidv4(),
+        name: "Exercise 2",
+        sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "30s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
+        isInCircuit: true,
+        circuitId,
       };
       
-      // Update the circuit with the exercise IDs
-      newCircuit.exercises = [exercise1.id, exercise2.id];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: [...workout.exercises, exercise1, exercise2],
-        circuits: [...(workout.circuits || []), newCircuit]
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
+      workout.exercises.push(exercise1, exercise2);
     });
-  };
+  }, [updateWorkout]);
   
-  const createSuperset = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Create a new circuit (superset)
-      const newCircuit: Circuit = {
-        id: v4(),
+  const createSuperset = useCallback((workoutId: string) => {
+    const circuitId = uuidv4();
+    
+    updateWorkout(workoutId, (workout) => {
+      const circuitExercise: Exercise = {
+        id: circuitId,
         name: "Superset",
-        exercises: [],
-        rounds: "3",
-        restBetweenExercises: "0s",
-        restBetweenRounds: "60s"
+        sets: [],
+        notes: "Perform these exercises back-to-back with no rest between",
+        isCircuit: true,
+        circuitId,
       };
       
-      // Create two new exercises for the superset
+      workout.exercises.push(circuitExercise);
+      
       const exercise1: Exercise = {
-        id: v4(),
-        name: "Superset Exercise A",
-        sets: [{ id: v4(), reps: "10", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 0,
+        id: uuidv4(),
+        name: "Exercise A",
+        sets: [{ id: uuidv4(), reps: "12", weight: "", intensity: "", rest: "0s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
+        isInCircuit: true,
+        circuitId,
       };
       
       const exercise2: Exercise = {
-        id: v4(),
-        name: "Superset Exercise B",
-        sets: [{ id: v4(), reps: "10", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 1,
+        id: uuidv4(),
+        name: "Exercise B",
+        sets: [{ id: uuidv4(), reps: "12", weight: "", intensity: "", rest: "60s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
-      };
-      
-      // Update the circuit with the exercise IDs
-      newCircuit.exercises = [exercise1.id, exercise2.id];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: [...workout.exercises, exercise1, exercise2],
-        circuits: [...(workout.circuits || []), newCircuit]
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-  
-  const createEMOM = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Create a new circuit (EMOM)
-      const newCircuit: Circuit = {
-        id: v4(),
-        name: "EMOM - 10 minutes",
-        exercises: [],
-        rounds: "10",
-        restBetweenExercises: "0s",
-        restBetweenRounds: "0s"
-      };
-      
-      // Create an exercise for the EMOM
-      const exercise: Exercise = {
-        id: v4(),
-        name: "EMOM Exercise",
-        sets: [{ id: v4(), reps: "AMRAP", weight: "", intensity: "", rest: "" }],
         isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 0,
-        notes: "Complete as many reps as possible within 50 seconds, rest for the remainder of the minute",
-        repType: "amrap",
-        intensityType: "rpe",
-        weightType: "pounds"
+        circuitId,
       };
       
-      // Update the circuit with the exercise ID
-      newCircuit.exercises = [exercise.id];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: [...workout.exercises, exercise],
-        circuits: [...(workout.circuits || []), newCircuit]
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
+      workout.exercises.push(exercise1, exercise2);
     });
-  };
+  }, [updateWorkout]);
   
-  const createAMRAP = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Create a new circuit (AMRAP)
-      const newCircuit: Circuit = {
-        id: v4(),
-        name: "AMRAP - 10 minutes",
-        exercises: [],
-        rounds: "AMRAP",
-        restBetweenExercises: "0s",
-        restBetweenRounds: "0s"
+  const createEMOM = useCallback((workoutId: string) => {
+    const circuitId = uuidv4();
+    
+    updateWorkout(workoutId, (workout) => {
+      const circuitExercise: Exercise = {
+        id: circuitId,
+        name: "EMOM - 10 min",
+        sets: [],
+        notes: "Every Minute On the Minute for 10 minutes",
+        isCircuit: true,
+        circuitId,
       };
       
-      // Create exercises for the AMRAP
+      workout.exercises.push(circuitExercise);
+      
       const exercise1: Exercise = {
-        id: v4(),
-        name: "Push-ups",
-        sets: [{ id: v4(), reps: "10", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 0,
+        id: uuidv4(),
+        name: "Even Minutes",
+        sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "0s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
+        isInCircuit: true,
+        circuitId,
       };
       
       const exercise2: Exercise = {
-        id: v4(),
-        name: "Sit-ups",
-        sets: [{ id: v4(), reps: "15", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 1,
+        id: uuidv4(),
+        name: "Odd Minutes",
+        sets: [{ id: uuidv4(), reps: "8", weight: "", intensity: "", rest: "0s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
+        isInCircuit: true,
+        circuitId,
+      };
+      
+      workout.exercises.push(exercise1, exercise2);
+    });
+  }, [updateWorkout]);
+  
+  const createAMRAP = useCallback((workoutId: string) => {
+    const circuitId = uuidv4();
+    
+    updateWorkout(workoutId, (workout) => {
+      const circuitExercise: Exercise = {
+        id: circuitId,
+        name: "AMRAP - 12 min",
+        sets: [],
+        notes: "As Many Rounds As Possible in 12 minutes",
+        isCircuit: true,
+        circuitId,
+      };
+      
+      workout.exercises.push(circuitExercise);
+      
+      const exercise1: Exercise = {
+        id: uuidv4(),
+        name: "Exercise 1",
+        sets: [{ id: uuidv4(), reps: "10", weight: "", intensity: "", rest: "0s" }],
+        notes: "",
+        isInCircuit: true,
+        circuitId,
+      };
+      
+      const exercise2: Exercise = {
+        id: uuidv4(),
+        name: "Exercise 2",
+        sets: [{ id: uuidv4(), reps: "15", weight: "", intensity: "", rest: "0s" }],
+        notes: "",
+        isInCircuit: true,
+        circuitId,
       };
       
       const exercise3: Exercise = {
-        id: v4(),
-        name: "Air Squats",
-        sets: [{ id: v4(), reps: "20", weight: "", intensity: "", rest: "" }],
-        isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 2,
+        id: uuidv4(),
+        name: "Exercise 3",
+        sets: [{ id: uuidv4(), reps: "20", weight: "", intensity: "", rest: "0s" }],
         notes: "",
-        repType: "fixed",
-        intensityType: "rpe",
-        weightType: "pounds"
-      };
-      
-      // Update the circuit with the exercise IDs
-      newCircuit.exercises = [exercise1.id, exercise2.id, exercise3.id];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: [...workout.exercises, exercise1, exercise2, exercise3],
-        circuits: [...(workout.circuits || []), newCircuit]
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
-    });
-  };
-  
-  const createTabata = (workoutId: string) => {
-    setProgram((prev) => {
-      if (!prev) return prev;
-      
-      const workoutIndex = prev.workouts.findIndex(w => w.id === workoutId);
-      if (workoutIndex === -1) return prev;
-      
-      const workout = prev.workouts[workoutIndex];
-      
-      // Create a new circuit (Tabata)
-      const newCircuit: Circuit = {
-        id: v4(),
-        name: "Tabata - 4 minutes",
-        exercises: [],
-        rounds: "8",
-        restBetweenExercises: "10s",
-        restBetweenRounds: "0s"
-      };
-      
-      // Create an exercise for the Tabata
-      const exercise: Exercise = {
-        id: v4(),
-        name: "Tabata Exercise",
-        sets: [{ id: v4(), reps: "20s", weight: "", intensity: "", rest: "10s" }],
         isInCircuit: true,
-        circuitId: newCircuit.id,
-        circuitOrder: 0,
-        notes: "Work for 20 seconds, rest for 10 seconds, repeat 8 times",
-        repType: "time",
-        intensityType: "rpe",
-        weightType: "pounds"
+        circuitId,
       };
       
-      // Update the circuit with the exercise ID
-      newCircuit.exercises = [exercise.id];
-      
-      // Update the workout
-      const updatedWorkout = {
-        ...workout,
-        exercises: [...workout.exercises, exercise],
-        circuits: [...(workout.circuits || []), newCircuit]
-      };
-      
-      // Update the workouts array
-      const updatedWorkouts = [...prev.workouts];
-      updatedWorkouts[workoutIndex] = updatedWorkout;
-      
-      return {
-        ...prev,
-        workouts: updatedWorkouts
-      };
+      workout.exercises.push(exercise1, exercise2, exercise3);
     });
-  };
+  }, [updateWorkout]);
   
-  // Library operations
-  const resetProgram = () => {
-    const newProgram: WorkoutProgram = {
-      id: v4(),
-      name: "New Program",
-      weeks: [],
-      workouts: []
-    };
+  const createTabata = useCallback((workoutId: string) => {
+    const circuitId = uuidv4();
     
-    setProgram(newProgram);
-    setActiveWeekId(null);
-    setActiveWorkoutId(null);
-    
-    // Create initial week and workout
-    setTimeout(() => {
-      const weekId = addWeek();
-      if (weekId) {
-        setActiveWeekId(weekId);
-        const workoutId = addWorkout(weekId);
-        if (workoutId) {
-          setActiveWorkoutId(workoutId);
-        }
-      }
-    }, 0);
-  };
+    updateWorkout(workoutId, (workout) => {
+      const circuitExercise: Exercise = {
+        id: circuitId,
+        name: "Tabata - 4 min",
+        sets: [],
+        notes: "8 rounds of 20s work, 10s rest",
+        isCircuit: true,
+        circuitId,
+      };
+      
+      workout.exercises.push(circuitExercise);
+      
+      const exercise1: Exercise = {
+        id: uuidv4(),
+        name: "Tabata Exercise",
+        sets: [{ id: uuidv4(), reps: "20s", weight: "", intensity: "", rest: "10s" }],
+        notes: "Max effort for 20 seconds, then rest 10 seconds. Repeat 8 times.",
+        isInCircuit: true,
+        circuitId,
+        repType: "time",
+      };
+      
+      workout.exercises.push(exercise1);
+    });
+  }, [updateWorkout]);
   
-  const loadSampleProgram = () => {
-    // Create a sample program
-    const newProgram: WorkoutProgram = {
-      id: v4(),
+  const loadSampleProgram = useCallback(() => {
+    const sampleProgram: WorkoutProgram = {
+      id: uuidv4(),
       name: "Sample Training Program",
+      workouts: [
+        {
+          id: uuidv4(),
+          name: "Upper Body",
+          day: 1,
+          exercises: [
+            {
+              id: uuidv4(),
+              name: "Bench Press",
+              sets: [
+                { id: uuidv4(), reps: "10,8,8,6", weight: "135,145,155,165", intensity: "", rest: "90s" }
+              ],
+              notes: "Focus on chest contraction",
+            },
+            {
+              id: uuidv4(),
+              name: "Pull-ups",
+              sets: [
+                { id: uuidv4(), reps: "8,8,8", weight: "BW", intensity: "", rest: "60s" }
+              ],
+              notes: "",
+            }
+          ],
+          circuits: [],
+        },
+        {
+          id: uuidv4(),
+          name: "Lower Body",
+          day: 2,
+          exercises: [
+            {
+              id: uuidv4(),
+              name: "Squats",
+              sets: [
+                { id: uuidv4(), reps: "10,8,6", weight: "185,205,225", intensity: "", rest: "120s" }
+              ],
+              notes: "",
+            },
+            {
+              id: uuidv4(),
+              name: "Romanian Deadlift",
+              sets: [
+                { id: uuidv4(), reps: "10,10,10", weight: "135,145,155", intensity: "", rest: "90s" }
+              ],
+              notes: "Keep back straight",
+            }
+          ],
+          circuits: [],
+        }
+      ],
       weeks: [],
+    };
+    
+    const week: WorkoutWeek = {
+      id: uuidv4(),
+      name: "Week 1",
+      order: 0,
+      workouts: [],
+    };
+    
+    for (const workout of sampleProgram.workouts) {
+      week.workouts.push(workout.id);
+      workout.weekId = week.id;
+    }
+    
+    sampleProgram.weeks.push(week);
+    
+    setProgram(sampleProgram);
+    setActiveWeekId(week.id);
+    setActiveWorkoutId(sampleProgram.workouts[0].id);
+  }, []);
+  
+  const resetProgram = useCallback(() => {
+    setProgram(initialProgramState);
+    setActiveWorkoutId(null);
+    setActiveWeekId(null);
+  }, []);
+  
+  const saveWorkoutToLibrary = useCallback((workoutId: string, name: string) => {
+    if (!program) return;
+    
+    const workoutToSave = program.workouts.find(w => w.id === workoutId);
+    if (!workoutToSave) return;
+    
+    const savedWorkout = {
+      ...workoutToSave,
+      id: uuidv4(),
+      name: name
+    };
+    
+    setWorkoutLibrary(prev => [...prev, savedWorkout]);
+  }, [program]);
+  
+  const saveWeekToLibrary = useCallback((weekId: string, name: string) => {
+    if (!program) return;
+    
+    const weekToSave = program.weeks.find(w => w.id === weekId);
+    if (!weekToSave) return;
+    
+    const weekWorkouts = weekToSave.workouts.map(
+      wId => program.workouts.find(w => w.id === wId)
+    ).filter(Boolean) as Workout[];
+    
+    const newWorkouts = weekWorkouts.map(workout => ({
+      ...workout,
+      id: uuidv4()
+    }));
+    
+    const savedWeek = {
+      ...weekToSave,
+      id: uuidv4(),
+      name: name,
+      workouts: newWorkouts.map(w => w.id)
+    };
+    
+    setWeekLibrary(prev => [...prev, savedWeek]);
+  }, [program]);
+  
+  const saveProgramToLibrary = useCallback((name: string) => {
+    if (!program) return;
+    
+    const savedProgram = {
+      ...program,
+      id: uuidv4(),
+      name: name
+    };
+    
+    setProgramLibrary(prev => [...prev, savedProgram]);
+  }, [program]);
+  
+  const loadWorkoutFromLibrary = useCallback((workout: Workout, weekId: string) => {
+    const newWorkout = {
+      ...workout,
+      id: uuidv4(),
+      weekId: weekId,
+      exercises: workout.exercises.map(ex => ({
+        ...ex,
+        id: uuidv4(),
+        sets: ex.sets.map(set => ({
+          ...set,
+          id: uuidv4()
+        }))
+      }))
+    };
+    
+    updateProgram(draft => {
+      draft.workouts.push(newWorkout);
+      
+      const week = draft.weeks.find(w => w.id === weekId);
+      if (week) {
+        week.workouts.push(newWorkout.id);
+      }
+    });
+  }, [updateProgram]);
+  
+  const loadWeekFromLibrary = useCallback((week: WorkoutWeek) => {
+    const newWeekId = uuidv4();
+    const newWeek = {
+      ...week,
+      id: newWeekId,
+      order: program?.weeks.length || 0,
       workouts: []
     };
     
-    setProgram(newProgram);
-    setActiveWeekId(null);
-    setActiveWorkoutId(null);
+    const weekWorkouts = week.workouts.map(wId => {
+      const foundWorkout = workoutLibrary.find(w => w.id === wId);
+      if (foundWorkout) {
+        return {
+          ...foundWorkout,
+          id: uuidv4(),
+          weekId: newWeekId,
+          exercises: foundWorkout.exercises.map(ex => ({
+            ...ex,
+            id: uuidv4(),
+            sets: ex.sets.map(set => ({
+              ...set,
+              id: uuidv4()
+            }))
+          }))
+        };
+      }
+      return null;
+    }).filter(Boolean) as Workout[];
     
-    // Queue up the creation of the sample program structure
-    setTimeout(() => {
-      // Create Week 1
-      const week1Id = addWeek();
-      if (!week1Id) return;
-      
-      // Create workouts for Week 1
-      const workout1Id = addWorkout(week1Id);
-      if (!workout1Id) return;
-      
-      setActiveWeekId(week1Id);
-      setActiveWorkoutId(workout1Id);
-      
-      // Update workout names
-      updateWorkoutName(workout1Id, "Day 1: Upper Body");
-      
-      // Add exercises to Day 1
-      setTimeout(() => {
-        if (!workout1Id) return;
-        
-        // Add exercises to Day 1
-        addExercise(workout1Id);
-        addExercise(workout1Id);
-        addExercise(workout1Id);
-        
-        // Queue updating exercise details
-        setTimeout(() => {
-          const workout = program?.workouts.find(w => w.id === workout1Id);
-          if (!workout || workout.exercises.length < 3) return;
-          
-          // Update exercise names and details
-          updateExercise(workout1Id, workout.exercises[0].id, {
-            name: "Bench Press",
-            notes: "Focus on form and control"
-          });
-          
-          updateExercise(workout1Id, workout.exercises[1].id, {
-            name: "Barbell Row",
-            notes: "Keep back straight"
-          });
-          
-          updateExercise(workout1Id, workout.exercises[2].id, {
-            name: "Shoulder Press",
-            notes: "Use lighter weight if needed"
-          });
-          
-          // Update sets for the exercises
-          if (workout.exercises[0].sets.length > 0) {
-            updateSet(workout1Id, workout.exercises[0].id, workout.exercises[0].sets[0].id, {
-              reps: "8-10",
-              weight: "135",
-              intensity: "7",
-              rest: "90s"
-            });
-          }
-          
-          // Add more sets to Bench Press
-          addSet(workout1Id, workout.exercises[0].id, {
-            reps: "8-10",
-            weight: "135",
-            intensity: "7",
-            rest: "90s"
-          });
-          
-          addSet(workout1Id, workout.exercises[0].id, {
-            reps: "8-10",
-            weight: "135",
-            intensity: "7",
-            rest: "90s"
-          });
-          
-          // Add Day 2 workout
-          const workout2Id = addWorkout(week1Id);
-          if (workout2Id) {
-            updateWorkoutName(workout2Id, "Day 2: Lower Body");
-            
-            // Add exercises to Day 2
-            addExercise(workout2Id);
-            
-            // Queue updating exercise details for Day 2
-            setTimeout(() => {
-              const workout2 = program?.workouts.find(w => w.id === workout2Id);
-              if (!workout2 || workout2.exercises.length < 1) return;
-              
-              updateExercise(workout2Id, workout2.exercises[0].id, {
-                name: "Squats",
-                notes: "Go deep but maintain form"
-              });
-              
-              // Create a Week 2
-              const week2Id = addWeek();
-              if (week2Id) {
-                // Add a workout to Week 2
-                const week2Workout1Id = addWorkout(week2Id);
-                if (week2Workout1Id) {
-                  updateWorkoutName(week2Workout1Id, "Day 1: Full Body");
-                }
-              }
-            }, 100);
-          }
-        }, 100);
-      }, 100);
-    }, 100);
-  };
+    newWeek.workouts = weekWorkouts.map(w => w.id);
+    
+    updateProgram(draft => {
+      draft.weeks.push(newWeek);
+      draft.workouts.push(...weekWorkouts);
+    });
+  }, [program?.weeks.length, updateProgram, workoutLibrary]);
   
-  // Library management function stubs
-  const saveWorkoutToLibrary = (workoutId: string, name: string) => {
-    // This would normally save to your database or localStorage
-    toast.success(`Workout "${name}" saved to library`);
-  };
-  
-  const saveWeekToLibrary = (weekId: string, name: string) => {
-    toast.success(`Week "${name}" saved to library`);
-  };
-  
-  const saveProgramToLibrary = (name: string) => {
-    toast.success(`Program "${name}" saved to library`);
-  };
-  
-  const loadWorkoutFromLibrary = (workout: Workout, weekId: string) => {
-    // This would load a workout from your library into the current program
-    toast.success(`Workout "${workout.name}" loaded from library`);
-  };
-  
-  const loadWeekFromLibrary = (week: WorkoutWeek) => {
-    toast.success(`Week "${week.name}" loaded from library`);
-  };
-  
-  const loadProgramFromLibrary = (program: WorkoutProgram) => {
-    toast.success(`Program "${program.name}" loaded from library`);
-  };
-  
-  const getWorkoutLibrary = () => {
-    // This would normally fetch from your database or localStorage
-    return [];
-  };
-  
-  const getWeekLibrary = () => {
-    return [];
-  };
-  
-  const getProgramLibrary = () => {
-    return [];
-  };
-  
-  const removeWorkoutFromLibrary = (workoutId: string) => {
-    toast.success("Workout removed from library");
-  };
-  
-  const removeWeekFromLibrary = (weekId: string) => {
-    toast.success("Week removed from library");
-  };
-  
-  const removeProgramFromLibrary = (programId: string) => {
-    toast.success("Program removed from library");
-  };
-  
-  // Utility functions
-  const getExerciseDetails = (exerciseId: string): Exercise | undefined => {
-    // Loop through all workouts to find the exercise
-    for (const workout of program?.workouts || []) {
-      const exercise = workout.exercises.find(e => e.id === exerciseId);
-      if (exercise) return exercise;
+  const loadProgramFromLibrary = useCallback((programToLoad: WorkoutProgram) => {
+    setProgram(programToLoad);
+    if (programToLoad.weeks.length > 0) {
+      setActiveWeekId(programToLoad.weeks[0].id);
+      if (programToLoad.workouts.length > 0) {
+        setActiveWorkoutId(programToLoad.workouts[0].id);
+      }
     }
-    return undefined;
-  };
-
-  const contextValue: WorkoutContextType = {
-    program,
-    activeWeekId,
-    activeWorkoutId,
-    setProgram,
-    setActiveWeekId,
-    setActiveWorkoutId,
-    addWeek,
-    addWorkout,
-    addExercise,
-    addSet,
-    updateWeek,
-    updateWorkout,
-    updateWorkoutName,
-    updateWeekName,
-    updateExercise,
-    updateSet,
-    deleteWeek,
-    deleteWorkout,
-    deleteExercise,
-    deleteSet,
-    duplicateWorkout,
-    duplicateExercise,
-    createCircuit,
-    createSuperset,
-    createEMOM,
-    createAMRAP,
-    createTabata,
-    resetProgram,
-    loadSampleProgram,
-    saveWorkoutToLibrary,
-    saveWeekToLibrary,
-    saveProgramToLibrary,
-    loadWorkoutFromLibrary,
-    loadWeekFromLibrary,
-    loadProgramFromLibrary,
-    getWorkoutLibrary,
-    getWeekLibrary,
-    getProgramLibrary,
-    removeWorkoutFromLibrary, 
-    removeWeekFromLibrary,
-    removeProgramFromLibrary,
-    getExerciseDetails
-  };
+  }, []);
+  
+  const getWorkoutLibrary = useCallback(() => {
+    return workoutLibrary;
+  }, [workoutLibrary]);
+  
+  const getWeekLibrary = useCallback(() => {
+    return weekLibrary;
+  }, [weekLibrary]);
+  
+  const getProgramLibrary = useCallback(() => {
+    return programLibrary;
+  }, [programLibrary]);
+  
+  const removeWorkoutFromLibrary = useCallback((id: string) => {
+    setWorkoutLibrary(prev => prev.filter(w => w.id !== id));
+  }, []);
+  
+  const removeWeekFromLibrary = useCallback((id: string) => {
+    setWeekLibrary(prev => prev.filter(w => w.id !== id));
+  }, []);
+  
+  const removeProgramFromLibrary = useCallback((id: string) => {
+    setProgramLibrary(prev => prev.filter(p => p.id !== id));
+  }, []);
+  
+  const updateWorkoutName = useCallback((workoutId: string, name: string) => {
+    updateWorkout(workoutId, (workout) => {
+      workout.name = name;
+    });
+  }, [updateWorkout]);
+  
+  const updateWeekName = useCallback((weekId: string, name: string) => {
+    updateWeek(weekId, (week) => {
+      week.name = name;
+    });
+  }, [updateWeek]);
 
   return (
-    <WorkoutContext.Provider value={contextValue}>
+    <WorkoutContext.Provider
+      value={{
+        program,
+        activeWorkoutId,
+        activeWeekId,
+        setActiveWorkoutId,
+        setActiveWeekId,
+        setProgram,
+        addWorkout,
+        addWeek,
+        addCircuit,
+        addExercise,
+        addExerciseToWorkout,
+        duplicateExercise,
+        addSet,
+        deleteSet,
+        deleteExercise,
+        deleteWorkout,
+        updateProgram,
+        updateWorkout,
+        updateWeek,
+        updateExercise,
+        updateSet,
+        getExerciseDetails,
+        moveWorkout,
+        moveWeek,
+        createCircuit,
+        createSuperset,
+        createEMOM,
+        createAMRAP,
+        createTabata,
+        resetProgram,
+        loadSampleProgram,
+        saveWorkoutToLibrary,
+        saveWeekToLibrary,
+        saveProgramToLibrary,
+        loadWorkoutFromLibrary,
+        loadWeekFromLibrary,
+        loadProgramFromLibrary,
+        getWorkoutLibrary,
+        getWeekLibrary,
+        getProgramLibrary,
+        removeWorkoutFromLibrary,
+        removeWeekFromLibrary,
+        removeProgramFromLibrary,
+        updateWorkoutName,
+        updateWeekName,
+      }}
+    >
       {children}
     </WorkoutContext.Provider>
   );
 };
 
-const useWorkout = () => {
+export const useWorkout = () => {
   const context = useContext(WorkoutContext);
   if (!context) {
     throw new Error("useWorkout must be used within a WorkoutProvider");
   }
   return context;
 };
-
-export { WorkoutProvider, useWorkout };
