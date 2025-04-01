@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
-import { useWorkout } from '@/contexts/WorkoutContext';
 import { useNavigate } from 'react-router-dom';
 
 interface ContentCardProps {
@@ -19,7 +18,6 @@ interface ContentCardProps {
 
 const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   const navigate = useNavigate();
-  const { loadWorkoutFromLibrary, addWeek, setActiveWeekId } = useWorkout();
   
   // Determine if item is Exercise or ItemType
   const isExercise = 'primaryMuscle' in item;
