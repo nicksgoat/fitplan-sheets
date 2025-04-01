@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ItemType } from '@/lib/types';
-import { Download, Clock } from 'lucide-react';
+import { Download, Clock, CalendarDays, Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePublicWorkoutLibrary } from '@/hooks/useWorkoutLibraryIntegration';
 import { toast } from 'sonner';
@@ -37,43 +37,65 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
   };
   
   return (
-    <div className="p-4">
-      <div className="aspect-video mb-4 rounded-lg overflow-hidden">
+    <div className="p-4 max-w-xl mx-auto">
+      <div className="relative aspect-video mb-6 rounded-lg overflow-hidden">
         <img 
           src={item.imageUrl || "https://images.unsplash.com/photo-1594737625785-a6cbdabd333c?q=80&w=2070"} 
           alt={item.title}
           className="w-full h-full object-cover"
         />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {item.tags?.map((tag, index) => (
+              <Badge key={index} variant="outline" className="bg-black/50 text-white border-none text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold">{item.title}</h2>
-          <p className="text-gray-400 text-sm">Created by {item.creator || 'Anonymous'}</p>
+          <h2 className="text-2xl font-bold mb-1">{item.title}</h2>
+          <p className="text-fitbloom-text-medium text-sm">Created by {item.creator || 'Anonymous'}</p>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          {item.tags?.map((tag, index) => (
-            <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-              {tag}
-            </Badge>
-          ))}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-dark-300">
+            <Clock className="h-5 w-5 text-fitbloom-purple" />
+            <div>
+              <p className="text-xs text-fitbloom-text-medium">Duration</p>
+              <p className="font-medium">{item.duration || 'N/A'}</p>
+            </div>
+          </div>
           
-          <Badge variant="outline" className="text-xs px-2 py-0.5 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {item.duration || 'N/A'}
-          </Badge>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-dark-300">
+            <Dumbbell className="h-5 w-5 text-fitbloom-purple" />
+            <div>
+              <p className="text-xs text-fitbloom-text-medium">Difficulty</p>
+              <p className="font-medium capitalize">{item.difficulty || 'Beginner'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-dark-300">
+            <CalendarDays className="h-5 w-5 text-fitbloom-purple" />
+            <div>
+              <p className="text-xs text-fitbloom-text-medium">Added</p>
+              <p className="font-medium">{item.savedAt ? new Date(item.savedAt).toLocaleDateString() : 'Recently'}</p>
+            </div>
+          </div>
         </div>
         
         <div>
           <h3 className="font-semibold mb-2">Description</h3>
-          <p className="text-sm text-gray-300">
+          <p className="text-fitbloom-text-medium">
             {item.description || 'No description available.'}
           </p>
         </div>
         
         <Button 
-          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-4"
+          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
           onClick={handleUseWorkout}
         >
           <Download className="h-4 w-4 mr-2" />
