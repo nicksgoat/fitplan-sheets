@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -53,6 +52,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
   
   // If we're only dealing with a single exercise
   if (exercise && workoutId) {
+    // Define a dummy navigation function for single exercise view
+    const handleSingleExerciseSetNavigate = (
+      direction: "up" | "down" | "left" | "right", 
+      shiftKey: boolean
+    ) => {
+      // In single exercise view, we don't need complex navigation
+      // This is just a placeholder to satisfy the type requirement
+    };
+
     return (
       <div className="workout-container">
         <Table className="workout-table border-collapse w-full" ref={tableRef}>
@@ -100,6 +108,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                       onRepTypeChange={(type) => updateExercise(workoutId, exercise.id, { repType: type })}
                       isFocused={isCellFocused(0, "reps", exercise.id, setIndex)}
                       onFocus={focusCell}
+                      onNavigate={handleSingleExerciseSetNavigate}
                       hideRepTypeSelector={true}
                     />
                   </td>
@@ -120,6 +129,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                       onWeightTypeChange={(type) => updateSet(workoutId, exercise.id, set.id, { weightType: type })}
                       isFocused={isCellFocused(0, "weight", exercise.id, setIndex)}
                       onFocus={focusCell}
+                      onNavigate={handleSingleExerciseSetNavigate}
                       hideWeightTypeSelector={true}
                     />
                   </td>
@@ -140,6 +150,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                       onIntensityTypeChange={(type) => updateSet(workoutId, exercise.id, set.id, { intensityType: type })}
                       isFocused={isCellFocused(0, "intensity", exercise.id, setIndex)}
                       onFocus={focusCell}
+                      onNavigate={handleSingleExerciseSetNavigate}
                       hideIntensityTypeSelector={true}
                     />
                   </td>
@@ -157,6 +168,7 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session, exercise, workoutI
                       }}
                       isFocused={isCellFocused(0, "rest", exercise.id, setIndex)}
                       onFocus={focusCell}
+                      onNavigate={handleSingleExerciseSetNavigate}
                     />
                   </td>
                   

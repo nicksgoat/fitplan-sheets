@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { Workout, Exercise } from "@/types/workout";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -60,7 +61,7 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
 
   return (
     <div className="mb-16">
-      <WorkoutSessionHeader workout={workout} />
+      <WorkoutSessionHeader sessionId={sessionId} />
       
       <div className="flex justify-between items-center my-4">
         <div className="flex items-center space-x-2">
