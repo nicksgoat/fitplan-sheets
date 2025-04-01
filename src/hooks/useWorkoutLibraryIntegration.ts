@@ -118,8 +118,13 @@ export function usePublicWorkoutLibrary() {
   
   const saveWorkout = (workout: Workout) => {
     try {
-      // Save workout to personal library (makes a copy)
-      const workoutCopy = { ...workout, isPublic: false } as Workout;
+      // Create a deep copy of the workout to ensure all data is captured
+      const workoutCopy = JSON.parse(JSON.stringify({ 
+        ...workout, 
+        isPublic: false,
+        lastModified: new Date().toISOString()
+      })) as Workout;
+      
       addWorkoutToLibrary(workoutCopy);
       toast.success('Workout saved to your library');
       return true;

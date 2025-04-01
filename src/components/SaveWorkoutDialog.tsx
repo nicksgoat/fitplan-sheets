@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { addWorkoutToLibrary } from "@/utils/presets";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { Image, Upload } from "lucide-react";
+import { Image, Upload, X } from "lucide-react";
 
 interface SaveWorkoutDialogProps {
   open: boolean;
@@ -24,13 +24,54 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Get the current workout
   const workout = program?.workouts.find(w => w.id === workoutId);
+
+  // Handle image file upload
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+    
+    setUploadedImage(file);
+    setImageUrl(''); // Clear URL input when file is uploaded
+    
+    // Create a preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    
+    return () => URL.revokeObjectURL(objectUrl);
+  };
   
+  // Clear the selected image
+  const clearImage = () => {
+    setUploadedImage(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // Handle image URL input change
   const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageUrl(e.target.value);
+    setUploadedImage(null);
+    setPreviewUrl(null);
   };
 
   // Generate a random workout image if none is provided
@@ -47,7 +88,17 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
     return `https://source.unsplash.com/random/800x600?${randomId}`;
   };
   
-  const handleSave = () => {
+  // Convert uploaded image to base64
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+  
+  const handleSave = async () => {
     if (!workout) {
       toast.error("Workout not found");
       return;
@@ -61,19 +112,27 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
     setSaving(true);
     
     try {
-      // Determine image URL: user input or random exercise image
-      const workoutImageUrl = imageUrl.trim() || getDefaultWorkoutImage();
+      let workoutImageUrl = imageUrl.trim();
       
-      // Create a copy of the workout with the new name and image
-      const workoutToSave = {
+      // If an image was uploaded, convert it to base64
+      if (uploadedImage) {
+        workoutImageUrl = await convertToBase64(uploadedImage);
+      } else if (!workoutImageUrl) {
+        // If no image URL or upload, use default
+        workoutImageUrl = getDefaultWorkoutImage();
+      }
+      
+      // Create a deep copy to ensure all workout data is captured
+      const workoutToSave = JSON.parse(JSON.stringify({
         ...workout,
         name: name.trim(),
         isPublic: isPublic,
         userId: user?.id,
         creator: user?.email || "Anonymous",
         savedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
         imageUrl: workoutImageUrl
-      };
+      }));
       
       // Save to local library
       addWorkoutToLibrary(workoutToSave);
@@ -112,19 +171,69 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="image-url" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Workout Image URL (optional)
-            </Label>
-            <Input
-              id="image-url"
-              placeholder="https://example.com/workout-image.jpg"
-              value={imageUrl}
-              onChange={handleImageUrlChange}
-              className="bg-dark-300 border-dark-400"
-            />
-            <p className="text-xs text-gray-400">
-              Leave empty for a random fitness image
+            <Label className="block mb-2">Workout Image</Label>
+            
+            {previewUrl && (
+              <div className="relative w-full h-40 mb-2">
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover rounded-md"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                  onClick={clearImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex flex-col gap-4">
+              <div>
+                <Label htmlFor="image-upload" className="flex items-center gap-2 mb-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Image
+                </Label>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="bg-dark-300 border-dark-400"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Maximum file size: 5MB
+                </p>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="flex-grow border-t border-dark-400"></div>
+                <span className="px-3 text-xs text-gray-400">OR</span>
+                <div className="flex-grow border-t border-dark-400"></div>
+              </div>
+              
+              <div>
+                <Label htmlFor="image-url" className="flex items-center gap-2 mb-2">
+                  <Image className="h-4 w-4" />
+                  Image URL
+                </Label>
+                <Input
+                  id="image-url"
+                  placeholder="https://example.com/workout-image.jpg"
+                  value={imageUrl}
+                  onChange={handleImageUrlChange}
+                  className="bg-dark-300 border-dark-400"
+                  disabled={!!uploadedImage}
+                />
+              </div>
+            </div>
+            
+            <p className="text-xs text-gray-400 mt-2">
+              Leave both empty for a random fitness image
             </p>
           </div>
           

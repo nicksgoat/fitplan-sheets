@@ -1,3 +1,4 @@
+
 import { WorkoutProgram, Workout, WorkoutWeek } from "@/types/workout";
 import { Exercise as LibraryExercise } from "@/types/exercise";
 import { v4 as uuidv4 } from "uuid";
@@ -18,7 +19,7 @@ export function addWorkoutToLibrary(workout: Workout): void {
   const workoutToSave = JSON.parse(JSON.stringify(workout));
   
   // Add metadata for tracking
-  workoutToSave.savedAt = new Date().toISOString();
+  workoutToSave.savedAt = workoutToSave.savedAt || new Date().toISOString();
   workoutToSave.lastModified = new Date().toISOString();
   
   // Store library exercise references in each exercise
@@ -41,7 +42,7 @@ export function addWeekToLibrary(week: WorkoutWeek): void {
   const weekToSave = JSON.parse(JSON.stringify(week));
   
   // Add metadata
-  weekToSave.savedAt = new Date().toISOString();
+  weekToSave.savedAt = weekToSave.savedAt || new Date().toISOString();
   weekToSave.lastModified = new Date().toISOString();
   
   const library = getWeekLibrary();
@@ -54,7 +55,7 @@ export function addProgramToLibrary(program: WorkoutProgram): void {
   const programToSave = JSON.parse(JSON.stringify(program));
   
   // Add metadata
-  programToSave.savedAt = new Date().toISOString();
+  programToSave.savedAt = programToSave.savedAt || new Date().toISOString();
   programToSave.lastModified = new Date().toISOString();
   
   const library = getProgramLibrary();
