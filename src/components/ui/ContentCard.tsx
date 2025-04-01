@@ -12,9 +12,10 @@ import { ItemType } from '@/lib/types';
 interface ContentCardProps {
   item: Exercise | ItemType;
   className?: string;
+  onClick?: () => void;
 }
 
-const ContentCard = ({ item, className }: ContentCardProps) => {
+const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   // Determine if item is Exercise or ItemType
   const isExercise = 'primaryMuscle' in item;
   
@@ -49,7 +50,10 @@ const ContentCard = ({ item, className }: ContentCardProps) => {
   
   return (
     <DetailDrawer item={normalizedItem}>
-      <Card className={cn("content-card h-full flex flex-col", className)}>
+      <Card 
+        className={cn("content-card h-full flex flex-col", className)}
+        onClick={onClick}
+      >
         <div className="relative">
           {videoUrl ? (
             <div className="relative h-[120px] w-full">

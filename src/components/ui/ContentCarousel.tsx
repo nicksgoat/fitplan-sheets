@@ -9,9 +9,10 @@ import { Exercise } from '@/types/exercise';
 interface ContentCarouselProps {
   items: (ItemType | Exercise)[];
   className?: string;
+  onItemClick?: (item: ItemType | Exercise) => void;
 }
 
-const ContentCarousel = ({ items, className }: ContentCarouselProps) => {
+const ContentCarousel = ({ items, className, onItemClick }: ContentCarouselProps) => {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -36,7 +37,11 @@ const ContentCarousel = ({ items, className }: ContentCarouselProps) => {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {items.map((item) => (
-          <div key={item.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] snap-start">
+          <div 
+            key={item.id} 
+            className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] snap-start"
+            onClick={() => onItemClick && onItemClick(item)}
+          >
             <ContentCard item={item} />
           </div>
         ))}
