@@ -6,6 +6,7 @@ import { Exercise as LibraryExercise } from '@/types/exercise';
 import { Exercise as WorkoutExercise, Workout } from '@/types/workout';
 import { toast } from 'sonner';
 import { addWorkoutToLibrary, getWorkoutLibrary } from '@/utils/presets';
+import { ItemType } from '@/lib/types';
 
 /**
  * Hook to get library exercise data for a workout exercise
@@ -73,6 +74,7 @@ export function useWorkoutLibraryExercises(workoutId: string) {
  */
 export function usePublicWorkoutLibrary() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workoutItems, setWorkoutItems] = useState<ItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -86,6 +88,24 @@ export function usePublicWorkoutLibrary() {
         const publicWorkouts = allWorkouts.filter(workout => workout.isPublic === true);
         
         setWorkouts(publicWorkouts);
+
+        // Convert workouts to ItemType format for ContentCard compatibility
+        const formattedWorkouts = publicWorkouts.map(workout => ({
+          id: workout.id,
+          title: workout.name,
+          type: 'workout' as const,
+          creator: workout.creator || 'Anonymous',
+          imageUrl: `https://source.unsplash.com/random/300x200?fitness-${workout.id.substring(0, 8)}`,
+          tags: workout.exercises.slice(0, 3).map(ex => ex.name),
+          duration: `${workout.exercises.length} exercises`,
+          difficulty: 'intermediate' as const,
+          isFavorite: false,
+          description: `A workout with ${workout.exercises.length} exercises`,
+          savedAt: workout.savedAt,
+          lastModified: workout.lastModified
+        }));
+        
+        setWorkoutItems(formattedWorkouts);
       } catch (error) {
         console.error('Error fetching public workouts:', error);
       } finally {
@@ -112,6 +132,7 @@ export function usePublicWorkoutLibrary() {
   
   return {
     workouts,
+    workoutItems,
     isLoading,
     saveWorkout
   };

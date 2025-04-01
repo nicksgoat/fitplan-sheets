@@ -17,26 +17,34 @@ import { Workout } from '@/types/workout';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { ItemType } from '@/lib/types';
 
 const PublicWorkoutsLibrary: React.FC = () => {
-  const { workouts, isLoading, saveWorkout } = usePublicWorkoutLibrary();
+  const { workouts, workoutItems, isLoading, saveWorkout } = usePublicWorkoutLibrary();
   const { loadWorkoutFromLibrary } = useWorkout();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   
-  const filteredWorkouts = workouts.filter(
-    workout => workout.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredWorkouts = workoutItems.filter(
+    workout => workout.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleUseWorkout = (workout: Workout) => {
-    // First, save the workout to user's personal library
-    saveWorkout(workout);
+  const handleUseWorkout = (workoutItem: ItemType) => {
+    // Find the corresponding workout from our workouts array
+    const workout = workouts.find(w => w.id === workoutItem.id);
     
-    // Navigate to sheets page and load the workout
-    navigate('/sheets');
-    
-    // Toast notification
-    toast.success(`"${workout.name}" added to your workout program`);
+    if (workout) {
+      // First, save the workout to user's personal library
+      saveWorkout(workout);
+      
+      // Navigate to sheets page and load the workout
+      navigate('/sheets');
+      
+      // Toast notification
+      toast.success(`"${workout.name}" added to your workout program`);
+    } else {
+      toast.error("Could not find the workout data");
+    }
   };
   
   if (isLoading) {
@@ -70,24 +78,23 @@ const PublicWorkoutsLibrary: React.FC = () => {
           {filteredWorkouts.map(workout => (
             <Card key={workout.id} className="bg-dark-200 border-dark-300 hover:border-fitbloom-purple transition-colors">
               <CardHeader>
-                <CardTitle className="text-white">{workout.name}</CardTitle>
+                <CardTitle className="text-white">{workout.title}</CardTitle>
                 <CardDescription className="flex items-center text-gray-400">
                   <Dumbbell className="h-4 w-4 mr-1" />
-                  {workout.exercises.length} exercises
+                  {workout.duration}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm text-gray-400">
-                    <span>Created by: {workout.creator || 'Anonymous'}</span>
+                    <span>Created by: {workout.creator}</span>
                     <span className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
                       {new Date(workout.savedAt || '').toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-gray-300 line-clamp-2">
-                    {workout.exercises.slice(0, 3).map(e => e.name).join(', ')}
-                    {workout.exercises.length > 3 ? '...' : ''}
+                    {workout.tags?.join(', ')}
                   </p>
                 </div>
               </CardContent>

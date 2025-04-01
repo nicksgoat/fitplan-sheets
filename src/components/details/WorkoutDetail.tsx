@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ItemType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Heart, ChevronDown } from 'lucide-react';
+import { Clock, Heart, ChevronDown, Calendar, User, BarChart3 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeaderboardTab from './LeaderboardTab';
 import { 
@@ -12,6 +12,8 @@ import {
   CollapsibleTrigger 
 } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePublicWorkoutLibrary } from '@/hooks/useWorkoutLibraryIntegration';
+import { Workout } from '@/types/workout';
 
 interface WorkoutDetailProps {
   item: ItemType;
@@ -38,58 +40,36 @@ interface Exercise {
 const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
   const [openExercises, setOpenExercises] = useState<number[]>([]);
-
-  // Sample exercise data - in a real app this would come from your backend
-  const exercises: Exercise[] = [
-    {
-      id: 1,
-      name: "Back Squat",
-      sets: 3,
-      reps: 12,
-      instructions: "Keep your heels down and drive your knees out over your toes",
-      setDetails: [
-        { number: 1, target: "—", weight: 95, reps: 12, restTime: 60 },
-        { number: 2, target: "—", weight: 115, reps: 12, restTime: 60 },
-        { number: 3, target: "—", weight: 115, reps: 12, restTime: 60 },
-      ]
-    },
-    {
-      id: 2,
-      name: "Push-ups",
-      sets: 3,
-      reps: 15,
-      instructions: "Keep your core tight and elbows close to your body",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 15, restTime: 45 },
-        { number: 2, target: "—", weight: 0, reps: 15, restTime: 45 },
-        { number: 3, target: "—", weight: 0, reps: 15, restTime: 45 },
-      ]
-    },
-    {
-      id: 3,
-      name: "Planks",
-      sets: 3,
-      reps: 30,
-      instructions: "Keep your body in a straight line from head to heels",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 30, restTime: 30 },
-        { number: 2, target: "—", weight: 0, reps: 30, restTime: 30 },
-        { number: 3, target: "—", weight: 0, reps: 30, restTime: 30 },
-      ]
-    },
-    {
-      id: 4,
-      name: "Lunges",
-      sets: 3,
-      reps: 12,
-      instructions: "Step forward and lower your back knee toward the ground",
-      setDetails: [
-        { number: 1, target: "—", weight: 0, reps: 12, restTime: 45 },
-        { number: 2, target: "—", weight: 0, reps: 12, restTime: 45 },
-        { number: 3, target: "—", weight: 0, reps: 12, restTime: 45 },
-      ]
+  const { workouts } = usePublicWorkoutLibrary();
+  const [workoutDetails, setWorkoutDetails] = useState<Workout | null>(null);
+  
+  useEffect(() => {
+    // Find the workout details from our public workouts
+    if (workouts && workouts.length > 0) {
+      const foundWorkout = workouts.find(w => w.id === item.id);
+      if (foundWorkout) {
+        setWorkoutDetails(foundWorkout);
+      }
     }
-  ];
+  }, [workouts, item.id]);
+  
+  // Format exercise data for display
+  const exercises: Exercise[] = workoutDetails ? workoutDetails.exercises.map((exercise, index) => {
+    return {
+      id: index + 1,
+      name: exercise.name,
+      sets: exercise.sets.length,
+      reps: 0,
+      instructions: exercise.notes,
+      setDetails: exercise.sets.map((set, setIndex) => ({
+        number: setIndex + 1,
+        target: "—",
+        weight: parseFloat(set.weight) || 0,
+        reps: parseInt(set.reps) || 0,
+        restTime: parseInt(set.rest) || 60
+      }))
+    };
+  }) : [];
 
   const toggleExercise = (exerciseId: number) => {
     setOpenExercises(prev => 
@@ -166,6 +146,25 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
               </Badge>
             </div>
 
+            {/* Workout Stats Cards */}
+            <div className="grid grid-cols-3 gap-2 my-4">
+              <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-fitbloom-purple mb-1" />
+                <p className="text-xs text-gray-400">Difficulty</p>
+                <p className="text-sm font-medium">{item.difficulty}</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col items-center justify-center">
+                <Calendar className="h-5 w-5 text-fitbloom-purple mb-1" />
+                <p className="text-xs text-gray-400">Created</p>
+                <p className="text-sm font-medium">{new Date(item.savedAt || '').toLocaleDateString()}</p>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col items-center justify-center">
+                <User className="h-5 w-5 text-fitbloom-purple mb-1" />
+                <p className="text-xs text-gray-400">Creator</p>
+                <p className="text-sm font-medium">{item.creator}</p>
+              </div>
+            </div>
+
             <div className="mt-6">
               <h2 className="font-semibold mb-2">Description</h2>
               <p className="text-sm text-gray-300">
@@ -191,7 +190,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, onClose }) => {
                         </div>
                         <div>
                           <h3 className="text-sm font-medium">{exercise.name}</h3>
-                          <p className="text-xs text-fitbloom-text-medium">{exercise.sets} sets, {exercise.reps} reps</p>
+                          <p className="text-xs text-fitbloom-text-medium">{exercise.sets} sets</p>
                         </div>
                       </div>
                       <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${openExercises.includes(exercise.id) ? 'rotate-180' : ''}`} />
