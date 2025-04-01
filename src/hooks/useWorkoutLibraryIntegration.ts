@@ -99,7 +99,8 @@ export function usePublicWorkoutLibrary() {
   const saveWorkout = (workout: Workout) => {
     try {
       // Save workout to personal library (makes a copy)
-      addWorkoutToLibrary({ ...workout, isPublic: false });
+      const workoutCopy = { ...workout, isPublic: false } as Workout;
+      addWorkoutToLibrary(workoutCopy);
       toast.success('Workout saved to your library');
       return true;
     } catch (error) {

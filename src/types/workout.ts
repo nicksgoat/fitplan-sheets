@@ -45,6 +45,9 @@ export interface Workout {
   weekId?: string; // Field to associate workout with a week
   savedAt?: string; // Timestamp when the workout was saved to library
   lastModified?: string; // Timestamp when the workout was last modified
+  isPublic?: boolean; // Flag to indicate if workout is public
+  userId?: string; // User ID of the workout creator
+  creator?: string; // Name of the workout creator
 }
 
 export interface WorkoutWeek {
