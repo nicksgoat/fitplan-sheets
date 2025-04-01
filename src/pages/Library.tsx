@@ -11,7 +11,6 @@ import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
-import { WorkoutProvider } from '@/contexts/WorkoutContext';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -95,120 +94,118 @@ const Library = () => {
   };
   
   return (
-    <WorkoutProvider>
-      <div className="space-y-6 animate-fade-in p-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-bold">My Library</h1>
-          <Button 
-            className="bg-fitbloom-purple hover:bg-opacity-90" 
-            onClick={handleCreateButtonClick}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create
-          </Button>
+    <div className="space-y-6 animate-fade-in p-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl md:text-3xl font-bold">My Library</h1>
+        <Button 
+          className="bg-fitbloom-purple hover:bg-opacity-90" 
+          onClick={handleCreateButtonClick}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create
+        </Button>
+      </div>
+
+      {!user && (
+        <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4">
+          <p className="text-amber-800 dark:text-amber-200 text-sm">
+            You are not logged in. Items you create will be stored locally. 
+            <Button 
+              variant="link" 
+              className="text-amber-800 dark:text-amber-200 underline p-0 h-auto font-semibold"
+              onClick={() => navigate('/auth')}
+            >
+              Log in
+            </Button> to save them to your account.
+          </p>
         </div>
+      )}
 
-        {!user && (
-          <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4">
-            <p className="text-amber-800 dark:text-amber-200 text-sm">
-              You are not logged in. Items you create will be stored locally. 
-              <Button 
-                variant="link" 
-                className="text-amber-800 dark:text-amber-200 underline p-0 h-auto font-semibold"
-                onClick={() => navigate('/auth')}
-              >
-                Log in
-              </Button> to save them to your account.
-            </p>
+      <Tabs defaultValue="exercises" className="w-full">
+        <TabsList className="mb-6 w-full overflow-x-auto scrollbar-hide flex">
+          <TabsTrigger value="collections">Collections</TabsTrigger>
+          <TabsTrigger value="exercises">Exercises</TabsTrigger>
+          <TabsTrigger value="workouts">Workouts</TabsTrigger>
+          <TabsTrigger value="programs">Programs</TabsTrigger>
+          <TabsTrigger value="created">Created by me</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="collections" className="mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {mockCollections.map((collection) => (
+              <CollectionCard key={collection.id} collection={collection} />
+            ))}
           </div>
-        )}
-
-        <Tabs defaultValue="exercises" className="w-full">
-          <TabsList className="mb-6 w-full overflow-x-auto scrollbar-hide flex">
-            <TabsTrigger value="collections">Collections</TabsTrigger>
-            <TabsTrigger value="exercises">Exercises</TabsTrigger>
-            <TabsTrigger value="workouts">Workouts</TabsTrigger>
-            <TabsTrigger value="programs">Programs</TabsTrigger>
-            <TabsTrigger value="created">Created by me</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="collections" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {mockCollections.map((collection) => (
-                <CollectionCard key={collection.id} collection={collection} />
-              ))}
+        </TabsContent>
+        
+        <TabsContent value="exercises" className="mt-4 overflow-x-auto">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="exercises" className="mt-4 overflow-x-auto">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
-              </div>
-            ) : error ? (
-              <div className="text-center py-10">
-                <p className="text-red-400">Failed to load exercises. Using local data.</p>
-                {filteredExercises.length > 0 ? (
-                  <div className="mt-4">
-                    <ContentGrid items={filteredExercises} />
-                  </div>
-                ) : (
-                  <p className="text-gray-400 mt-2">No exercises available.</p>
-                )}
-              </div>
-            ) : filteredExercises.length > 0 ? (
-              <ContentGrid items={filteredExercises} />
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-gray-400">No exercises found.</p>
-                <Button 
-                  className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
-                  onClick={() => navigate('/create-exercise')}
-                >
-                  Create Exercise
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="workouts" className="mt-4">
-            <WorkoutsLibraryTab />
-          </TabsContent>
-          
-          <TabsContent value="programs" className="mt-4">
+          ) : error ? (
             <div className="text-center py-10">
-              <p className="text-gray-400">No programs saved yet.</p>
+              <p className="text-red-400">Failed to load exercises. Using local data.</p>
+              {filteredExercises.length > 0 ? (
+                <div className="mt-4">
+                  <ContentGrid items={filteredExercises} />
+                </div>
+              ) : (
+                <p className="text-gray-400 mt-2">No exercises available.</p>
+              )}
+            </div>
+          ) : filteredExercises.length > 0 ? (
+            <ContentGrid items={filteredExercises} />
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-400">No exercises found.</p>
               <Button 
                 className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
-                onClick={() => navigate('/sheets')}
+                onClick={() => navigate('/create-exercise')}
               >
-                Create Program
+                Create Exercise
               </Button>
             </div>
-          </TabsContent>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="workouts" className="mt-4">
+          <WorkoutsLibraryTab />
+        </TabsContent>
+        
+        <TabsContent value="programs" className="mt-4">
+          <div className="text-center py-10">
+            <p className="text-gray-400">No programs saved yet.</p>
+            <Button 
+              className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+              onClick={() => navigate('/sheets')}
+            >
+              Create Program
+            </Button>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="created" className="mt-4 overflow-x-auto">
-            {isLoadingCustom ? (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
-              </div>
-            ) : filteredCustomExercises && filteredCustomExercises.length > 0 ? (
-              <ContentGrid items={filteredCustomExercises} />
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-gray-400">You haven't created any content yet.</p>
-                <Button 
-                  className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
-                  onClick={() => navigate('/create-exercise')}
-                >
-                  Create Content
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </WorkoutProvider>
+        <TabsContent value="created" className="mt-4 overflow-x-auto">
+          {isLoadingCustom ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+            </div>
+          ) : filteredCustomExercises && filteredCustomExercises.length > 0 ? (
+            <ContentGrid items={filteredCustomExercises} />
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-400">You haven't created any content yet.</p>
+              <Button 
+                className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
+                onClick={() => navigate('/create-exercise')}
+              >
+                Create Content
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryButton from '@/components/ui/CategoryButton';
@@ -9,7 +10,6 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLibrary } from '@/contexts/LibraryContext';
-import { WorkoutProvider } from '@/contexts/WorkoutContext';
 
 const Explore = () => {
   const allCategories = [
@@ -105,160 +105,144 @@ const Explore = () => {
   const handleCategoryClick = (category: string) => {
     setActiveCategory(prev => prev === category ? null : category);
   };
-  
-  const handleItemClick = (item: ItemType) => {
-    if (item.type === 'workout' || item.type === 'program') {
-      // For workout and program items, navigate to sheets with the correct item loaded
-      if (item.type === 'workout') {
-        navigate(`/sheets?workoutId=${item.id}`);
-      } else {
-        navigate('/sheets');
-      }
-    } else if (item.type === 'exercise') {
-      // Navigate to exercise detail (this remains the same)
-    }
-  };
 
   return (
-    <WorkoutProvider>
-      <div className="space-y-6 animate-fade-in p-4">
-        <section className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Browse Categories</h2>
-            <a href="#" className="text-fitbloom-purple hover:underline text-sm">See All</a>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {allCategories.map((category) => (
-              <CategoryButton 
-                key={category} 
-                name={category} 
-                active={activeCategory === category}
-                onClick={() => handleCategoryClick(category)}
-              />
-            ))}
-          </div>
-          {activeCategory && (
-            <div className="inline-flex items-center">
-              <p className="text-sm text-muted-foreground">
-                Showing results for category: <span className="font-medium text-primary">{activeCategory}</span>
-              </p>
-              <button 
-                className="ml-2 text-xs text-fitbloom-purple hover:underline"
-                onClick={() => setActiveCategory(null)}
-              >
-                Clear filter
-              </button>
-            </div>
-          )}
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Your Library</h2>
-            <Button
-              variant="link"
-              className="text-fitbloom-purple hover:underline text-sm"
-              onClick={() => navigate('/library')}
-            >
-              View All
-            </Button>
-          </div>
-          <Tabs defaultValue="workouts" className="w-full">
-            <TabsList>
-              <TabsTrigger value="exercises">Exercises</TabsTrigger>
-              <TabsTrigger value="workouts">Workouts</TabsTrigger>
-              <TabsTrigger value="programs">Programs</TabsTrigger>
-            </TabsList>
-            <TabsContent value="exercises" className="mt-3">
-              {isLoading ? (
-                <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-6">
-                  <p className="text-red-400">Failed to load exercises.</p>
-                </div>
-              ) : getFilteredItems(exerciseItems).length > 0 ? (
-                <ContentCarousel items={getFilteredItems(exerciseItems)} onItemClick={handleItemClick} />
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-gray-400">No exercises match your criteria.</p>
-                </div>
-              )}
-            </TabsContent>
-            <TabsContent value="workouts" className="mt-3">
-              {workoutItems.length > 0 ? (
-                <ContentCarousel items={getFilteredItems(workoutItems)} onItemClick={handleItemClick} />
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-gray-400">You haven't created any workouts yet.</p>
-                  <Button 
-                    className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
-                    onClick={() => navigate('/sheets')}
-                  >
-                    Create Workout
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-            <TabsContent value="programs" className="mt-3">
-              {programItems.length > 0 ? (
-                <ContentCarousel items={getFilteredItems(programItems)} onItemClick={handleItemClick} />
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-gray-400">You haven't created any programs yet.</p>
-                  <Button 
-                    className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
-                    onClick={() => navigate('/sheets')}
-                  >
-                    Create Program
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Recently Created</h2>
-            <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
-          </div>
-          {allItems.length > 0 ? (
-            <ContentCarousel 
-              items={getFilteredItems(
-                [...workoutItems, ...programItems, ...exerciseItems]
-                  .sort((a, b) => {
-                    const dateA = a.lastModified ? new Date(a.lastModified) : new Date(0);
-                    const dateB = b.lastModified ? new Date(b.lastModified) : new Date(0);
-                    return dateB.getTime() - dateA.getTime();
-                  })
-                  .slice(0, 6)
-              )} 
-              onItemClick={handleItemClick}
+    <div className="space-y-6 animate-fade-in p-4">
+      <section className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Browse Categories</h2>
+          <a href="#" className="text-fitbloom-purple hover:underline text-sm">See All</a>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {allCategories.map((category) => (
+            <CategoryButton 
+              key={category} 
+              name={category} 
+              active={activeCategory === category}
+              onClick={() => handleCategoryClick(category)}
             />
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-gray-400">No items found.</p>
-            </div>
-          )}
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Trending Exercises</h2>
-            <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
+          ))}
+        </div>
+        {activeCategory && (
+          <div className="inline-flex items-center">
+            <p className="text-sm text-muted-foreground">
+              Showing results for category: <span className="font-medium text-primary">{activeCategory}</span>
+            </p>
+            <button 
+              className="ml-2 text-xs text-fitbloom-purple hover:underline"
+              onClick={() => setActiveCategory(null)}
+            >
+              Clear filter
+            </button>
           </div>
-          {exerciseItems.length > 0 ? (
-            <ContentCarousel items={getFilteredItems(exerciseItems.slice(0, 6))} onItemClick={handleItemClick} />
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-gray-400">No exercises found.</p>
-            </div>
-          )}
-        </section>
-      </div>
-    </WorkoutProvider>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Your Library</h2>
+          <Button
+            variant="link"
+            className="text-fitbloom-purple hover:underline text-sm"
+            onClick={() => navigate('/library')}
+          >
+            View All
+          </Button>
+        </div>
+        <Tabs defaultValue="workouts" className="w-full">
+          <TabsList>
+            <TabsTrigger value="exercises">Exercises</TabsTrigger>
+            <TabsTrigger value="workouts">Workouts</TabsTrigger>
+            <TabsTrigger value="programs">Programs</TabsTrigger>
+          </TabsList>
+          <TabsContent value="exercises" className="mt-3">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-6">
+                <p className="text-red-400">Failed to load exercises.</p>
+              </div>
+            ) : getFilteredItems(exerciseItems).length > 0 ? (
+              <ContentCarousel items={getFilteredItems(exerciseItems)} />
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-400">No exercises match your criteria.</p>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="workouts" className="mt-3">
+            {workoutItems.length > 0 ? (
+              <ContentCarousel items={getFilteredItems(workoutItems)} />
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-400">You haven't created any workouts yet.</p>
+                <Button 
+                  className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
+                  onClick={() => navigate('/sheets')}
+                >
+                  Create Workout
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="programs" className="mt-3">
+            {programItems.length > 0 ? (
+              <ContentCarousel items={getFilteredItems(programItems)} />
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-400">You haven't created any programs yet.</p>
+                <Button 
+                  className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
+                  onClick={() => navigate('/sheets')}
+                >
+                  Create Program
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Recently Created</h2>
+          <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
+        </div>
+        {allItems.length > 0 ? (
+          <ContentCarousel 
+            items={getFilteredItems(
+              [...workoutItems, ...programItems, ...exerciseItems]
+                .sort((a, b) => {
+                  const dateA = a.lastModified ? new Date(a.lastModified) : new Date(0);
+                  const dateB = b.lastModified ? new Date(b.lastModified) : new Date(0);
+                  return dateB.getTime() - dateA.getTime();
+                })
+                .slice(0, 6)
+            )} 
+          />
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-gray-400">No items found.</p>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Trending Exercises</h2>
+          <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
+        </div>
+        {exerciseItems.length > 0 ? (
+          <ContentCarousel items={getFilteredItems(exerciseItems.slice(0, 6))} />
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-gray-400">No exercises found.</p>
+          </div>
+        )}
+      </section>
+    </div>
   );
 };
 
