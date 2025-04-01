@@ -4,10 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryButton from '@/components/ui/CategoryButton';
 import ContentCarousel from '@/components/ui/ContentCarousel';
 import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
+import { usePublicWorkoutLibrary } from '@/hooks/useWorkoutLibraryIntegration';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import { mockWorkouts, mockPrograms } from '@/lib/mockData';
+import { mockPrograms } from '@/lib/mockData';
 
 const Explore = () => {
   const allCategories = [
@@ -19,6 +20,9 @@ const Explore = () => {
   
   // Use the same data hook as the Library page
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
+  
+  // Get public workouts from the library
+  const { workoutItems, isLoading: isLoadingWorkouts } = usePublicWorkoutLibrary();
   
   // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
@@ -36,7 +40,7 @@ const Explore = () => {
     isCustom: false
   })) || [];
 
-  const allItems = [...exerciseItems, ...mockWorkouts, ...mockPrograms];
+  const allItems = [...exerciseItems, ...workoutItems, ...mockPrograms];
 
   // Filter items based on active category
   const filteredItems = activeCategory 
@@ -115,7 +119,17 @@ const Explore = () => {
             )}
           </TabsContent>
           <TabsContent value="workouts" className="mt-3">
-            <ContentCarousel items={getFilteredItems(mockWorkouts)} />
+            {isLoadingWorkouts ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+              </div>
+            ) : workoutItems.length > 0 ? (
+              <ContentCarousel items={getFilteredItems(workoutItems)} />
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-400">No public workouts available.</p>
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="programs" className="mt-3">
             <ContentCarousel items={getFilteredItems(mockPrograms)} />
@@ -128,7 +142,7 @@ const Explore = () => {
           <h2 className="text-lg font-semibold">Trending Workouts</h2>
           <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
         </div>
-        <ContentCarousel items={getFilteredItems(mockWorkouts.slice(0, 6))} />
+        <ContentCarousel items={getFilteredItems(workoutItems.slice(0, 6))} />
       </section>
 
       <section className="space-y-3">
@@ -136,7 +150,7 @@ const Explore = () => {
           <h2 className="text-lg font-semibold">New Releases</h2>
           <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
         </div>
-        <ContentCarousel items={getFilteredItems([...exerciseItems, ...mockWorkouts, ...mockPrograms].slice(0, 6))} />
+        <ContentCarousel items={getFilteredItems([...exerciseItems, ...workoutItems, ...mockPrograms].slice(0, 6))} />
       </section>
     </div>
   );
