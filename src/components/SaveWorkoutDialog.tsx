@@ -9,6 +9,7 @@ import { addWorkoutToLibrary } from "@/utils/presets";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { Image, Upload } from "lucide-react";
 
 interface SaveWorkoutDialogProps {
   open: boolean;
@@ -22,9 +23,29 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const [name, setName] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
   
   // Get the current workout
   const workout = program?.workouts.find(w => w.id === workoutId);
+  
+  // Handle image URL input change
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUrl(e.target.value);
+  };
+
+  // Generate a random workout image if none is provided
+  const getDefaultWorkoutImage = () => {
+    const imageIds = [
+      "barbell-workout",
+      "fitness-class",
+      "gym-equipment",
+      "kettlebell",
+      "running-track",
+      "weight-lifting"
+    ];
+    const randomId = imageIds[Math.floor(Math.random() * imageIds.length)];
+    return `https://source.unsplash.com/random/800x600?${randomId}`;
+  };
   
   const handleSave = () => {
     if (!workout) {
@@ -40,14 +61,18 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
     setSaving(true);
     
     try {
-      // Create a copy of the workout with the new name
+      // Determine image URL: user input or random exercise image
+      const workoutImageUrl = imageUrl.trim() || getDefaultWorkoutImage();
+      
+      // Create a copy of the workout with the new name and image
       const workoutToSave = {
         ...workout,
         name: name.trim(),
         isPublic: isPublic,
         userId: user?.id,
         creator: user?.email || "Anonymous",
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
+        imageUrl: workoutImageUrl
       };
       
       // Save to local library
@@ -84,6 +109,23 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
               className="bg-dark-300 border-dark-400"
               defaultValue={workout?.name || ""}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="image-url" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Workout Image URL (optional)
+            </Label>
+            <Input
+              id="image-url"
+              placeholder="https://example.com/workout-image.jpg"
+              value={imageUrl}
+              onChange={handleImageUrlChange}
+              className="bg-dark-300 border-dark-400"
+            />
+            <p className="text-xs text-gray-400">
+              Leave empty for a random fitness image
+            </p>
           </div>
           
           <div className="flex items-center justify-between space-x-2">

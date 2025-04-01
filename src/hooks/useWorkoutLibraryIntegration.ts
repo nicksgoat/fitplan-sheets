@@ -95,7 +95,7 @@ export function usePublicWorkoutLibrary() {
           title: workout.name,
           type: 'workout' as const,
           creator: workout.creator || 'Anonymous',
-          imageUrl: `https://source.unsplash.com/random/300x200?fitness-${workout.id.substring(0, 8)}`,
+          imageUrl: workout.imageUrl || `https://source.unsplash.com/random/300x200?fitness-${workout.id.substring(0, 8)}`,
           tags: workout.exercises.slice(0, 3).map(ex => ex.name),
           duration: `${workout.exercises.length} exercises`,
           difficulty: 'intermediate' as const,

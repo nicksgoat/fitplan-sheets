@@ -1,4 +1,3 @@
-
 export interface Set {
   id: string;
   reps: string;
@@ -48,6 +47,7 @@ export interface Workout {
   isPublic?: boolean; // Flag to indicate if workout is public
   userId?: string; // User ID of the workout creator
   creator?: string; // Name of the workout creator
+  imageUrl?: string; // URL for the workout image
 }
 
 export interface WorkoutWeek {

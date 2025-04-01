@@ -78,6 +78,17 @@ const PublicWorkoutsLibrary: React.FC = () => {
           {filteredWorkouts.map(workout => (
             <Card key={workout.id} className="bg-dark-200 border-dark-300 hover:border-fitbloom-purple transition-colors">
               <CardHeader>
+                <div className="rounded-md overflow-hidden h-40 mb-3">
+                  <img 
+                    src={workout.imageUrl} 
+                    alt={workout.title} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      (e.target as HTMLImageElement).src = 'https://source.unsplash.com/random/300x200?fitness';
+                    }}
+                  />
+                </div>
                 <CardTitle className="text-white">{workout.title}</CardTitle>
                 <CardDescription className="flex items-center text-gray-400">
                   <Dumbbell className="h-4 w-4 mr-1" />
