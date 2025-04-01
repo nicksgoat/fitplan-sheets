@@ -20,7 +20,7 @@ function App() {
     <LibraryProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MainLayout />}>
+          <Route element={<MainLayout />}>
             <Route index element={<Index />} />
             <Route path="library" element={<Library />} />
             <Route path="explore" element={<Explore />} />

@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
@@ -34,7 +34,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           />
         )}
         <main className="flex-1 overflow-auto p-3 md:p-4 lg:p-5">
-          {children}
+          {children || <Outlet />}
         </main>
       </div>
       {isMobile && (
