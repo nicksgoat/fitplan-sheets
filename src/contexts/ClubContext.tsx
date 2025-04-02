@@ -51,7 +51,7 @@ interface ClubContextType {
   currentClub: Club | null;
   setCurrentClub: (club: Club | null) => void;
   refreshClubs: () => Promise<void>;
-  createNewClub: (club: Omit<Club, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Club>;
+  createNewClub: (club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) => Promise<Club>;
   updateExistingClub: (id: string, updates: Partial<Club>) => Promise<Club>;
   removeClub: (id: string) => Promise<boolean>;
   
@@ -67,8 +67,8 @@ interface ClubContextType {
   events: ClubEvent[];
   loadingEvents: boolean;
   refreshEvents: () => Promise<void>;
-  createNewEvent: (event: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ClubEvent>;
-  updateExistingEvent: (id: string, updates: Partial<Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<ClubEvent>;
+  createNewEvent: (event: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) => Promise<ClubEvent>;
+  updateExistingEvent: (id: string, updates: Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) => Promise<ClubEvent>;
   removeEvent: (id: string) => Promise<boolean>;
   respondToClubEvent: (eventId: string, status: EventParticipationStatus) => Promise<EventParticipant>;
   
@@ -76,12 +76,12 @@ interface ClubContextType {
   posts: ClubPost[];
   loadingPosts: boolean;
   refreshPosts: () => Promise<void>;
-  createNewPost: (post: Omit<ClubPost, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) => Promise<ClubPost>;
+  createNewPost: (post: Omit<ClubPost, 'id' | 'created_at' | 'updated_at' | 'profile'>) => Promise<ClubPost>;
   removePost: (id: string) => Promise<boolean>;
   
   // Comments
   loadComments: (postId: string) => Promise<ClubPostComment[]>;
-  createNewComment: (comment: Omit<ClubPostComment, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) => Promise<ClubPostComment>;
+  createNewComment: (comment: Omit<ClubPostComment, 'id' | 'created_at' | 'updated_at' | 'profile'>) => Promise<ClubPostComment>;
   removeComment: (id: string) => Promise<boolean>;
   
   // Messages
@@ -161,7 +161,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const createNewClub = async (club: Omit<Club, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createNewClub = async (club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const newClub = await createClub(club);
       setClubs(prev => [newClub, ...prev]);
@@ -261,7 +261,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       await leaveClub(currentClub.id);
-      setMembers(prev => prev.filter(member => member.userId !== user.id));
+      setMembers(prev => prev.filter(member => member.user_id !== user.id));
       refreshClubs(); // To update userClubs
       toast.success(`You've left ${currentClub.name}`);
       return true;
@@ -288,7 +288,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const createNewEvent = async (event: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createNewEvent = async (event: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const newEvent = await createEvent(event);
       setEvents(prev => [...prev, newEvent]);
@@ -301,7 +301,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const updateExistingEvent = async (id: string, updates: Partial<Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const updateExistingEvent = async (id: string, updates: Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) => {
     try {
       const updatedEvent = await updateEvent(id, updates);
       setEvents(prev => prev.map(event => event.id === id ? updatedEvent : event));
@@ -340,7 +340,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setEvents(prev => prev.map(event => {
         if (event.id === eventId) {
           const updatedParticipants = event.participants || [];
-          const existingParticipantIndex = updatedParticipants.findIndex(p => p.userId === user.id);
+          const existingParticipantIndex = updatedParticipants.findIndex(p => p.user_id === user.id);
           
           if (existingParticipantIndex >= 0) {
             updatedParticipants[existingParticipantIndex] = response;
@@ -378,7 +378,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const createNewPost = async (post: Omit<ClubPost, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) => {
+  const createNewPost = async (post: Omit<ClubPost, 'id' | 'created_at' | 'updated_at' | 'profile'>) => {
     try {
       const newPost = await createPost(post);
       setPosts(prev => [newPost, ...prev]);
@@ -416,13 +416,13 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const createNewComment = async (comment: Omit<ClubPostComment, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) => {
+  const createNewComment = async (comment: Omit<ClubPostComment, 'id' | 'created_at' | 'updated_at' | 'profile'>) => {
     try {
       const newComment = await createComment(comment);
       
       // Update the post with the new comment
       setPosts(prev => prev.map(post => {
-        if (post.id === comment.postId) {
+        if (post.id === comment.post_id) {
           const comments = post.comments || [];
           return { ...post, comments: [...comments, newComment] };
         }
@@ -484,8 +484,8 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       const newMessage = await sendMessage({
-        clubId: currentClub.id,
-        userId: user.id,
+        club_id: currentClub.id,
+        user_id: user.id,
         content
       });
       
@@ -500,7 +500,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const togglePinMessage = async (id: string, isPinned: boolean) => {
     try {
       const updatedMessage = await pinMessage(id, isPinned);
-      setMessages(prev => prev.map(message => message.id === id ? { ...message, isPinned } : message));
+      setMessages(prev => prev.map(message => message.id === id ? { ...message, is_pinned: isPinned } : message));
       toast.success(`Message ${isPinned ? 'pinned' : 'unpinned'} successfully`);
       return updatedMessage;
     } catch (error) {
@@ -519,7 +519,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getUserClubRole = (clubId: string): MemberRole | null => {
     if (!user) return null;
     const membership = userClubs.find(uc => uc.club.id === clubId)?.membership;
-    return membership ? membership.role as MemberRole : null;
+    return membership ? membership.role : null;
   };
   
   const isUserClubAdmin = (clubId: string): boolean => {
@@ -530,7 +530,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isUserClubCreator = (clubId: string): boolean => {
     if (!user) return false;
     const club = clubs.find(c => c.id === clubId);
-    return club ? club.creatorId === user.id : false;
+    return club ? club.creator_id === user.id : false;
   };
   
   const value = {

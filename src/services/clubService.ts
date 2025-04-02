@@ -38,10 +38,19 @@ export async function fetchClubById(id: string) {
   return data as Club;
 }
 
-export async function createClub(club: Omit<Club, 'id' | 'createdAt' | 'updatedAt'>) {
+export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) {
   const { data, error } = await supabase
     .from('clubs')
-    .insert([club])
+    .insert([{
+      name: club.name,
+      description: club.description,
+      logo_url: club.logo_url,
+      banner_url: club.banner_url,
+      club_type: club.club_type,
+      creator_id: club.creator_id,
+      membership_type: club.membership_type,
+      premium_price: club.premium_price
+    }])
     .select()
     .single();
   
@@ -52,7 +61,15 @@ export async function createClub(club: Omit<Club, 'id' | 'createdAt' | 'updatedA
 export async function updateClub(id: string, updates: Partial<Club>) {
   const { data, error } = await supabase
     .from('clubs')
-    .update(updates)
+    .update({
+      name: updates.name,
+      description: updates.description,
+      logo_url: updates.logo_url,
+      banner_url: updates.banner_url,
+      club_type: updates.club_type,
+      membership_type: updates.membership_type,
+      premium_price: updates.premium_price
+    })
     .eq('id', id)
     .select()
     .single();
@@ -77,7 +94,7 @@ export async function fetchClubMembers(clubId: string) {
     .from('club_members')
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .eq('club_id', clubId);
   
@@ -85,13 +102,13 @@ export async function fetchClubMembers(clubId: string) {
   
   return data.map(member => ({
     id: member.id,
-    clubId: member.club_id,
-    userId: member.user_id,
-    role: member.role,
-    status: member.status,
-    membershipType: member.membership_type,
-    joinedAt: member.joined_at,
-    expiresAt: member.expires_at,
+    club_id: member.club_id,
+    user_id: member.user_id,
+    role: member.role as MemberRole,
+    status: member.status as MemberStatus,
+    membership_type: member.membership_type as MembershipType,
+    joined_at: member.joined_at,
+    expires_at: member.expires_at,
     profile: member.profile as Profile
   })) as ClubMember[];
 }
@@ -105,8 +122,8 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
     .insert([{
       club_id: clubId,
       user_id: (await user).data.user?.id,
-      role: 'member',
-      status: 'active',
+      role: 'member' as MemberRole,
+      status: 'active' as MemberStatus,
       membership_type: membershipType
     }])
     .select()
@@ -116,20 +133,20 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
   
   return {
     id: data.id,
-    clubId: data.club_id,
-    userId: data.user_id,
-    role: data.role,
-    status: data.status,
-    membershipType: data.membership_type,
-    joinedAt: data.joined_at,
-    expiresAt: data.expires_at
+    club_id: data.club_id,
+    user_id: data.user_id,
+    role: data.role as MemberRole,
+    status: data.status as MemberStatus,
+    membership_type: data.membership_type as MembershipType,
+    joined_at: data.joined_at,
+    expires_at: data.expires_at
   } as ClubMember;
 }
 
 export async function updateMemberRole(memberId: string, role: MemberRole) {
   const { data, error } = await supabase
     .from('club_members')
-    .update({ role })
+    .update({ role: role })
     .eq('id', memberId)
     .select()
     .single();
@@ -138,13 +155,13 @@ export async function updateMemberRole(memberId: string, role: MemberRole) {
   
   return {
     id: data.id,
-    clubId: data.club_id,
-    userId: data.user_id,
-    role: data.role,
-    status: data.status,
-    membershipType: data.membership_type,
-    joinedAt: data.joined_at,
-    expiresAt: data.expires_at
+    club_id: data.club_id,
+    user_id: data.user_id,
+    role: data.role as MemberRole,
+    status: data.status as MemberStatus,
+    membership_type: data.membership_type as MembershipType,
+    joined_at: data.joined_at,
+    expires_at: data.expires_at
   } as ClubMember;
 }
 
@@ -170,7 +187,7 @@ export async function getUserClubs() {
     .from('club_members')
     .select(`
       *,
-      club:club_id(*)
+      club:clubs(*)
     `)
     .eq('user_id', (await user).data.user?.id);
   
@@ -179,13 +196,13 @@ export async function getUserClubs() {
   return data.map(membership => ({
     membership: {
       id: membership.id,
-      clubId: membership.club_id,
-      userId: membership.user_id,
-      role: membership.role,
-      status: membership.status,
-      membershipType: membership.membership_type,
-      joinedAt: membership.joined_at,
-      expiresAt: membership.expires_at
+      club_id: membership.club_id,
+      user_id: membership.user_id,
+      role: membership.role as MemberRole,
+      status: membership.status as MemberStatus,
+      membership_type: membership.membership_type as MembershipType,
+      joined_at: membership.joined_at,
+      expires_at: membership.expires_at
     },
     club: membership.club as Club
   }));
@@ -203,31 +220,31 @@ export async function fetchClubEvents(clubId: string) {
   
   return data.map(event => ({
     id: event.id,
-    clubId: event.club_id,
+    club_id: event.club_id,
     name: event.name,
     description: event.description,
     location: event.location,
-    startTime: event.start_time,
-    endTime: event.end_time,
-    imageUrl: event.image_url,
-    createdBy: event.created_by,
-    createdAt: event.created_at,
-    updatedAt: event.updated_at
+    start_time: event.start_time,
+    end_time: event.end_time,
+    image_url: event.image_url,
+    created_by: event.created_by,
+    created_at: event.created_at,
+    updated_at: event.updated_at
   })) as ClubEvent[];
 }
 
-export async function createEvent(event: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>) {
+export async function createEvent(event: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) {
   const { data, error } = await supabase
     .from('club_events')
     .insert([{
-      club_id: event.clubId,
+      club_id: event.club_id,
       name: event.name,
       description: event.description,
       location: event.location,
-      start_time: event.startTime,
-      end_time: event.endTime,
-      image_url: event.imageUrl,
-      created_by: event.createdBy
+      start_time: event.start_time,
+      end_time: event.end_time,
+      image_url: event.image_url,
+      created_by: event.created_by
     }])
     .select()
     .single();
@@ -236,28 +253,28 @@ export async function createEvent(event: Omit<ClubEvent, 'id' | 'createdAt' | 'u
   
   return {
     id: data.id,
-    clubId: data.club_id,
+    club_id: data.club_id,
     name: data.name,
     description: data.description,
     location: data.location,
-    startTime: data.start_time,
-    endTime: data.end_time,
-    imageUrl: data.image_url,
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at
+    start_time: data.start_time,
+    end_time: data.end_time,
+    image_url: data.image_url,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   } as ClubEvent;
 }
 
-export async function updateEvent(id: string, updates: Partial<Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>>) {
+export async function updateEvent(id: string, updates: Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) {
   const mappedUpdates: any = {};
   
   if (updates.name) mappedUpdates.name = updates.name;
   if (updates.description) mappedUpdates.description = updates.description;
   if (updates.location) mappedUpdates.location = updates.location;
-  if (updates.startTime) mappedUpdates.start_time = updates.startTime;
-  if (updates.endTime) mappedUpdates.end_time = updates.endTime;
-  if (updates.imageUrl) mappedUpdates.image_url = updates.imageUrl;
+  if (updates.start_time) mappedUpdates.start_time = updates.start_time;
+  if (updates.end_time) mappedUpdates.end_time = updates.end_time;
+  if (updates.image_url) mappedUpdates.image_url = updates.image_url;
   
   const { data, error } = await supabase
     .from('club_events')
@@ -270,16 +287,16 @@ export async function updateEvent(id: string, updates: Partial<Omit<ClubEvent, '
   
   return {
     id: data.id,
-    clubId: data.club_id,
+    club_id: data.club_id,
     name: data.name,
     description: data.description,
     location: data.location,
-    startTime: data.start_time,
-    endTime: data.end_time,
-    imageUrl: data.image_url,
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at
+    start_time: data.start_time,
+    end_time: data.end_time,
+    image_url: data.image_url,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   } as ClubEvent;
 }
 
@@ -302,7 +319,7 @@ export async function respondToEvent(eventId: string, status: EventParticipation
     .upsert([{
       event_id: eventId,
       user_id: (await user).data.user?.id,
-      status
+      status: status
     }], { onConflict: 'event_id,user_id' })
     .select()
     .single();
@@ -311,10 +328,10 @@ export async function respondToEvent(eventId: string, status: EventParticipation
   
   return {
     id: data.id,
-    eventId: data.event_id,
-    userId: data.user_id,
-    status: data.status,
-    joinedAt: data.joined_at
+    event_id: data.event_id,
+    user_id: data.user_id,
+    status: data.status as EventParticipationStatus,
+    joined_at: data.joined_at
   } as EventParticipant;
 }
 
@@ -323,7 +340,7 @@ export async function fetchEventParticipants(eventId: string) {
     .from('event_participants')
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .eq('event_id', eventId);
   
@@ -331,10 +348,10 @@ export async function fetchEventParticipants(eventId: string) {
   
   return data.map(participant => ({
     id: participant.id,
-    eventId: participant.event_id,
-    userId: participant.user_id,
-    status: participant.status,
-    joinedAt: participant.joined_at,
+    event_id: participant.event_id,
+    user_id: participant.user_id,
+    status: participant.status as EventParticipationStatus,
+    joined_at: participant.joined_at,
     profile: participant.profile as Profile
   })) as EventParticipant[];
 }
@@ -345,7 +362,7 @@ export async function fetchClubPosts(clubId: string) {
     .from('club_posts')
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .eq('club_id', clubId)
     .order('created_at', { ascending: false });
@@ -354,30 +371,30 @@ export async function fetchClubPosts(clubId: string) {
   
   return data.map(post => ({
     id: post.id,
-    clubId: post.club_id,
-    userId: post.user_id,
+    club_id: post.club_id,
+    user_id: post.user_id,
     content: post.content,
-    workoutId: post.workout_id,
-    imageUrl: post.image_url,
-    createdAt: post.created_at,
-    updatedAt: post.updated_at,
+    workout_id: post.workout_id,
+    image_url: post.image_url,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
     profile: post.profile as Profile
   })) as ClubPost[];
 }
 
-export async function createPost(post: Omit<ClubPost, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) {
+export async function createPost(post: Omit<ClubPost, 'id' | 'created_at' | 'updated_at' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_posts')
     .insert([{
-      club_id: post.clubId,
-      user_id: post.userId,
+      club_id: post.club_id,
+      user_id: post.user_id,
       content: post.content,
-      workout_id: post.workoutId,
-      image_url: post.imageUrl
+      workout_id: post.workout_id,
+      image_url: post.image_url
     }])
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .single();
   
@@ -385,13 +402,13 @@ export async function createPost(post: Omit<ClubPost, 'id' | 'createdAt' | 'upda
   
   return {
     id: data.id,
-    clubId: data.club_id,
-    userId: data.user_id,
+    club_id: data.club_id,
+    user_id: data.user_id,
     content: data.content,
-    workoutId: data.workout_id,
-    imageUrl: data.image_url,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    workout_id: data.workout_id,
+    image_url: data.image_url,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
     profile: data.profile as Profile
   } as ClubPost;
 }
@@ -412,7 +429,7 @@ export async function fetchPostComments(postId: string) {
     .from('club_post_comments')
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
@@ -421,26 +438,26 @@ export async function fetchPostComments(postId: string) {
   
   return data.map(comment => ({
     id: comment.id,
-    postId: comment.post_id,
-    userId: comment.user_id,
+    post_id: comment.post_id,
+    user_id: comment.user_id,
     content: comment.content,
-    createdAt: comment.created_at,
-    updatedAt: comment.updated_at,
+    created_at: comment.created_at,
+    updated_at: comment.updated_at,
     profile: comment.profile as Profile
   })) as ClubPostComment[];
 }
 
-export async function createComment(comment: Omit<ClubPostComment, 'id' | 'createdAt' | 'updatedAt' | 'profile'>) {
+export async function createComment(comment: Omit<ClubPostComment, 'id' | 'created_at' | 'updated_at' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_post_comments')
     .insert([{
-      post_id: comment.postId,
-      user_id: comment.userId,
+      post_id: comment.post_id,
+      user_id: comment.user_id,
       content: comment.content
     }])
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .single();
   
@@ -448,11 +465,11 @@ export async function createComment(comment: Omit<ClubPostComment, 'id' | 'creat
   
   return {
     id: data.id,
-    postId: data.post_id,
-    userId: data.user_id,
+    post_id: data.post_id,
+    user_id: data.user_id,
     content: data.content,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
     profile: data.profile as Profile
   } as ClubPostComment;
 }
@@ -473,7 +490,7 @@ export async function fetchClubMessages(clubId: string) {
     .from('club_messages')
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .eq('club_id', clubId)
     .order('created_at', { ascending: false })
@@ -483,26 +500,26 @@ export async function fetchClubMessages(clubId: string) {
   
   return data.map(message => ({
     id: message.id,
-    clubId: message.club_id,
-    userId: message.user_id,
+    club_id: message.club_id,
+    user_id: message.user_id,
     content: message.content,
-    createdAt: message.created_at,
-    isPinned: message.is_pinned,
+    created_at: message.created_at,
+    is_pinned: message.is_pinned,
     profile: message.profile as Profile
   })) as ClubMessage[];
 }
 
-export async function sendMessage(message: Omit<ClubMessage, 'id' | 'createdAt' | 'isPinned' | 'profile'>) {
+export async function sendMessage(message: Omit<ClubMessage, 'id' | 'created_at' | 'is_pinned' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_messages')
     .insert([{
-      club_id: message.clubId,
-      user_id: message.userId,
+      club_id: message.club_id,
+      user_id: message.user_id,
       content: message.content
     }])
     .select(`
       *,
-      profile:user_id(id, username, display_name, avatar_url)
+      profile:profiles(id, username, display_name, avatar_url)
     `)
     .single();
   
@@ -510,11 +527,11 @@ export async function sendMessage(message: Omit<ClubMessage, 'id' | 'createdAt' 
   
   return {
     id: data.id,
-    clubId: data.club_id,
-    userId: data.user_id,
+    club_id: data.club_id,
+    user_id: data.user_id,
     content: data.content,
-    createdAt: data.created_at,
-    isPinned: data.is_pinned,
+    created_at: data.created_at,
+    is_pinned: data.is_pinned,
     profile: data.profile as Profile
   } as ClubMessage;
 }
@@ -531,11 +548,11 @@ export async function pinMessage(id: string, isPinned: boolean) {
   
   return {
     id: data.id,
-    clubId: data.club_id,
-    userId: data.user_id,
+    club_id: data.club_id,
+    user_id: data.user_id,
     content: data.content,
-    createdAt: data.created_at,
-    isPinned: data.is_pinned
+    created_at: data.created_at,
+    is_pinned: data.is_pinned
   } as ClubMessage;
 }
 
@@ -558,12 +575,12 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
       
       const message: ClubMessage = {
         id: payload.new.id,
-        clubId: payload.new.club_id,
-        userId: payload.new.user_id,
+        club_id: payload.new.club_id,
+        user_id: payload.new.user_id,
         content: payload.new.content,
-        createdAt: payload.new.created_at,
-        isPinned: payload.new.is_pinned,
-        profile: data as Profile
+        created_at: payload.new.created_at,
+        is_pinned: payload.new.is_pinned,
+        profile: data as unknown as Profile
       };
       
       callback(message);

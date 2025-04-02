@@ -13,61 +13,61 @@ export interface Club {
   id: string;
   name: string;
   description?: string;
-  logoUrl?: string;
-  bannerUrl?: string;
-  clubType: ClubType;
-  creatorId: string;
-  membershipType: MembershipType;
-  premiumPrice?: number;
-  createdAt: string;
-  updatedAt: string;
+  logo_url?: string;
+  banner_url?: string;
+  club_type: ClubType;
+  creator_id: string;
+  membership_type: MembershipType;
+  premium_price?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClubMember {
   id: string;
-  clubId: string;
-  userId: string;
+  club_id: string;
+  user_id: string;
   role: MemberRole;
   status: MemberStatus;
-  membershipType: MembershipType;
-  joinedAt: string;
-  expiresAt?: string;
+  membership_type: MembershipType;
+  joined_at: string;
+  expires_at?: string;
   profile?: Profile;
 }
 
 export interface ClubEvent {
   id: string;
-  clubId: string;
+  club_id: string;
   name: string;
   description?: string;
   location?: string;
-  startTime: string;
-  endTime: string;
-  imageUrl?: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  start_time: string;
+  end_time: string;
+  image_url?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
   participants?: EventParticipant[];
 }
 
 export interface EventParticipant {
   id: string;
-  eventId: string;
-  userId: string;
+  event_id: string;
+  user_id: string;
   status: EventParticipationStatus;
-  joinedAt: string;
+  joined_at: string;
   profile?: Profile;
 }
 
 export interface ClubPost {
   id: string;
-  clubId: string;
-  userId: string;
+  club_id: string;
+  user_id: string;
   content: string;
-  workoutId?: string;
-  imageUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  workout_id?: string;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
   profile?: Profile;
   workout?: Workout;
   comments?: ClubPostComment[];
@@ -75,20 +75,20 @@ export interface ClubPost {
 
 export interface ClubPostComment {
   id: string;
-  postId: string;
-  userId: string;
+  post_id: string;
+  user_id: string;
   content: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   profile?: Profile;
 }
 
 export interface ClubMessage {
   id: string;
-  clubId: string;
-  userId: string;
+  club_id: string;
+  user_id: string;
   content: string;
-  createdAt: string;
-  isPinned: boolean;
+  created_at: string;
+  is_pinned: boolean;
   profile?: Profile;
 }

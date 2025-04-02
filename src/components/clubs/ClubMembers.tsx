@@ -72,7 +72,9 @@ const ClubMembers: React.FC<ClubMembersProps> = ({ clubId }) => {
                 member={member} 
                 canModify={isCreator} 
                 formatDate={formatDate}
-                onUpdateRole={(role) => updateMemberRole(member.id, role)}
+                onUpdateRole={(role) => {
+                  return updateMemberRole(member.id, role);
+                }}
               />
             ))}
           </div>
@@ -90,7 +92,9 @@ const ClubMembers: React.FC<ClubMembersProps> = ({ clubId }) => {
                 member={member} 
                 canModify={isCreator} 
                 formatDate={formatDate}
-                onUpdateRole={(role) => updateMemberRole(member.id, role)}
+                onUpdateRole={(role) => {
+                  return updateMemberRole(member.id, role);
+                }}
               />
             ))}
           </div>
@@ -110,9 +114,11 @@ const ClubMembers: React.FC<ClubMembersProps> = ({ clubId }) => {
               <MemberItem 
                 key={member.id} 
                 member={member} 
-                canModify={isCreator || adminMembers.some(m => m.userId === user?.id)} 
+                canModify={isCreator || adminMembers.some(m => m.user_id === user?.id)} 
                 formatDate={formatDate}
-                onUpdateRole={(role) => updateMemberRole(member.id, role)}
+                onUpdateRole={(role) => {
+                  return updateMemberRole(member.id, role);
+                }}
               />
             ))}
           </div>
@@ -133,7 +139,7 @@ interface MemberItemProps {
   member: ClubMember;
   canModify: boolean;
   formatDate: (date: string) => string;
-  onUpdateRole: (role: MemberRole) => Promise<void>;
+  onUpdateRole: (role: MemberRole) => Promise<ClubMember>;
 }
 
 const MemberItem: React.FC<MemberItemProps> = ({ member, canModify, formatDate, onUpdateRole }) => {
@@ -182,7 +188,7 @@ const MemberItem: React.FC<MemberItemProps> = ({ member, canModify, formatDate, 
               {member.role}
             </Badge>
           </div>
-          <p className="text-xs text-gray-400">Joined {formatDate(member.joinedAt)}</p>
+          <p className="text-xs text-gray-400">Joined {formatDate(member.joined_at)}</p>
         </div>
       </div>
       
