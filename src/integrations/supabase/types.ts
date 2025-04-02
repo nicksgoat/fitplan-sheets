@@ -83,6 +83,286 @@ export type Database = {
           },
         ]
       }
+      club_events: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_time: string
+          id: string
+          image_url: string | null
+          location: string | null
+          name: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_time: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          name: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          name?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_members: {
+        Row: {
+          club_id: string
+          expires_at: string | null
+          id: string
+          joined_at: string
+          membership_type: Database["public"]["Enums"]["membership_type"]
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          expires_at?: string | null
+          id?: string
+          joined_at?: string
+          membership_type?: Database["public"]["Enums"]["membership_type"]
+          role?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          expires_at?: string | null
+          id?: string
+          joined_at?: string
+          membership_type?: Database["public"]["Enums"]["membership_type"]
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_messages: {
+        Row: {
+          club_id: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_messages_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "club_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_posts: {
+        Row: {
+          club_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          updated_at: string
+          user_id: string
+          workout_id: string | null
+        }
+        Insert: {
+          club_id: string
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          updated_at?: string
+          user_id: string
+          workout_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          updated_at?: string
+          user_id?: string
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_posts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          banner_url: string | null
+          club_type: Database["public"]["Enums"]["club_type"] | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          membership_type: Database["public"]["Enums"]["membership_type"] | null
+          name: string
+          premium_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          club_type?: Database["public"]["Enums"]["club_type"] | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          membership_type?:
+            | Database["public"]["Enums"]["membership_type"]
+            | null
+          name: string
+          premium_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          club_type?: Database["public"]["Enums"]["club_type"] | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          membership_type?:
+            | Database["public"]["Enums"]["membership_type"]
+            | null
+          name?: string
+          premium_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "club_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercise_library: {
         Row: {
           category: Database["public"]["Enums"]["exercise_category"]
@@ -428,6 +708,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      club_type: "fitness" | "sports" | "wellness" | "nutrition" | "other"
       difficulty_level: "beginner" | "intermediate" | "advanced"
       exercise_category:
         | "barbell"
@@ -439,6 +720,7 @@ export type Database = {
         | "cardio"
         | "other"
       intensity_type: "rpe" | "arpe" | "percent" | "absolute" | "velocity"
+      membership_type: "free" | "premium"
       primary_muscle:
         | "chest"
         | "back"

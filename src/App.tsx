@@ -12,12 +12,14 @@ import NotFound from "./pages/NotFound";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Schedule from "./pages/Schedule";
+import Clubs from "./pages/Clubs";
 import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
 import { LibraryProvider } from "./contexts/LibraryContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ScheduleProvider } from "./contexts/ScheduleContext";
+import { ClubProvider } from "./contexts/ClubContext";
 
 // Initialize the query client
 const queryClient = new QueryClient({
@@ -35,28 +37,33 @@ function App() {
       <AuthProvider>
         <LibraryProvider>
           <ScheduleProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route element={<MainLayout />}>
-                  <Route index element={<Index />} />
-                  <Route path="library" element={<Library />} />
-                  <Route path="explore" element={<Explore />} />
-                  <Route path="sheets" element={<Sheets />} />
-                  <Route path="auth" element={<Auth />} />
-                  <Route path="liked" element={<Liked />} />
-                  <Route path="search" element={<Search />} />
-                  <Route path="schedule" element={<Schedule />} />
-                  <Route path="profile" element={
-                    <AuthenticatedRoute>
-                      <Profile />
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="create-exercise" element={<CreateExercise />} />
-                  <Route path="edit-exercise/:id" element={<EditExercise />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
+            <ClubProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<MainLayout />}>
+                    <Route index element={<Index />} />
+                    <Route path="library" element={<Library />} />
+                    <Route path="explore" element={<Explore />} />
+                    <Route path="sheets" element={<Sheets />} />
+                    <Route path="auth" element={<Auth />} />
+                    <Route path="liked" element={<Liked />} />
+                    <Route path="search" element={<Search />} />
+                    <Route path="schedule" element={<Schedule />} />
+                    <Route path="clubs" element={<Clubs />} />
+                    <Route path="clubs/:clubId" element={<Clubs />} />
+                    <Route path="clubs/:action" element={<Clubs />} />
+                    <Route path="profile" element={
+                      <AuthenticatedRoute>
+                        <Profile />
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="create-exercise" element={<CreateExercise />} />
+                    <Route path="edit-exercise/:id" element={<EditExercise />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </ClubProvider>
           </ScheduleProvider>
         </LibraryProvider>
       </AuthProvider>
