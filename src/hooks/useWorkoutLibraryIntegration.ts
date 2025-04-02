@@ -12,7 +12,19 @@ export const useWorkoutLibraryIntegration = () => {
     saveProgram: addProgramToLibrary 
   } = useLibrary();
   
-  const { program, getActiveWorkout, getActiveWeek } = useWorkout();
+  const { program, activeWorkoutId, activeWeekId } = useWorkout();
+  
+  // Get active workout from program
+  const getActiveWorkout = useCallback(() => {
+    if (!program || !activeWorkoutId) return null;
+    return program.workouts.find(w => w.id === activeWorkoutId) || null;
+  }, [program, activeWorkoutId]);
+  
+  // Get active week from program
+  const getActiveWeek = useCallback(() => {
+    if (!program || !activeWeekId) return null;
+    return program.weeks.find(w => w.id === activeWeekId) || null;
+  }, [program, activeWeekId]);
   
   const saveCurrentWorkoutToLibrary = useCallback((name?: string) => {
     const workout = getActiveWorkout();

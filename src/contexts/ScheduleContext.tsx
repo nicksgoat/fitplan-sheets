@@ -74,6 +74,11 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Schedule a program starting from a specific date
   const startProgram = (program: WorkoutProgram, startDate: Date): ProgramSchedule => {
+    // Debug log to see what's coming in
+    console.log("Starting program:", program);
+    console.log("Program weeks:", program.weeks);
+    console.log("Program workouts:", program.workouts);
+    
     // Deactivate any current active schedule
     const updatedSchedules = schedules.map(schedule => ({
       ...schedule,
@@ -89,11 +94,31 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Track the maximum number of days to calculate end date
     let maxDays = 0;
     
+    // Ensure we have valid weeks and workouts in the program
+    if (!program.weeks || program.weeks.length === 0) {
+      console.warn("Program has no weeks defined");
+      return {
+        id: scheduleId,
+        programId: program.id,
+        startDate: startDate.toISOString(),
+        endDate: startDate.toISOString(),
+        scheduledWorkouts: [],
+        active: true,
+        createdAt: new Date().toISOString()
+      };
+    }
+    
     // For each week in the program
     program.weeks.forEach((week, weekIndex) => {
+      // Ensure the week has valid workouts defined
+      if (!week.workouts || week.workouts.length === 0) {
+        console.warn(`Week ${week.name} has no workouts defined`);
+        return;
+      }
+      
       // For each workout in the week
       week.workouts.forEach(workoutId => {
-        // Find the workout in the program
+        // Find the workout in the program's workouts array
         const workout = program.workouts.find(w => w.id === workoutId);
         
         if (workout) {
@@ -112,16 +137,26 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
           const workoutDate = addDays(startDate, dayOffset);
           
           // Create a scheduled workout
-          scheduledWorkouts.push({
+          const scheduledWorkout: ScheduledWorkout = {
             id: uuidv4(),
             date: workoutDate.toISOString(),
             workoutId: workout.id,
             programId: program.id,
             completed: false
-          });
+          };
+          
+          // Debug log each scheduled workout
+          console.log(`Scheduling workout "${workout.name}" for ${format(workoutDate, 'yyyy-MM-dd')}`);
+          
+          scheduledWorkouts.push(scheduledWorkout);
+        } else {
+          console.warn(`Workout with ID ${workoutId} not found in program`);
         }
       });
     });
+    
+    // Log the final scheduled workouts for debugging
+    console.log("Final scheduled workouts:", scheduledWorkouts);
     
     // Calculate end date (start date + max days)
     const endDate = addDays(startDate, maxDays);
