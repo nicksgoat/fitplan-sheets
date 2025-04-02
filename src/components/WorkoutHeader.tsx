@@ -1,8 +1,9 @@
+
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { PlusCircle, RefreshCw, Layers, Library, Music, AlbumIcon, ListMusic, FileText, Disc, X, GripVertical, Edit, Trash2, Save, Database } from "lucide-react";
+import { PlusCircle, RefreshCw, Layers, Library, GripVertical, Edit, Trash2, SaveAll, Save, FileText, ListMusic, X, AlbumIcon, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const WorkoutHeader: React.FC = () => {
   const { 
@@ -108,6 +110,7 @@ const WorkoutHeader: React.FC = () => {
         saveWorkout(workoutToSave, libraryItemName);
         setLibraryItemName("");
         setIsWorkoutDialogOpen(false);
+        toast.success(`Workout "${libraryItemName}" saved to library`);
       }
     }
   };
@@ -119,6 +122,7 @@ const WorkoutHeader: React.FC = () => {
         saveWeek(weekToSave, libraryItemName);
         setLibraryItemName("");
         setIsWeekDialogOpen(false);
+        toast.success(`Week "${libraryItemName}" saved to library`);
       }
     }
   };
@@ -128,6 +132,7 @@ const WorkoutHeader: React.FC = () => {
       saveProgram(program, libraryItemName);
       setLibraryItemName("");
       setIsProgramDialogOpen(false);
+      toast.success(`Program "${libraryItemName}" saved to library`);
     }
   };
 
@@ -136,10 +141,13 @@ const WorkoutHeader: React.FC = () => {
     
     if (itemToDelete.type === "workout") {
       removeWorkout(itemToDelete.id);
+      toast.success("Workout removed from library");
     } else if (itemToDelete.type === "week") {
       removeWeek(itemToDelete.id);
+      toast.success("Week removed from library");
     } else if (itemToDelete.type === "program") {
       removeProgram(itemToDelete.id);
+      toast.success("Program removed from library");
     }
     
     setItemToDelete(null);
@@ -200,6 +208,57 @@ const WorkoutHeader: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-2">
+        {/* Save Program prominently displayed button */}
+        <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+            >
+              <SaveAll className="h-4 w-4" />
+              <span>Save Program</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Save Your Program to Library</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="program-name" className="text-right">
+                  Program Name
+                </Label>
+                <Input
+                  id="program-name"
+                  value={libraryItemName}
+                  onChange={(e) => setLibraryItemName(e.target.value)}
+                  className="col-span-3"
+                  autoFocus
+                  placeholder="My Awesome Program"
+                />
+              </div>
+              <div className="col-span-4">
+                <p className="text-sm text-muted-foreground">
+                  This will save your entire program with all weeks and workouts
+                  to your library. You can access it from the Library page.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                onClick={handleSaveProgramToLibrary}
+                disabled={!libraryItemName}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Program
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
         <LibraryComponent>
           <LibraryTrigger asChild>
             <Button
@@ -273,10 +332,12 @@ const WorkoutHeader: React.FC = () => {
                                 onClick={() => {
                                   if (activeWeekId) {
                                     loadWorkoutFromLibrary(workout, activeWeekId);
+                                    toast.success(`Workout "${workout.name}" added to week`);
                                   }
                                 }}
                                 disabled={!activeWeekId}
                                 className="h-8 w-8"
+                                title="Add to current week"
                               >
                                 <PlusCircle className="h-4 w-4" />
                               </Button>
@@ -288,6 +349,7 @@ const WorkoutHeader: React.FC = () => {
                                   setIsDeleteDialogOpen(true);
                                 }}
                                 className="h-8 w-8"
+                                title="Remove from library"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -320,8 +382,12 @@ const WorkoutHeader: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => loadWeekFromLibrary(week)}
+                                onClick={() => {
+                                  loadWeekFromLibrary(week);
+                                  toast.success(`Week "${week.name}" added to program`);
+                                }}
                                 className="h-8 w-8"
+                                title="Add to program"
                               >
                                 <PlusCircle className="h-4 w-4" />
                               </Button>
@@ -333,6 +399,7 @@ const WorkoutHeader: React.FC = () => {
                                   setIsDeleteDialogOpen(true);
                                 }}
                                 className="h-8 w-8"
+                                title="Remove from library"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -365,8 +432,12 @@ const WorkoutHeader: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => loadProgramFromLibrary(program)}
+                                onClick={() => {
+                                  loadProgramFromLibrary(program);
+                                  toast.success(`Program "${program.name}" loaded`);
+                                }}
                                 className="h-8 w-8"
+                                title="Load program"
                               >
                                 <PlusCircle className="h-4 w-4" />
                               </Button>
@@ -378,6 +449,7 @@ const WorkoutHeader: React.FC = () => {
                                   setIsDeleteDialogOpen(true);
                                 }}
                                 className="h-8 w-8"
+                                title="Remove from library"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -422,7 +494,13 @@ const WorkoutHeader: React.FC = () => {
                             onChange={(e) => setLibraryItemName(e.target.value)}
                             className="col-span-3"
                             autoFocus
+                            placeholder="My Workout Day"
                           />
+                        </div>
+                        <div className="col-span-4">
+                          <p className="text-sm text-muted-foreground">
+                            This will save only the current workout day to your library.
+                          </p>
                         </div>
                       </div>
                       <DialogFooter>
@@ -431,7 +509,8 @@ const WorkoutHeader: React.FC = () => {
                           onClick={handleSaveWorkoutToLibrary}
                           disabled={!libraryItemName}
                         >
-                          Add to Library
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Workout
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -464,7 +543,13 @@ const WorkoutHeader: React.FC = () => {
                             onChange={(e) => setLibraryItemName(e.target.value)}
                             className="col-span-3"
                             autoFocus
+                            placeholder="My Training Week"
                           />
+                        </div>
+                        <div className="col-span-4">
+                          <p className="text-sm text-muted-foreground">
+                            This will save the current week with all its workouts to your library.
+                          </p>
                         </div>
                       </div>
                       <DialogFooter>
@@ -473,48 +558,8 @@ const WorkoutHeader: React.FC = () => {
                           onClick={handleSaveWeekToLibrary}
                           disabled={!libraryItemName}
                         >
-                          Add to Library
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center justify-start"
-                      >
-                        <AlbumIcon className="h-4 w-4 mr-2" />
-                        <span>Save Current Program</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Add Training Program to Library</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="program-name" className="text-right">
-                            Program Name
-                          </Label>
-                          <Input
-                            id="program-name"
-                            value={libraryItemName}
-                            onChange={(e) => setLibraryItemName(e.target.value)}
-                            className="col-span-3"
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button 
-                          type="submit" 
-                          onClick={handleSaveProgramToLibrary}
-                          disabled={!libraryItemName}
-                        >
-                          Add to Library
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Week
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -577,6 +622,7 @@ const WorkoutHeader: React.FC = () => {
           </div>
           <DialogFooter>
             <Button type="submit" onClick={handleRenameItem}>
+              <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
           </DialogFooter>
