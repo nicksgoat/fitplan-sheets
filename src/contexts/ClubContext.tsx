@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   Club, 
@@ -151,7 +150,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (user) {
         const userClubData = await getUserClubs();
-        setUserClubs(userClubData);
+        setUserClubs(userClubData as { membership: ClubMember; club: Club }[]);
       }
     } catch (error) {
       console.error('Error fetching clubs:', error);

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';

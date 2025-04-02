@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +42,7 @@ interface EventFormProps {
   clubId: string;
   userId: string;
   event?: ClubEvent;
-  onSubmit: (eventData: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'> | Partial<Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  onSubmit: (eventData: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'> | Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -94,14 +95,14 @@ const EventForm: React.FC<EventFormProps> = ({ clubId, userId, event, onSubmit, 
     const endDateTime = new Date(`${values.endDate}T${values.endTime}`);
     
     const eventData = {
-      clubId,
+      club_id: clubId,
       name: values.name,
       description: values.description,
       location: values.location,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
-      imageUrl: values.imageUrl || undefined,
-      createdBy: userId,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      image_url: values.imageUrl || undefined,
+      created_by: userId,
     };
     
     await onSubmit(eventData);

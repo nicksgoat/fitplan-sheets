@@ -33,20 +33,7 @@ export async function fetchClubs() {
   
   if (error) throw error;
   
-  // Manually create Club objects to ensure all fields are present
-  return data.map(club => ({
-    id: club.id,
-    name: club.name,
-    description: club.description || '',
-    logo_url: club.logo_url,
-    banner_url: club.banner_url,
-    club_type: club.club_type,
-    creator_id: club.creator_id,
-    membership_type: club.membership_type,
-    premium_price: club.premium_price,
-    created_at: club.created_at,
-    updated_at: club.updated_at
-  })) as Club[];
+  return data as Club[];
 }
 
 export async function fetchClubById(id: string) {
@@ -58,20 +45,7 @@ export async function fetchClubById(id: string) {
   
   if (error) throw error;
   
-  // Manually create Club objects to ensure all fields are present
-  return data ? ({
-    id: data.id,
-    name: data.name,
-    description: data.description || '',
-    logo_url: data.logo_url,
-    banner_url: data.banner_url,
-    club_type: data.club_type,
-    creator_id: data.creator_id,
-    membership_type: data.membership_type,
-    premium_price: data.premium_price,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  }) as Club : null;
+  return data as Club | null;
 }
 
 export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) {
@@ -92,20 +66,7 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
   
   if (error) throw error;
   
-  // Manually create Club objects to ensure all fields are present
-  return data ? ({
-    id: data.id,
-    name: data.name,
-    description: data.description || '',
-    logo_url: data.logo_url,
-    banner_url: data.banner_url,
-    club_type: data.club_type,
-    creator_id: data.creator_id,
-    membership_type: data.membership_type,
-    premium_price: data.premium_price,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  }) as Club : null;
+  return data as Club;
 }
 
 export async function updateClub(id: string, updates: Partial<Club>) {
@@ -126,20 +87,7 @@ export async function updateClub(id: string, updates: Partial<Club>) {
   
   if (error) throw error;
   
-  // Manually create Club objects to ensure all fields are present
-  return data ? ({
-    id: data.id,
-    name: data.name,
-    description: data.description || '',
-    logo_url: data.logo_url,
-    banner_url: data.banner_url,
-    club_type: data.club_type,
-    creator_id: data.creator_id,
-    membership_type: data.membership_type,
-    premium_price: data.premium_price,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  }) as Club : null;
+  return data as Club;
 }
 
 export async function deleteClub(id: string) {
@@ -644,7 +592,7 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
         content: payload.new.content,
         created_at: payload.new.created_at,
         is_pinned: payload.new.is_pinned,
-        profile: data as unknown as Profile
+        profile: data as Profile
       };
       
       callback(message);
