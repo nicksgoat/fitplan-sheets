@@ -13,8 +13,9 @@ import {
   MemberStatus,
   EventParticipationStatus 
 } from '@/types/club';
-import { Profile } from '@/types/profile';
+import { Profile, SocialLink } from '@/types/profile';
 import { Workout } from '@/types/workout';
+import { Json } from '@/integrations/supabase/types';
 
 // Helper function to safely convert profile data 
 const safeProfileConversion = (profileData: any): Profile | undefined => {
