@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,6 +41,7 @@ const CreateClubForm: React.FC = () => {
   const { createNewClub } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,6 +61,9 @@ const CreateClubForm: React.FC = () => {
     }
 
     try {
+      setIsSubmitting(true);
+      toast.loading('Creating club...');
+      
       const newClub = await createNewClub({
         name: values.name,
         description: values.description || '',
@@ -70,11 +75,15 @@ const CreateClubForm: React.FC = () => {
           : undefined,
       });
       
+      toast.dismiss();
       toast.success('Club created successfully!');
       navigate(`/clubs/${newClub.id}`);
     } catch (error) {
       console.error('Error creating club:', error);
-      toast.error('Failed to create club');
+      toast.dismiss();
+      toast.error('Failed to create club. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -215,14 +224,16 @@ const CreateClubForm: React.FC = () => {
               type="button" 
               variant="outline" 
               onClick={() => navigate('/clubs')}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+              disabled={isSubmitting}
             >
-              Create Club
+              {isSubmitting ? 'Creating...' : 'Create Club'}
             </Button>
           </div>
         </form>

@@ -17,7 +17,6 @@ import { Profile, SocialLink } from '@/types/profile';
 import { Workout } from '@/types/workout';
 import { Json } from '@/integrations/supabase/types';
 
-// Helper function to safely convert profile data 
 const safeProfileConversion = (profileData: any): Profile | undefined => {
   if (!profileData || typeof profileData === 'string' || profileData.error) {
     return undefined;
@@ -25,7 +24,6 @@ const safeProfileConversion = (profileData: any): Profile | undefined => {
   return profileData as Profile;
 };
 
-// Clubs
 export async function fetchClubs() {
   const { data, error } = await supabase
     .from('clubs')
@@ -50,41 +48,43 @@ export async function fetchClubById(id: string) {
 }
 
 export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) {
-  const { data: clubData, error: clubError } = await supabase
-    .from('clubs')
-    .insert([{
-      name: club.name,
-      description: club.description,
-      logo_url: club.logo_url,
-      banner_url: club.banner_url,
-      club_type: club.club_type,
-      creator_id: club.creator_id,
-      membership_type: club.membership_type,
-      premium_price: club.premium_price
-    }])
-    .select()
-    .single();
-  
-  if (clubError) throw clubError;
-  
-  // Add the creator as an admin member
-  const { data: memberData, error: memberError } = await supabase
-    .from('club_members')
-    .insert([{
-      club_id: clubData.id,
-      user_id: club.creator_id,
-      role: 'admin' as MemberRole,
-      status: 'active' as MemberStatus,
-      membership_type: club.membership_type
-    }])
-    .select();
-  
-  if (memberError) {
-    // If member creation fails, still return the club but log the error
-    console.error("Failed to add creator as club admin:", memberError);
+  try {
+    const { data: clubData, error: clubError } = await supabase
+      .from('clubs')
+      .insert([{
+        name: club.name,
+        description: club.description,
+        logo_url: club.logo_url,
+        banner_url: club.banner_url,
+        club_type: club.club_type,
+        creator_id: club.creator_id,
+        membership_type: club.membership_type,
+        premium_price: club.premium_price
+      }])
+      .select()
+      .single();
+    
+    if (clubError) throw clubError;
+    
+    const { error: memberError } = await supabase
+      .from('club_members')
+      .insert([{
+        club_id: clubData.id,
+        user_id: club.creator_id,
+        role: 'admin' as MemberRole,
+        status: 'active' as MemberStatus,
+        membership_type: club.membership_type
+      }]);
+    
+    if (memberError) {
+      console.error("Failed to add creator as club admin:", memberError);
+    }
+    
+    return clubData as Club;
+  } catch (error) {
+    console.error("Error in createClub:", error);
+    throw error;
   }
-  
-  return clubData as Club;
 }
 
 export async function updateClub(id: string, updates: Partial<Club>) {
@@ -118,7 +118,6 @@ export async function deleteClub(id: string) {
   return true;
 }
 
-// Club Members
 export async function fetchClubMembers(clubId: string) {
   const { data, error } = await supabase
     .from('club_members')
@@ -238,7 +237,6 @@ export async function getUserClubs() {
   }));
 }
 
-// Club Events
 export async function fetchClubEvents(clubId: string) {
   const { data, error } = await supabase
     .from('club_events')
@@ -386,7 +384,6 @@ export async function fetchEventParticipants(eventId: string) {
   })) as EventParticipant[];
 }
 
-// Club Posts
 export async function fetchClubPosts(clubId: string) {
   const { data, error } = await supabase
     .from('club_posts')
@@ -453,7 +450,6 @@ export async function deletePost(id: string) {
   return true;
 }
 
-// Club Post Comments
 export async function fetchPostComments(postId: string) {
   const { data, error } = await supabase
     .from('club_post_comments')
@@ -514,7 +510,6 @@ export async function deleteComment(id: string) {
   return true;
 }
 
-// Club Messages (Chat)
 export async function fetchClubMessages(clubId: string) {
   const { data, error } = await supabase
     .from('club_messages')
@@ -586,7 +581,6 @@ export async function pinMessage(id: string, isPinned: boolean) {
   } as ClubMessage;
 }
 
-// Subscribe to real-time message updates
 export function subscribeToClubMessages(clubId: string, callback: (message: ClubMessage) => void) {
   const channel = supabase
     .channel('public:club_messages')
@@ -596,32 +590,26 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
       table: 'club_messages',
       filter: `club_id=eq.${clubId}`
     }, async (payload) => {
-      // Fetch user profile for the message
       const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', payload.new.user_id)
         .single();
       
-      // Convert the profile data, ensuring social_links is properly typed
       let profile: Profile | undefined;
       if (data) {
-        // Parse social_links from JSON to SocialLink[] if it exists
         let socialLinks: SocialLink[] = [];
         if (data.social_links) {
           try {
-            // Handle both string and array cases
             if (typeof data.social_links === 'string') {
               socialLinks = JSON.parse(data.social_links) as SocialLink[];
             } else if (Array.isArray(data.social_links)) {
-              // Ensure each item has the required properties
               socialLinks = (data.social_links as any[]).map(link => ({
                 platform: link.platform || '',
                 url: link.url || '',
                 icon: link.icon
               }));
             } else if (typeof data.social_links === 'object') {
-              // Handle case where it might be a single object
               const link = data.social_links as any;
               if (link.platform && link.url) {
                 socialLinks = [{ 
