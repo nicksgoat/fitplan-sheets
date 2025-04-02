@@ -585,6 +585,53 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
         .eq('id', payload.new.user_id)
         .single();
       
+      // Convert the profile data, ensuring social_links is properly typed
+      let profile: Profile | undefined;
+      if (data) {
+        // Parse social_links from JSON to SocialLink[] if it exists
+        let socialLinks: SocialLink[] = [];
+        if (data.social_links) {
+          try {
+            // Handle both string and array cases
+            if (typeof data.social_links === 'string') {
+              socialLinks = JSON.parse(data.social_links) as SocialLink[];
+            } else if (Array.isArray(data.social_links)) {
+              // Ensure each item has the required properties
+              socialLinks = (data.social_links as any[]).map(link => ({
+                platform: link.platform || '',
+                url: link.url || '',
+                icon: link.icon
+              }));
+            } else if (typeof data.social_links === 'object') {
+              // Handle case where it might be a single object
+              const link = data.social_links as any;
+              if (link.platform && link.url) {
+                socialLinks = [{ 
+                  platform: link.platform, 
+                  url: link.url,
+                  icon: link.icon
+                }];
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing social links:', e);
+            socialLinks = [];
+          }
+        }
+
+        profile = {
+          id: data.id,
+          username: data.username,
+          display_name: data.display_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+          website: data.website,
+          social_links: socialLinks,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        } as Profile;
+      }
+      
       const message: ClubMessage = {
         id: payload.new.id,
         club_id: payload.new.club_id,
@@ -592,7 +639,7 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
         content: payload.new.content,
         created_at: payload.new.created_at,
         is_pinned: payload.new.is_pinned,
-        profile: data as Profile
+        profile: profile
       };
       
       callback(message);
