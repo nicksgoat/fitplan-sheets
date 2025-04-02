@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Liked from "./pages/Liked";
 import Search from "./pages/Search";
+import Schedule from "./pages/Schedule";
 import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
@@ -44,6 +45,7 @@ function App() {
                   <Route path="auth" element={<Auth />} />
                   <Route path="liked" element={<Liked />} />
                   <Route path="search" element={<Search />} />
+                  <Route path="schedule" element={<Schedule />} />
                   <Route path="profile" element={
                     <AuthenticatedRoute>
                       <Profile />
