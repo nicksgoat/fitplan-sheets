@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useClub } from '@/contexts/ClubContext';
@@ -25,61 +26,67 @@ const ClubTabs: React.FC<ClubTabsProps> = ({ clubId }) => {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-4 bg-dark-300 rounded-t-lg rounded-b-none h-auto p-0">
+        <TabsList className="grid grid-cols-5 bg-dark-300 rounded-t-lg rounded-b-none h-auto p-0 w-full">
           <TabsTrigger
-            value="feed"
-            className="data-[state=active]:bg-dark-200 py-4 flex items-center gap-2"
+            value="chats"
+            className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
           >
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Feed</span>
+            <MessageSquare className="h-4 w-4" />
+            Chats
           </TabsTrigger>
           
           <TabsTrigger
             value="events"
-            className="data-[state=active]:bg-dark-200 py-4 flex items-center gap-2"
+            className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
           >
             <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Events</span>
+            Events
+          </TabsTrigger>
+          
+          <TabsTrigger
+            value="memberships"
+            className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
+          >
+            <Users className="h-4 w-4" />
+            Memberships
+          </TabsTrigger>
+          
+          <TabsTrigger
+            value="posts"
+            className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
+          >
+            <FileText className="h-4 w-4" />
+            Posts
           </TabsTrigger>
           
           <TabsTrigger
             value="members"
-            className="data-[state=active]:bg-dark-200 py-4 flex items-center gap-2"
+            className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
           >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Members</span>
-          </TabsTrigger>
-          
-          <TabsTrigger
-            value="chat"
-            className="data-[state=active]:bg-dark-200 py-4 flex items-center gap-2"
-            disabled={!isMember}
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="hidden sm:inline">Chat</span>
+            Members
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="feed" className="m-0 p-4">
-          <ClubFeed clubId={clubId} />
+        <TabsContent value="chats" className="m-0 p-4">
+          <ClubChat clubId={clubId} />
         </TabsContent>
         
         <TabsContent value="events" className="m-0 p-4">
           <ClubEvents clubId={clubId} />
         </TabsContent>
         
-        <TabsContent value="members" className="m-0 p-4">
-          <ClubMembers clubId={clubId} />
+        <TabsContent value="memberships" className="m-0 p-4">
+          {/* Add Memberships component if needed */}
+          <div>Memberships content</div>
         </TabsContent>
         
-        <TabsContent value="chat" className="m-0">
-          {isMember ? (
-            <ClubChat clubId={clubId} />
-          ) : (
-            <div className="p-4 text-center text-gray-400">
-              You need to join this club to access the chat.
-            </div>
-          )}
+        <TabsContent value="posts" className="m-0 p-4">
+          <ClubFeed clubId={clubId} />
+        </TabsContent>
+        
+        <TabsContent value="members" className="m-0 p-4">
+          <ClubMembers clubId={clubId} />
         </TabsContent>
       </Tabs>
     </div>
