@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +26,7 @@ const ClubCard: React.FC<ClubCardProps> = ({ club }) => {
   
   const membershipStatus = isUserClubMember(club.id) 
     ? 'Member' 
-    : club.membershipType === 'premium' 
+    : club.membership_type === 'premium' 
       ? 'Premium' 
       : 'Free';
       
@@ -44,19 +43,19 @@ const ClubCard: React.FC<ClubCardProps> = ({ club }) => {
       className={`${cardStyle} hover:border-fitbloom-purple/80 transition-all cursor-pointer relative overflow-hidden`}
       onClick={handleClick}
     >
-      {club.bannerUrl && (
+      {club.banner_url && (
         <div 
           className="h-20 w-full absolute top-0 left-0 opacity-30 bg-center bg-cover" 
-          style={{ backgroundImage: `url(${club.bannerUrl})` }}
+          style={{ backgroundImage: `url(${club.banner_url})` }}
         />
       )}
       
       <CardHeader className="pb-2 pt-4 relative">
         <div className="flex items-center space-x-3">
-          {club.logoUrl && (
+          {club.logo_url && (
             <div 
               className="h-10 w-10 rounded-full bg-center bg-cover border border-dark-300" 
-              style={{ backgroundImage: `url(${club.logoUrl})` }}
+              style={{ backgroundImage: `url(${club.logo_url})` }}
             />
           )}
           <CardTitle className="text-lg font-semibold">{club.name}</CardTitle>
@@ -85,7 +84,7 @@ const ClubCard: React.FC<ClubCardProps> = ({ club }) => {
         </div>
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          <span>Created {formatDate(club.createdAt)}</span>
+          <span>Created {formatDate(club.created_at)}</span>
         </div>
       </CardFooter>
     </Card>

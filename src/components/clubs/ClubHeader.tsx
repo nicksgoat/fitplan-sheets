@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
@@ -58,8 +57,8 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId }) => {
       <div 
         className="h-48 w-full bg-dark-300 bg-center bg-cover"
         style={{ 
-          backgroundImage: currentClub.bannerUrl 
-            ? `url(${currentClub.bannerUrl})` 
+          backgroundImage: currentClub.banner_url 
+            ? `url(${currentClub.banner_url})` 
             : 'linear-gradient(to right, #4f46e5, #7c3aed)' 
         }}
       >
@@ -83,15 +82,15 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId }) => {
             <div 
               className="h-20 w-20 rounded-full bg-dark-300 border-4 border-dark-200 absolute -top-10 bg-center bg-cover"
               style={{ 
-                backgroundImage: currentClub.logoUrl 
-                  ? `url(${currentClub.logoUrl})` 
+                backgroundImage: currentClub.logo_url 
+                  ? `url(${currentClub.logo_url})` 
                   : 'linear-gradient(to right, #4f46e5, #7c3aed)' 
               }}
             />
             <div className="ml-24">
               <h1 className="text-2xl font-bold flex items-center">
                 {currentClub.name}
-                {currentClub.membershipType === 'premium' && (
+                {currentClub.membership_type === 'premium' && (
                   <Badge className="ml-2 bg-amber-500">Premium</Badge>
                 )}
               </h1>

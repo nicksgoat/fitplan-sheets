@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,10 +62,10 @@ const CreateClubForm: React.FC = () => {
       const newClub = await createNewClub({
         name: values.name,
         description: values.description || '',
-        clubType: values.clubType,
-        creatorId: user.id,
-        membershipType: values.membershipType,
-        premiumPrice: values.membershipType === 'premium' && values.premiumPrice 
+        club_type: values.clubType,
+        creator_id: user.id,
+        membership_type: values.membershipType,
+        premium_price: values.membershipType === 'premium' && values.premiumPrice 
           ? parseFloat(values.premiumPrice) 
           : undefined,
       });

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,12 +68,12 @@ const ClubEvents: React.FC<ClubEventsProps> = ({ clubId }) => {
   const isAdmin = isUserClubAdmin(clubId);
   
   const upcomingEvents = events
-    .filter(event => isFuture(parseISO(event.startTime)))
-    .sort((a, b) => parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime());
+    .filter(event => isFuture(parseISO(event.start_time)))
+    .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
     
   const pastEvents = events
-    .filter(event => !isFuture(parseISO(event.startTime)))
-    .sort((a, b) => parseISO(b.startTime).getTime() - parseISO(a.startTime).getTime());
+    .filter(event => !isFuture(parseISO(event.start_time)))
+    .sort((a, b) => parseISO(b.start_time).getTime() - parseISO(a.start_time).getTime());
   
   const handleCreateEvent = async (eventData: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
@@ -323,7 +322,7 @@ const EventCard: React.FC<EventCardProps> = ({
   const getUserResponse = (): EventParticipationStatus | null => {
     if (!currentUserId) return null;
     
-    const userParticipation = event.participants?.find(p => p.userId === currentUserId);
+    const userParticipation = event.participants?.find(p => p.user_id === currentUserId);
     return userParticipation ? userParticipation.status : null;
   };
   
@@ -334,14 +333,14 @@ const EventCard: React.FC<EventCardProps> = ({
   
   return (
     <Card className="bg-dark-300 border-dark-400 overflow-hidden">
-      {event.imageUrl && (
+      {event.image_url && (
         <div 
           className="h-32 w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${event.imageUrl})` }}
+          style={{ backgroundImage: `url(${event.image_url})` }}
         />
       )}
       
-      <CardHeader className={`pb-2 ${event.imageUrl ? '' : 'pt-4'}`}>
+      <CardHeader className={`pb-2 ${event.image_url ? '' : 'pt-4'}`}>
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{event.name}</CardTitle>
           
@@ -377,12 +376,12 @@ const EventCard: React.FC<EventCardProps> = ({
         
         <div className="flex items-center text-sm text-gray-300">
           <Calendar className="h-4 w-4 mr-2 text-fitbloom-purple" />
-          <span>{formatEventDate(event.startTime)}</span>
+          <span>{formatEventDate(event.start_time)}</span>
         </div>
         
         <div className="flex items-center text-sm text-gray-300">
           <Clock className="h-4 w-4 mr-2 text-fitbloom-purple" />
-          <span>{formatEventTime(event.startTime)} - {formatEventTime(event.endTime)}</span>
+          <span>{formatEventTime(event.start_time)} - {formatEventTime(event.end_time)}</span>
         </div>
         
         {event.location && (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,8 +45,8 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
     try {
       setIsSubmitting(true);
       await createNewPost({
-        clubId,
-        userId: user.id,
+        club_id: clubId,
+        user_id: user.id,
         content: newPostContent
       });
       
@@ -196,7 +195,7 @@ const PostItem: React.FC<PostItemProps> = ({
     }
   };
   
-  const isAuthor = currentUserId === post.userId;
+  const isAuthor = currentUserId === post.user_id;
   
   return (
     <div className="bg-dark-300 rounded-lg p-4">
@@ -212,7 +211,7 @@ const PostItem: React.FC<PostItemProps> = ({
             <h3 className="font-medium">
               {post.profile?.display_name || post.profile?.username || 'Unknown User'}
             </h3>
-            <p className="text-xs text-gray-400">{formatDate(post.createdAt)}</p>
+            <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
           </div>
         </div>
         

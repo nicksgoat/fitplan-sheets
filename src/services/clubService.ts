@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Club, 
@@ -11,10 +10,19 @@ import {
   ClubType,
   MembershipType,
   MemberRole,
+  MemberStatus,
   EventParticipationStatus 
 } from '@/types/club';
 import { Profile } from '@/types/profile';
 import { Workout } from '@/types/workout';
+
+// Helper function to safely convert profile data 
+const safeProfileConversion = (profileData: any): Profile | undefined => {
+  if (!profileData || typeof profileData === 'string' || profileData.error) {
+    return undefined;
+  }
+  return profileData as Profile;
+};
 
 // Clubs
 export async function fetchClubs() {
@@ -24,7 +32,21 @@ export async function fetchClubs() {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data as Club[];
+  
+  // Manually create Club objects to ensure all fields are present
+  return data.map(club => ({
+    id: club.id,
+    name: club.name,
+    description: club.description || '',
+    logo_url: club.logo_url,
+    banner_url: club.banner_url,
+    club_type: club.club_type,
+    creator_id: club.creator_id,
+    membership_type: club.membership_type,
+    premium_price: club.premium_price,
+    created_at: club.created_at,
+    updated_at: club.updated_at
+  })) as Club[];
 }
 
 export async function fetchClubById(id: string) {
@@ -35,7 +57,21 @@ export async function fetchClubById(id: string) {
     .single();
   
   if (error) throw error;
-  return data as Club;
+  
+  // Manually create Club objects to ensure all fields are present
+  return data ? ({
+    id: data.id,
+    name: data.name,
+    description: data.description || '',
+    logo_url: data.logo_url,
+    banner_url: data.banner_url,
+    club_type: data.club_type,
+    creator_id: data.creator_id,
+    membership_type: data.membership_type,
+    premium_price: data.premium_price,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  }) as Club : null;
 }
 
 export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) {
@@ -55,7 +91,21 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
     .single();
   
   if (error) throw error;
-  return data as Club;
+  
+  // Manually create Club objects to ensure all fields are present
+  return data ? ({
+    id: data.id,
+    name: data.name,
+    description: data.description || '',
+    logo_url: data.logo_url,
+    banner_url: data.banner_url,
+    club_type: data.club_type,
+    creator_id: data.creator_id,
+    membership_type: data.membership_type,
+    premium_price: data.premium_price,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  }) as Club : null;
 }
 
 export async function updateClub(id: string, updates: Partial<Club>) {
@@ -75,7 +125,21 @@ export async function updateClub(id: string, updates: Partial<Club>) {
     .single();
   
   if (error) throw error;
-  return data as Club;
+  
+  // Manually create Club objects to ensure all fields are present
+  return data ? ({
+    id: data.id,
+    name: data.name,
+    description: data.description || '',
+    logo_url: data.logo_url,
+    banner_url: data.banner_url,
+    club_type: data.club_type,
+    creator_id: data.creator_id,
+    membership_type: data.membership_type,
+    premium_price: data.premium_price,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  }) as Club : null;
 }
 
 export async function deleteClub(id: string) {
@@ -109,7 +173,7 @@ export async function fetchClubMembers(clubId: string) {
     membership_type: member.membership_type as MembershipType,
     joined_at: member.joined_at,
     expires_at: member.expires_at,
-    profile: member.profile as Profile
+    profile: safeProfileConversion(member.profile)
   })) as ClubMember[];
 }
 
@@ -352,7 +416,7 @@ export async function fetchEventParticipants(eventId: string) {
     user_id: participant.user_id,
     status: participant.status as EventParticipationStatus,
     joined_at: participant.joined_at,
-    profile: participant.profile as Profile
+    profile: safeProfileConversion(participant.profile)
   })) as EventParticipant[];
 }
 
@@ -378,7 +442,7 @@ export async function fetchClubPosts(clubId: string) {
     image_url: post.image_url,
     created_at: post.created_at,
     updated_at: post.updated_at,
-    profile: post.profile as Profile
+    profile: safeProfileConversion(post.profile)
   })) as ClubPost[];
 }
 
@@ -409,7 +473,7 @@ export async function createPost(post: Omit<ClubPost, 'id' | 'created_at' | 'upd
     image_url: data.image_url,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    profile: data.profile as Profile
+    profile: safeProfileConversion(data.profile)
   } as ClubPost;
 }
 
@@ -443,7 +507,7 @@ export async function fetchPostComments(postId: string) {
     content: comment.content,
     created_at: comment.created_at,
     updated_at: comment.updated_at,
-    profile: comment.profile as Profile
+    profile: safeProfileConversion(comment.profile)
   })) as ClubPostComment[];
 }
 
@@ -470,7 +534,7 @@ export async function createComment(comment: Omit<ClubPostComment, 'id' | 'creat
     content: data.content,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    profile: data.profile as Profile
+    profile: safeProfileConversion(data.profile)
   } as ClubPostComment;
 }
 
@@ -505,7 +569,7 @@ export async function fetchClubMessages(clubId: string) {
     content: message.content,
     created_at: message.created_at,
     is_pinned: message.is_pinned,
-    profile: message.profile as Profile
+    profile: safeProfileConversion(message.profile)
   })) as ClubMessage[];
 }
 
@@ -532,7 +596,7 @@ export async function sendMessage(message: Omit<ClubMessage, 'id' | 'created_at'
     content: data.content,
     created_at: data.created_at,
     is_pinned: data.is_pinned,
-    profile: data.profile as Profile
+    profile: safeProfileConversion(data.profile)
   } as ClubMessage;
 }
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,8 +69,8 @@ const EventForm: React.FC<EventFormProps> = ({ clubId, userId, event, onSubmit, 
       };
     }
     
-    const startDate = new Date(event.startTime);
-    const endDate = new Date(event.endTime);
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
     
     return {
       name: event.name,
@@ -81,7 +80,7 @@ const EventForm: React.FC<EventFormProps> = ({ clubId, userId, event, onSubmit, 
       startTime: startDate.toTimeString().slice(0, 5),
       endDate: endDate.toISOString().split('T')[0],
       endTime: endDate.toTimeString().slice(0, 5),
-      imageUrl: event.imageUrl || '',
+      imageUrl: event.image_url || '',
     };
   };
 

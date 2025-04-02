@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -76,8 +75,8 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     }
   };
   
-  const pinnedMessages = messages.filter(message => message.isPinned);
-  const regularMessages = messages.filter(message => !message.isPinned);
+  const pinnedMessages = messages.filter(message => message.is_pinned);
+  const regularMessages = messages.filter(message => !message.is_pinned);
   
   return (
     <div className="flex flex-col h-[600px]">
@@ -147,9 +146,9 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
             {regularMessages.map(message => (
               <div 
                 key={message.id} 
-                className={`flex items-start ${message.userId === user?.id ? 'justify-end' : ''}`}
+                className={`flex items-start ${message.user_id === user?.id ? 'justify-end' : ''}`}
               >
-                {message.userId !== user?.id && (
+                {message.user_id !== user?.id && (
                   <Avatar className="h-8 w-8 mr-2">
                     <AvatarImage src={message.profile?.avatar_url} />
                     <AvatarFallback>
@@ -159,14 +158,14 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
                   </Avatar>
                 )}
                 
-                <div className={`max-w-[70%] ${message.userId === user?.id ? 'order-1' : 'order-2'}`}>
-                  {message.userId !== user?.id && (
+                <div className={`max-w-[70%] ${message.user_id === user?.id ? 'order-1' : 'order-2'}`}>
+                  {message.user_id !== user?.id && (
                     <div className="flex items-center mb-1">
                       <span className="text-sm font-medium">
                         {message.profile?.display_name || message.profile?.username || 'Unknown User'}
                       </span>
                       <span className="text-xs text-gray-400 ml-2">
-                        {formatMessageTime(message.createdAt)}
+                        {formatMessageTime(message.created_at)}
                       </span>
                     </div>
                   )}
@@ -174,7 +173,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
                   <div className="flex group">
                     <div 
                       className={`rounded-lg p-3 ${
-                        message.userId === user?.id 
+                        message.user_id === user?.id 
                           ? 'bg-fitbloom-purple/90 text-white' 
                           : 'bg-dark-300'
                       }`}
@@ -182,7 +181,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
                       <p>{message.content}</p>
                     </div>
                     
-                    {isAdmin && message.userId !== user?.id && !message.isPinned && (
+                    {isAdmin && message.user_id !== user?.id && !message.is_pinned && (
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -205,10 +204,10 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
                     )}
                   </div>
                   
-                  {message.userId === user?.id && (
+                  {message.user_id === user?.id && (
                     <div className="flex justify-end">
                       <span className="text-xs text-gray-400 mt-1">
-                        {formatMessageTime(message.createdAt)}
+                        {formatMessageTime(message.created_at)}
                       </span>
                     </div>
                   )}
