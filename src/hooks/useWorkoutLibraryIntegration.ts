@@ -1,68 +1,76 @@
 
-import { useEffect, useState } from 'react';
-import { useWorkout } from '@/contexts/WorkoutContext';
-import { useExercise } from '@/hooks/useExerciseLibrary';
-import { Exercise as LibraryExercise } from '@/types/exercise';
-import { Exercise as WorkoutExercise } from '@/types/workout';
-import { toast } from 'sonner';
+import { useLibrary } from "@/contexts/LibraryContext";
+import { useWorkout } from "@/contexts/WorkoutContext";
+import { createLibraryProgram, createLibraryWeek, createLibraryWorkout } from "@/utils/presets";
+import { useCallback } from "react";
+import { toast } from "sonner";
 
-/**
- * Hook to get library exercise data for a workout exercise
- */
-export function useWorkoutExerciseLibraryData(workoutExerciseId: string) {
-  const { getExerciseDetails } = useWorkout();
-  const [libraryExerciseId, setLibraryExerciseId] = useState<string | null>(null);
+export const useWorkoutLibraryIntegration = () => {
+  const { 
+    saveWorkout: addWorkoutToLibrary, 
+    saveWeek: addWeekToLibrary, 
+    saveProgram: addProgramToLibrary 
+  } = useLibrary();
   
-  // Get workout exercise details with potential library ID
-  const exerciseDetails = getExerciseDetails(workoutExerciseId);
+  const { program, getActiveWorkout, getActiveWeek } = useWorkout();
   
-  // Fetch library data when available
-  useEffect(() => {
-    if (exerciseDetails?.libraryExerciseId) {
-      setLibraryExerciseId(exerciseDetails.libraryExerciseId);
-    } else {
-      setLibraryExerciseId(null);
+  const saveCurrentWorkoutToLibrary = useCallback((name?: string) => {
+    const workout = getActiveWorkout();
+    if (!workout) {
+      toast.error("No active workout to save");
+      return;
     }
-  }, [exerciseDetails]);
+    
+    const workoutToSave = createLibraryWorkout(
+      name || workout.name, 
+      workout.exercises
+    );
+    
+    // Set the day number
+    workoutToSave.day = workout.day;
+    
+    addWorkoutToLibrary(workoutToSave, name);
+    toast.success(`Workout "${workoutToSave.name}" saved to library`);
+  }, [getActiveWorkout, addWorkoutToLibrary]);
   
-  // Use the library hook if we have an ID
-  const { data: libraryExercise, isLoading, error } = useExercise(
-    libraryExerciseId || ''
-  );
-  
-  // Log errors but don't show toast to user to avoid spamming
-  useEffect(() => {
-    if (error) {
-      console.error('Error fetching library exercise:', error);
+  const saveCurrentWeekToLibrary = useCallback((name?: string) => {
+    const week = getActiveWeek();
+    if (!week) {
+      toast.error("No active week to save");
+      return;
     }
-  }, [error]);
+    
+    const weekToSave = createLibraryWeek(
+      name || week.name,
+      week.workouts
+    );
+    
+    addWeekToLibrary(weekToSave, name);
+    toast.success(`Week "${weekToSave.name}" saved to library`);
+  }, [getActiveWeek, addWeekToLibrary]);
+  
+  const saveCurrentProgramToLibrary = useCallback((name?: string) => {
+    if (!program) {
+      toast.error("No program to save");
+      return;
+    }
+    
+    const programToSave = createLibraryProgram(
+      name || program.name,
+      program.workouts,
+      program.weeks
+    );
+    
+    addProgramToLibrary(programToSave, name);
+    toast.success(`Program "${programToSave.name}" saved to library`);
+    
+    // Logging to debug if program is being saved correctly
+    console.log("Program saved to library:", programToSave);
+  }, [program, addProgramToLibrary]);
   
   return {
-    workoutExercise: exerciseDetails,
-    libraryExercise: libraryExerciseId ? libraryExercise : null,
-    isLoading,
-    hasLibraryData: !!libraryExerciseId
+    saveCurrentWorkoutToLibrary,
+    saveCurrentWeekToLibrary,
+    saveCurrentProgramToLibrary
   };
-}
-
-/**
- * Get all library exercises available for a workout
- */
-export function useWorkoutLibraryExercises(workoutId: string) {
-  const { program } = useWorkout();
-  const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
-  
-  useEffect(() => {
-    if (program) {
-      const workout = program.workouts.find(w => w.id === workoutId);
-      if (workout) {
-        setWorkoutExercises(workout.exercises);
-      }
-    }
-  }, [program, workoutId]);
-  
-  return {
-    workoutExercises,
-    hasWorkout: !!workoutExercises.length
-  };
-}
+};

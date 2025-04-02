@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +10,7 @@ import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
+import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -87,6 +87,8 @@ const Library = () => {
     if (currentTab === 'exercises') {
       navigate('/create-exercise');
     } else if (currentTab === 'workouts') {
+      navigate('/sheets');
+    } else if (currentTab === 'programs') {
       navigate('/sheets');
     } else {
       navigate('/create-exercise');
@@ -174,15 +176,7 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">
-          <div className="text-center py-10">
-            <p className="text-gray-400">No programs saved yet.</p>
-            <Button 
-              className="mt-4 bg-fitbloom-purple hover:bg-opacity-90 text-sm"
-              onClick={() => navigate('/sheets')}
-            >
-              Create Program
-            </Button>
-          </div>
+          <ProgramsLibraryTab />
         </TabsContent>
 
         <TabsContent value="created" className="mt-4 overflow-x-auto">
