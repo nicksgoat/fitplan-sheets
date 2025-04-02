@@ -50,7 +50,7 @@ export async function fetchClubById(id: string) {
 }
 
 export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) {
-  const { data, error } = await supabase
+  const { data: clubData, error: clubError } = await supabase
     .from('clubs')
     .insert([{
       name: club.name,
@@ -65,9 +65,26 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
     .select()
     .single();
   
-  if (error) throw error;
+  if (clubError) throw clubError;
   
-  return data as Club;
+  // Add the creator as an admin member
+  const { data: memberData, error: memberError } = await supabase
+    .from('club_members')
+    .insert([{
+      club_id: clubData.id,
+      user_id: club.creator_id,
+      role: 'admin' as MemberRole,
+      status: 'active' as MemberStatus,
+      membership_type: club.membership_type
+    }])
+    .select();
+  
+  if (memberError) {
+    // If member creation fails, still return the club but log the error
+    console.error("Failed to add creator as club admin:", memberError);
+  }
+  
+  return clubData as Club;
 }
 
 export async function updateClub(id: string, updates: Partial<Club>) {
