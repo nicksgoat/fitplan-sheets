@@ -1,14 +1,13 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ClubList from '@/components/clubs/ClubList';
 import ClubHeader from '@/components/clubs/ClubHeader';
-import ClubTabs from '@/components/clubs/ClubTabs';
 import CreateClubForm from '@/components/clubs/CreateClubForm';
 import { useClub } from '@/contexts/ClubContext';
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import ClubLayout from '@/components/clubs/ClubLayout';
 
 const Clubs: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
@@ -39,12 +38,7 @@ const Clubs: React.FC = () => {
     if (isCreatePath) {
       return <CreateClubForm />;
     } else if (clubId && currentClub) {
-      return (
-        <div>
-          <ClubHeader clubId={clubId} />
-          <ClubTabs clubId={clubId} />
-        </div>
-      );
+      return <ClubLayout clubId={clubId} />;
     } else if (clubId && !currentClub && !loadingClubs) {
       return (
         <div className="text-center py-16">
@@ -64,7 +58,7 @@ const Clubs: React.FC = () => {
   };
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 px-0 max-w-full">
       {renderContent()}
     </div>
   );

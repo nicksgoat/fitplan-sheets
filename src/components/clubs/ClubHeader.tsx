@@ -2,32 +2,39 @@
 import React from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, Settings, Edit } from 'lucide-react';
+import { 
+  MessageSquare, 
+  FileText, 
+  Calendar, 
+  Users, 
+  Hash, 
+  Bell,
+  BellOff,
+  Search
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ClubHeaderProps {
   clubId: string;
+  activeView?: string;
 }
 
-const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId }) => {
+const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
   const { 
     currentClub, 
     members, 
     joinCurrentClub, 
-    leaveCurrentClub, 
     isUserClubMember,
-    isUserClubCreator,
-    events
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
   
   if (!currentClub) return null;
   
-  const isCreator = isUserClubCreator(clubId);
   const isMember = isUserClubMember(clubId);
   
   const handleJoinClick = async () => {
@@ -44,92 +51,76 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId }) => {
     }
   };
   
-  const handleLeaveClick = async () => {
-    try {
-      await leaveCurrentClub();
-    } catch (error) {
-      console.error('Error leaving club:', error);
+  const viewTitle = () => {
+    switch (activeView) {
+      case 'chat':
+        return '#general';
+      case 'feed':
+        return 'Feed';
+      case 'events':
+        return 'Events';
+      case 'members':
+        return 'Members';
+      default:
+        return currentClub.name;
+    }
+  };
+  
+  const viewIcon = () => {
+    switch (activeView) {
+      case 'chat':
+        return <Hash className="h-5 w-5 mr-2 text-gray-400" />;
+      case 'feed':
+        return <FileText className="h-5 w-5 mr-2 text-gray-400" />;
+      case 'events':
+        return <Calendar className="h-5 w-5 mr-2 text-gray-400" />;
+      case 'members':
+        return <Users className="h-5 w-5 mr-2 text-gray-400" />;
+      default:
+        return null;
     }
   };
   
   return (
-    <div className="relative">
-      {/* Banner */}
-      <div 
-        className="h-48 w-full bg-dark-300 bg-center bg-cover"
-        style={{ 
-          backgroundImage: currentClub.banner_url 
-            ? `url(${currentClub.banner_url})` 
-            : 'linear-gradient(to right, #4f46e5, #7c3aed)' 
-        }}
-      >
-        {isCreator && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white"
-            onClick={() => navigate(`/clubs/${clubId}/edit`)}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        )}
+    <div className="h-14 min-h-14 border-b border-dark-400 px-4 flex items-center justify-between bg-dark-300">
+      <div className="flex items-center">
+        {viewIcon()}
+        <h2 className="font-semibold flex items-center">
+          {viewTitle()}
+          {currentClub.membership_type === 'premium' && (
+            <Badge className="ml-2 bg-amber-500 text-xs">Premium</Badge>
+          )}
+        </h2>
       </div>
       
-      {/* Logo and Title Area */}
-      <div className="bg-dark-200 p-6 pb-4 relative">
-        <div className="flex items-start justify-between">
-          <div className="flex">
-            <div 
-              className="h-20 w-20 rounded-full bg-dark-300 border-4 border-dark-200 absolute -top-10 bg-center bg-cover"
-              style={{ 
-                backgroundImage: currentClub.logo_url 
-                  ? `url(${currentClub.logo_url})` 
-                  : 'linear-gradient(to right, #4f46e5, #7c3aed)' 
-              }}
-            />
-            <div className="ml-24">
-              <h1 className="text-2xl font-bold flex items-center">
-                {currentClub.name}
-                {currentClub.membership_type === 'premium' && (
-                  <Badge className="ml-2 bg-amber-500">Premium</Badge>
-                )}
-              </h1>
-              <p className="text-gray-400 mt-1">{currentClub.description}</p>
-            </div>
-          </div>
-          
-          <div>
-            {isMember ? (
-              <Button 
-                variant="outline" 
-                className="border-red-500 text-red-500 hover:bg-red-500/10"
-                onClick={handleLeaveClick}
-              >
-                Leave Club
-              </Button>
-            ) : (
-              <Button 
-                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                onClick={handleJoinClick}
-              >
-                Join Club
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        {/* Stats */}
-        <div className="flex mt-6 border-t border-dark-300 pt-4">
-          <div className="flex items-center mr-6">
-            <Users className="h-5 w-5 mr-2 text-fitbloom-purple" />
-            <span>{members.length} members</span>
-          </div>
-          <div className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-fitbloom-purple" />
-            <span>{events.length} events</span>
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        {/* Only show notification and search buttons if the user is a member */}
+        {isMember ? (
+          <>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-400 hover:text-white hover:bg-dark-400"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-400 hover:text-white hover:bg-dark-400"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <Button 
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            size="sm"
+            onClick={handleJoinClick}
+          >
+            Join Club
+          </Button>
+        )}
       </div>
     </div>
   );
