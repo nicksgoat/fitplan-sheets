@@ -16,6 +16,7 @@ import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
 import { LibraryProvider } from "./contexts/LibraryContext";
 import { AuthProvider } from "./hooks/useAuth";
+import { ScheduleProvider } from "./contexts/ScheduleContext";
 
 // Initialize the query client
 const queryClient = new QueryClient({
@@ -32,27 +33,29 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LibraryProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<MainLayout />}>
-                <Route index element={<Index />} />
-                <Route path="library" element={<Library />} />
-                <Route path="explore" element={<Explore />} />
-                <Route path="sheets" element={<Sheets />} />
-                <Route path="auth" element={<Auth />} />
-                <Route path="liked" element={<Liked />} />
-                <Route path="search" element={<Search />} />
-                <Route path="profile" element={
-                  <AuthenticatedRoute>
-                    <Profile />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="create-exercise" element={<CreateExercise />} />
-                <Route path="edit-exercise/:id" element={<EditExercise />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
+          <ScheduleProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<MainLayout />}>
+                  <Route index element={<Index />} />
+                  <Route path="library" element={<Library />} />
+                  <Route path="explore" element={<Explore />} />
+                  <Route path="sheets" element={<Sheets />} />
+                  <Route path="auth" element={<Auth />} />
+                  <Route path="liked" element={<Liked />} />
+                  <Route path="search" element={<Search />} />
+                  <Route path="profile" element={
+                    <AuthenticatedRoute>
+                      <Profile />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="create-exercise" element={<CreateExercise />} />
+                  <Route path="edit-exercise/:id" element={<EditExercise />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </ScheduleProvider>
         </LibraryProvider>
       </AuthProvider>
     </QueryClientProvider>

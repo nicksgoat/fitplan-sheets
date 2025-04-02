@@ -12,6 +12,7 @@ import WorkoutDetail from './WorkoutDetail';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLibrary } from '@/contexts/LibraryContext';
+import StartProgramDialog from '@/components/program/StartProgramDialog';
 
 interface ProgramDetailProps {
   item: ItemType;
@@ -23,6 +24,7 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, programData, onClos
   const [activeTab, setActiveTab] = useState<string>("details");
   const [activeWeek, setActiveWeek] = useState<number>(1);
   const [selectedWorkout, setSelectedWorkout] = useState<{ itemType: ItemType, workoutData?: Workout } | null>(null);
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
   const { workouts } = useLibrary();
   
   // Get total weeks
@@ -254,11 +256,24 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, programData, onClos
           <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
             Close
           </Button>
-          <Button className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
+          <Button 
+            className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            onClick={() => programData && setStartDialogOpen(true)}
+            disabled={!programData}
+          >
             Start Program
           </Button>
         </div>
       </div>
+
+      {/* Start Program Dialog */}
+      {programData && (
+        <StartProgramDialog
+          open={startDialogOpen}
+          onOpenChange={setStartDialogOpen}
+          program={programData}
+        />
+      )}
 
       {/* Workout Detail Dialog */}
       {selectedWorkout && (

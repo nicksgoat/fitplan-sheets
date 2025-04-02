@@ -1,3 +1,4 @@
+
 export interface Set {
   id: string;
   reps: string;
@@ -99,3 +100,23 @@ export type WeightType =
   | 'distance-ft'   // Distance in feet (e.g., "50ft")
   | 'distance-yd'   // Distance in yards (e.g., "25yd")
   | 'distance-mi';  // Distance in miles (e.g., "0.5mi")
+
+// New types for program scheduling
+export interface ScheduledWorkout {
+  id: string;
+  date: string; // ISO date string
+  workoutId: string; // Reference to original workout
+  programId: string; // Reference to the program
+  completed: boolean;
+  progress?: number; // Optional progress percentage (0-100)
+}
+
+export interface ProgramSchedule {
+  id: string;
+  programId: string;
+  startDate: string; // ISO date string
+  endDate?: string; // Optional end date
+  scheduledWorkouts: ScheduledWorkout[];
+  active: boolean; // Whether this is the active program
+  createdAt: string; // ISO date string
+}
