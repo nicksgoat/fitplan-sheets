@@ -49,9 +49,10 @@ function App() {
                     <Route path="liked" element={<Liked />} />
                     <Route path="search" element={<Search />} />
                     <Route path="schedule" element={<Schedule />} />
+                    {/* Club routes - specificity matters here */}
                     <Route path="clubs" element={<Clubs />} />
+                    <Route path="clubs/create" element={<Clubs />} />
                     <Route path="clubs/:clubId" element={<Clubs />} />
-                    <Route path="clubs/:action" element={<Clubs />} />
                     <Route path="profile" element={
                       <AuthenticatedRoute>
                         <Profile />

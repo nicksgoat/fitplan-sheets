@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import ClubList from '@/components/clubs/ClubList';
 import ClubHeader from '@/components/clubs/ClubHeader';
 import ClubTabs from '@/components/clubs/ClubTabs';
@@ -11,12 +11,16 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const Clubs: React.FC = () => {
-  const { clubId, action } = useParams<{ clubId: string; action?: string }>();
+  const { clubId } = useParams<{ clubId: string }>();
+  const location = useLocation();
   const { currentClub, setCurrentClub, clubs, loadingClubs } = useClub();
   const navigate = useNavigate();
   
+  // Check if the current path is the create club path
+  const isCreatePath = location.pathname.endsWith('/create');
+  
   useEffect(() => {
-    if (clubId && !action) {
+    if (clubId && !isCreatePath) {
       // Load specific club
       const club = clubs.find(c => c.id === clubId);
       if (club) {
@@ -25,14 +29,14 @@ const Clubs: React.FC = () => {
         // Club not found and not loading, redirect to clubs list
         navigate('/clubs');
       }
-    } else if (!clubId && !action) {
+    } else if (!clubId && !isCreatePath) {
       // Clubs list, clear current club
       setCurrentClub(null);
     }
-  }, [clubId, action, clubs, loadingClubs]);
+  }, [clubId, isCreatePath, clubs, loadingClubs]);
   
   const renderContent = () => {
-    if (action === 'create') {
+    if (isCreatePath) {
       return <CreateClubForm />;
     } else if (clubId && currentClub) {
       return (
