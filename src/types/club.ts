@@ -35,6 +35,7 @@ export interface ClubMember {
   joined_at: string;
   expires_at?: string;
   premium_expires_at?: string;
+  stripe_subscription_id?: string;
   profile?: Profile;
 }
 

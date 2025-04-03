@@ -410,6 +410,37 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
+  const upgradeToMembership = async (clubId: string, membershipType: MembershipType) => {
+    if (!user) {
+      toast.error('You must be logged in to upgrade membership');
+      throw new Error('Cannot upgrade membership: user not logged in');
+    }
+    
+    if (membershipType === 'premium') {
+      // Premium memberships are handled through Stripe checkout
+      // This will be implemented in the component that calls this function
+      return null;
+    }
+    
+    try {
+      const updatedMember = await updateMembership(clubId, membershipType);
+      
+      // Update the members list with the new membership type
+      setMembers(prev => prev.map(member => 
+        member.user_id === user.id ? updatedMember : member
+      ));
+      
+      // Also update userClubs to reflect the new membership type
+      refreshClubs();
+      
+      return updatedMember;
+    } catch (error) {
+      console.error('Error upgrading membership:', error);
+      toast.error('Failed to upgrade membership');
+      throw error;
+    }
+  };
+  
   // Post functions
   const refreshPosts = async () => {
     if (!currentClub) return;
@@ -579,31 +610,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) return false;
     const club = clubs.find(c => c.id === clubId);
     return club ? club.creator_id === user.id : false;
-  };
-  
-  const upgradeToMembership = async (clubId: string, membershipType: MembershipType) => {
-    if (!user) {
-      toast.error('You must be logged in to upgrade membership');
-      throw new Error('Cannot upgrade membership: user not logged in');
-    }
-    
-    try {
-      const updatedMember = await updateMembership(clubId, membershipType);
-      
-      // Update the members list with the new membership type
-      setMembers(prev => prev.map(member => 
-        member.user_id === user.id ? updatedMember : member
-      ));
-      
-      // Also update userClubs to reflect the new membership type
-      refreshClubs();
-      
-      return updatedMember;
-    } catch (error) {
-      console.error('Error upgrading membership:', error);
-      toast.error('Failed to upgrade membership');
-      throw error;
-    }
   };
   
   const value = {

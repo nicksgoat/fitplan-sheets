@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import ClubList from '@/components/clubs/ClubList';
 import ClubHeader from '@/components/clubs/ClubHeader';
 import CreateClubForm from '@/components/clubs/CreateClubForm';
@@ -8,15 +8,39 @@ import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import ClubLayout from '@/components/clubs/ClubLayout';
+import { toast } from 'sonner';
 
 const Clubs: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
   const location = useLocation();
-  const { currentClub, setCurrentClub, clubs, loadingClubs } = useClub();
+  const [searchParams] = useSearchParams();
+  const { currentClub, setCurrentClub, clubs, loadingClubs, refreshMembers, refreshProducts } = useClub();
   const navigate = useNavigate();
   
   // Check if the current path is the create club path
   const isCreatePath = location.pathname.endsWith('/create');
+  
+  // Handle checkout status from query params
+  const checkoutStatus = searchParams.get('checkout');
+  
+  useEffect(() => {
+    if (checkoutStatus) {
+      if (checkoutStatus === 'success') {
+        toast.success('Payment completed successfully!');
+        // Refresh data after successful payment
+        if (clubId) {
+          refreshMembers();
+          refreshProducts();
+        }
+        // Remove the query parameter from the URL
+        navigate(location.pathname, { replace: true });
+      } else if (checkoutStatus === 'cancelled') {
+        toast.error('Payment was cancelled.');
+        // Remove the query parameter from the URL
+        navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [checkoutStatus, navigate, location.pathname, clubId, refreshMembers, refreshProducts]);
   
   useEffect(() => {
     if (clubId && !isCreatePath) {

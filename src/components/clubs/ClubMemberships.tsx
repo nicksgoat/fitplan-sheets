@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +14,13 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   CheckCircle, 
   CircleDollarSign, 
   Info,
-  Star 
+  Star,
+  Loader2 
 } from 'lucide-react';
 
 interface ClubMembershipsProps {
@@ -31,17 +33,30 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
     members, 
     isUserClubMember, 
     getUserClubRole,
-    upgradeToMembership 
+    upgradeToMembership,
+    products,
+    purchaseProduct,
+    refreshProducts
   } = useClub();
+  
   const { user } = useAuth();
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({
     free: false,
     premium: false,
     vip: false
   });
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   const currentMembership = isUserClubMember(clubId) ? 
     members.find(member => member.user_id === user?.id)?.membership_type : null;
+
+  useEffect(() => {
+    // Load products when component mounts
+    if (currentClub && products.length === 0) {
+      refreshProducts();
+    }
+  }, [currentClub, products.length, refreshProducts]);
 
   const handleUpgrade = async (membershipType: 'free' | 'premium' | 'vip') => {
     if (!user) {
@@ -53,20 +68,69 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
       setLoading({ ...loading, [membershipType]: true });
       
       if (membershipType === 'premium') {
-        // For premium, we'll have a pricing tier that's monthly or yearly
-        await upgradeToMembership(clubId, membershipType);
-        toast.success(`You've upgraded to Premium membership!`);
+        // For premium, we'll use Stripe Checkout
+        setCheckoutLoading(true);
+        
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: {
+            membershipType: 'premium',
+            clubId,
+            userId: user.id
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data.url) {
+          // Redirect to Stripe Checkout
+          window.location.href = data.url;
+        } else {
+          throw new Error('No checkout URL returned');
+        }
       } else if (membershipType === 'free') {
         // Downgrade to free
         await upgradeToMembership(clubId, membershipType);
         toast.success(`Your membership has been changed to Free`);
       }
-      // VIP is handled differently - it's for one-off purchases
     } catch (error) {
       console.error('Error upgrading membership:', error);
       toast.error('Failed to upgrade membership. Please try again.');
     } finally {
       setLoading({ ...loading, [membershipType]: false });
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handlePurchaseProduct = async (productId: string) => {
+    if (!user) {
+      toast.error('You need to log in to purchase this product');
+      return;
+    }
+
+    try {
+      setSelectedProduct(productId);
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          productId,
+          clubId,
+          userId: user.id
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error purchasing product:', error);
+      toast.error('Failed to process purchase. Please try again.');
+    } finally {
+      setSelectedProduct(null);
     }
   };
 
@@ -120,7 +184,12 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
                 onClick={() => handleUpgrade('free')}
                 disabled={loading.free || !currentMembership}
               >
-                {loading.free ? 'Processing...' : 'Downgrade to Free'}
+                {loading.free ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                    Processing...
+                  </>
+                ) : 'Downgrade to Free'}
               </Button>
             )}
           </CardFooter>
@@ -175,9 +244,14 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
               <Button 
                 className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90" 
                 onClick={() => handleUpgrade('premium')}
-                disabled={loading.premium}
+                disabled={loading.premium || checkoutLoading}
               >
-                {loading.premium ? 'Processing...' : 'Upgrade to Premium'}
+                {loading.premium || checkoutLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                    Processing...
+                  </>
+                ) : 'Upgrade to Premium'}
               </Button>
             )}
           </CardFooter>
@@ -217,7 +291,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
             <Button 
               variant="outline" 
               className="w-full border-amber-600 text-amber-500 hover:bg-amber-950/30"
-              onClick={() => { toast.info('Check out the Products section below!'); }}
+              onClick={() => document.getElementById('vip-products')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <CircleDollarSign className="h-5 w-5 mr-2" />
               See Available Products
@@ -228,20 +302,87 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
 
       <Separator className="my-8" />
 
-      <div>
+      <div id="vip-products">
         <h2 className="text-2xl font-bold mb-2">Exclusive VIP Products</h2>
         <p className="text-gray-400 mb-6">
           Premium one-time purchases that give you access to exclusive coaching and events.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* This will be populated with club products from backend */}
-          <Card className="bg-dark-300 border-dark-400 text-center p-8">
-            <CircleDollarSign className="h-16 w-16 mx-auto mb-4 text-gray-500" />
-            <p className="text-gray-400">
-              Club admins will be able to create exclusive VIP products that will appear here.
-            </p>
-          </Card>
+          {products.length > 0 ? (
+            products.map(product => (
+              <Card key={product.id} className="bg-dark-300 border-dark-400">
+                <CardHeader>
+                  <CardTitle>{product.name}</CardTitle>
+                  <CardDescription>{product.product_type}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="text-2xl font-bold">${product.price_amount}</div>
+                  <p className="text-gray-400">{product.description}</p>
+                  
+                  {product.date_time && (
+                    <div className="flex items-start mt-2">
+                      <Info className="h-5 w-5 mr-2 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Date & Time</p>
+                        <p className="text-sm text-gray-400">
+                          {new Date(product.date_time).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {product.location && (
+                    <div className="flex items-start mt-2">
+                      <Info className="h-5 w-5 mr-2 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Location</p>
+                        <p className="text-sm text-gray-400">{product.location}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {product.max_participants && (
+                    <div className="flex items-start mt-2">
+                      <Info className="h-5 w-5 mr-2 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Limited Spots</p>
+                        <p className="text-sm text-gray-400">
+                          {product.max_participants} participants max
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                    onClick={() => handlePurchaseProduct(product.id)}
+                    disabled={selectedProduct === product.id}
+                  >
+                    {selectedProduct === product.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CircleDollarSign className="h-5 w-5 mr-2" />
+                        Purchase
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))
+          ) : (
+            <Card className="bg-dark-300 border-dark-400 text-center p-8 col-span-3">
+              <CircleDollarSign className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+              <p className="text-gray-400">
+                No VIP products are currently available. Check back later or ask the club admin to add some!
+              </p>
+            </Card>
+          )}
         </div>
       </div>
     </div>
