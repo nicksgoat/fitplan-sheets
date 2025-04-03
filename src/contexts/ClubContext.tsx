@@ -9,7 +9,9 @@ import {
   ClubMessage,
   MembershipType,
   MemberRole,
-  EventParticipationStatus
+  EventParticipationStatus,
+  ClubProduct,
+  ClubProductPurchase
 } from '@/types/club';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -39,7 +41,10 @@ import {
   fetchClubMessages,
   sendMessage,
   pinMessage,
-  subscribeToClubMessages
+  subscribeToClubMessages,
+  updateMembership,
+  fetchClubProducts,
+  purchaseClubProduct
 } from '@/services/clubService';
 
 interface ClubContextType {
@@ -61,6 +66,7 @@ interface ClubContextType {
   joinCurrentClub: (membershipType?: MembershipType) => Promise<ClubMember>;
   leaveCurrentClub: () => Promise<boolean>;
   updateMemberRole: (memberId: string, role: MemberRole) => Promise<ClubMember>;
+  upgradeToMembership: (clubId: string, membershipType: MembershipType) => Promise<ClubMember>;
   
   // Events
   events: ClubEvent[];
@@ -70,6 +76,12 @@ interface ClubContextType {
   updateExistingEvent: (id: string, updates: Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) => Promise<ClubEvent>;
   removeEvent: (id: string) => Promise<boolean>;
   respondToClubEvent: (eventId: string, status: EventParticipationStatus) => Promise<EventParticipant>;
+  
+  // Products
+  products: ClubProduct[];
+  loadingProducts: boolean;
+  refreshProducts: () => Promise<void>;
+  purchaseProduct: (productId: string) => Promise<ClubProductPurchase>;
   
   // Posts
   posts: ClubPost[];
@@ -113,6 +125,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState<boolean>(false);
   
+  const [products, setProducts] = useState<ClubProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
+  
   const [posts, setPosts] = useState<ClubPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState<boolean>(false);
   
@@ -127,6 +142,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (currentClub) {
       refreshMembers();
       refreshEvents();
+      refreshProducts();
       refreshPosts();
       refreshMessages();
       
@@ -361,6 +377,39 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
+  // Product functions
+  const refreshProducts = async () => {
+    if (!currentClub) return;
+    
+    try {
+      setLoadingProducts(true);
+      const productData = await fetchClubProducts(currentClub.id);
+      setProducts(productData);
+    } catch (error) {
+      console.error('Error fetching club products:', error);
+      toast.error('Failed to load club products');
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+  
+  const purchaseProduct = async (productId: string) => {
+    if (!user) {
+      toast.error('You must be logged in to purchase products');
+      throw new Error('Cannot purchase product: user not logged in');
+    }
+    
+    try {
+      const purchase = await purchaseClubProduct(productId);
+      toast.success('Product purchased successfully!');
+      return purchase;
+    } catch (error) {
+      console.error('Error purchasing product:', error);
+      toast.error('Failed to purchase product');
+      throw error;
+    }
+  };
+  
   // Post functions
   const refreshPosts = async () => {
     if (!currentClub) return;
@@ -532,6 +581,31 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return club ? club.creator_id === user.id : false;
   };
   
+  const upgradeToMembership = async (clubId: string, membershipType: MembershipType) => {
+    if (!user) {
+      toast.error('You must be logged in to upgrade membership');
+      throw new Error('Cannot upgrade membership: user not logged in');
+    }
+    
+    try {
+      const updatedMember = await updateMembership(clubId, membershipType);
+      
+      // Update the members list with the new membership type
+      setMembers(prev => prev.map(member => 
+        member.user_id === user.id ? updatedMember : member
+      ));
+      
+      // Also update userClubs to reflect the new membership type
+      refreshClubs();
+      
+      return updatedMember;
+    } catch (error) {
+      console.error('Error upgrading membership:', error);
+      toast.error('Failed to upgrade membership');
+      throw error;
+    }
+  };
+  
   const value = {
     clubs,
     userClubs,
@@ -549,6 +623,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     joinCurrentClub,
     leaveCurrentClub,
     updateMemberRole: updateMemberRoleFunction,
+    upgradeToMembership,
     
     events,
     loadingEvents,
@@ -557,6 +632,11 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateExistingEvent,
     removeEvent,
     respondToClubEvent,
+    
+    products,
+    loadingProducts,
+    refreshProducts,
+    purchaseProduct,
     
     posts,
     loadingPosts,

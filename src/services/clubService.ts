@@ -11,7 +11,11 @@ import {
   MembershipType,
   MemberRole,
   MemberStatus,
-  EventParticipationStatus 
+  EventParticipationStatus,
+  ProductType,
+  ClubProduct,
+  ClubProductPurchase,
+  PurchaseStatus
 } from '@/types/club';
 import { Profile, SocialLink } from '@/types/profile';
 import { Workout } from '@/types/workout';
@@ -655,4 +659,228 @@ export function subscribeToClubMessages(clubId: string, callback: (message: Club
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+export async function updateMembership(clubId: string, membershipType: MembershipType) {
+  const user = supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const userId = (await user).data.user?.id;
+  if (!userId) throw new Error('User ID not available');
+  
+  const { data: existingMembership, error: findError } = await supabase
+    .from('club_members')
+    .select('*')
+    .eq('club_id', clubId)
+    .eq('user_id', userId)
+    .single();
+  
+  if (findError && findError.code !== 'PGRST116') throw findError;
+  
+  let expiresAt = null;
+  let premiumExpiresAt = null;
+  
+  if (membershipType === 'premium') {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    premiumExpiresAt = date.toISOString();
+  }
+  
+  if (existingMembership) {
+    const { data, error } = await supabase
+      .from('club_members')
+      .update({ 
+        membership_type: membershipType,
+        premium_expires_at: premiumExpiresAt
+      })
+      .eq('id', existingMembership.id)
+      .select(`
+        *,
+        profile:profiles(id, username, display_name, avatar_url)
+      `)
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      club_id: data.club_id,
+      user_id: data.user_id,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType,
+      joined_at: data.joined_at,
+      expires_at: data.expires_at,
+      premium_expires_at: data.premium_expires_at,
+      profile: safeProfileConversion(data.profile)
+    } as ClubMember;
+  } else {
+    const { data, error } = await supabase
+      .from('club_members')
+      .insert([{
+        club_id: clubId,
+        user_id: userId,
+        role: 'member' as MemberRole,
+        status: 'active' as MemberStatus,
+        membership_type: membershipType,
+        premium_expires_at: premiumExpiresAt
+      }])
+      .select(`
+        *,
+        profile:profiles(id, username, display_name, avatar_url)
+      `)
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      club_id: data.club_id,
+      user_id: data.user_id,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType,
+      joined_at: data.joined_at,
+      expires_at: data.expires_at,
+      premium_expires_at: data.premium_expires_at,
+      profile: safeProfileConversion(data.profile)
+    } as ClubMember;
+  }
+}
+
+export async function fetchClubProducts(clubId: string) {
+  const { data, error } = await supabase
+    .from('club_products')
+    .select('*')
+    .eq('club_id', clubId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  return data.map(product => ({
+    id: product.id,
+    club_id: product.club_id,
+    name: product.name,
+    description: product.description,
+    price_amount: product.price_amount,
+    price_currency: product.price_currency,
+    product_type: product.product_type as ProductType,
+    max_participants: product.max_participants,
+    date_time: product.date_time,
+    location: product.location,
+    is_active: product.is_active,
+    created_at: product.created_at,
+    updated_at: product.updated_at
+  })) as ClubProduct[];
+}
+
+export async function createClubProduct(product: Omit<ClubProduct, 'id' | 'created_at' | 'updated_at' | 'is_active'>) {
+  const { data, error } = await supabase
+    .from('club_products')
+    .insert([{
+      club_id: product.club_id,
+      name: product.name,
+      description: product.description,
+      price_amount: product.price_amount,
+      price_currency: product.price_currency,
+      product_type: product.product_type,
+      max_participants: product.max_participants,
+      date_time: product.date_time,
+      location: product.location
+    }])
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return {
+    id: data.id,
+    club_id: data.club_id,
+    name: data.name,
+    description: data.description,
+    price_amount: data.price_amount,
+    price_currency: data.price_currency,
+    product_type: data.product_type as ProductType,
+    max_participants: data.max_participants,
+    date_time: data.date_time,
+    location: data.location,
+    is_active: data.is_active,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  } as ClubProduct;
+}
+
+export async function purchaseClubProduct(productId: string) {
+  const user = supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const { data: product, error: productError } = await supabase
+    .from('club_products')
+    .select('*')
+    .eq('id', productId)
+    .single();
+  
+  if (productError) throw productError;
+  
+  const { data, error } = await supabase
+    .from('club_product_purchases')
+    .insert([{
+      product_id: productId,
+      user_id: (await user).data.user?.id,
+      amount_paid: product.price_amount,
+      currency: product.price_currency,
+      status: 'completed' as PurchaseStatus
+    }])
+    .select(`
+      *,
+      product:club_products(*)
+    `)
+    .single();
+  
+  if (error) throw error;
+  
+  return {
+    id: data.id,
+    product_id: data.product_id,
+    user_id: data.user_id,
+    purchase_date: data.purchase_date,
+    amount_paid: data.amount_paid,
+    currency: data.currency,
+    stripe_session_id: data.stripe_session_id,
+    status: data.status as PurchaseStatus,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    product: data.product as ClubProduct
+  } as ClubProductPurchase;
+}
+
+export async function getUserPurchases() {
+  const user = supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const { data, error } = await supabase
+    .from('club_product_purchases')
+    .select(`
+      *,
+      product:club_products(*)
+    `)
+    .eq('user_id', (await user).data.user?.id)
+    .order('purchase_date', { ascending: false });
+  
+  if (error) throw error;
+  
+  return data.map(purchase => ({
+    id: purchase.id,
+    product_id: purchase.product_id,
+    user_id: purchase.user_id,
+    purchase_date: purchase.purchase_date,
+    amount_paid: purchase.amount_paid,
+    currency: purchase.currency,
+    stripe_session_id: purchase.stripe_session_id,
+    status: purchase.status as PurchaseStatus,
+    created_at: purchase.created_at,
+    updated_at: purchase.updated_at,
+    product: purchase.product as ClubProduct
+  })) as ClubProductPurchase[];
 }

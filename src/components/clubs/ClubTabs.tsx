@@ -6,14 +6,15 @@ import ClubChat from './ClubChat';
 import ClubFeed from './ClubFeed';
 import ClubEvents from './ClubEvents';
 import ClubMembers from './ClubMembers';
-import { MessageSquare, FileText, Calendar, Users } from 'lucide-react';
+import ClubMemberships from './ClubMemberships';
+import { MessageSquare, FileText, Calendar, Users, CircleDollarSign } from 'lucide-react';
 
 interface ClubTabsProps {
   clubId: string;
 }
 
 const ClubTabs: React.FC<ClubTabsProps> = ({ clubId }) => {
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState('posts');
   const { isUserClubMember } = useClub();
   
   const isMember = isUserClubMember(clubId);
@@ -21,7 +22,7 @@ const ClubTabs: React.FC<ClubTabsProps> = ({ clubId }) => {
   return (
     <div className="bg-dark-200 rounded-lg p-0 mt-4">
       <Tabs 
-        defaultValue="feed" 
+        defaultValue="posts" 
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full"
@@ -47,7 +48,7 @@ const ClubTabs: React.FC<ClubTabsProps> = ({ clubId }) => {
             value="memberships"
             className="data-[state=active]:bg-dark-200 py-4 flex items-center justify-center gap-2 text-sm"
           >
-            <Users className="h-4 w-4" />
+            <CircleDollarSign className="h-4 w-4" />
             Memberships
           </TabsTrigger>
           
@@ -77,8 +78,7 @@ const ClubTabs: React.FC<ClubTabsProps> = ({ clubId }) => {
         </TabsContent>
         
         <TabsContent value="memberships" className="m-0 p-4">
-          {/* Add Memberships component if needed */}
-          <div>Memberships content</div>
+          <ClubMemberships clubId={clubId} />
         </TabsContent>
         
         <TabsContent value="posts" className="m-0 p-4">

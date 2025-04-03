@@ -4,10 +4,12 @@ import { Profile } from './profile';
 import { Workout } from './workout';
 
 export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
-export type MembershipType = 'free' | 'premium';
+export type MembershipType = 'free' | 'premium' | 'vip';
 export type MemberRole = 'admin' | 'moderator' | 'member';
 export type MemberStatus = 'active' | 'pending' | 'inactive';
 export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
+export type ProductType = 'event' | 'coaching' | 'program' | 'other';
+export type PurchaseStatus = 'pending' | 'completed' | 'refunded' | 'cancelled';
 
 export interface Club {
   id: string;
@@ -32,6 +34,7 @@ export interface ClubMember {
   membership_type: MembershipType;
   joined_at: string;
   expires_at?: string;
+  premium_expires_at?: string;
   profile?: Profile;
 }
 
@@ -91,4 +94,34 @@ export interface ClubMessage {
   created_at: string;
   is_pinned: boolean;
   profile?: Profile;
+}
+
+export interface ClubProduct {
+  id: string;
+  club_id: string;
+  name: string;
+  description?: string;
+  price_amount: number;
+  price_currency: string;
+  product_type: ProductType;
+  max_participants?: number;
+  date_time?: string;
+  location?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClubProductPurchase {
+  id: string;
+  product_id: string;
+  user_id: string;
+  purchase_date: string;
+  amount_paid: number;
+  currency: string;
+  stripe_session_id?: string;
+  status: PurchaseStatus;
+  created_at: string;
+  updated_at: string;
+  product?: ClubProduct;
 }

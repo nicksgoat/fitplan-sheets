@@ -140,6 +140,7 @@ export type Database = {
           id: string
           joined_at: string
           membership_type: Database["public"]["Enums"]["membership_type"]
+          premium_expires_at: string | null
           role: string
           status: string
           user_id: string
@@ -150,6 +151,7 @@ export type Database = {
           id?: string
           joined_at?: string
           membership_type?: Database["public"]["Enums"]["membership_type"]
+          premium_expires_at?: string | null
           role?: string
           status?: string
           user_id: string
@@ -160,6 +162,7 @@ export type Database = {
           id?: string
           joined_at?: string
           membership_type?: Database["public"]["Enums"]["membership_type"]
+          premium_expires_at?: string | null
           role?: string
           status?: string
           user_id?: string
@@ -278,6 +281,109 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "club_posts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_product_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          currency: string
+          id: string
+          product_id: string
+          purchase_date: string
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          currency?: string
+          id?: string
+          product_id: string
+          purchase_date?: string
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          product_id?: string
+          purchase_date?: string
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_product_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "club_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_products: {
+        Row: {
+          club_id: string
+          created_at: string
+          date_time: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          location: string | null
+          max_participants: number | null
+          name: string
+          price_amount: number
+          price_currency: string
+          product_type: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          date_time?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          max_participants?: number | null
+          name: string
+          price_amount: number
+          price_currency?: string
+          product_type?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          date_time?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          max_participants?: number | null
+          name?: string
+          price_amount?: number
+          price_currency?: string
+          product_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_products_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
@@ -720,7 +826,7 @@ export type Database = {
         | "cardio"
         | "other"
       intensity_type: "rpe" | "arpe" | "percent" | "absolute" | "velocity"
-      membership_type: "free" | "premium"
+      membership_type: "free" | "premium" | "vip"
       primary_muscle:
         | "chest"
         | "back"
