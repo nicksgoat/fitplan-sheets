@@ -55,7 +55,7 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
   try {
     const { data: clubData, error: clubError } = await supabase
       .from('clubs')
-      .insert([{
+      .insert({
         name: club.name,
         description: club.description,
         logo_url: club.logo_url,
@@ -64,7 +64,7 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
         creator_id: club.creator_id,
         membership_type: club.membership_type,
         premium_price: club.premium_price
-      }])
+      })
       .select()
       .single();
     
@@ -72,13 +72,13 @@ export async function createClub(club: Omit<Club, 'id' | 'created_at' | 'updated
     
     const { error: memberError } = await supabase
       .from('club_members')
-      .insert([{
+      .insert({
         club_id: clubData.id,
         user_id: club.creator_id,
         role: 'admin' as MemberRole,
         status: 'active' as MemberStatus,
-        membership_type: club.membership_type
-      }]);
+        membership_type: club.membership_type as MembershipType
+      });
     
     if (memberError) {
       console.error("Failed to add creator as club admin:", memberError);
@@ -142,6 +142,7 @@ export async function fetchClubMembers(clubId: string) {
     membership_type: member.membership_type as MembershipType,
     joined_at: member.joined_at,
     expires_at: member.expires_at,
+    premium_expires_at: member.premium_expires_at,
     profile: safeProfileConversion(member.profile)
   })) as ClubMember[];
 }
@@ -152,13 +153,13 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
   
   const { data, error } = await supabase
     .from('club_members')
-    .insert([{
+    .insert({
       club_id: clubId,
       user_id: (await user).data.user?.id,
       role: 'member' as MemberRole,
       status: 'active' as MemberStatus,
-      membership_type: membershipType
-    }])
+      membership_type: membershipType as MembershipType
+    })
     .select()
     .single();
   
@@ -172,7 +173,8 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
     status: data.status as MemberStatus,
     membership_type: data.membership_type as MembershipType,
     joined_at: data.joined_at,
-    expires_at: data.expires_at
+    expires_at: data.expires_at,
+    premium_expires_at: data.premium_expires_at
   } as ClubMember;
 }
 
@@ -194,7 +196,8 @@ export async function updateMemberRole(memberId: string, role: MemberRole) {
     status: data.status as MemberStatus,
     membership_type: data.membership_type as MembershipType,
     joined_at: data.joined_at,
-    expires_at: data.expires_at
+    expires_at: data.expires_at,
+    premium_expires_at: data.premium_expires_at
   } as ClubMember;
 }
 
@@ -235,7 +238,8 @@ export async function getUserClubs() {
       status: membership.status as MemberStatus,
       membership_type: membership.membership_type as MembershipType,
       joined_at: membership.joined_at,
-      expires_at: membership.expires_at
+      expires_at: membership.expires_at,
+      premium_expires_at: membership.premium_expires_at
     },
     club: membership.club as Club
   }));
@@ -268,7 +272,7 @@ export async function fetchClubEvents(clubId: string) {
 export async function createEvent(event: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) {
   const { data, error } = await supabase
     .from('club_events')
-    .insert([{
+    .insert({
       club_id: event.club_id,
       name: event.name,
       description: event.description,
@@ -277,7 +281,7 @@ export async function createEvent(event: Omit<ClubEvent, 'id' | 'created_at' | '
       end_time: event.end_time,
       image_url: event.image_url,
       created_by: event.created_by
-    }])
+    })
     .select()
     .single();
   
@@ -348,11 +352,11 @@ export async function respondToEvent(eventId: string, status: EventParticipation
   
   const { data, error } = await supabase
     .from('event_participants')
-    .upsert([{
+    .upsert({
       event_id: eventId,
       user_id: (await user).data.user?.id,
       status: status
-    }], { onConflict: 'event_id,user_id' })
+    }, { onConflict: 'event_id,user_id' })
     .select()
     .single();
   
@@ -416,13 +420,13 @@ export async function fetchClubPosts(clubId: string) {
 export async function createPost(post: Omit<ClubPost, 'id' | 'created_at' | 'updated_at' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_posts')
-    .insert([{
+    .insert({
       club_id: post.club_id,
       user_id: post.user_id,
       content: post.content,
       workout_id: post.workout_id,
       image_url: post.image_url
-    }])
+    })
     .select(`
       *,
       profile:profiles(id, username, display_name, avatar_url)
@@ -480,11 +484,11 @@ export async function fetchPostComments(postId: string) {
 export async function createComment(comment: Omit<ClubPostComment, 'id' | 'created_at' | 'updated_at' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_post_comments')
-    .insert([{
+    .insert({
       post_id: comment.post_id,
       user_id: comment.user_id,
       content: comment.content
-    }])
+    })
     .select(`
       *,
       profile:profiles(id, username, display_name, avatar_url)
@@ -541,11 +545,11 @@ export async function fetchClubMessages(clubId: string) {
 export async function sendMessage(message: Omit<ClubMessage, 'id' | 'created_at' | 'is_pinned' | 'profile'>) {
   const { data, error } = await supabase
     .from('club_messages')
-    .insert([{
+    .insert({
       club_id: message.club_id,
       user_id: message.user_id,
       content: message.content
-    }])
+    })
     .select(`
       *,
       profile:profiles(id, username, display_name, avatar_url)
@@ -690,7 +694,7 @@ export async function updateMembership(clubId: string, membershipType: Membershi
     const { data, error } = await supabase
       .from('club_members')
       .update({ 
-        membership_type: membershipType,
+        membership_type: membershipType as MembershipType,
         premium_expires_at: premiumExpiresAt
       })
       .eq('id', existingMembership.id)
@@ -717,14 +721,14 @@ export async function updateMembership(clubId: string, membershipType: Membershi
   } else {
     const { data, error } = await supabase
       .from('club_members')
-      .insert([{
+      .insert({
         club_id: clubId,
         user_id: userId,
         role: 'member' as MemberRole,
         status: 'active' as MemberStatus,
-        membership_type: membershipType,
+        membership_type: membershipType as MembershipType,
         premium_expires_at: premiumExpiresAt
-      }])
+      })
       .select(`
         *,
         profile:profiles(id, username, display_name, avatar_url)
@@ -748,139 +752,158 @@ export async function updateMembership(clubId: string, membershipType: Membershi
   }
 }
 
-export async function fetchClubProducts(clubId: string) {
-  const { data, error } = await supabase
-    .from('club_products')
-    .select('*')
-    .eq('club_id', clubId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  
-  return data.map(product => ({
-    id: product.id,
-    club_id: product.club_id,
-    name: product.name,
-    description: product.description,
-    price_amount: product.price_amount,
-    price_currency: product.price_currency,
-    product_type: product.product_type as ProductType,
-    max_participants: product.max_participants,
-    date_time: product.date_time,
-    location: product.location,
-    is_active: product.is_active,
-    created_at: product.created_at,
-    updated_at: product.updated_at
-  })) as ClubProduct[];
-}
+// New functions for club products and purchases
 
-export async function createClubProduct(product: Omit<ClubProduct, 'id' | 'created_at' | 'updated_at' | 'is_active'>) {
-  const { data, error } = await supabase
-    .from('club_products')
-    .insert([{
+export async function fetchClubProducts(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_products')
+      .select('*')
+      .eq('club_id', clubId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(product => ({
+      id: product.id,
       club_id: product.club_id,
       name: product.name,
       description: product.description,
       price_amount: product.price_amount,
       price_currency: product.price_currency,
-      product_type: product.product_type,
+      product_type: product.product_type as ProductType,
       max_participants: product.max_participants,
       date_time: product.date_time,
-      location: product.location
-    }])
-    .select()
-    .single();
-  
-  if (error) throw error;
-  
-  return {
-    id: data.id,
-    club_id: data.club_id,
-    name: data.name,
-    description: data.description,
-    price_amount: data.price_amount,
-    price_currency: data.price_currency,
-    product_type: data.product_type as ProductType,
-    max_participants: data.max_participants,
-    date_time: data.date_time,
-    location: data.location,
-    is_active: data.is_active,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  } as ClubProduct;
+      location: product.location,
+      is_active: product.is_active,
+      created_at: product.created_at,
+      updated_at: product.updated_at
+    })) as ClubProduct[];
+  } catch (error) {
+    console.error("Error fetching club products:", error);
+    return [];
+  }
+}
+
+export async function createClubProduct(product: Omit<ClubProduct, 'id' | 'created_at' | 'updated_at' | 'is_active'>) {
+  try {
+    const { data, error } = await supabase
+      .from('club_products')
+      .insert({
+        club_id: product.club_id,
+        name: product.name,
+        description: product.description,
+        price_amount: product.price_amount,
+        price_currency: product.price_currency || 'usd',
+        product_type: product.product_type || 'event',
+        max_participants: product.max_participants,
+        date_time: product.date_time,
+        location: product.location
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      club_id: data.club_id,
+      name: data.name,
+      description: data.description,
+      price_amount: data.price_amount,
+      price_currency: data.price_currency,
+      product_type: data.product_type as ProductType,
+      max_participants: data.max_participants,
+      date_time: data.date_time,
+      location: data.location,
+      is_active: data.is_active,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    } as ClubProduct;
+  } catch (error) {
+    console.error("Error creating club product:", error);
+    throw error;
+  }
 }
 
 export async function purchaseClubProduct(productId: string) {
-  const user = supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-  
-  const { data: product, error: productError } = await supabase
-    .from('club_products')
-    .select('*')
-    .eq('id', productId)
-    .single();
-  
-  if (productError) throw productError;
-  
-  const { data, error } = await supabase
-    .from('club_product_purchases')
-    .insert([{
-      product_id: productId,
-      user_id: (await user).data.user?.id,
-      amount_paid: product.price_amount,
-      currency: product.price_currency,
-      status: 'completed' as PurchaseStatus
-    }])
-    .select(`
-      *,
-      product:club_products(*)
-    `)
-    .single();
-  
-  if (error) throw error;
-  
-  return {
-    id: data.id,
-    product_id: data.product_id,
-    user_id: data.user_id,
-    purchase_date: data.purchase_date,
-    amount_paid: data.amount_paid,
-    currency: data.currency,
-    stripe_session_id: data.stripe_session_id,
-    status: data.status as PurchaseStatus,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    product: data.product as ClubProduct
-  } as ClubProductPurchase;
+  try {
+    const user = supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data: product, error: productError } = await supabase
+      .from('club_products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+    
+    if (productError) throw productError;
+    
+    const { data, error } = await supabase
+      .from('club_product_purchases')
+      .insert({
+        product_id: productId,
+        user_id: (await user).data.user?.id,
+        amount_paid: product.price_amount,
+        currency: product.price_currency,
+        status: 'completed' as PurchaseStatus
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      product_id: data.product_id,
+      user_id: data.user_id,
+      purchase_date: data.purchase_date,
+      amount_paid: data.amount_paid,
+      currency: data.currency,
+      stripe_session_id: data.stripe_session_id,
+      status: data.status as PurchaseStatus,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      product: product as ClubProduct
+    } as ClubProductPurchase;
+  } catch (error) {
+    console.error("Error purchasing club product:", error);
+    throw error;
+  }
 }
 
 export async function getUserPurchases() {
-  const user = supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-  
-  const { data, error } = await supabase
-    .from('club_product_purchases')
-    .select(`
-      *,
-      product:club_products(*)
-    `)
-    .eq('user_id', (await user).data.user?.id)
-    .order('purchase_date', { ascending: false });
-  
-  if (error) throw error;
-  
-  return data.map(purchase => ({
-    id: purchase.id,
-    product_id: purchase.product_id,
-    user_id: purchase.user_id,
-    purchase_date: purchase.purchase_date,
-    amount_paid: purchase.amount_paid,
-    currency: purchase.currency,
-    stripe_session_id: purchase.stripe_session_id,
-    status: purchase.status as PurchaseStatus,
-    created_at: purchase.created_at,
-    updated_at: purchase.updated_at,
-    product: purchase.product as ClubProduct
-  })) as ClubProductPurchase[];
+  try {
+    const user = supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data, error } = await supabase
+      .from('club_product_purchases')
+      .select(`
+        *,
+        product:club_products(*)
+      `)
+      .eq('user_id', (await user).data.user?.id)
+      .order('purchase_date', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(purchase => ({
+      id: purchase.id,
+      product_id: purchase.product_id,
+      user_id: purchase.user_id,
+      purchase_date: purchase.purchase_date,
+      amount_paid: purchase.amount_paid,
+      currency: purchase.currency,
+      stripe_session_id: purchase.stripe_session_id,
+      status: purchase.status as PurchaseStatus,
+      created_at: purchase.created_at,
+      updated_at: purchase.updated_at,
+      product: purchase.product as ClubProduct
+    })) as ClubProductPurchase[];
+  } catch (error) {
+    console.error("Error fetching user purchases:", error);
+    return [];
+  }
 }
