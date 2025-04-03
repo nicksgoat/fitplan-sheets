@@ -47,6 +47,58 @@ export async function checkPremiumStatus(userId: string, clubId: string): Promis
 }
 
 /**
+ * Create a club product (event, coaching, etc)
+ */
+export async function createClubProduct(
+  productDetails: {
+    clubId: string;
+    name: string;
+    description?: string;
+    priceAmount: number;
+    priceCurrency?: string;
+    productType: ProductType;
+    maxParticipants?: number;
+    dateTime?: string;
+    location?: string;
+  }
+): Promise<{ success: boolean; data?: ClubProduct; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('club_products')
+      .insert({
+        club_id: productDetails.clubId,
+        name: productDetails.name,
+        description: productDetails.description,
+        price_amount: productDetails.priceAmount,
+        price_currency: productDetails.priceCurrency || 'usd',
+        product_type: productDetails.productType,
+        max_participants: productDetails.maxParticipants,
+        date_time: productDetails.dateTime,
+        location: productDetails.location,
+        is_active: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Explicitly cast the product_type to ensure it matches the ProductType type
+    const typedProduct: ClubProduct = {
+      ...data,
+      product_type: data.product_type as ProductType
+    };
+
+    return { success: true, data: typedProduct };
+  } catch (error) {
+    console.error('Error creating club product:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error creating product'
+    };
+  }
+}
+
+/**
  * Create a VIP product for a club
  */
 export async function createVIPProduct(
