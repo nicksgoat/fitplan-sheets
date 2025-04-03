@@ -1,145 +1,83 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { MembershipType, ProductType } from '@/types/club';
+import { 
+  Club, 
+  ClubMember, 
+  ClubProduct, 
+  MembershipType, 
+  ProductType 
+} from '@/types/club';
 
 /**
- * Initiate the checkout process for a club membership or product
+ * Check if a user has a premium or VIP membership for a club
  */
-export async function initiateCheckout(options: {
-  clubId: string,
-  userId: string,
-  membershipType?: MembershipType,
-  productId?: string
-}) {
+export async function checkPremiumStatus(userId: string, clubId: string): Promise<{
+  hasPremium: boolean;
+  membershipType: MembershipType;
+  premiumExpiresAt?: string;
+}> {
   try {
-    const { clubId, userId, membershipType, productId } = options;
-    
-    if (!membershipType && !productId) {
-      throw new Error('Either membershipType or productId must be provided');
-    }
-    
-    const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: {
-        clubId,
-        userId,
-        membershipType,
-        productId
-      }
-    });
-    
+    const { data, error } = await supabase
+      .from('club_members')
+      .select('membership_type, premium_expires_at')
+      .eq('user_id', userId)
+      .eq('club_id', clubId)
+      .single();
+
     if (error) throw error;
+
+    const hasPremium = 
+      data.membership_type === 'premium' || 
+      data.membership_type === 'vip';
     
-    if (data.url) {
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-      return { success: true };
-    } else {
-      throw new Error('No checkout URL returned');
-    }
-  } catch (error) {
-    console.error('Checkout error:', error);
+    const premiumExpiresAt = data.premium_expires_at;
+
     return { 
-      success: false, 
-      error: error.message || 'Failed to process checkout' 
+      hasPremium, 
+      membershipType: data.membership_type, 
+      premiumExpiresAt 
+    };
+  } catch (error) {
+    console.error('Error checking premium status:', error);
+    return { 
+      hasPremium: false, 
+      membershipType: 'free' 
     };
   }
 }
 
 /**
- * Check if a user has an active subscription for a club
+ * Create a VIP product for a club
  */
-export async function checkSubscription(userId: string, clubId: string) {
-  try {
-    const { data, error } = await supabase.functions.invoke('check-subscription', {
-      body: { userId, clubId }
-    });
-    
-    if (error) throw error;
-    
-    return {
-      success: true,
-      hasSubscription: data.hasSubscription,
-      membershipType: data.membershipType,
-      hasPremium: data.hasPremium,
-      premiumExpiresAt: data.premiumExpiresAt
-    };
-  } catch (error) {
-    console.error('Subscription check error:', error);
-    return { 
-      success: false, 
-      hasSubscription: false,
-      error: error.message || 'Failed to check subscription status' 
-    };
+export async function createVIPProduct(
+  clubId: string, 
+  productDetails: {
+    name: string;
+    description?: string;
+    priceAmount: number;
+    maxParticipants?: number;
   }
-}
-
-/**
- * Create a new club product (for admins)
- */
-export async function createClubProduct(product: {
-  clubId: string,
-  name: string,
-  description?: string,
-  priceAmount: number,
-  priceCurrency?: string,
-  productType: ProductType,
-  maxParticipants?: number,
-  dateTime?: string,
-  location?: string
-}) {
+): Promise<ClubProduct | null> {
   try {
     const { data, error } = await supabase
       .from('club_products')
       .insert({
-        club_id: product.clubId,
-        name: product.name,
-        description: product.description,
-        price_amount: product.priceAmount,
-        price_currency: product.priceCurrency || 'usd',
-        product_type: product.productType,
-        max_participants: product.maxParticipants,
-        date_time: product.dateTime,
-        location: product.location,
+        club_id: clubId,
+        name: productDetails.name,
+        description: productDetails.description,
+        price_amount: productDetails.priceAmount,
+        product_type: 'other',
+        max_participants: productDetails.maxParticipants,
         is_active: true
       })
       .select()
       .single();
-    
-    if (error) throw error;
-    
-    return { success: true, product: data };
-  } catch (error) {
-    console.error('Create product error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to create product' 
-    };
-  }
-}
 
-/**
- * Get purchase history for a user
- */
-export async function getUserPurchaseHistory(userId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('club_product_purchases')
-      .select(`
-        *,
-        product:club_products(*)
-      `)
-      .eq('user_id', userId)
-      .order('purchase_date', { ascending: false });
-    
     if (error) throw error;
-    
-    return { success: true, purchases: data };
+
+    return data;
   } catch (error) {
-    console.error('Get purchases error:', error);
-    return { 
-      success: false, 
-      purchases: [],
-      error: error.message || 'Failed to get purchase history' 
-    };
+    console.error('Error creating VIP product:', error);
+    return null;
   }
 }

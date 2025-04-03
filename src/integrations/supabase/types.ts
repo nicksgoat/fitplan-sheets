@@ -143,6 +143,7 @@ export type Database = {
           premium_expires_at: string | null
           role: string
           status: string
+          stripe_subscription_id: string | null
           user_id: string
         }
         Insert: {
@@ -154,6 +155,7 @@ export type Database = {
           premium_expires_at?: string | null
           role?: string
           status?: string
+          stripe_subscription_id?: string | null
           user_id: string
         }
         Update: {
@@ -165,6 +167,7 @@ export type Database = {
           premium_expires_at?: string | null
           role?: string
           status?: string
+          stripe_subscription_id?: string | null
           user_id?: string
         }
         Relationships: [

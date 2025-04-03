@@ -1,5 +1,3 @@
-
-import { User } from '@supabase/supabase-js';
 import { Profile } from './profile';
 import { Workout } from './workout';
 
