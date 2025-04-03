@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import Stripe from "https://esm.sh/stripe@12.5.0?dts";
+import Stripe from "https://esm.sh/stripe@12.0.0?no-check";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,24 +15,16 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Stripe
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecretKey) {
-      return new Response(
-        JSON.stringify({ error: 'Stripe secret key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    });
-
     // Create Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_ANON_KEY') || ''
     );
+
+    // Create Stripe client
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    });
 
     // Verify auth
     const authHeader = req.headers.get('Authorization');
@@ -55,7 +47,7 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { subscriptionId, atPeriodEnd = true } = await req.json();
+    const { subscriptionId, atPeriodEnd } = await req.json();
     
     if (!subscriptionId) {
       return new Response(
@@ -65,47 +57,56 @@ serve(async (req) => {
     }
 
     // Check if subscription exists and belongs to the user
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subscriptionError } = await supabase
       .from('club_subscriptions')
       .select('*')
       .eq('id', subscriptionId)
       .eq('user_id', user.id)
       .single();
 
-    if (subError || !subscription) {
+    if (subscriptionError || !subscription) {
       return new Response(
         JSON.stringify({ error: 'Subscription not found or does not belong to the user' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check if subscription has a Stripe subscription ID
-    if (!subscription.stripe_subscription_id) {
-      return new Response(
-        JSON.stringify({ error: 'Subscription does not have a Stripe subscription ID' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Cancel the subscription in Stripe
-    const stripeSubscription = await stripe.subscriptions.update(
-      subscription.stripe_subscription_id,
-      { cancel_at_period_end: atPeriodEnd }
-    );
-
-    // If immediate cancellation, also cancel in Stripe
-    if (!atPeriodEnd) {
-      await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+    if (subscription.stripe_subscription_id) {
+      try {
+        if (atPeriodEnd) {
+          // Cancel at period end
+          await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+            cancel_at_period_end: true,
+          });
+        } else {
+          // Cancel immediately
+          await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+        }
+      } catch (stripeError) {
+        console.error('Stripe error:', stripeError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to cancel subscription in Stripe' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Update subscription in database
-    const { data: updatedSub, error: updateError } = await supabase
+    const updateData = atPeriodEnd
+      ? {
+          cancel_at_period_end: true,
+          canceled_at: new Date().toISOString(),
+        }
+      : {
+          cancel_at_period_end: true,
+          canceled_at: new Date().toISOString(),
+          status: 'canceled',
+        };
+
+    const { data: updatedSubscription, error: updateError } = await supabase
       .from('club_subscriptions')
-      .update({
-        status: atPeriodEnd ? 'active' : 'canceled',
-        cancel_at_period_end: atPeriodEnd,
-        canceled_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', subscriptionId)
       .select()
       .single();
@@ -118,14 +119,14 @@ serve(async (req) => {
       );
     }
 
-    // If immediate cancellation, also update the club_members table
+    // If immediate cancellation, also update club_members table
     if (!atPeriodEnd) {
       await supabase
         .from('club_members')
         .update({
           membership_type: 'free',
           premium_expires_at: null,
-          stripe_subscription_id: null
+          stripe_subscription_id: null,
         })
         .eq('user_id', user.id)
         .eq('club_id', subscription.club_id);
@@ -133,10 +134,12 @@ serve(async (req) => {
 
     // Return updated subscription
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: atPeriodEnd ? 'Subscription will be canceled at the end of the billing period' : 'Subscription canceled immediately',
-        subscription: updatedSub
+      JSON.stringify({
+        success: true,
+        message: atPeriodEnd
+          ? 'Subscription will be canceled at the end of the billing period'
+          : 'Subscription has been canceled immediately',
+        subscription: updatedSubscription,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

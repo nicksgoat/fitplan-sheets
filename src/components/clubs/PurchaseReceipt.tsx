@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { ClubProductPurchase, ClubProduct, ClubSubscription } from '@/types/club';
+import { ClubProductPurchase, ClubProduct, ClubSubscription, PurchaseStatus, SubscriptionStatus } from '@/types/club';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -63,26 +63,30 @@ const PurchaseReceipt: React.FC = () => {
             .single();
           
           if (error) throw error;
+          
+          // Cast the data with proper types
           setPurchase({
             ...data,
+            status: data.status as PurchaseStatus,
             product: data.product as ClubProduct
-          });
+          } as ClubProductPurchase);
         } else if (type === 'subscription') {
-          // Fetch subscription data
-          // Note: Since Stripe subscriptions are linked to different session IDs,
-          // we'd need to fetch the subscription details differently or store the link
-          
-          // For simplicity, let's just get the most recent subscription
-          const { data, error } = await supabase
-            .from('club_subscriptions')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+          // For subscription receipt, use the RPC function
+          const { data, error } = await supabase.rpc('get_subscription_by_session', {
+            session_id_param: sessionId
+          });
           
           if (error) throw error;
-          setSubscription(data);
+          
+          if (!data || data.length === 0) {
+            throw new Error('Subscription not found');
+          }
+          
+          // Cast to proper type
+          setSubscription({
+            ...data[0],
+            status: data[0].status as SubscriptionStatus
+          } as ClubSubscription);
         }
       } catch (err) {
         console.error('Error fetching receipt data:', err);

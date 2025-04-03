@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
@@ -9,11 +8,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { 
-  ClubProductPurchase, 
-  ClubProduct, 
-  ClubSubscription 
+  ClubProductPurchase,
+  ClubSubscription
 } from '@/types/club';
 import { 
   AlertTriangle, 
@@ -28,7 +25,12 @@ import {
   ShoppingBag, 
   XCircle 
 } from 'lucide-react';
-import { getUserPurchases } from '@/services/clubService';
+import { 
+  getUserPurchases,
+  getUserSubscriptions, 
+  requestRefund,
+  cancelSubscription
+} from '@/services/clubService';
 
 const PaymentHistory: React.FC = () => {
   const { user } = useAuth();
@@ -53,15 +55,8 @@ const PaymentHistory: React.FC = () => {
       setPurchases(userPurchases);
       
       // Fetch subscriptions
-      const { data: subs, error: subsError } = await supabase
-        .from('club_subscriptions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-      
-      if (subsError) throw subsError;
-      
-      setSubscriptions(subs);
+      const userSubscriptions = await getUserSubscriptions();
+      setSubscriptions(userSubscriptions);
     } catch (error) {
       console.error('Error fetching payment history:', error);
       toast.error('Failed to load payment history');
@@ -85,20 +80,16 @@ const PaymentHistory: React.FC = () => {
         return;
       }
       
-      const { data, error } = await supabase.functions.invoke('refund-request', {
-        body: { purchaseId, reason }
-      });
+      const result = await requestRefund(purchaseId, reason);
       
-      if (error) throw error;
-      
-      if (data.success) {
+      if (result.success && result.data) {
         toast.success('Refund request submitted successfully');
         // Update the purchase in the state
         setPurchases(purchases.map(p => 
-          p.id === purchaseId ? { ...p, refund_status: 'requested', refund_requested_at: new Date().toISOString(), refund_reason: reason } : p
+          p.id === purchaseId ? result.data as ClubProductPurchase : p
         ));
       } else {
-        toast.error(data.error || 'Failed to submit refund request');
+        toast.error(result.error || 'Failed to submit refund request');
       }
     } catch (error) {
       console.error('Error requesting refund:', error);
@@ -125,28 +116,19 @@ const PaymentHistory: React.FC = () => {
     try {
       setLoadingAction({ ...loadingAction, [subscriptionId]: true });
       
-      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-        body: { 
-          subscriptionId, 
-          atPeriodEnd: !immediateCancel 
-        }
-      });
+      const result = await cancelSubscription(subscriptionId, !immediateCancel);
       
-      if (error) throw error;
-      
-      if (data.success) {
-        toast.success(data.message);
+      if (result.success && result.data) {
+        toast.success(immediateCancel ? 
+          'Subscription canceled immediately' : 
+          'Subscription will be canceled at the end of the billing period');
+        
         // Update the subscription in the state
         setSubscriptions(subscriptions.map(s => 
-          s.id === subscriptionId ? { 
-            ...s, 
-            cancel_at_period_end: !immediateCancel,
-            canceled_at: new Date().toISOString(),
-            status: immediateCancel ? 'canceled' : s.status
-          } : s
+          s.id === subscriptionId ? result.data as ClubSubscription : s
         ));
       } else {
-        toast.error(data.error || 'Failed to cancel subscription');
+        toast.error(result.error || 'Failed to cancel subscription');
       }
     } catch (error) {
       console.error('Error canceling subscription:', error);
