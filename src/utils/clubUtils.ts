@@ -127,7 +127,13 @@ export async function createVIPProduct(
 
     if (error) throw error;
 
-    return data;
+    // Explicitly cast the product_type to ensure it matches the ProductType type
+    const typedProduct: ClubProduct = {
+      ...data,
+      product_type: data.product_type as ProductType
+    };
+
+    return typedProduct;
   } catch (error) {
     console.error('Error creating VIP product:', error);
     return null;
