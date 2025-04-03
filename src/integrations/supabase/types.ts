@@ -299,6 +299,10 @@ export type Database = {
           id: string
           product_id: string
           purchase_date: string
+          refund_processed_at: string | null
+          refund_reason: string | null
+          refund_requested_at: string | null
+          refund_status: string | null
           status: string
           stripe_session_id: string | null
           updated_at: string
@@ -311,6 +315,10 @@ export type Database = {
           id?: string
           product_id: string
           purchase_date?: string
+          refund_processed_at?: string | null
+          refund_reason?: string | null
+          refund_requested_at?: string | null
+          refund_status?: string | null
           status?: string
           stripe_session_id?: string | null
           updated_at?: string
@@ -323,6 +331,10 @@ export type Database = {
           id?: string
           product_id?: string
           purchase_date?: string
+          refund_processed_at?: string | null
+          refund_reason?: string | null
+          refund_requested_at?: string | null
+          refund_status?: string | null
           status?: string
           stripe_session_id?: string | null
           updated_at?: string
@@ -387,6 +399,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "club_products_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          club_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_amount: number | null
+          plan_currency: string | null
+          plan_interval: string | null
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          club_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_amount?: number | null
+          plan_currency?: string | null
+          plan_interval?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          club_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_amount?: number | null
+          plan_currency?: string | null
+          plan_interval?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_subscriptions_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"

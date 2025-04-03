@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams, Route, Routes } from 'react-router-dom';
 import ClubList from '@/components/clubs/ClubList';
 import ClubHeader from '@/components/clubs/ClubHeader';
 import CreateClubForm from '@/components/clubs/CreateClubForm';
@@ -8,6 +8,7 @@ import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import ClubLayout from '@/components/clubs/ClubLayout';
+import PurchaseReceipt from '@/components/clubs/PurchaseReceipt';
 import { toast } from 'sonner';
 
 const Clubs: React.FC = () => {
@@ -19,6 +20,8 @@ const Clubs: React.FC = () => {
   
   // Check if the current path is the create club path
   const isCreatePath = location.pathname.endsWith('/create');
+  // Check if the current path is the receipt path
+  const isReceiptPath = location.pathname.includes('/receipt');
   
   // Handle checkout status from query params
   const checkoutStatus = searchParams.get('checkout');
@@ -43,7 +46,7 @@ const Clubs: React.FC = () => {
   }, [checkoutStatus, navigate, location.pathname, clubId, refreshMembers, refreshProducts]);
   
   useEffect(() => {
-    if (clubId && !isCreatePath) {
+    if (clubId && !isCreatePath && !isReceiptPath) {
       // Load specific club
       const club = clubs.find(c => c.id === clubId);
       if (club) {
@@ -52,14 +55,16 @@ const Clubs: React.FC = () => {
         // Club not found and not loading, redirect to clubs list
         navigate('/clubs');
       }
-    } else if (!clubId && !isCreatePath) {
+    } else if (!clubId && !isCreatePath && !isReceiptPath) {
       // Clubs list, clear current club
       setCurrentClub(null);
     }
-  }, [clubId, isCreatePath, clubs, loadingClubs]);
+  }, [clubId, isCreatePath, isReceiptPath, clubs, loadingClubs]);
   
   const renderContent = () => {
-    if (isCreatePath) {
+    if (isReceiptPath) {
+      return <PurchaseReceipt />;
+    } else if (isCreatePath) {
       return <CreateClubForm />;
     } else if (clubId && currentClub) {
       return <ClubLayout clubId={clubId} />;

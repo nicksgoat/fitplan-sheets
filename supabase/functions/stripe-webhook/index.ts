@@ -67,7 +67,7 @@ serve(async (req) => {
           oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
           
           // Update membership in database
-          const { error } = await supabase
+          const { error: memberError } = await supabase
             .from('club_members')
             .update({
               membership_type: 'premium',
@@ -77,8 +77,32 @@ serve(async (req) => {
             .eq('club_id', clubId)
             .eq('user_id', userId);
           
-          if (error) {
-            console.error('Error updating membership:', error);
+          if (memberError) {
+            console.error('Error updating membership:', memberError);
+          }
+
+          // Also record in subscriptions table
+          if (session.subscription) {
+            // Get subscription details from Stripe
+            const subscription = await stripe.subscriptions.retrieve(session.subscription);
+            
+            const { error: subError } = await supabase
+              .from('club_subscriptions')
+              .insert({
+                user_id: userId,
+                club_id: clubId,
+                stripe_subscription_id: session.subscription,
+                status: subscription.status,
+                current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                plan_amount: session.amount_total / 100,
+                plan_currency: session.currency,
+                plan_interval: 'month'
+              });
+            
+            if (subError) {
+              console.error('Error recording subscription:', subError);
+            }
           }
         } else if (type === 'product') {
           // For one-time product purchase
@@ -106,30 +130,50 @@ serve(async (req) => {
         const subscriptionId = invoice.subscription;
         
         if (subscriptionId) {
+          // Get subscription details
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          
           // Find the subscription in our database
-          const { data, error } = await supabase
-            .from('club_members')
+          const { data: subscriptions, error: findError } = await supabase
+            .from('club_subscriptions')
             .select('*')
             .eq('stripe_subscription_id', subscriptionId);
           
-          if (error || !data.length) {
-            console.error('Error finding subscription:', error);
+          if (findError || !subscriptions.length) {
+            console.error('Error finding subscription:', findError);
             break;
           }
           
-          // Extend the expiry date
+          const dbSubscription = subscriptions[0];
+          
+          // Update subscription record
+          const { error: subUpdateError } = await supabase
+            .from('club_subscriptions')
+            .update({
+              status: subscription.status,
+              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              cancel_at_period_end: subscription.cancel_at_period_end
+            })
+            .eq('stripe_subscription_id', subscriptionId);
+          
+          if (subUpdateError) {
+            console.error('Error updating subscription record:', subUpdateError);
+          }
+          
+          // Extend the expiry date in club_members
           const oneMonthLater = new Date();
           oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
           
-          const { error: updateError } = await supabase
+          const { error: memberUpdateError } = await supabase
             .from('club_members')
             .update({
               premium_expires_at: oneMonthLater.toISOString(),
             })
             .eq('stripe_subscription_id', subscriptionId);
           
-          if (updateError) {
-            console.error('Error updating subscription:', updateError);
+          if (memberUpdateError) {
+            console.error('Error updating subscription in club_members:', memberUpdateError);
           }
         }
         break;
@@ -139,7 +183,8 @@ serve(async (req) => {
         // Handle subscription cancellations
         const subscription = event.data.object;
         
-        const { error } = await supabase
+        // Update club_members
+        const { error: memberError } = await supabase
           .from('club_members')
           .update({
             membership_type: 'free',
@@ -147,8 +192,52 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id);
         
-        if (error) {
-          console.error('Error downgrading membership:', error);
+        if (memberError) {
+          console.error('Error downgrading membership:', memberError);
+        }
+        
+        // Update club_subscriptions
+        const { error: subError } = await supabase
+          .from('club_subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+        
+        if (subError) {
+          console.error('Error updating subscription record:', subError);
+        }
+        break;
+      }
+      
+      case 'charge.refunded': {
+        // Handle refunds
+        const charge = event.data.object;
+        
+        // Find the purchase using the payment intent
+        const { data: purchases, error: findError } = await supabase
+          .from('club_product_purchases')
+          .select('*')
+          .eq('stripe_session_id', charge.payment_intent);
+        
+        if (findError || !purchases.length) {
+          console.error('Error finding purchase for refund:', findError);
+          break;
+        }
+        
+        // Update the purchase record with refund info
+        const { error: updateError } = await supabase
+          .from('club_product_purchases')
+          .update({
+            status: 'refunded',
+            refund_status: 'processed',
+            refund_processed_at: new Date().toISOString()
+          })
+          .eq('stripe_session_id', charge.payment_intent);
+        
+        if (updateError) {
+          console.error('Error updating purchase with refund info:', updateError);
         }
         break;
       }

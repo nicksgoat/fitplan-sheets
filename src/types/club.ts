@@ -1,3 +1,4 @@
+
 import { Profile } from './profile';
 import { Workout } from './workout';
 
@@ -8,6 +9,8 @@ export type MemberStatus = 'active' | 'pending' | 'inactive';
 export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
 export type ProductType = 'event' | 'coaching' | 'program' | 'other';
 export type PurchaseStatus = 'pending' | 'completed' | 'refunded' | 'cancelled';
+export type RefundStatus = 'requested' | 'approved' | 'rejected' | 'processed';
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'unpaid' | 'incomplete';
 
 export interface Club {
   id: string;
@@ -122,5 +125,26 @@ export interface ClubProductPurchase {
   status: PurchaseStatus;
   created_at: string;
   updated_at: string;
+  refund_status?: RefundStatus;
+  refund_requested_at?: string;
+  refund_processed_at?: string;
+  refund_reason?: string;
   product?: ClubProduct;
+}
+
+export interface ClubSubscription {
+  id: string;
+  user_id: string;
+  club_id: string;
+  stripe_subscription_id?: string;
+  status: SubscriptionStatus;
+  created_at: string;
+  updated_at: string;
+  current_period_start?: string;
+  current_period_end?: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string;
+  plan_amount?: number;
+  plan_currency?: string;
+  plan_interval?: string;
 }

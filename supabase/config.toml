@@ -3,3 +3,9 @@ project_id = "cmzhdyiadvuuwypocxjv"
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.refund-request]
+verify_jwt = true
+
+[functions.cancel-subscription]
+verify_jwt = true

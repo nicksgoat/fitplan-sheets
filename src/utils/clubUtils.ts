@@ -4,8 +4,11 @@ import {
   Club, 
   ClubMember, 
   ClubProduct, 
+  ClubProductPurchase,
+  ClubSubscription,
   MembershipType, 
-  ProductType 
+  ProductType,
+  RefundStatus 
 } from '@/types/club';
 
 /**
@@ -137,5 +140,137 @@ export async function createVIPProduct(
   } catch (error) {
     console.error('Error creating VIP product:', error);
     return null;
+  }
+}
+
+/**
+ * Request a refund for a product purchase
+ */
+export async function requestRefund(
+  purchaseId: string,
+  reason: string
+): Promise<{ success: boolean; data?: ClubProductPurchase; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('refund-request', {
+      body: { purchaseId, reason }
+    });
+
+    if (error) throw error;
+    
+    if (!data.success) {
+      return { success: false, error: data.error || 'Unknown error requesting refund' };
+    }
+
+    return { success: true, data: data.purchase };
+  } catch (error) {
+    console.error('Error requesting refund:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error requesting refund'
+    };
+  }
+}
+
+/**
+ * Cancel a subscription
+ */
+export async function cancelSubscription(
+  subscriptionId: string,
+  atPeriodEnd: boolean = true
+): Promise<{ success: boolean; data?: ClubSubscription; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+      body: { subscriptionId, atPeriodEnd }
+    });
+
+    if (error) throw error;
+    
+    if (!data.success) {
+      return { success: false, error: data.error || 'Unknown error canceling subscription' };
+    }
+
+    return { success: true, data: data.subscription };
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error canceling subscription'
+    };
+  }
+}
+
+/**
+ * Get user's subscription for a club
+ */
+export async function getUserClubSubscription(
+  userId: string, 
+  clubId: string
+): Promise<ClubSubscription | null> {
+  try {
+    const { data, error } = await supabase
+      .from('club_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('club_id', clubId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No subscription found
+        return null;
+      }
+      throw error;
+    }
+
+    return data as ClubSubscription;
+  } catch (error) {
+    console.error('Error getting user subscription:', error);
+    return null;
+  }
+}
+
+/**
+ * Get user's purchases
+ */
+export async function getUserPurchases(): Promise<ClubProductPurchase[]> {
+  try {
+    const { data, error } = await supabase
+      .from('club_product_purchases')
+      .select(`
+        *,
+        product:club_products(*)
+      `)
+      .order('purchase_date', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(purchase => ({
+      ...purchase,
+      product: purchase.product as ClubProduct
+    })) as ClubProductPurchase[];
+  } catch (error) {
+    console.error('Error getting user purchases:', error);
+    return [];
+  }
+}
+
+/**
+ * Get user's subscriptions
+ */
+export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
+  try {
+    const { data, error } = await supabase
+      .from('club_subscriptions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data as ClubSubscription[];
+  } catch (error) {
+    console.error('Error getting user subscriptions:', error);
+    return [];
   }
 }
