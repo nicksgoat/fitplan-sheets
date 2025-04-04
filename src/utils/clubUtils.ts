@@ -7,7 +7,9 @@ import {
   ClubProductPurchase,
   MembershipType, 
   ProductType,
-  RefundStatus 
+  RefundStatus,
+  SubscriptionStatus,
+  PurchaseStatus
 } from '@/types/club';
 import {
   getUserClubSubscription
@@ -39,7 +41,7 @@ export async function checkPremiumStatus(userId: string, clubId: string): Promis
 
     return { 
       hasPremium, 
-      membershipType: data.membership_type, 
+      membershipType: data.membership_type as MembershipType, 
       premiumExpiresAt 
     };
   } catch (error) {

@@ -148,3 +148,21 @@ export interface ClubSubscription {
   plan_currency?: string;
   plan_interval?: string;
 }
+
+// Add type for database response to help with type casting
+export interface DBClubSubscription {
+  id: string;
+  user_id: string;
+  club_id: string;
+  stripe_subscription_id?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  current_period_start?: string;
+  current_period_end?: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string;
+  plan_amount?: number;
+  plan_currency?: string;
+  plan_interval?: string;
+}

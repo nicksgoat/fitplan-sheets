@@ -7,7 +7,13 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { ClubProductPurchase, ClubProduct, ClubSubscription, PurchaseStatus, SubscriptionStatus } from '@/types/club';
+import { 
+  ClubProductPurchase, 
+  ClubProduct, 
+  ClubSubscription, 
+  PurchaseStatus, 
+  SubscriptionStatus 
+} from '@/types/club';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -65,7 +71,10 @@ const PurchaseReceipt: React.FC = () => {
           setPurchase({
             ...data,
             status: data.status as PurchaseStatus,
-            product: data.product as ClubProduct
+            product: {
+              ...data.product,
+              product_type: data.product.product_type as any
+            } 
           } as ClubProductPurchase);
         } else if (type === 'subscription') {
           const { data, error } = await supabase.rpc('get_subscription_by_session', {

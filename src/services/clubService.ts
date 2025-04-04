@@ -6,7 +6,13 @@ import {
   ClubSubscription,
   PurchaseStatus,
   SubscriptionStatus,
-  RefundStatus
+  RefundStatus,
+  DBClubSubscription,
+  MemberRole,
+  EventParticipationStatus,
+  ProductType,
+  MemberStatus,
+  MembershipType
 } from '@/types/club';
 
 /**
@@ -222,7 +228,14 @@ export async function fetchClubMembers(clubId: string) {
       .eq('club_id', clubId);
     
     if (error) throw error;
-    return data;
+    
+    // Properly cast the roles and status
+    return data.map(member => ({
+      ...member,
+      role: member.role as MemberRole,
+      status: member.status as MemberStatus,
+      membership_type: member.membership_type as MembershipType
+    }));
   } catch (error) {
     console.error(`Error fetching club members for ${clubId}:`, error);
     return [];
@@ -231,21 +244,29 @@ export async function fetchClubMembers(clubId: string) {
 
 export async function joinClub(clubId: string, membershipType: string) {
   try {
-    const user = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
     const { data, error } = await supabase
       .from('club_members')
       .insert({
         club_id: clubId,
-        user_id: user.data.user?.id,
-        membership_type: membershipType as "free" | "premium" | "vip",
-        role: 'member',
-        status: 'active'
+        user_id: userData.user.id,
+        membership_type: membershipType as MembershipType,
+        role: 'member' as MemberRole,
+        status: 'active' as MemberStatus
       })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    };
   } catch (error) {
     console.error(`Error joining club ${clubId}:`, error);
     throw error;
@@ -262,7 +283,13 @@ export async function updateMemberRole(memberId: string, role: string) {
       .single();
     
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    };
   } catch (error) {
     console.error(`Error updating member role ${memberId}:`, error);
     throw error;
@@ -271,12 +298,14 @@ export async function updateMemberRole(memberId: string, role: string) {
 
 export async function leaveClub(clubId: string) {
   try {
-    const user = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
     const { error } = await supabase
       .from('club_members')
       .delete()
       .eq('club_id', clubId)
-      .eq('user_id', user.data.user?.id);
+      .eq('user_id', userData.user.id);
     
     if (error) throw error;
     return true;
@@ -288,14 +317,26 @@ export async function leaveClub(clubId: string) {
 
 export async function getUserClubs() {
   try {
-    const user = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
     const { data, error } = await supabase
       .from('club_members')
       .select('*, club:clubs(*)')
-      .eq('user_id', user.data.user?.id);
+      .eq('user_id', userData.user.id);
     
     if (error) throw error;
-    return data;
+    
+    // Transform the data into the expected format with proper type casting
+    return data.map(item => ({
+      membership: {
+        ...item,
+        role: item.role as MemberRole,
+        status: item.status as MemberStatus,
+        membership_type: item.membership_type as MembershipType
+      },
+      club: item.club
+    }));
   } catch (error) {
     console.error('Error getting user clubs:', error);
     return [];
@@ -367,19 +408,25 @@ export async function deleteEvent(id: string) {
 
 export async function respondToEvent(eventId: string, status: string) {
   try {
-    const user = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
     const { data, error } = await supabase
       .from('event_participants')
       .upsert({
         event_id: eventId,
-        user_id: user.data.user?.id,
-        status
+        user_id: userData.user.id,
+        status: status as EventParticipationStatus
       })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: data.status as EventParticipationStatus
+    };
   } catch (error) {
     console.error(`Error responding to event ${eventId}:`, error);
     throw error;
@@ -394,7 +441,11 @@ export async function fetchEventParticipants(eventId: string) {
       .eq('event_id', eventId);
     
     if (error) throw error;
-    return data;
+    
+    return data.map(participant => ({
+      ...participant,
+      status: participant.status as EventParticipationStatus
+    }));
   } catch (error) {
     console.error(`Error fetching event participants for ${eventId}:`, error);
     return [];
@@ -409,7 +460,13 @@ export async function fetchClubPosts(clubId: string) {
       .eq('club_id', clubId);
     
     if (error) throw error;
-    return data;
+    
+    // Handle potentially missing profile/workout relationships
+    return data.map(post => ({
+      ...post,
+      profile: post.profile?.id ? post.profile : undefined,
+      workout: post.workout?.id ? post.workout : undefined
+    }));
   } catch (error) {
     console.error(`Error fetching club posts for ${clubId}:`, error);
     return [];
@@ -455,7 +512,12 @@ export async function fetchPostComments(postId: string) {
       .eq('post_id', postId);
     
     if (error) throw error;
-    return data;
+    
+    // Handle potentially missing profile relationship
+    return data.map(comment => ({
+      ...comment,
+      profile: comment.profile?.id ? comment.profile : undefined
+    }));
   } catch (error) {
     console.error(`Error fetching post comments for ${postId}:`, error);
     return [];
@@ -501,7 +563,12 @@ export async function fetchClubMessages(clubId: string) {
       .eq('club_id', clubId);
     
     if (error) throw error;
-    return data;
+    
+    // Handle potentially missing profile relationship
+    return data.map(message => ({
+      ...message,
+      profile: message.profile?.id ? message.profile : undefined
+    }));
   } catch (error) {
     console.error(`Error fetching club messages for ${clubId}:`, error);
     return [];
@@ -554,23 +621,31 @@ export function subscribeToClubMessages(clubId: string, callback: (message: any)
     .subscribe();
     
   return () => {
-    supabase.removeChannel(channel);
+    channel.unsubscribe();
   };
 }
 
-export async function updateMembership(clubId: string, membershipType: "free" | "premium" | "vip") {
+export async function updateMembership(clubId: string, membershipType: MembershipType) {
   try {
-    const user = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
     const { data, error } = await supabase
       .from('club_members')
       .update({ membership_type: membershipType })
       .eq('club_id', clubId)
-      .eq('user_id', user.data.user?.id)
+      .eq('user_id', userData.user.id)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    };
   } catch (error) {
     console.error(`Error updating membership for club ${clubId}:`, error);
     throw error;
@@ -585,7 +660,11 @@ export async function fetchClubProducts(clubId: string) {
       .eq('club_id', clubId);
     
     if (error) throw error;
-    return data;
+    
+    return data.map(product => ({
+      ...product,
+      product_type: product.product_type as ProductType
+    }));
   } catch (error) {
     console.error(`Error fetching club products for ${clubId}:`, error);
     return [];
@@ -594,18 +673,24 @@ export async function fetchClubProducts(clubId: string) {
 
 export async function purchaseClubProduct(productId: string) {
   try {
-    const user = await supabase.auth.getUser();
-    const { data: product } = await supabase
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('No authenticated user');
+    
+    // First get the product details
+    const { data: product, error: productError } = await supabase
       .from('club_products')
       .select('*')
       .eq('id', productId)
       .single();
 
+    if (productError) throw productError;
+
+    // Then create the purchase record
     const { data, error } = await supabase
       .from('club_product_purchases')
       .insert({
         product_id: productId,
-        user_id: user.data.user?.id,
+        user_id: userData.user.id,
         amount_paid: product.price_amount,
         currency: product.price_currency,
         status: 'completed' as PurchaseStatus
@@ -614,7 +699,12 @@ export async function purchaseClubProduct(productId: string) {
       .single();
     
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      status: data.status as PurchaseStatus,
+      refund_status: data.refund_status as RefundStatus | undefined
+    };
   } catch (error) {
     console.error(`Error purchasing product ${productId}:`, error);
     throw error;

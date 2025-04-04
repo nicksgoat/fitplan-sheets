@@ -19,3 +19,6 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.run-sql-rpcs]
+verify_jwt = true
