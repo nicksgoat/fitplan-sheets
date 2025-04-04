@@ -39,13 +39,21 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
   const applySqlFix = async () => {
     setLoading(true);
     try {
+      // Fix RLS policies using our dedicated function
       console.log("Attempting to fix RLS policies via edge function...");
-      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'fix_club_members_rls',
-          params: {}
-        }
-      });
+      
+      // First ensure the SQL function is created
+      const { data: initData, error: initError } = await supabase.functions.invoke('create-sql-function');
+      
+      if (initError) {
+        console.error("Error creating SQL function:", initError);
+        toast.error("Failed to create SQL function");
+        setSqlFixStatus('failed');
+        return;
+      }
+      
+      // Now fix the RLS policies
+      const { data, error } = await supabase.functions.invoke('fix-rls-policies');
       
       if (error) {
         console.error("Error fixing RLS policies:", error);

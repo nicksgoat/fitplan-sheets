@@ -61,6 +61,31 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     scrollToBottom();
   }, [messages]);
   
+  // Setup subscription to realtime updates for new messages
+  useEffect(() => {
+    if (!clubId) return;
+    
+    // Create a subscription to the club_messages table for this club
+    const subscription = supabase
+      .channel(`club_${clubId}_messages`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'club_messages',
+        filter: `club_id=eq.${clubId}`
+      }, payload => {
+        // When we get a new message, refresh all messages
+        console.log('New message received:', payload);
+        refreshMessages();
+      })
+      .subscribe();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [clubId, refreshMessages]);
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -77,30 +102,55 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
       setIsSubmitting(true);
       console.log("Sending message:", messageText);
       
-      // Direct insert using the insert method
-      const { data, error } = await supabase
-        .from('club_messages')
-        .insert({
-          club_id: clubId,
-          user_id: user.id,
-          content: messageText,
-          is_pinned: false
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error sending message:', error);
-        throw error;
+      // First try direct insert through Supabase client
+      try {
+        const { data, error } = await supabase
+          .from('club_messages')
+          .insert({
+            club_id: clubId,
+            user_id: user.id,
+            content: messageText,
+            is_pinned: false
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Direct insert failed, error:', error);
+          throw error;
+        }
+        
+        console.log("Message sent successfully via direct insert:", data);
+        setMessageText('');
+        toast.success("Message sent successfully");
+        
+      } catch (insertError) {
+        // If direct insert fails, fallback to the edge function
+        console.log("Falling back to edge function...");
+        
+        const { data: functionData, error: functionError } = await supabase.functions.invoke('run-sql-query', {
+          body: {
+            query: `
+              INSERT INTO club_messages (club_id, user_id, content, is_pinned)
+              VALUES ('${clubId}', '${user.id}', '${messageText.replace(/'/g, "''")}', false)
+              RETURNING id, club_id, user_id, content, created_at, is_pinned
+            `
+          }
+        });
+        
+        if (functionError) {
+          console.error('Edge function also failed:', functionError);
+          throw functionError;
+        }
+        
+        console.log("Message sent successfully via edge function:", functionData);
+        setMessageText('');
+        toast.success("Message sent successfully (via edge function)");
       }
-      
-      console.log("Message sent successfully:", data);
-      setMessageText('');
       
       // Refresh messages to show the new one
       await refreshMessages();
       
-      toast.success("Message sent successfully");
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');

@@ -31,8 +31,9 @@ serve(async (req) => {
         DECLARE
           result JSONB;
         BEGIN
-          EXECUTE query INTO result;
-          RETURN result;
+          EXECUTE 'WITH query_result AS (' || query || ') 
+                   SELECT jsonb_agg(row_to_json(query_result)) FROM query_result' INTO result;
+          RETURN COALESCE(result, '[]'::jsonb);
         EXCEPTION WHEN OTHERS THEN
           RAISE EXCEPTION 'SQL Error: %', SQLERRM;
         END;
