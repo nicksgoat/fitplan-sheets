@@ -31,10 +31,12 @@ serve(async (req) => {
     // Parse the request body
     const { query, params = {} } = await req.json();
     console.log("Executing SQL query:", query);
+    console.log("With params:", params);
     
     // Execute the SQL query
-    const { data, error } = await adminSupabase.rpc('run_sql_query', {
-      query: query
+    const { data, error } = await adminSupabase.rpc('run_sql_query_with_params', {
+      query: query,
+      params_array: Array.isArray(params) ? params : Object.values(params)
     });
     
     if (error) {

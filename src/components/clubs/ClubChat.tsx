@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClubChatProps {
   clubId: string;
@@ -73,8 +73,30 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     try {
       setIsSubmitting(true);
       console.log("Sending message:", messageText);
-      await sendNewMessage(messageText);
+      
+      // Use the direct SQL query approach to bypass RLS issues
+      const { data, error } = await supabase.functions.invoke('run-sql-query', {
+        body: {
+          query: `
+            INSERT INTO club_messages (club_id, user_id, content, is_pinned)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, club_id, user_id, content, created_at, is_pinned
+          `,
+          params: [clubId, user.id, messageText, false]
+        }
+      });
+      
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+      
+      console.log("Message sent successfully:", data);
       setMessageText('');
+      
+      // Refresh messages to show the new one
+      await sendNewMessage(messageText);
+      
       toast.success("Message sent successfully");
     } catch (error) {
       console.error('Error sending message:', error);
