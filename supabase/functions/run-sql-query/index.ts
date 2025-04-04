@@ -29,11 +29,11 @@ serve(async (req) => {
     );
     
     // Parse the request body
-    const { query, params = {} } = await req.json();
+    const { query, params = [] } = await req.json();
     console.log("Executing SQL query:", query);
     console.log("With params:", params);
     
-    // Execute the SQL query
+    // Execute the SQL query using the new function
     const { data, error } = await adminSupabase.rpc('run_sql_query_with_params', {
       query: query,
       params_array: Array.isArray(params) ? params : Object.values(params)

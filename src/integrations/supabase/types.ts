@@ -1079,6 +1079,13 @@ export type Database = {
         }
         Returns: Json
       }
+      run_sql_query_with_params: {
+        Args: {
+          query: string
+          params_array: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       club_type: "fitness" | "sports" | "wellness" | "nutrition" | "other"
