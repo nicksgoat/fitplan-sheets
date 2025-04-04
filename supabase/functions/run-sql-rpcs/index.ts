@@ -63,7 +63,7 @@ serve(async (req) => {
     switch (sqlName) {
       case 'join_club':
         // Handle joining a club
-        console.log(`[JOIN_CLUB] User ${params.user_id} joining club ${params.club_id}`);
+        console.log(`[JOIN_CLUB] User ${authUser.id} joining club ${params.club_id}`);
         
         try {
           // Check if user is already a member - use admin client to avoid RLS issues
@@ -71,7 +71,7 @@ serve(async (req) => {
             .from('club_members')
             .select('*')
             .eq('club_id', params.club_id)
-            .eq('user_id', params.user_id)
+            .eq('user_id', authUser.id)
             .maybeSingle();
             
           console.log("[JOIN_CLUB] Existing member check:", existingMember, memberCheckError);
@@ -80,7 +80,7 @@ serve(async (req) => {
             console.log("[JOIN_CLUB] User already a member, returning existing membership");
             return new Response(
               JSON.stringify(existingMember),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
             );
           }
             
@@ -89,7 +89,7 @@ serve(async (req) => {
             .from('club_members')
             .insert({
               club_id: params.club_id,
-              user_id: params.user_id,
+              user_id: authUser.id,
               role: params.role || 'member',
               status: params.status || 'active',
               membership_type: params.membership_type || 'free'
@@ -107,7 +107,7 @@ serve(async (req) => {
           console.log("[JOIN_CLUB] Successfully joined club");
           return new Response(
             JSON.stringify(newMembership),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
           );
         } catch (error) {
           console.error("[JOIN_CLUB] Error:", error);
@@ -116,7 +116,7 @@ serve(async (req) => {
         
       case 'check_club_member':
         // RPC to check if a user is a member without triggering the infinite recursion
-        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${params.user_id} is member of club ${params.club_id}`);
+        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${authUser.id} is member of club ${params.club_id}`);
         
         try {
           // Use admin client to bypass RLS policies completely
@@ -124,7 +124,7 @@ serve(async (req) => {
             .from('club_members')
             .select('*')
             .eq('club_id', params.club_id)
-            .eq('user_id', params.user_id)
+            .eq('user_id', authUser.id)
             .maybeSingle();
             
           console.log("[CHECK_CLUB_MEMBER] Check result:", memberData, checkError);
@@ -134,7 +134,7 @@ serve(async (req) => {
               is_member: !!memberData, 
               member_data: memberData 
             }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
           );
         } catch (error) {
           console.error("[CHECK_CLUB_MEMBER] Error:", error);
@@ -163,7 +163,7 @@ serve(async (req) => {
           
           return new Response(
             JSON.stringify(updatedMember),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
           );
         } catch (error) {
           console.error("[UPDATE_MEMBER_ROLE] Error:", error);
@@ -172,7 +172,7 @@ serve(async (req) => {
       
       case 'leave_club':
         // Handle leaving a club
-        console.log(`[LEAVE_CLUB] User ${params.user_id} leaving club ${params.club_id}`);
+        console.log(`[LEAVE_CLUB] User ${authUser.id} leaving club ${params.club_id}`);
         
         try {
           // Delete the membership record using admin client to bypass RLS
@@ -180,7 +180,7 @@ serve(async (req) => {
             .from('club_members')
             .delete()
             .eq('club_id', params.club_id)
-            .eq('user_id', params.user_id);
+            .eq('user_id', authUser.id);
             
           if (deleteError) {
             console.error("[LEAVE_CLUB] Error leaving club:", deleteError);
@@ -190,11 +190,91 @@ serve(async (req) => {
           console.log("[LEAVE_CLUB] Successfully left club");
           return new Response(
             JSON.stringify({ success: true }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
           );
         } catch (error) {
           console.error("[LEAVE_CLUB] Error:", error);
           throw new Error(`Failed to leave club: ${error.message}`);
+        }
+      
+      case 'get_club_members':
+        // Get all members of a club
+        console.log(`[GET_CLUB_MEMBERS] Getting members for club ${params.club_id}`);
+        
+        try {
+          // Use admin client to bypass RLS policies completely
+          const { data: members, error: membersError } = await adminSupabase
+            .from('club_members')
+            .select('*, profile:profiles(*)')
+            .eq('club_id', params.club_id);
+            
+          if (membersError) {
+            console.error("[GET_CLUB_MEMBERS] Error fetching members:", membersError);
+            throw membersError;
+          }
+          
+          console.log(`[GET_CLUB_MEMBERS] Found ${members?.length || 0} members`);
+          
+          return new Response(
+            JSON.stringify(members || []),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        } catch (error) {
+          console.error("[GET_CLUB_MEMBERS] Error:", error);
+          throw new Error(`Failed to get club members: ${error.message}`);
+        }
+      
+      case 'get_user_clubs':
+        // Get all clubs that a user is a member of
+        console.log(`[GET_USER_CLUBS] Getting clubs for user ${authUser.id}`);
+        
+        try {
+          // First get the club memberships using admin client
+          const { data: memberships, error: membershipError } = await adminSupabase
+            .from('club_members')
+            .select('*')
+            .eq('user_id', authUser.id);
+          
+          if (membershipError) {
+            console.error("[GET_USER_CLUBS] Error fetching memberships:", membershipError);
+            throw membershipError;
+          }
+          
+          if (!memberships || memberships.length === 0) {
+            console.log("[GET_USER_CLUBS] No memberships found");
+            return new Response(
+              JSON.stringify([]),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+            );
+          }
+          
+          // Get club details for each membership
+          const clubIds = memberships.map(m => m.club_id);
+          const { data: clubs, error: clubsError } = await adminSupabase
+            .from('clubs')
+            .select('*')
+            .in('id', clubIds);
+          
+          if (clubsError) {
+            console.error("[GET_USER_CLUBS] Error fetching clubs:", clubsError);
+            throw clubsError;
+          }
+          
+          // Join memberships with clubs
+          const userClubs = memberships.map(membership => {
+            const club = clubs?.find(c => c.id === membership.club_id);
+            return club ? { membership, club } : null;
+          }).filter(Boolean);
+          
+          console.log(`[GET_USER_CLUBS] Found ${userClubs.length} user clubs`);
+          
+          return new Response(
+            JSON.stringify(userClubs),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        } catch (error) {
+          console.error("[GET_USER_CLUBS] Error:", error);
+          throw new Error(`Failed to get user clubs: ${error.message}`);
         }
       
       // Add other SQL RPCs here as needed

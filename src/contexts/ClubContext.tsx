@@ -168,9 +168,20 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (user) {
         try {
           console.log("Fetching user clubs for user:", user.id);
-          const userClubData = await getUserClubs();
-          console.log("User club data:", userClubData);
-          setUserClubs(userClubData);
+          const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+            body: {
+              sqlName: 'get_user_clubs',
+              params: {}
+            }
+          });
+          
+          if (error) {
+            console.error('Error fetching user clubs from edge function:', error);
+            setUserClubs([]);
+          } else {
+            console.log("User club data from edge function:", data);
+            setUserClubs(data || []);
+          }
         } catch (error) {
           console.error('Error fetching user clubs:', error);
           setUserClubs([]);
@@ -238,9 +249,30 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoadingMembers(true);
       console.log("Fetching members for club:", currentClub.id);
-      const memberData = await fetchClubMembers(currentClub.id);
-      console.log("Club members data:", memberData);
-      setMembers(memberData);
+      
+      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+        body: {
+          sqlName: 'get_club_members',
+          params: {
+            club_id: currentClub.id
+          }
+        }
+      });
+      
+      if (error) {
+        console.error('Error fetching club members from edge function:', error);
+        setMembers([]);
+      } else {
+        console.log("Club members data from edge function:", data);
+        const mappedMembers = data.map(member => ({
+          ...member,
+          role: member.role as MemberRole,
+          status: member.status as MemberStatus,
+          membership_type: member.membership_type as MembershipType,
+          profile: member.profile ? safelyGetProfile(member.profile, member.user_id) : undefined
+        }));
+        setMembers(mappedMembers);
+      }
     } catch (error) {
       console.error('Error fetching club members:', error);
       toast.error('Failed to load club members');
@@ -279,7 +311,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           sqlName: 'join_club',
           params: {
             club_id: currentClub.id,
-            user_id: user.id,
             membership_type: membershipType
           }
         }

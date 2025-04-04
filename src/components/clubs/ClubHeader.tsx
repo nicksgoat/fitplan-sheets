@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
 import { 
@@ -11,7 +11,8 @@ import {
   Bell,
   BellOff,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,7 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [joining, setJoining] = useState(false);
   
   if (!currentClub) return null;
   
@@ -56,6 +58,7 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
     
     try {
       console.log("[ClubHeader] Starting join process");
+      setJoining(true);
       toast.loading('Joining club...');
       
       console.log("[ClubHeader] Joining club:", clubId);
@@ -87,6 +90,8 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
       console.error('[ClubHeader] Error joining club:', error);
       toast.dismiss();
       toast.error('Failed to join club. Please try again.');
+    } finally {
+      setJoining(false);
     }
   };
   
@@ -149,8 +154,16 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             size="sm"
             onClick={handleJoinClick}
+            disabled={joining}
           >
-            Join Club
+            {joining ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Joining...
+              </>
+            ) : (
+              'Join Club'
+            )}
           </Button>
         ) : (
           <>

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,8 @@ import {
   Plus,
   ChevronDown,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -50,6 +50,7 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [joining, setJoining] = useState(false);
   
   if (!currentClub) return null;
   
@@ -77,6 +78,7 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
     
     try {
       console.log("[ClubSidebar] Starting join process");
+      setJoining(true);
       toast.loading('Joining club...');
       
       console.log("[ClubSidebar] Joining club:", clubId);
@@ -107,6 +109,8 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
       console.error('[ClubSidebar] Error joining club:', error);
       toast.dismiss();
       toast.error('Failed to join club. Please try again.');
+    } finally {
+      setJoining(false);
     }
   };
   
@@ -277,8 +281,16 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
             size="sm"
             onClick={handleJoinClick}
+            disabled={joining}
           >
-            Join Club
+            {joining ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Joining...
+              </>
+            ) : (
+              'Join Club'
+            )}
           </Button>
         )}
       </div>
