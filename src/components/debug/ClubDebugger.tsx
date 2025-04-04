@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RefreshCw, AlertTriangle, Check, Database } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle, Check, Database, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -21,6 +20,7 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
   const [edgeFunctionCheck, setEdgeFunctionCheck] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [forceRefreshAttempts, setForceRefreshAttempts] = useState(0);
+  const [sqlFixStatus, setSqlFixStatus] = useState<'pending' | 'applied' | 'failed'>('pending');
   const [refreshingData, setRefreshingData] = useState<{
     members: boolean;
     posts: boolean;
@@ -33,9 +33,37 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
     events: false
   });
   
-  // Check if there's a data consistency issue
   const hasConsistencyIssue = isUserClubMember(clubId) && members.length > 0 && !members.some(m => m.user_id === user?.id);
   const membersEmpty = isUserClubMember(clubId) && members.length === 0;
+  
+  const applySqlFix = async () => {
+    setLoading(true);
+    try {
+      console.log("Attempting to fix RLS policies via edge function...");
+      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+        body: {
+          sqlName: 'fix_club_members_rls',
+          params: {}
+        }
+      });
+      
+      if (error) {
+        console.error("Error fixing RLS policies:", error);
+        setSqlFixStatus('failed');
+        toast.error("Failed to apply RLS fix");
+      } else {
+        console.log("RLS fix result:", data);
+        setSqlFixStatus('applied');
+        toast.success("RLS policies have been fixed");
+      }
+    } catch (error) {
+      console.error("Exception during RLS fix:", error);
+      setSqlFixStatus('failed');
+      toast.error("Error applying RLS fix");
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const checkMembership = async () => {
     if (!user || !clubId) return;
@@ -101,7 +129,6 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
       setRefreshingData(prev => ({ ...prev, members: false }));
       console.log("Members after forced refresh:", members);
       
-      // Check if members still empty after refresh
       if (members.length === 0) {
         console.log("Members array still empty after refresh. This indicates a possible issue with data fetching.");
         toast.warning("Members data might be incomplete. Please check console logs for details.");
@@ -168,6 +195,25 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
             size="sm" 
             variant="outline" 
             className="h-6 text-xs"
+            onClick={applySqlFix}
+            disabled={loading || sqlFixStatus === 'applied'}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Fixing RLS...
+              </>
+            ) : (
+              <>
+                <ArrowUpDown className="mr-1 h-3 w-3" />
+                Fix RLS Policies
+              </>
+            )}
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 text-xs"
             onClick={checkMembership}
             disabled={loading}
           >
@@ -224,14 +270,34 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
         </div>
       </div>
       
+      {sqlFixStatus === 'applied' && (
+        <Alert className="mb-2 bg-green-900/30 border border-green-800/50 rounded text-green-300">
+          <Check className="h-4 w-4" />
+          <AlertTitle className="text-xs">RLS Policies Fixed</AlertTitle>
+          <AlertDescription className="text-xs">
+            The Row Level Security policies have been fixed. Try refreshing the data now.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {sqlFixStatus === 'failed' && (
+        <Alert className="mb-2 bg-red-900/30 border border-red-800/50 rounded text-red-300">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="text-xs">RLS Fix Failed</AlertTitle>
+          <AlertDescription className="text-xs">
+            Failed to apply RLS policy fixes. Check the console for details.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {(membersEmpty || hasConsistencyIssue) && (
         <Alert className="mb-2 bg-amber-900/30 border border-amber-800/50 rounded text-amber-300">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle className="text-xs">Data Inconsistency Detected</AlertTitle>
           <AlertDescription className="text-xs">
             {membersEmpty 
-              ? "You appear to be a member, but the members list is empty. Try the Refresh All Data button." 
-              : "Your user might be missing from members array. Try refreshing club data."}
+              ? "You appear to be a member, but the members list is empty. Try the Fix RLS Policies button and then refresh data." 
+              : "Your user might be missing from members array. Try fixing RLS policies and refreshing club data."}
           </AlertDescription>
         </Alert>
       )}

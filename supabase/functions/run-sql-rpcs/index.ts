@@ -61,6 +61,95 @@ serve(async (req) => {
     
     // Execute the appropriate SQL RPC based on the sqlName parameter
     switch (sqlName) {
+      case 'fix_club_members_rls':
+        // Fix RLS policies for club_members table
+        console.log("[FIX_CLUB_MEMBERS_RLS] Fixing RLS policies for club_members table");
+        
+        try {
+          // Execute the SQL to fix the RLS policies
+          const { data: rlsFixData, error: rlsFixError } = await adminSupabase.rpc('run_sql_query', {
+            query: `
+              -- First, drop the problematic RLS policies
+              DROP POLICY IF EXISTS "Club admins can manage members" ON public.club_members;
+              DROP POLICY IF EXISTS "Club members are viewable by club members" ON public.club_members;
+              
+              -- Create security definer functions if they don't exist
+              CREATE OR REPLACE FUNCTION public.is_club_admin(club_id_param uuid, user_id_param uuid)
+              RETURNS boolean
+              LANGUAGE sql
+              STABLE SECURITY DEFINER
+              AS $$
+                SELECT EXISTS (
+                  SELECT 1 FROM public.club_members
+                  WHERE club_id = club_id_param 
+                  AND user_id = user_id_param
+                  AND (role = 'admin' OR role = 'moderator')
+                );
+              $$;
+              
+              CREATE OR REPLACE FUNCTION public.is_club_member_safe(club_id_param uuid, user_id_param uuid)
+              RETURNS boolean
+              LANGUAGE sql
+              STABLE SECURITY DEFINER
+              AS $$
+                SELECT EXISTS (
+                  SELECT 1 
+                  FROM public.club_members 
+                  WHERE club_id = club_id_param 
+                  AND user_id = user_id_param
+                );
+              $$;
+              
+              -- Recreate policies using security definer functions
+              CREATE POLICY "Club admins can manage members safely"
+              ON public.club_members
+              FOR ALL
+              USING (
+                public.is_club_admin(club_id, auth.uid())
+              );
+              
+              CREATE POLICY "Club members are viewable by club members safely"
+              ON public.club_members
+              FOR SELECT
+              USING (
+                public.is_club_member_safe(club_id, auth.uid())
+              );
+              
+              -- Add policies for user's own records
+              CREATE POLICY "Users can view their own club memberships"
+              ON public.club_members
+              FOR SELECT
+              USING (
+                user_id = auth.uid()
+              );
+              
+              CREATE POLICY "Users can insert their own club memberships"
+              ON public.club_members
+              FOR INSERT
+              WITH CHECK (
+                user_id = auth.uid()
+              );
+            `
+          });
+          
+          if (rlsFixError) {
+            console.error("[FIX_CLUB_MEMBERS_RLS] Error fixing RLS policies:", rlsFixError);
+            throw rlsFixError;
+          }
+          
+          console.log("[FIX_CLUB_MEMBERS_RLS] RLS policies fixed successfully");
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: "RLS policies fixed successfully" 
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        } catch (error) {
+          console.error("[FIX_CLUB_MEMBERS_RLS] Error:", error);
+          throw new Error(`Failed to fix RLS policies: ${error.message}`);
+        }
+      
       case 'join_club':
         // Handle joining a club
         console.log(`[JOIN_CLUB] User ${authUser.id} joining club ${params.club_id}`);
