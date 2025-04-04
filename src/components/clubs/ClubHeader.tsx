@@ -29,8 +29,8 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     members, 
     joinCurrentClub, 
     isUserClubMember,
-    refreshClubs, // Add this to refresh the user's club membership status
-    refreshMembers, // Add this to refresh members after joining
+    refreshClubs,
+    refreshMembers,
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -49,13 +49,13 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     
     try {
       console.log("Joining club:", clubId);
-      await joinCurrentClub();
+      await joinCurrentClub(); // This was likely the problematic method
       
-      // After joining, refresh data to update UI state
-      refreshClubs();
-      refreshMembers();
+      // Refresh data to update UI state
+      await refreshClubs();
+      await refreshMembers();
       
-      console.log("Successfully joined club");
+      toast.success(`You've joined ${currentClub.name}`);
     } catch (error) {
       console.error('Error joining club:', error);
       toast.error('Failed to join club. Please try again.');
@@ -106,7 +106,15 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
       
       <div className="flex items-center gap-2">
         {/* Only show notification and search buttons if the user is a member */}
-        {isMember ? (
+        {!isMember ? (
+          <Button 
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            size="sm"
+            onClick={handleJoinClick}
+          >
+            Join Club
+          </Button>
+        ) : (
           <>
             <Button 
               variant="ghost" 
@@ -123,14 +131,6 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
               <Bell className="h-4 w-4" />
             </Button>
           </>
-        ) : (
-          <Button 
-            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            size="sm"
-            onClick={handleJoinClick}
-          >
-            Join Club
-          </Button>
         )}
       </div>
     </div>
