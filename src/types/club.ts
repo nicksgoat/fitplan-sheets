@@ -5,7 +5,7 @@ import { Workout } from './workout';
 export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
 export type MembershipType = 'free' | 'premium' | 'vip';
 export type MemberRole = 'admin' | 'moderator' | 'member';
-export type MemberStatus = 'active' | 'pending' | 'inactive';
+export type MemberStatus = 'active' | 'pending' | 'inactive';  // This ensures the type is defined
 export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
 export type ProductType = 'event' | 'coaching' | 'program' | 'other';
 export type PurchaseStatus = 'pending' | 'completed' | 'refunded' | 'cancelled';

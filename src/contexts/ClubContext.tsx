@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   Club, 
@@ -9,6 +10,7 @@ import {
   ClubMessage,
   MembershipType,
   MemberRole,
+  MemberStatus,  // Added this missing import
   EventParticipationStatus,
   ClubProduct,
   ClubProductPurchase
