@@ -36,8 +36,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("Error creating subscription RPCs:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Unknown error"
+      }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }, 
         status: 500 
@@ -96,6 +100,7 @@ async function setupSubscriptionRPCs() {
   });
 
   if (error) {
+    console.error("Error creating RPC functions:", error);
     throw new Error(`Error creating subscription RPCs: ${error.message}`);
   }
 

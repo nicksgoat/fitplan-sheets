@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   Club, 
@@ -23,7 +24,7 @@ import {
   deleteClub,
   fetchClubMembers,
   joinClub,
-  updateMemberRole,
+  updateMemberRole as updateMemberRoleService,
   leaveClub,
   getUserClubs,
   fetchClubEvents,
@@ -46,6 +47,7 @@ import {
   fetchClubProducts,
   purchaseClubProduct
 } from '@/services/clubService';
+import { safelyGetProfile } from '@/utils/profileUtils';
 
 interface ClubContextType {
   // Clubs
@@ -66,7 +68,7 @@ interface ClubContextType {
   joinCurrentClub: (membershipType?: MembershipType) => Promise<ClubMember>;
   leaveCurrentClub: () => Promise<boolean>;
   updateMemberRole: (memberId: string, role: MemberRole) => Promise<ClubMember>;
-  upgradeToMembership: (clubId: string, membershipType: MembershipType) => Promise<ClubMember>;
+  upgradeToMembership: (clubId: string, membershipType: MembershipType) => Promise<ClubMember | null>;
   
   // Events
   events: ClubEvent[];
@@ -166,7 +168,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (user) {
         const userClubData = await getUserClubs();
-        setUserClubs(userClubData as { membership: ClubMember; club: Club }[]);
+        setUserClubs(userClubData);
       }
     } catch (error) {
       console.error('Error fetching clubs:', error);
@@ -176,9 +178,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const createNewClub = async (club: Omit<Club, 'id' | 'created_at' | 'updated_at'>) => {
+  const createNewClub = async (clubData: Omit<Club, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const newClub = await createClub(club);
+      const newClub = await createClub(clubData);
       setClubs(prev => [newClub, ...prev]);
       return newClub;
     } catch (error) {
@@ -257,9 +259,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  const updateMemberRoleFunction = async (memberId: string, role: MemberRole) => {
+  const updateMemberRole = async (memberId: string, role: MemberRole) => {
     try {
-      const updatedMember = await updateMemberRole(memberId, role);
+      const updatedMember = await updateMemberRoleService(memberId, role);
       setMembers(prev => prev.map(member => member.id === memberId ? updatedMember : member));
       return updatedMember;
     } catch (error) {
@@ -612,7 +614,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return club ? club.creator_id === user.id : false;
   };
   
-  const value = {
+  const value: ClubContextType = {
     clubs,
     userClubs,
     loadingClubs,
@@ -628,7 +630,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshMembers,
     joinCurrentClub,
     leaveCurrentClub,
-    updateMemberRole: updateMemberRoleFunction,
+    updateMemberRole,
     upgradeToMembership,
     
     events,

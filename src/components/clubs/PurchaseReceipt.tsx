@@ -26,7 +26,7 @@ import {
   Receipt,
   RefreshCw
 } from 'lucide-react';
-import { getUserClubSubscription } from '@/services/clubService';
+import { getUserClubSubscription } from '@/utils/clubUtils';
 
 const PurchaseReceipt: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -57,7 +57,7 @@ const PurchaseReceipt: React.FC = () => {
         }
         
         if (type === 'product') {
-          const { data, error } = await supabase
+          const { data: purchaseData, error } = await supabase
             .from('club_product_purchases')
             .select(`
               *,
@@ -68,14 +68,16 @@ const PurchaseReceipt: React.FC = () => {
           
           if (error) throw error;
           
-          setPurchase({
-            ...data,
-            status: data.status as PurchaseStatus,
-            product: {
-              ...data.product,
-              product_type: data.product.product_type as any
-            } 
-          } as ClubProductPurchase);
+          if (purchaseData) {
+            setPurchase({
+              ...purchaseData,
+              status: purchaseData.status as PurchaseStatus,
+              product: purchaseData.product ? {
+                ...purchaseData.product,
+                product_type: purchaseData.product.product_type as any
+              } : undefined
+            } as ClubProductPurchase);
+          }
         } else if (type === 'subscription') {
           const { data, error } = await supabase.rpc('get_subscription_by_session', {
             session_id_param: sessionId
@@ -83,15 +85,15 @@ const PurchaseReceipt: React.FC = () => {
           
           if (error) throw error;
           
-          if (!data || data.length === 0) {
+          if (data && Array.isArray(data) && data.length > 0) {
+            const subData = data[0];
+            setSubscription({
+              ...subData,
+              status: subData.status as SubscriptionStatus
+            } as ClubSubscription);
+          } else {
             throw new Error('Subscription not found');
           }
-          
-          const subData = data[0];
-          setSubscription({
-            ...subData,
-            status: subData.status as SubscriptionStatus
-          } as ClubSubscription);
         }
       } catch (err) {
         console.error('Error fetching receipt data:', err);

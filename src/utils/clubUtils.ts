@@ -11,9 +11,6 @@ import {
   SubscriptionStatus,
   PurchaseStatus
 } from '@/types/club';
-import {
-  getUserClubSubscription
-} from '@/services/clubService';
 
 /**
  * Check if a user has a premium or VIP membership for a club
@@ -88,6 +85,7 @@ export async function createClubProduct(
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('No data returned after product creation');
 
     // Explicitly cast the product_type to ensure it matches the ProductType type
     const typedProduct: ClubProduct = {
@@ -125,7 +123,7 @@ export async function createVIPProduct(
         name: productDetails.name,
         description: productDetails.description,
         price_amount: productDetails.priceAmount,
-        product_type: 'other',
+        product_type: 'other' as ProductType,
         max_participants: productDetails.maxParticipants,
         is_active: true
       })
@@ -133,6 +131,7 @@ export async function createVIPProduct(
       .single();
 
     if (error) throw error;
+    if (!data) return null;
 
     // Explicitly cast the product_type to ensure it matches the ProductType type
     const typedProduct: ClubProduct = {
@@ -147,11 +146,41 @@ export async function createVIPProduct(
   }
 }
 
+/**
+ * Get user's subscription for a club
+ */
+export async function getUserClubSubscription(
+  userId: string, 
+  clubId: string
+): Promise<ClubSubscription | null> {
+  try {
+    // Use an RPC function to get a specific subscription with proper typing
+    const { data, error } = await supabase.rpc('get_user_club_subscription', {
+      user_id_param: userId,
+      club_id_param: clubId
+    });
+
+    if (error) throw error;
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+
+    // Cast the data to the correct type
+    return {
+      ...data[0],
+      status: data[0].status as SubscriptionStatus
+    } as ClubSubscription;
+  } catch (error) {
+    console.error('Error getting user subscription:', error);
+    return null;
+  }
+}
+
 // Export functions from the clubService
 export { 
   getUserPurchases,
   getUserSubscriptions,
-  getUserClubSubscription,
   requestRefund,
   cancelSubscription
 } from '@/services/clubService';
