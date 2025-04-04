@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -630,7 +629,12 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
       
       // Only add workout if it's valid (not an error object)
       let workout: Workout | undefined = undefined;
-      if (post.workout && typeof post.workout === 'object' && post.workout !== null && !('error' in post.workout)) {
+      
+      // The fix: More robust type checking to handle null and undefined cases
+      if (post.workout && 
+          typeof post.workout === 'object' && 
+          post.workout !== null && 
+          !('error' in post.workout as Record<string, any>)) {
         workout = post.workout as Workout;
       }
       
