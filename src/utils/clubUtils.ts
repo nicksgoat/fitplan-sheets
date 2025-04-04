@@ -12,6 +12,7 @@ import {
   PurchaseStatus,
   ClubSubscription
 } from '@/types/club';
+import { isValidProfile, safelyGetProfile } from '@/utils/profileUtils';
 
 /**
  * Check if a user has a premium or VIP membership for a club
@@ -29,7 +30,13 @@ export async function checkPremiumStatus(userId: string, clubId: string): Promis
       .eq('club_id', clubId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in checkPremiumStatus:', error);
+      return { 
+        hasPremium: false, 
+        membershipType: 'free' 
+      };
+    }
 
     const hasPremium = 
       data.membership_type === 'premium' || 

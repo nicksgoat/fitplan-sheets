@@ -73,6 +73,7 @@ serve(async (req) => {
               membership_type: 'premium',
               premium_expires_at: oneMonthLater.toISOString(),
               stripe_subscription_id: session.subscription,
+              profile_id: userId // Ensure profile_id is set
             })
             .eq('club_id', clubId)
             .eq('user_id', userId);

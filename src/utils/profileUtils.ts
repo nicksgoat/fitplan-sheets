@@ -18,6 +18,15 @@ export function safelyGetProfile(profile: any, userId?: string): Profile | undef
     return profile as Profile;
   }
   
-  // Return undefined if profile data is not valid
+  // Handle case where profile might be null but we have userId
+  if (!profile && userId) {
+    // Return minimal profile with just ID to avoid UI errors
+    return {
+      id: userId,
+      created_at: new Date().toISOString()
+    } as Profile;
+  }
+  
+  // Return undefined if profile data is not valid and no userId provided
   return undefined;
 }

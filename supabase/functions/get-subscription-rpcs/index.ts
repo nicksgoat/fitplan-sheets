@@ -1,104 +1,98 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-// Set up Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle preflight requests
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Get the user from the auth header
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) throw new Error("No authorization token");
-
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !userData?.user) throw new Error("Authentication failed");
-    
-    // Get the request params
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action");
-    
-    if (!action) {
-      throw new Error("Action parameter is required");
+    // Extract user token from request
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
     }
-
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client with user's JWT token
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    );
+    
+    // Get the current user's ID
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !authData.user) {
+      throw new Error('Unauthorized or invalid token');
+    }
+    
+    const userId = authData.user.id;
+    
+    // Parse the request body
+    const { action, club_id } = await req.json();
+    
     let result;
     
     switch (action) {
-      case "get_user_subscriptions": {
+      case 'get_user_subscriptions':
         // Get all subscriptions for the current user
-        const { data, error } = await supabase
-          .from("club_subscriptions")
-          .select("*")
-          .eq("user_id", userData.user.id);
-        
-        if (error) throw error;
-        result = data || [];
+        result = await supabase
+          .from('club_subscriptions')
+          .select('*')
+          .eq('user_id', userId);
         break;
-      }
-      
-      case "get_user_club_subscription": {
-        // Get specific club subscription
-        const clubId = url.searchParams.get("club_id");
-        if (!clubId) throw new Error("club_id parameter is required");
         
-        const { data, error } = await supabase
-          .from("club_subscriptions")
-          .select("*")
-          .eq("user_id", userData.user.id)
-          .eq("club_id", clubId);
+      case 'get_user_club_subscription':
+        // Get subscription for a specific club
+        if (!club_id) {
+          throw new Error('club_id is required for this action');
+        }
         
-        if (error) throw error;
-        result = data || [];
+        result = await supabase
+          .from('club_subscriptions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('club_id', club_id);
         break;
-      }
-      
-      case "get_subscription_by_session": {
-        // Get subscription by Stripe session ID
-        const sessionId = url.searchParams.get("session_id");
-        if (!sessionId) throw new Error("session_id parameter is required");
         
-        const { data, error } = await supabase
-          .from("club_subscriptions")
-          .select("*")
-          .eq("stripe_session_id", sessionId);
-        
-        if (error) throw error;
-        result = data || [];
-        break;
-      }
-      
       default:
         throw new Error(`Unknown action: ${action}`);
     }
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`Error in subscription RPC: ${errorMessage}`);
+    
+    if (result.error) {
+      throw result.error;
+    }
     
     return new Response(
-      JSON.stringify({
-        error: errorMessage,
+      JSON.stringify(result.data),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error('Error in get-subscription-rpcs:', error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'An error occurred processing your request'
       }),
-      {
+      { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 400
       }
     );
   }

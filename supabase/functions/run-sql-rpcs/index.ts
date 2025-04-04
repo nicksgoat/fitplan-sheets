@@ -14,24 +14,37 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body for SQL execution parameters
+    const { sqlName, params } = await req.json();
+    
+    if (!sqlName) {
+      throw new Error('SQL name must be provided');
+    }
+    
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // The SQL script is located at supabase/functions/subscription-rpcs.sql
-    // You'll need to run this SQL script in the Supabase SQL editor
-    
+    // Execute the stored SQL function by name with optional parameters
+    const { data, error } = await supabaseAdmin.rpc(sqlName, params || {});
+
+    if (error) throw error;
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "To complete setup, please run the subscription-rpcs.sql script in your Supabase SQL editor" 
+        data
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error executing SQL RPC:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || "Unknown error executing SQL RPC" 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
     );
   }
