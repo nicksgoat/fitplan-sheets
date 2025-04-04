@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import ClubDebugger from '@/components/debug/ClubDebugger';
 
 interface ClubHeaderProps {
   clubId: string;
@@ -43,7 +41,6 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
   
   if (!currentClub) return null;
   
-  // Check if the user is a member of this club with improved logging
   const isMember = isUserClubMember(clubId);
   console.log("[ClubHeader] ClubId:", clubId, "User:", user?.id, "isMember:", isMember);
   console.log("[ClubHeader] UserClubs:", userClubs);
@@ -71,7 +68,6 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
       toast.dismiss();
       toast.success(`You've joined ${currentClub.name}`);
       
-      // Force immediate refresh of membership data
       console.log("[ClubHeader] Join completed, refreshing data...");
       await Promise.all([
         refreshClubs(),
@@ -148,7 +144,6 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Only show notification and search buttons if the user is a member */}
         {!isMember ? (
           <Button 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
@@ -184,13 +179,6 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
           </>
         )}
       </div>
-      
-      {/* Show debug panel in dev mode */}
-      {import.meta.env.DEV && (
-        <div className="absolute top-14 right-0 z-50 w-96">
-          <ClubDebugger clubId={clubId} />
-        </div>
-      )}
     </div>
   );
 };

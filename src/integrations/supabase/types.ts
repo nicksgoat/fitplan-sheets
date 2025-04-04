@@ -1073,6 +1073,12 @@ export type Database = {
           table_schema: string
         }[]
       }
+      run_sql_query: {
+        Args: {
+          query: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       club_type: "fitness" | "sports" | "wellness" | "nutrition" | "other"

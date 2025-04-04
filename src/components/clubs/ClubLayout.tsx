@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import ClubSidebar from './ClubSidebar';
@@ -8,7 +7,6 @@ import ClubFeed from './ClubFeed';
 import ClubEvents from './ClubEvents';
 import ClubMembers from './ClubMembers';
 import { useNavigate } from 'react-router-dom';
-import ClubDebugger from '@/components/debug/ClubDebugger';
 
 interface ClubLayoutProps {
   clubId: string;
@@ -100,12 +98,7 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
           {renderMainContent()}
         </div>
         
-        {/* Debug panel for development */}
-        {import.meta.env.DEV && (
-          <div className="border-t border-dark-400">
-            <ClubDebugger clubId={clubId} />
-          </div>
-        )}
+        {/* Removed debug panel for development */}
       </div>
     </div>
   );
