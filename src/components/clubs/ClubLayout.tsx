@@ -18,7 +18,7 @@ type ActiveView = 'chat' | 'feed' | 'events' | 'members';
 
 const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const [activeView, setActiveView] = useState<ActiveView>('chat');
-  const { currentClub, refreshClubs, refreshMembers, isUserClubMember } = useClub();
+  const { currentClub, refreshClubs, refreshMembers, isUserClubMember, members } = useClub();
   const navigate = useNavigate();
   
   // Enhanced logging
@@ -39,6 +39,7 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
         // Check membership after refresh
         const isMemberAfterRefresh = isUserClubMember(clubId);
         console.log("[ClubLayout] Membership after refresh:", isMemberAfterRefresh);
+        console.log("[ClubLayout] Members after refresh:", members);
       } catch (error) {
         console.error('[ClubLayout] Error refreshing club data:', error);
       }

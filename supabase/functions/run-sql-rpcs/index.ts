@@ -116,7 +116,7 @@ serve(async (req) => {
         
       case 'check_club_member':
         // RPC to check if a user is a member without triggering the infinite recursion
-        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${authUser.id} is member of club ${params.club_id}`);
+        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${params.user_id || authUser.id} is member of club ${params.club_id}`);
         
         try {
           // Use admin client to bypass RLS policies completely
@@ -124,7 +124,7 @@ serve(async (req) => {
             .from('club_members')
             .select('*')
             .eq('club_id', params.club_id)
-            .eq('user_id', authUser.id)
+            .eq('user_id', params.user_id || authUser.id)
             .maybeSingle();
             
           console.log("[CHECK_CLUB_MEMBER] Check result:", memberData, checkError);
@@ -202,10 +202,10 @@ serve(async (req) => {
         console.log(`[GET_CLUB_MEMBERS] Getting members for club ${params.club_id}`);
         
         try {
-          // Use admin client to bypass RLS policies completely
-          const { data: members, error: membersError } = await adminSupabase
+          // First get the raw members data
+          const { data: membersData, error: membersError } = await adminSupabase
             .from('club_members')
-            .select('*, profile:profiles(*)')
+            .select('*')
             .eq('club_id', params.club_id);
             
           if (membersError) {
@@ -213,10 +213,37 @@ serve(async (req) => {
             throw membersError;
           }
           
-          console.log(`[GET_CLUB_MEMBERS] Found ${members?.length || 0} members`);
+          // Now fetch the profiles for each member in a separate query
+          if (membersData && membersData.length > 0) {
+            const userIds = membersData.map(member => member.user_id);
+            
+            const { data: profilesData, error: profilesError } = await adminSupabase
+              .from('profiles')
+              .select('*')
+              .in('id', userIds);
+            
+            if (profilesError) {
+              console.error("[GET_CLUB_MEMBERS] Error fetching profiles:", profilesError);
+            }
+            
+            // Join the profiles with the members
+            const membersWithProfiles = membersData.map(member => {
+              const profile = profilesData?.find(p => p.id === member.user_id);
+              return { ...member, profile };
+            });
+            
+            console.log(`[GET_CLUB_MEMBERS] Found ${membersWithProfiles.length} members with profiles`);
+            
+            return new Response(
+              JSON.stringify(membersWithProfiles),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+            );
+          }
+          
+          console.log(`[GET_CLUB_MEMBERS] Found ${membersData?.length || 0} members`);
           
           return new Response(
-            JSON.stringify(members || []),
+            JSON.stringify(membersData || []),
             { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
           );
         } catch (error) {

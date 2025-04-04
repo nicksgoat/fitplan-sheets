@@ -11,11 +11,14 @@ interface ClubDebuggerProps {
 }
 
 const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
-  const { members, isUserClubMember, currentClub } = useClub();
+  const { members, isUserClubMember, currentClub, refreshMembers } = useClub();
   const { user } = useAuth();
   const [directMembershipCheck, setDirectMembershipCheck] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [edgeFunctionCheck, setEdgeFunctionCheck] = useState<any>(null);
+  
+  // Additional state to track refresh operation
+  const [refreshing, setRefreshing] = useState(false);
   
   const checkMembership = async () => {
     if (!user || !clubId) return;
@@ -57,19 +60,43 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
     }
   };
   
+  // Function to force refresh members
+  const handleForceRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshMembers();
+      console.log("Members after forced refresh:", members);
+    } catch (error) {
+      console.error("Error during force refresh:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  
   return (
     <div className="p-3 bg-dark-400 text-xs font-mono">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-gray-300 font-bold">Club Debug Info</h3>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="h-6 text-xs"
-          onClick={checkMembership}
-          disabled={loading}
-        >
-          {loading ? 'Checking...' : 'Check Membership'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 text-xs"
+            onClick={checkMembership}
+            disabled={loading}
+          >
+            {loading ? 'Checking...' : 'Check Membership'}
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 text-xs"
+            onClick={handleForceRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? 'Refreshing...' : 'Force Refresh'}
+          </Button>
+        </div>
       </div>
       
       <div className="space-y-2">
