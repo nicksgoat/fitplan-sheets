@@ -52,9 +52,14 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
     
     try {
       console.log("Joining club:", clubId);
-      await joinCurrentClub(); // Join the club with fixed RLS policies
-      
-      toast.success(`You've joined ${currentClub.name}`);
+      await toast.promise(
+        joinCurrentClub(),
+        {
+          loading: 'Joining club...',
+          success: `You've joined ${currentClub.name}`,
+          error: 'Failed to join club. Please try again.'
+        }
+      );
       
       // Force immediate refresh of membership data
       await Promise.all([
@@ -62,7 +67,7 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
         refreshMembers()
       ]);
       
-      // Force re-render by setting a state update
+      // Force page refresh after joining
       window.location.reload();
     } catch (error) {
       console.error('Error joining club:', error);

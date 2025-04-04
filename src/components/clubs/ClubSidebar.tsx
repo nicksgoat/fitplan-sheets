@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 interface ClubSidebarProps {
   clubId: string;
@@ -36,7 +37,15 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
   setActiveView,
   onBack
 }) => {
-  const { currentClub, isUserClubMember, isUserClubAdmin, leaveCurrentClub } = useClub();
+  const { 
+    currentClub, 
+    isUserClubMember, 
+    isUserClubAdmin, 
+    leaveCurrentClub,
+    joinCurrentClub,
+    refreshClubs,
+    refreshMembers
+  } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -51,6 +60,38 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
       navigate('/clubs');
     } catch (error) {
       console.error('Error leaving club:', error);
+    }
+  };
+  
+  const handleJoinClick = async () => {
+    if (!user) {
+      toast.error('You need to log in to join this club');
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      console.log("Joining club:", clubId);
+      await toast.promise(
+        joinCurrentClub(),
+        {
+          loading: 'Joining club...',
+          success: `You've joined ${currentClub.name}`,
+          error: 'Failed to join club. Please try again.'
+        }
+      );
+      
+      // Force immediate refresh of membership data
+      await Promise.all([
+        refreshClubs(),
+        refreshMembers()
+      ]);
+      
+      // Force page refresh after joining
+      window.location.reload();
+    } catch (error) {
+      console.error('Error joining club:', error);
+      toast.error('Failed to join club. Please try again.');
     }
   };
   
@@ -225,7 +266,7 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
           <Button 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
             size="sm"
-            onClick={() => navigate(`/clubs/${clubId}`)}
+            onClick={handleJoinClick}
           >
             Join Club
           </Button>

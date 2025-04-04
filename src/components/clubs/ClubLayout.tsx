@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import ClubSidebar from './ClubSidebar';
 import ClubHeader from './ClubHeader';
@@ -17,8 +17,24 @@ type ActiveView = 'chat' | 'feed' | 'events' | 'members';
 
 const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const [activeView, setActiveView] = useState<ActiveView>('chat');
-  const { currentClub } = useClub();
+  const { currentClub, refreshClubs, refreshMembers } = useClub();
   const navigate = useNavigate();
+  
+  // Refresh membership info when the component loads
+  useEffect(() => {
+    const refreshData = async () => {
+      try {
+        await Promise.all([
+          refreshClubs(),
+          refreshMembers()
+        ]);
+      } catch (error) {
+        console.error('Error refreshing club data:', error);
+      }
+    };
+    
+    refreshData();
+  }, [clubId, refreshClubs, refreshMembers]);
   
   const renderMainContent = () => {
     switch (activeView) {
