@@ -37,6 +37,7 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
   
   if (!currentClub) return null;
   
+  // Check if the user is a member of this club
   const isMember = isUserClubMember(clubId);
   console.log("ClubHeader - Is member:", isMember);
   
@@ -49,9 +50,9 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     
     try {
       console.log("Joining club:", clubId);
-      await joinCurrentClub(); // This was likely the problematic method
+      await joinCurrentClub(); // This function will now work correctly with the fixed RLS policies
       
-      // Refresh data to update UI state
+      // Refresh data to update UI state after joining
       await refreshClubs();
       await refreshMembers();
       

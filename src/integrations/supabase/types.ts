@@ -1038,6 +1038,27 @@ export type Database = {
           column_default: string
         }[]
       }
+      is_club_admin: {
+        Args: {
+          club_id_param: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
+      is_club_creator: {
+        Args: {
+          club_id_param: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
+      is_club_member: {
+        Args: {
+          club_id_param: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
       list_tables: {
         Args: Record<PropertyKey, never>
         Returns: {
