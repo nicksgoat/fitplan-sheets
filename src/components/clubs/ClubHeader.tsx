@@ -50,13 +50,18 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     
     try {
       console.log("Joining club:", clubId);
-      await joinCurrentClub(); // This function will now work correctly with the fixed RLS policies
-      
-      // Refresh data to update UI state after joining
-      await refreshClubs();
-      await refreshMembers();
+      await joinCurrentClub(); // Join the club with fixed RLS policies
       
       toast.success(`You've joined ${currentClub.name}`);
+      
+      // Force immediate refresh of membership data
+      await Promise.all([
+        refreshClubs(),
+        refreshMembers()
+      ]);
+      
+      // Force re-render by setting a state update
+      window.location.reload();
     } catch (error) {
       console.error('Error joining club:', error);
       toast.error('Failed to join club. Please try again.');

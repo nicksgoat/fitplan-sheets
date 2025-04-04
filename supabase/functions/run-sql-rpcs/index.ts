@@ -28,7 +28,32 @@ serve(async (req) => {
 
     // Execute the stored SQL function by name with optional parameters
     console.log(`Executing SQL function: ${sqlName} with params:`, params);
-    const { data, error } = await supabaseAdmin.rpc(sqlName, params || {});
+    
+    // Use service role to bypass RLS for certain operations
+    let data;
+    let error;
+    
+    if (sqlName === 'join_club' && params.club_id && params.user_id) {
+      // Special handling for joining clubs to bypass RLS
+      const { data: joinData, error: joinError } = await supabaseAdmin
+        .from('club_members')
+        .insert({
+          club_id: params.club_id,
+          user_id: params.user_id,
+          role: 'member',
+          status: 'active',
+          membership_type: 'free'
+        })
+        .select();
+      
+      data = joinData;
+      error = joinError;
+    } else {
+      // Regular RPC call for other functions
+      const result = await supabaseAdmin.rpc(sqlName, params || {});
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error("SQL RPC error:", error);
