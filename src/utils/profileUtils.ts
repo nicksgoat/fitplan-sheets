@@ -27,7 +27,7 @@ export const safelyGetProfile = (profileData: any, userId?: string): Profile | u
   if (!profileData) return undefined;
   
   // Check if it's an error object (from Supabase's error response)
-  if (profileData.error === true) {
+  if ('error' in profileData) {
     return userId ? createDefaultProfile(userId) : undefined;
   }
   

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -6,10 +7,9 @@ import {
   PurchaseStatus,
   SubscriptionStatus,
   RefundStatus,
-  DBClubSubscription,
+  ProductType,
   MemberRole,
   EventParticipationStatus,
-  ProductType,
   MemberStatus,
   MembershipType,
   ClubEvent,
@@ -22,6 +22,7 @@ import {
 } from '@/types/club';
 import { Profile } from '@/types/profile';
 import { safelyGetProfile } from '@/utils/profileUtils';
+import { Workout } from '@/types/workout';
 
 /**
  * Get user's purchases
@@ -64,7 +65,7 @@ export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
     const { data, error } = await supabase.rpc('get_user_subscriptions');
     
     if (error) throw error;
-    if (!data) return [];
+    if (!data || !Array.isArray(data)) return [];
     
     // Cast the data to the correct type
     return data.map(sub => ({
@@ -186,8 +187,8 @@ export async function fetchClubs(): Promise<Club[]> {
     
     return data.map(club => ({
       ...club,
-      club_type: club.club_type as any,
-      membership_type: club.membership_type as any
+      club_type: club.club_type as ClubType,
+      membership_type: club.membership_type as MembershipType
     })) as Club[];
   } catch (error) {
     console.error('Error fetching clubs:', error);
@@ -203,8 +204,8 @@ export async function fetchClubById(id: string): Promise<Club | null> {
     
     return {
       ...data,
-      club_type: data.club_type as any,
-      membership_type: data.membership_type as any
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
     } as Club;
   } catch (error) {
     console.error(`Error fetching club by id ${id}:`, error);
@@ -212,7 +213,16 @@ export async function fetchClubById(id: string): Promise<Club | null> {
   }
 }
 
-export async function createClub(clubData: Partial<Club>): Promise<Club> {
+export async function createClub(clubData: { 
+  name: string; 
+  description?: string; 
+  club_type?: ClubType; 
+  membership_type?: MembershipType;
+  premium_price?: number;
+  creator_id: string;
+  logo_url?: string;
+  banner_url?: string;
+}): Promise<Club> {
   try {
     const { data, error } = await supabase.from('clubs').insert(clubData).select().single();
     if (error) throw error;
@@ -220,8 +230,8 @@ export async function createClub(clubData: Partial<Club>): Promise<Club> {
     
     return {
       ...data,
-      club_type: data.club_type as any,
-      membership_type: data.membership_type as any
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
     } as Club;
   } catch (error) {
     console.error('Error creating club:', error);
@@ -229,7 +239,15 @@ export async function createClub(clubData: Partial<Club>): Promise<Club> {
   }
 }
 
-export async function updateClub(id: string, updates: Partial<Club>): Promise<Club> {
+export async function updateClub(id: string, updates: { 
+  name?: string; 
+  description?: string; 
+  club_type?: ClubType; 
+  membership_type?: MembershipType;
+  premium_price?: number;
+  logo_url?: string;
+  banner_url?: string;
+}): Promise<Club> {
   try {
     const { data, error } = await supabase.from('clubs').update(updates).eq('id', id).select().single();
     if (error) throw error;
@@ -237,8 +255,8 @@ export async function updateClub(id: string, updates: Partial<Club>): Promise<Cl
     
     return {
       ...data,
-      club_type: data.club_type as any,
-      membership_type: data.membership_type as any
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
     } as Club;
   } catch (error) {
     console.error(`Error updating club ${id}:`, error);
@@ -293,8 +311,8 @@ export async function joinClub(clubId: string, membershipType: MembershipType): 
         club_id: clubId,
         user_id: userData.user.id,
         membership_type: membershipType,
-        role: 'member' as MemberRole,
-        status: 'active' as MemberStatus
+        role: 'member',
+        status: 'active'
       })
       .select()
       .single();
@@ -380,8 +398,8 @@ export async function getUserClubs(): Promise<{ membership: ClubMember; club: Cl
       } as ClubMember,
       club: {
         ...item.club,
-        club_type: item.club.club_type as any,
-        membership_type: item.club.membership_type as any
+        club_type: item.club.club_type as ClubType,
+        membership_type: item.club.membership_type as MembershipType
       } as Club
     }));
   } catch (error) {
@@ -407,7 +425,16 @@ export async function fetchClubEvents(clubId: string): Promise<ClubEvent[]> {
   }
 }
 
-export async function createEvent(event: Partial<ClubEvent>): Promise<ClubEvent> {
+export async function createEvent(event: { 
+  club_id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  start_time: string;
+  end_time: string;
+  image_url?: string;
+  created_by: string;
+}): Promise<ClubEvent> {
   try {
     const { data, error } = await supabase
       .from('club_events')
@@ -425,7 +452,14 @@ export async function createEvent(event: Partial<ClubEvent>): Promise<ClubEvent>
   }
 }
 
-export async function updateEvent(id: string, updates: Partial<ClubEvent>): Promise<ClubEvent> {
+export async function updateEvent(id: string, updates: { 
+  name?: string;
+  description?: string;
+  location?: string;
+  start_time?: string;
+  end_time?: string;
+  image_url?: string;
+}): Promise<ClubEvent> {
   try {
     const { data, error } = await supabase
       .from('club_events')
@@ -469,7 +503,7 @@ export async function respondToEvent(eventId: string, status: EventParticipation
       .upsert({
         event_id: eventId,
         user_id: userData.user.id,
-        status: status
+        status
       })
       .select()
       .single();
@@ -519,19 +553,35 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
     if (!data) return [];
     
     // Handle potentially missing profile/workout relationships
-    return data.map(post => ({
-      ...post,
-      profile: safelyGetProfile(post.profile, post.user_id),
-      workout: post.workout || undefined,
-      comments: [] // Initialize with empty comments array
-    } as ClubPost));
+    return data.map(post => {
+      const validProfile = safelyGetProfile(post.profile, post.user_id);
+      
+      // Only add workout if it's valid (not an error object)
+      let workout: Workout | undefined = undefined;
+      if (post.workout && typeof post.workout === 'object' && !('error' in post.workout)) {
+        workout = post.workout as Workout;
+      }
+      
+      return {
+        ...post,
+        profile: validProfile,
+        workout,
+        comments: [] // Initialize with empty comments array
+      } as ClubPost;
+    });
   } catch (error) {
     console.error(`Error fetching club posts for ${clubId}:`, error);
     return [];
   }
 }
 
-export async function createPost(post: Partial<ClubPost>): Promise<ClubPost> {
+export async function createPost(post: {
+  club_id: string;
+  content: string;
+  user_id: string;
+  image_url?: string;
+  workout_id?: string;
+}): Promise<ClubPost> {
   try {
     const { data, error } = await supabase
       .from('club_posts')
@@ -588,7 +638,11 @@ export async function fetchPostComments(postId: string): Promise<ClubPostComment
   }
 }
 
-export async function createComment(comment: Partial<ClubPostComment>): Promise<ClubPostComment> {
+export async function createComment(comment: {
+  post_id: string;
+  user_id: string;
+  content: string;
+}): Promise<ClubPostComment> {
   try {
     const { data, error } = await supabase
       .from('club_post_comments')
@@ -642,7 +696,12 @@ export async function fetchClubMessages(clubId: string): Promise<ClubMessage[]> 
   }
 }
 
-export async function sendMessage(message: Partial<ClubMessage>): Promise<ClubMessage> {
+export async function sendMessage(message: {
+  club_id: string;
+  user_id: string;
+  content: string;
+  is_pinned?: boolean;
+}): Promise<ClubMessage> {
   try {
     const { data, error } = await supabase
       .from('club_messages')
@@ -767,7 +826,7 @@ export async function purchaseClubProduct(productId: string): Promise<ClubProduc
         user_id: userData.user.id,
         amount_paid: product.price_amount,
         currency: product.price_currency,
-        status: 'completed' as PurchaseStatus
+        status: 'completed'
       })
       .select()
       .single();
@@ -785,3 +844,6 @@ export async function purchaseClubProduct(productId: string): Promise<ClubProduc
     throw error;
   }
 }
+
+// Add missing declarations
+type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';

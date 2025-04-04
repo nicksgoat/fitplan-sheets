@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,7 +27,6 @@ import {
   Receipt,
   RefreshCw
 } from 'lucide-react';
-import { getUserClubSubscription } from '@/utils/clubUtils';
 
 const PurchaseReceipt: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -79,6 +79,7 @@ const PurchaseReceipt: React.FC = () => {
             } as ClubProductPurchase);
           }
         } else if (type === 'subscription') {
+          // Use the RPC function to get subscription by session ID
           const { data, error } = await supabase.rpc('get_subscription_by_session', {
             session_id_param: sessionId
           });

@@ -9,7 +9,8 @@ import {
   ProductType,
   RefundStatus,
   SubscriptionStatus,
-  PurchaseStatus
+  PurchaseStatus,
+  ClubSubscription
 } from '@/types/club';
 
 /**
@@ -155,21 +156,21 @@ export async function getUserClubSubscription(
 ): Promise<ClubSubscription | null> {
   try {
     // Use an RPC function to get a specific subscription with proper typing
-    const { data, error } = await supabase.rpc('get_user_club_subscription', {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_club_subscription', {
       user_id_param: userId,
       club_id_param: clubId
     });
 
-    if (error) throw error;
+    if (rpcError) throw rpcError;
     
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!rpcData || !Array.isArray(rpcData) || rpcData.length === 0) {
       return null;
     }
 
     // Cast the data to the correct type
     return {
-      ...data[0],
-      status: data[0].status as SubscriptionStatus
+      ...rpcData[0],
+      status: rpcData[0].status as SubscriptionStatus
     } as ClubSubscription;
   } catch (error) {
     console.error('Error getting user subscription:', error);

@@ -3,22 +3,15 @@ project_id = "cmzhdyiadvuuwypocxjv"
 
 [api]
 enabled = true
+port = 54321
+schemas = ["public", "storage"]
 
-[functions]
-[functions.create-subscription-rpcs]
-verify_jwt = true
+[db]
+port = 54322
 
-[functions.cancel-subscription]
-verify_jwt = true
+[realtime]
+enabled = true
 
-[functions.create-checkout]
-verify_jwt = true
-
-[functions.refund-request]
-verify_jwt = true
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.run-sql-rpcs]
-verify_jwt = true
+[studio]
+enabled = true
+port = 54323
