@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,8 +30,10 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     sendNewMessage, 
     togglePinMessage,
     isUserClubAdmin,
-    isUserClubMember
+    isUserClubMember,
+    refreshMessages
   } = useClub();
+  
   const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,17 +77,17 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
       setIsSubmitting(true);
       console.log("Sending message:", messageText);
       
-      // Use the direct SQL query approach to bypass RLS issues
-      const { data, error } = await supabase.functions.invoke('run-sql-query', {
-        body: {
-          query: `
-            INSERT INTO club_messages (club_id, user_id, content, is_pinned)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, club_id, user_id, content, created_at, is_pinned
-          `,
-          params: [clubId, user.id, messageText, false]
-        }
-      });
+      // Direct insert using the insert method
+      const { data, error } = await supabase
+        .from('club_messages')
+        .insert({
+          club_id: clubId,
+          user_id: user.id,
+          content: messageText,
+          is_pinned: false
+        })
+        .select()
+        .single();
       
       if (error) {
         console.error('Error sending message:', error);
@@ -95,7 +98,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
       setMessageText('');
       
       // Refresh messages to show the new one
-      await sendNewMessage(messageText);
+      await refreshMessages();
       
       toast.success("Message sent successfully");
     } catch (error) {

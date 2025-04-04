@@ -14,52 +14,53 @@ serve(async (req) => {
   }
   
   try {
-    // Extract user token from request
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-    
-    const token = authHeader.replace('Bearer ', '');
-    
     // Create Supabase admin client with service role key to bypass RLS
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     
-    // Parse the request body
-    const { query, params = [] } = await req.json();
-    console.log("Executing SQL query:", query);
-    console.log("With params:", params);
-    
-    // Execute the direct SQL query instead of using RPC
+    // Execute the SQL to create the function
     const { data, error } = await adminSupabase.rpc('run_sql_query', {
-      query: query
+      query: `
+        CREATE OR REPLACE FUNCTION public.run_sql_query(query text)
+        RETURNS jsonb
+        LANGUAGE plpgsql
+        SECURITY DEFINER
+        AS $$
+        DECLARE
+          result JSONB;
+        BEGIN
+          EXECUTE query INTO result;
+          RETURN result;
+        EXCEPTION WHEN OTHERS THEN
+          RAISE EXCEPTION 'SQL Error: %', SQLERRM;
+        END;
+        $$;
+      `
     });
     
     if (error) {
-      console.error("Error executing SQL query:", error);
+      console.error("Error creating SQL function:", error);
       throw error;
     }
     
-    console.log("SQL query executed successfully:", data);
+    console.log("SQL function created successfully");
     
     return new Response(
       JSON.stringify({
         success: true,
-        data: data,
-        message: "SQL query executed successfully"
+        message: "SQL function created successfully"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
-    console.error('Error executing SQL query:', error);
+    console.error('Error creating SQL function:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'An error occurred executing SQL query'
+        error: error.message || 'An error occurred creating SQL function'
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
