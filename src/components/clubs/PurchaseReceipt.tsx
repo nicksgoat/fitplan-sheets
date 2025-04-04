@@ -80,9 +80,12 @@ const PurchaseReceipt: React.FC = () => {
             } as ClubProductPurchase);
           }
         } else if (type === 'subscription') {
-          // Use proper typing for the subscription data
-          const { data, error } = await supabase.rpc('get_subscription_by_session', {
-            session_id_param: sessionId
+          // Use the edge function to get subscription data
+          const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+            body: {
+              action: 'get_subscription_by_session',
+              session_id: sessionId
+            }
           });
           
           if (error) throw error;

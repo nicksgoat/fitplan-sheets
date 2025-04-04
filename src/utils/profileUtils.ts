@@ -1,40 +1,23 @@
 
 import { Profile } from '@/types/profile';
 
-/**
- * Helper function to safely check if profile data is valid
- * and not a Supabase SelectQueryError
- */
-export const isValidProfile = (profile: any): profile is Profile => {
-  return profile && typeof profile === 'object' && 'id' in profile;
-};
+// Type guard to check if object is a valid profile
+export function isValidProfile(profile: any): profile is Profile {
+  return profile && 
+         typeof profile === 'object' && 
+         !('error' in profile) &&
+         'id' in profile;
+}
 
 /**
- * Create a default profile object when none exists or there's an error
+ * Safely get profile data, handling error objects returned from Supabase
+ * when relations can't be established
  */
-export const createDefaultProfile = (userId: string): Profile => {
-  return {
-    id: userId,
-    created_at: new Date().toISOString(),
-    social_links: []
-  };
-};
-
-/**
- * Safely handle profile from Supabase responses
- */
-export const safelyGetProfile = (profileData: any, userId?: string): Profile | undefined => {
-  if (!profileData) return undefined;
-  
-  // Check if it's an error object (from Supabase's error response)
-  if ('error' in profileData) {
-    return userId ? createDefaultProfile(userId) : undefined;
+export function safelyGetProfile(profile: any, userId?: string): Profile | undefined {
+  if (isValidProfile(profile)) {
+    return profile as Profile;
   }
   
-  // Check if it's a valid profile object
-  if (isValidProfile(profileData)) {
-    return profileData;
-  }
-  
+  // Return undefined if profile data is not valid
   return undefined;
-};
+}

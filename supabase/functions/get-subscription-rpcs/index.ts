@@ -45,7 +45,7 @@ serve(async (req) => {
           .eq("user_id", userData.user.id);
         
         if (error) throw error;
-        result = data;
+        result = data || [];
         break;
       }
       
@@ -61,7 +61,7 @@ serve(async (req) => {
           .eq("club_id", clubId);
         
         if (error) throw error;
-        result = data;
+        result = data || [];
         break;
       }
       
@@ -76,7 +76,7 @@ serve(async (req) => {
           .eq("stripe_session_id", sessionId);
         
         if (error) throw error;
-        result = data;
+        result = data || [];
         break;
       }
       

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -61,8 +60,12 @@ export async function getUserPurchases(): Promise<ClubProductPurchase[]> {
  */
 export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
   try {
-    // Use an RPC function to get subscriptions with proper typing
-    const { data, error } = await supabase.rpc('get_user_subscriptions');
+    // Use the edge function
+    const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+      body: {
+        action: 'get_user_subscriptions'
+      }
+    });
     
     if (error) throw error;
     if (!data || !Array.isArray(data)) return [];
@@ -98,15 +101,17 @@ export async function getUserClubSubscription(
   clubId: string
 ): Promise<ClubSubscription | null> {
   try {
-    // Use an RPC function to get a specific subscription with proper typing
-    const { data, error } = await supabase.rpc('get_user_club_subscription', {
-      user_id_param: userId,
-      club_id_param: clubId
+    // Use the edge function
+    const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+      body: {
+        action: 'get_user_club_subscription',
+        club_id: clubId
+      }
     });
 
     if (error) throw error;
     
-    // Handle the case where data is null, undefined, not an array, or empty array
+    // Handle empty response
     if (!data || !Array.isArray(data) || data.length === 0) {
       return null;
     }
@@ -619,7 +624,9 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
     
     // Handle potentially missing profile/workout relationships
     return data.map(post => {
-      const validProfile = safelyGetProfile(post.profile, post.user_id);
+      const validProfile = post.profile && typeof post.profile === 'object' && !('error' in post.profile) 
+        ? post.profile as Profile 
+        : undefined;
       
       // Only add workout if it's valid (not an error object)
       let workout: Workout | undefined = undefined;
@@ -648,14 +655,13 @@ export async function createPost(post: {
   workout_id?: string;
 }): Promise<ClubPost> {
   try {
-    const postData: Record<string, any> = {
+    const postData = {
       club_id: post.club_id,
       content: post.content,
-      user_id: post.user_id
+      user_id: post.user_id,
+      image_url: post.image_url,
+      workout_id: post.workout_id
     };
-    
-    if (post.image_url !== undefined) postData.image_url = post.image_url;
-    if (post.workout_id !== undefined) postData.workout_id = post.workout_id;
     
     const { data, error } = await supabase
       .from('club_posts')

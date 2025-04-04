@@ -155,15 +155,17 @@ export async function getUserClubSubscription(
   clubId: string
 ): Promise<ClubSubscription | null> {
   try {
-    // Use an RPC function to get a specific subscription with proper typing
-    const { data, error } = await supabase.rpc('get_user_club_subscription', {
-      user_id_param: userId,
-      club_id_param: clubId
+    // Use REST API call to the Edge Function
+    const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+      body: {
+        action: 'get_user_club_subscription',
+        club_id: clubId
+      }
     });
 
     if (error) throw error;
     
-    // Handle the case where data is null, undefined, not an array, or empty array
+    // Handle empty response
     if (!data || !Array.isArray(data) || data.length === 0) {
       return null;
     }
