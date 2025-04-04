@@ -158,132 +158,465 @@ export async function cancelSubscription(
   }
 }
 
-// Re-export all club-related functions that are imported in ClubContext.tsx
-// This ensures that all the functions imported in ClubContext.tsx exist
-
-export function fetchClubs() {
-  return supabase.from('clubs').select('*');
+// Club-related functions that are imported in ClubContext.tsx
+export async function fetchClubs() {
+  try {
+    const { data, error } = await supabase.from('clubs').select('*');
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching clubs:', error);
+    return [];
+  }
 }
 
-export function fetchClubById(id: string) {
-  return supabase.from('clubs').select('*').eq('id', id).single();
+export async function fetchClubById(id: string) {
+  try {
+    const { data, error } = await supabase.from('clubs').select('*').eq('id', id).single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club by id ${id}:`, error);
+    return null;
+  }
 }
 
-export function createClub(club: any) {
-  return supabase.from('clubs').insert(club).select().single();
+export async function createClub(club: any) {
+  try {
+    const { data, error } = await supabase.from('clubs').insert(club).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating club:', error);
+    throw error;
+  }
 }
 
-export function updateClub(id: string, updates: any) {
-  return supabase.from('clubs').update(updates).eq('id', id).select().single();
+export async function updateClub(id: string, updates: any) {
+  try {
+    const { data, error } = await supabase.from('clubs').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error updating club ${id}:`, error);
+    throw error;
+  }
 }
 
-export function deleteClub(id: string) {
-  return supabase.from('clubs').delete().eq('id', id);
+export async function deleteClub(id: string) {
+  try {
+    const { error } = await supabase.from('clubs').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting club ${id}:`, error);
+    throw error;
+  }
 }
 
-export function fetchClubMembers(clubId: string) {
-  return supabase.from('club_members').select('*, profile:profiles(*)').eq('club_id', clubId);
+export async function fetchClubMembers(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_members')
+      .select('*, profile:profiles(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club members for ${clubId}:`, error);
+    return [];
+  }
 }
 
-export function joinClub(clubId: string, membershipType: string) {
-  return supabase.from('club_members').insert({
-    club_id: clubId,
-    membership_type: membershipType
-  }).select().single();
+export async function joinClub(clubId: string, membershipType: string) {
+  try {
+    const user = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('club_members')
+      .insert({
+        club_id: clubId,
+        user_id: user.data.user?.id,
+        membership_type: membershipType as "free" | "premium" | "vip",
+        role: 'member',
+        status: 'active'
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error joining club ${clubId}:`, error);
+    throw error;
+  }
 }
 
-export function updateMemberRole(memberId: string, role: string) {
-  return supabase.from('club_members').update({ role }).eq('id', memberId).select().single();
+export async function updateMemberRole(memberId: string, role: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_members')
+      .update({ role })
+      .eq('id', memberId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error updating member role ${memberId}:`, error);
+    throw error;
+  }
 }
 
-export function leaveClub(clubId: string) {
-  return supabase.from('club_members').delete().eq('club_id', clubId).eq('user_id', supabase.auth.getUser());
+export async function leaveClub(clubId: string) {
+  try {
+    const user = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('club_members')
+      .delete()
+      .eq('club_id', clubId)
+      .eq('user_id', user.data.user?.id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error leaving club ${clubId}:`, error);
+    throw error;
+  }
 }
 
-export function getUserClubs() {
-  return supabase.from('club_members').select('*, club:clubs(*)').eq('user_id', supabase.auth.getUser());
+export async function getUserClubs() {
+  try {
+    const user = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('club_members')
+      .select('*, club:clubs(*)')
+      .eq('user_id', user.data.user?.id);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting user clubs:', error);
+    return [];
+  }
 }
 
-export function fetchClubEvents(clubId: string) {
-  return supabase.from('club_events').select('*').eq('club_id', clubId);
+export async function fetchClubEvents(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_events')
+      .select('*')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club events for ${clubId}:`, error);
+    return [];
+  }
 }
 
-export function createEvent(event: any) {
-  return supabase.from('club_events').insert(event).select().single();
+export async function createEvent(event: any) {
+  try {
+    const { data, error } = await supabase
+      .from('club_events')
+      .insert(event)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    throw error;
+  }
 }
 
-export function updateEvent(id: string, updates: any) {
-  return supabase.from('club_events').update(updates).eq('id', id).select().single();
+export async function updateEvent(id: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('club_events')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error updating event ${id}:`, error);
+    throw error;
+  }
 }
 
-export function deleteEvent(id: string) {
-  return supabase.from('club_events').delete().eq('id', id);
+export async function deleteEvent(id: string) {
+  try {
+    const { error } = await supabase
+      .from('club_events')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting event ${id}:`, error);
+    throw error;
+  }
 }
 
-export function respondToEvent(eventId: string, status: string) {
-  return supabase.from('event_participants').upsert({
-    event_id: eventId,
-    status
-  }).select().single();
+export async function respondToEvent(eventId: string, status: string) {
+  try {
+    const user = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('event_participants')
+      .upsert({
+        event_id: eventId,
+        user_id: user.data.user?.id,
+        status
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error responding to event ${eventId}:`, error);
+    throw error;
+  }
 }
 
-export function fetchEventParticipants(eventId: string) {
-  return supabase.from('event_participants').select('*, profile:profiles(*)').eq('event_id', eventId);
+export async function fetchEventParticipants(eventId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('event_participants')
+      .select('*, profile:profiles(*)')
+      .eq('event_id', eventId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching event participants for ${eventId}:`, error);
+    return [];
+  }
 }
 
-export function fetchClubPosts(clubId: string) {
-  return supabase.from('club_posts').select('*, profile:profiles(*), workout:workouts(*)').eq('club_id', clubId);
+export async function fetchClubPosts(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_posts')
+      .select('*, profile:profiles(*), workout:workouts(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club posts for ${clubId}:`, error);
+    return [];
+  }
 }
 
-export function createPost(post: any) {
-  return supabase.from('club_posts').insert(post).select().single();
+export async function createPost(post: any) {
+  try {
+    const { data, error } = await supabase
+      .from('club_posts')
+      .insert(post)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    throw error;
+  }
 }
 
-export function deletePost(id: string) {
-  return supabase.from('club_posts').delete().eq('id', id);
+export async function deletePost(id: string) {
+  try {
+    const { error } = await supabase
+      .from('club_posts')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting post ${id}:`, error);
+    throw error;
+  }
 }
 
-export function fetchPostComments(postId: string) {
-  return supabase.from('club_post_comments').select('*, profile:profiles(*)').eq('post_id', postId);
+export async function fetchPostComments(postId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_post_comments')
+      .select('*, profile:profiles(*)')
+      .eq('post_id', postId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching post comments for ${postId}:`, error);
+    return [];
+  }
 }
 
-export function createComment(comment: any) {
-  return supabase.from('club_post_comments').insert(comment).select().single();
+export async function createComment(comment: any) {
+  try {
+    const { data, error } = await supabase
+      .from('club_post_comments')
+      .insert(comment)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    throw error;
+  }
 }
 
-export function deleteComment(id: string) {
-  return supabase.from('club_post_comments').delete().eq('id', id);
+export async function deleteComment(id: string) {
+  try {
+    const { error } = await supabase
+      .from('club_post_comments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting comment ${id}:`, error);
+    throw error;
+  }
 }
 
-export function fetchClubMessages(clubId: string) {
-  return supabase.from('club_messages').select('*, profile:profiles(*)').eq('club_id', clubId);
+export async function fetchClubMessages(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_messages')
+      .select('*, profile:profiles(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club messages for ${clubId}:`, error);
+    return [];
+  }
 }
 
-export function sendMessage(message: any) {
-  return supabase.from('club_messages').insert(message).select().single();
+export async function sendMessage(message: any) {
+  try {
+    const { data, error } = await supabase
+      .from('club_messages')
+      .insert(message)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
 }
 
-export function pinMessage(id: string, isPinned: boolean) {
-  return supabase.from('club_messages').update({ is_pinned: isPinned }).eq('id', id).select().single();
+export async function pinMessage(id: string, isPinned: boolean) {
+  try {
+    const { data, error } = await supabase
+      .from('club_messages')
+      .update({ is_pinned: isPinned })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error pinning/unpinning message ${id}:`, error);
+    throw error;
+  }
 }
 
 export function subscribeToClubMessages(clubId: string, callback: (message: any) => void) {
-  return supabase.channel(`club-${clubId}`).subscribe(callback);
+  const channel = supabase.channel(`club-${clubId}`)
+    .on('postgres_changes', { 
+      event: 'INSERT', 
+      schema: 'public', 
+      table: 'club_messages',
+      filter: `club_id=eq.${clubId}` 
+    }, (payload) => {
+      callback(payload.new);
+    })
+    .subscribe();
+    
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
-export function updateMembership(clubId: string, membershipType: string) {
-  return supabase.from('club_members').update({ membership_type: membershipType })
-    .eq('club_id', clubId).eq('user_id', supabase.auth.getUser())
-    .select().single();
+export async function updateMembership(clubId: string, membershipType: "free" | "premium" | "vip") {
+  try {
+    const user = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('club_members')
+      .update({ membership_type: membershipType })
+      .eq('club_id', clubId)
+      .eq('user_id', user.data.user?.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error updating membership for club ${clubId}:`, error);
+    throw error;
+  }
 }
 
-export function fetchClubProducts(clubId: string) {
-  return supabase.from('club_products').select('*').eq('club_id', clubId);
+export async function fetchClubProducts(clubId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('club_products')
+      .select('*')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error fetching club products for ${clubId}:`, error);
+    return [];
+  }
 }
 
-export function purchaseClubProduct(productId: string) {
-  // This is a placeholder, actual purchase will likely use Stripe
-  return supabase.from('club_product_purchases').insert({
-    product_id: productId
-  }).select().single();
+export async function purchaseClubProduct(productId: string) {
+  try {
+    const user = await supabase.auth.getUser();
+    const { data: product } = await supabase
+      .from('club_products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+
+    const { data, error } = await supabase
+      .from('club_product_purchases')
+      .insert({
+        product_id: productId,
+        user_id: user.data.user?.id,
+        amount_paid: product.price_amount,
+        currency: product.price_currency,
+        status: 'completed' as PurchaseStatus
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error purchasing product ${productId}:`, error);
+    throw error;
+  }
 }

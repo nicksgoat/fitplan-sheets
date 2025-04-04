@@ -1,11 +1,21 @@
 
 project_id = "cmzhdyiadvuuwypocxjv"
 
-[functions.stripe-webhook]
-verify_jwt = false
+[api]
+enabled = true
 
-[functions.refund-request]
+[functions]
+[functions.create-subscription-rpcs]
 verify_jwt = true
 
 [functions.cancel-subscription]
 verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.refund-request]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
