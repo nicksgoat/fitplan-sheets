@@ -385,23 +385,64 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
         sqlName: 'join_club',
         params: {
           club_id: clubId,
+          user_id: userData.user.id,
+          membership_type: membershipType
+        }
+      }
+    });
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after joining club');
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    } as ClubMember;
+  } catch (error) {
+    console.error(`Error joining club ${clubId}:`, error);
+    throw error;
+  }
+}
+
+// Add a new function to check club membership that uses the edge function
+export async function checkClubMembership(clubId: string): Promise<{ isMember: boolean, member?: ClubMember }> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      return { isMember: false };
+    }
+    
+    // Use the edge function to bypass RLS policies
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'check_club_member',
+        params: {
+          club_id: clubId,
           user_id: userData.user.id
         }
       }
     });
     
     if (error) throw error;
-    if (!data || !data[0]) throw new Error('No data returned after joining club');
     
-    return {
-      ...data[0],
-      role: data[0].role as MemberRole,
-      status: data[0].status as MemberStatus,
-      membership_type: data[0].membership_type as MembershipType
-    } as ClubMember;
+    if (data?.is_member && data.member_data) {
+      return { 
+        isMember: true, 
+        member: {
+          ...data.member_data,
+          role: data.member_data.role as MemberRole,
+          status: data.member_data.status as MemberStatus,
+          membership_type: data.member_data.membership_type as MembershipType
+        } as ClubMember
+      };
+    }
+    
+    return { isMember: false };
   } catch (error) {
-    console.error(`Error joining club ${clubId}:`, error);
-    throw error;
+    console.error(`Error checking club membership for ${clubId}:`, error);
+    return { isMember: false };
   }
 }
 
@@ -969,45 +1010,4 @@ export async function fetchClubProducts(clubId: string): Promise<ClubProduct[]> 
 
 export async function purchaseClubProduct(productId: string): Promise<ClubProductPurchase> {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) throw new Error('No authenticated user');
-    
-    // First get the product details
-    const { data: product, error: productError } = await supabase
-      .from('club_products')
-      .select('*')
-      .eq('id', productId)
-      .single();
-
-    if (productError) throw productError;
-    if (!product) throw new Error('Product not found');
-
-    // Then create the purchase record
-    const { data, error } = await supabase
-      .from('club_product_purchases')
-      .insert({
-        product_id: productId,
-        user_id: userData.user.id,
-        amount_paid: product.price_amount,
-        currency: product.price_currency,
-        status: 'completed'
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    if (!data) throw new Error('No data returned after product purchase');
-    
-    return {
-      ...data,
-      status: data.status as PurchaseStatus,
-      refund_status: data.refund_status as RefundStatus | undefined
-    } as ClubProductPurchase;
-  } catch (error) {
-    console.error(`Error purchasing product ${productId}:`, error);
-    throw error;
-  }
-}
-
-// Add missing declarations
-type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
+    const { data

@@ -18,13 +18,33 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
     
     setLoading(true);
     try {
-      // Manual check for club membership
-      const { data: memberData, error: memberError } = await supabase
-        .from('club_members')
-        .select('*')
-        .eq('club_id', clubId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Manual check for club membership using edge function
+      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('run-sql-rpcs', {
+        body: {
+          sqlName: 'check_club_member',
+          params: {
+            club_id: clubId,
+            user_id: user.id
+          }
+        }
+      });
+      
+      // Direct database query (will likely trigger the recursion error)
+      let directQueryResult = null;
+      let directQueryError = null;
+      try {
+        const { data, error } = await supabase
+          .from('club_members')
+          .select('*')
+          .eq('club_id', clubId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        directQueryResult = data;
+        directQueryError = error;
+      } catch (e) {
+        directQueryError = e;
+      }
       
       // Log user clubs
       console.log("DEBUG - Current User Clubs:", userClubs);
@@ -33,44 +53,18 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
       const isMember = isUserClubMember(clubId);
       console.log(`DEBUG - isUserClubMember result for club ${clubId}:`, isMember);
       
-      // Use admin client via edge function to check membership
-      let adminCheckResult = null;
-      let adminCheckError = null;
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-          body: {
-            sqlName: 'join_club', // Reusing this function since it already does a membership check
-            params: {
-              club_id: clubId,
-              user_id: user.id,
-              check_only: true
-            }
-          }
-        });
-        
-        if (data && !error) {
-          adminCheckResult = data;
-        }
-        
-        if (error) {
-          adminCheckError = error;
-        }
-      } catch (e) {
-        adminCheckError = e;
-      }
-      
       setDebugInfo({
         userId: user.id,
         clubId,
         contextMembership: isMember,
-        directQueryMembership: memberData ? true : false,
-        membershipData: memberData,
-        membershipError: memberError,
+        directQueryMembership: directQueryResult ? true : false,
+        membershipData: directQueryResult,
+        membershipError: directQueryError,
+        edgeFunctionMembership: edgeFunctionData?.is_member === true,
+        edgeFunctionData,
+        edgeFunctionError,
         userClubs: userClubs,
-        currentClub: currentClub,
-        adminCheckResult,
-        adminCheckError
+        currentClub: currentClub
       });
     } catch (error) {
       console.error("Error fetching debug info:", error);
@@ -154,6 +148,9 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
           <div>DB query says is member:</div>
           <div>{debugInfo.directQueryMembership ? "Yes" : "No"}</div>
           
+          <div>Edge function says is member:</div>
+          <div>{debugInfo.edgeFunctionMembership ? "Yes" : "No"}</div>
+          
           <div>User Clubs Count:</div>
           <div>{debugInfo.userClubs?.length || 0}</div>
           
@@ -176,7 +173,7 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
             size="sm" 
             variant="outline" 
             onClick={forceJoin} 
-            disabled={loading || debugInfo.directQueryMembership}
+            disabled={loading || debugInfo.edgeFunctionMembership}
           >
             Force Join
           </Button>

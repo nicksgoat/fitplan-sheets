@@ -54,6 +54,13 @@ serve(async (req) => {
     
     let result;
     
+    // Always create a separate admin client with service role key
+    // This bypasses RLS policies and avoids infinite recursion
+    const adminSupabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    
     // Execute the appropriate SQL RPC based on the sqlName parameter
     switch (sqlName) {
       case 'join_club':
@@ -61,13 +68,6 @@ serve(async (req) => {
         console.log(`[JOIN_CLUB] User ${params.user_id} joining club ${params.club_id}`);
         
         try {
-          // Using service role client for admin operations that bypass RLS
-          // This is the key fix for the infinite recursion issue
-          const adminSupabase = createClient(
-            Deno.env.get("SUPABASE_URL") ?? "",
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-          );
-        
           // Check if user is already a member
           const { data: existingMember, error: memberCheckError } = await adminSupabase
             .from('club_members')
@@ -116,6 +116,32 @@ serve(async (req) => {
           throw new Error(`Failed to join club: ${error.message}`);
         }
         
+      case 'check_club_member':
+        // New RPC to check if a user is a member without triggering the infinite recursion
+        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${params.user_id} is member of club ${params.club_id}`);
+        
+        try {
+          const { data: memberData, error: checkError } = await adminSupabase
+            .from('club_members')
+            .select('*')
+            .eq('club_id', params.club_id)
+            .eq('user_id', params.user_id)
+            .maybeSingle();
+            
+          console.log("[CHECK_CLUB_MEMBER] Check result:", memberData, checkError);
+          
+          return new Response(
+            JSON.stringify({ 
+              is_member: !!memberData, 
+              member_data: memberData 
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("[CHECK_CLUB_MEMBER] Error:", error);
+          throw new Error(`Failed to check club membership: ${error.message}`);
+        }
+      
       // Add other SQL RPCs here as needed
       
       default:

@@ -312,7 +312,16 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             club: currentClub
           };
           
-          setUserClubs(prev => [...prev, userClub]);
+          setUserClubs(prev => {
+            const exists = prev.some(uc => uc.club.id === currentClub.id);
+            if (exists) {
+              return prev.map(uc => 
+                uc.club.id === currentClub.id ? userClub : uc
+              );
+            } else {
+              return [...prev, userClub];
+            }
+          });
         }
         
         console.log(`[ClubContext] Refreshing clubs to update userClubs`);
