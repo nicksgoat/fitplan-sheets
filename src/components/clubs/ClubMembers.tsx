@@ -26,7 +26,11 @@ const ClubMembers: React.FC<ClubMembersProps> = ({ clubId }) => {
   const { members, loadingMembers, updateMemberRole, isUserClubCreator } = useClub();
   const { user } = useAuth();
   
+  console.log("Club members component - members:", members);
+  console.log("Club members component - user:", user?.id);
+  
   const isCreator = isUserClubCreator(clubId);
+  console.log("Is creator:", isCreator);
   
   const formatDate = (dateString: string) => {
     try {
@@ -36,9 +40,14 @@ const ClubMembers: React.FC<ClubMembersProps> = ({ clubId }) => {
     }
   };
   
+  // Sort members by role
   const adminMembers = members.filter(member => member.role === 'admin');
   const moderatorMembers = members.filter(member => member.role === 'moderator');
   const regularMembers = members.filter(member => member.role === 'member');
+  
+  console.log("Admin members:", adminMembers);
+  console.log("Moderator members:", moderatorMembers);
+  console.log("Regular members:", regularMembers);
   
   if (loadingMembers) {
     return (

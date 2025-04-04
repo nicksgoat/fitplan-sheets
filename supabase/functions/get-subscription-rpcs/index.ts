@@ -39,19 +39,23 @@ serve(async (req) => {
     const { data: authData, error: authError } = await supabase.auth.getUser();
     
     if (authError || !authData.user) {
+      console.error("Auth error:", authError);
       throw new Error('Unauthorized or invalid token');
     }
     
     const userId = authData.user.id;
+    console.log("Authorized user ID:", userId);
     
     // Parse the request body
     const { action, club_id } = await req.json();
+    console.log(`Processing action: ${action}, club_id: ${club_id}`);
     
     let result;
     
     switch (action) {
       case 'get_user_subscriptions':
         // Get all subscriptions for the current user
+        console.log("Getting all user subscriptions");
         result = await supabase
           .from('club_subscriptions')
           .select('*')
@@ -64,6 +68,7 @@ serve(async (req) => {
           throw new Error('club_id is required for this action');
         }
         
+        console.log(`Getting subscription for club: ${club_id}`);
         result = await supabase
           .from('club_subscriptions')
           .select('*')
@@ -76,9 +81,11 @@ serve(async (req) => {
     }
     
     if (result.error) {
+      console.error("Query error:", result.error);
       throw result.error;
     }
     
+    console.log("Query result:", result.data);
     return new Response(
       JSON.stringify(result.data),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

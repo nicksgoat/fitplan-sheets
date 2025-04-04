@@ -29,6 +29,8 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     members, 
     joinCurrentClub, 
     isUserClubMember,
+    refreshClubs, // Add this to refresh the user's club membership status
+    refreshMembers, // Add this to refresh members after joining
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
   if (!currentClub) return null;
   
   const isMember = isUserClubMember(clubId);
+  console.log("ClubHeader - Is member:", isMember);
   
   const handleJoinClick = async () => {
     if (!user) {
@@ -45,9 +48,17 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
     }
     
     try {
+      console.log("Joining club:", clubId);
       await joinCurrentClub();
+      
+      // After joining, refresh data to update UI state
+      refreshClubs();
+      refreshMembers();
+      
+      console.log("Successfully joined club");
     } catch (error) {
       console.error('Error joining club:', error);
+      toast.error('Failed to join club. Please try again.');
     }
   };
   

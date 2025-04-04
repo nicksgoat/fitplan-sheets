@@ -27,10 +27,15 @@ serve(async (req) => {
     );
 
     // Execute the stored SQL function by name with optional parameters
+    console.log(`Executing SQL function: ${sqlName} with params:`, params);
     const { data, error } = await supabaseAdmin.rpc(sqlName, params || {});
 
-    if (error) throw error;
+    if (error) {
+      console.error("SQL RPC error:", error);
+      throw error;
+    }
 
+    console.log("SQL RPC success, data:", data);
     return new Response(
       JSON.stringify({ 
         success: true, 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   Club, 
@@ -48,6 +47,7 @@ import {
   purchaseClubProduct
 } from '@/services/clubService';
 import { safelyGetProfile } from '@/utils/profileUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClubContextType {
   // Clubs
@@ -138,7 +138,7 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   useEffect(() => {
     refreshClubs();
-  }, []);
+  }, [user]);
   
   useEffect(() => {
     if (currentClub) {
@@ -159,7 +159,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [currentClub]);
   
-  // Club functions
   const refreshClubs = async () => {
     try {
       setLoadingClubs(true);
@@ -167,8 +166,18 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setClubs(clubData);
       
       if (user) {
-        const userClubData = await getUserClubs();
-        setUserClubs(userClubData);
+        try {
+          console.log("Fetching user clubs for user:", user.id);
+          const userClubData = await getUserClubs();
+          console.log("User club data:", userClubData);
+          setUserClubs(userClubData);
+        } catch (error) {
+          console.error('Error fetching user clubs:', error);
+          // Don't fail the whole operation if we can't get user clubs
+          setUserClubs([]);
+        }
+      } else {
+        setUserClubs([]);
       }
     } catch (error) {
       console.error('Error fetching clubs:', error);
@@ -224,13 +233,14 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Member functions
   const refreshMembers = async () => {
     if (!currentClub) return;
     
     try {
       setLoadingMembers(true);
+      console.log("Fetching members for club:", currentClub.id);
       const memberData = await fetchClubMembers(currentClub.id);
+      console.log("Club members data:", memberData);
       setMembers(memberData);
     } catch (error) {
       console.error('Error fetching club members:', error);
@@ -247,9 +257,15 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
+      console.log(`User ${user.id} joining club ${currentClub.id} with membership ${membershipType}`);
       const membership = await joinClub(currentClub.id, membershipType);
+      console.log("Join club result:", membership);
+      
       setMembers(prev => [...prev, membership]);
-      refreshClubs(); // To update userClubs
+      
+      // Refresh clubs to update userClubs
+      await refreshClubs();
+      
       toast.success(`You've joined ${currentClub.name}`);
       return membership;
     } catch (error) {
@@ -289,7 +305,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Event functions
   const refreshEvents = async () => {
     if (!currentClub) return;
     
@@ -379,7 +394,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Product functions
   const refreshProducts = async () => {
     if (!currentClub) return;
     
@@ -443,7 +457,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Post functions
   const refreshPosts = async () => {
     if (!currentClub) return;
     
@@ -485,7 +498,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Comment functions
   const loadComments = async (postId: string) => {
     try {
       const comments = await fetchPostComments(postId);
@@ -541,7 +553,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Message functions
   const refreshMessages = async () => {
     if (!currentClub) return;
     
@@ -591,10 +602,11 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Utility functions
   const isUserClubMember = (clubId: string): boolean => {
     if (!user) return false;
-    return userClubs.some(uc => uc.club.id === clubId);
+    const result = userClubs.some(uc => uc.club.id === clubId);
+    console.log(`Checking if user ${user.id} is member of club ${clubId}:`, result);
+    return result;
   };
   
   const getUserClubRole = (clubId: string): MemberRole | null => {

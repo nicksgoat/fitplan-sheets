@@ -23,6 +23,7 @@ export async function checkPremiumStatus(userId: string, clubId: string): Promis
   premiumExpiresAt?: string;
 }> {
   try {
+    console.log(`Checking premium status for user ${userId} in club ${clubId}`);
     const { data, error } = await supabase
       .from('club_members')
       .select('membership_type, premium_expires_at')
@@ -75,6 +76,7 @@ export async function createClubProduct(
   }
 ): Promise<{ success: boolean; data?: ClubProduct; error?: string }> {
   try {
+    console.log('Creating club product:', productDetails);
     const { data, error } = await supabase
       .from('club_products')
       .insert({
@@ -162,6 +164,7 @@ export async function getUserClubSubscription(
   clubId: string
 ): Promise<ClubSubscription | null> {
   try {
+    console.log(`Getting subscription for user ${userId} in club ${clubId}`);
     // Use REST API call to the Edge Function
     const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
       body: {
@@ -170,7 +173,12 @@ export async function getUserClubSubscription(
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error invoking edge function:", error);
+      throw error;
+    }
+    
+    console.log("Edge function response:", data);
     
     // Handle empty response
     if (!data || !Array.isArray(data) || data.length === 0) {

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -61,6 +60,7 @@ export async function getUserPurchases(): Promise<ClubProductPurchase[]> {
  */
 export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
   try {
+    console.log("Getting user subscriptions");
     // Use the edge function
     const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
       body: {
@@ -68,7 +68,13 @@ export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
       }
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error invoking edge function:", error);
+      throw error;
+    }
+    
+    console.log("Edge function response:", data);
+    
     if (!data || !Array.isArray(data)) return [];
     
     // Cast the data to the correct type with proper mapping
@@ -446,30 +452,72 @@ export async function leaveClub(clubId: string): Promise<boolean> {
 export async function getUserClubs(): Promise<{ membership: ClubMember; club: Club }[]> {
   try {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) throw new Error('No authenticated user');
+    if (!userData?.user) {
+      console.error('No authenticated user found in getUserClubs');
+      throw new Error('No authenticated user');
+    }
     
-    const { data, error } = await supabase
+    console.log(`Getting clubs for user ${userData.user.id}`);
+    
+    // First get the club memberships
+    const { data: memberships, error: membershipError } = await supabase
       .from('club_members')
-      .select('*, club:clubs(*)')
+      .select('*')
       .eq('user_id', userData.user.id);
     
-    if (error) throw error;
-    if (!data) return [];
+    if (membershipError) {
+      console.error('Error fetching club memberships:', membershipError);
+      throw membershipError;
+    }
     
-    // Transform the data into the expected format with proper type casting
-    return data.map(item => ({
-      membership: {
-        ...item,
-        role: item.role as MemberRole,
-        status: item.status as MemberStatus,
-        membership_type: item.membership_type as MembershipType
-      } as ClubMember,
-      club: {
-        ...item.club,
-        club_type: item.club.club_type as ClubType,
-        membership_type: item.club.membership_type as MembershipType
-      } as Club
-    }));
+    if (!memberships || memberships.length === 0) {
+      console.log('No club memberships found');
+      return [];
+    }
+    
+    console.log(`Found ${memberships.length} club memberships`);
+    
+    // Now get the club details for each membership
+    const clubIds = memberships.map(m => m.club_id);
+    const { data: clubs, error: clubsError } = await supabase
+      .from('clubs')
+      .select('*')
+      .in('id', clubIds);
+    
+    if (clubsError) {
+      console.error('Error fetching clubs:', clubsError);
+      throw clubsError;
+    }
+    
+    if (!clubs || clubs.length === 0) {
+      console.log('No clubs found');
+      return [];
+    }
+    
+    console.log(`Found ${clubs.length} clubs`);
+    
+    // Join the data
+    return memberships.map(membership => {
+      const club = clubs.find(c => c.id === membership.club_id);
+      if (!club) {
+        console.error(`Club not found for membership ${membership.id}`);
+        return null;
+      }
+      
+      return {
+        membership: {
+          ...membership,
+          role: membership.role as MemberRole,
+          status: membership.status as MemberStatus,
+          membership_type: membership.membership_type as MembershipType
+        } as ClubMember,
+        club: {
+          ...club,
+          club_type: club.club_type as ClubType,
+          membership_type: club.membership_type as MembershipType
+        } as Club
+      };
+    }).filter(Boolean) as { membership: ClubMember; club: Club }[];
   } catch (error) {
     console.error('Error getting user clubs:', error);
     return [];
