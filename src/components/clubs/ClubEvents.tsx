@@ -13,7 +13,8 @@ import {
   X,
   MoreVertical,
   Trash2,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -63,6 +64,7 @@ const ClubEvents: React.FC<ClubEventsProps> = ({ clubId }) => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editEvent, setEditEvent] = useState<ClubEvent | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const isMember = isUserClubMember(clubId);
   const isAdmin = isUserClubAdmin(clubId);
@@ -75,18 +77,22 @@ const ClubEvents: React.FC<ClubEventsProps> = ({ clubId }) => {
     .filter(event => !isFuture(parseISO(event.start_time)))
     .sort((a, b) => parseISO(b.start_time).getTime() - parseISO(a.start_time).getTime());
   
-  const handleCreateEvent = async (eventData: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleCreateEvent = async (eventData: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      setIsSubmitting(true);
+      console.log("Creating new event:", eventData);
       await createNewEvent(eventData);
       setCreateDialogOpen(false);
       toast.success('Event created successfully');
     } catch (error) {
       console.error('Error creating event:', error);
       toast.error('Failed to create event');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  const handleUpdateEvent = async (eventData: Partial<Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const handleUpdateEvent = async (eventData: Partial<Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!editEvent) return;
     
     try {

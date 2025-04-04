@@ -12,13 +12,11 @@ interface ClubDebuggerProps {
 }
 
 const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
-  const { members, isUserClubMember, currentClub, refreshMembers, loadingMembers } = useClub();
+  const { members, isUserClubMember, currentClub, refreshMembers, loadingMembers, posts, messages, events } = useClub();
   const { user } = useAuth();
   const [directMembershipCheck, setDirectMembershipCheck] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [edgeFunctionCheck, setEdgeFunctionCheck] = useState<any>(null);
-  
-  // Additional state to track refresh operation
   const [refreshing, setRefreshing] = useState(false);
   
   const checkMembership = async () => {
@@ -61,7 +59,6 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
     }
   };
   
-  // Function to force refresh members
   const handleForceRefresh = async () => {
     setRefreshing(true);
     try {
@@ -137,6 +134,18 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
           <Badge className={members.some(m => m.user_id === user?.id) ? 'bg-green-600' : 'bg-red-600'}>
             {members.some(m => m.user_id === user?.id) ? 'true' : 'false'}
           </Badge>
+        </div>
+        
+        <div>
+          <span className="text-gray-400">Posts count:</span> {posts.length}
+        </div>
+        
+        <div>
+          <span className="text-gray-400">Messages count:</span> {messages.length}
+        </div>
+        
+        <div>
+          <span className="text-gray-400">Events count:</span> {events.length}
         </div>
         
         {directMembershipCheck && (

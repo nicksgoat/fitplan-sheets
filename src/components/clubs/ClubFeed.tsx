@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { Send, MoreVertical, Trash2, MessageSquare, Share2 } from 'lucide-react';
+import { Send, MoreVertical, Trash2, MessageSquare, Share2, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +45,12 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
     
     try {
       setIsSubmitting(true);
+      console.log("Creating new post:", {
+        club_id: clubId,
+        user_id: user.id,
+        content: newPostContent
+      });
+      
       await createNewPost({
         club_id: clubId,
         user_id: user.id,
@@ -52,8 +58,10 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
       });
       
       setNewPostContent('');
+      toast.success('Post created successfully');
     } catch (error) {
       console.error('Error creating post:', error);
+      toast.error('Failed to create post');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,6 +123,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
                 value={newPostContent}
                 onChange={e => setNewPostContent(e.target.value)}
                 rows={3}
+                disabled={isSubmitting}
               />
               <div className="flex justify-end">
                 <Button 
@@ -122,8 +131,17 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
                   onClick={handleCreatePost}
                   disabled={isSubmitting || !newPostContent.trim()}
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Post
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Post
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

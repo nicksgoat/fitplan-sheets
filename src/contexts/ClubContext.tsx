@@ -406,7 +406,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       setLoadingEvents(true);
+      console.log(`[ClubContext] Refreshing events for club: ${currentClub.id}`);
       const eventData = await fetchClubEvents(currentClub.id);
+      console.log(`[ClubContext] Fetched ${eventData.length} events`);
       setEvents(eventData);
     } catch (error) {
       console.error('Error fetching club events:', error);
@@ -418,9 +420,10 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const createNewEvent = async (event: Omit<ClubEvent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log(`[ClubContext] Creating new event:`, event);
       const newEvent = await createEvent(event);
+      console.log(`[ClubContext] Event created successfully:`, newEvent);
       setEvents(prev => [...prev, newEvent]);
-      toast.success('Event created successfully');
       return newEvent;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -553,7 +556,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       setLoadingPosts(true);
+      console.log(`[ClubContext] Refreshing posts for club: ${currentClub.id}`);
       const postData = await fetchClubPosts(currentClub.id);
+      console.log(`[ClubContext] Fetched ${postData.length} posts`);
       setPosts(postData);
     } catch (error) {
       console.error('Error fetching club posts:', error);
@@ -565,9 +570,10 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const createNewPost = async (post: Omit<ClubPost, 'id' | 'created_at' | 'updated_at' | 'profile'>) => {
     try {
+      console.log(`[ClubContext] Creating new post:`, post);
       const newPost = await createPost(post);
+      console.log(`[ClubContext] Post created successfully:`, newPost);
       setPosts(prev => [newPost, ...prev]);
-      toast.success('Post created successfully');
       return newPost;
     } catch (error) {
       console.error('Error creating post:', error);
@@ -647,7 +653,9 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       setLoadingMessages(true);
+      console.log(`[ClubContext] Refreshing messages for club: ${currentClub.id}`);
       const messageData = await fetchClubMessages(currentClub.id);
+      console.log(`[ClubContext] Fetched ${messageData.length} messages`);
       setMessages(messageData);
     } catch (error) {
       console.error('Error fetching club messages:', error);
@@ -664,11 +672,19 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
-      const newMessage = await sendMessage({
+      console.log(`[ClubContext] Sending new message to club: ${currentClub.id}`);
+      const messageData = {
         club_id: currentClub.id,
         user_id: user.id,
         content
-      });
+      };
+      console.log(`[ClubContext] Message data:`, messageData);
+      
+      const newMessage = await sendMessage(messageData);
+      console.log(`[ClubContext] Message sent successfully:`, newMessage);
+      
+      // Add the new message to the state
+      setMessages(prev => [...prev, newMessage]);
       
       return newMessage;
     } catch (error) {

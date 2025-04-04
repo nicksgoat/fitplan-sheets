@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
 interface ClubChatProps {
   clubId: string;
@@ -64,14 +65,20 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!messageText.trim() || !user) return;
+    if (!messageText.trim() || !user) {
+      toast.error("Message cannot be empty");
+      return;
+    }
     
     try {
       setIsSubmitting(true);
+      console.log("Sending message:", messageText);
       await sendNewMessage(messageText);
       setMessageText('');
+      toast.success("Message sent successfully");
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error('Failed to send message');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,8 +180,9 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
       <ScrollArea className="flex-1 px-4">
         <div className="pt-4 pb-6 space-y-6">
           {loadingMessages ? (
-            <div className="flex justify-center">
-              <p className="text-gray-400">Loading messages...</p>
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+              <p className="ml-2 text-gray-400">Loading messages...</p>
             </div>
           ) : Object.keys(messagesByDay).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -285,13 +293,18 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             className="bg-dark-400 border-dark-500 focus-visible:ring-fitbloom-purple"
+            disabled={isSubmitting}
           />
           <Button 
             type="submit" 
             className="ml-2 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             disabled={isSubmitting || !messageText.trim()}
           >
-            <Send className="h-4 w-4" />
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </form>
