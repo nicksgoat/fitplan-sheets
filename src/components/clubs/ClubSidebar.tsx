@@ -14,7 +14,8 @@ import {
   LogOut,
   Plus,
   ChevronDown,
-  Layers
+  Layers,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,12 +27,14 @@ interface ClubSidebarProps {
   clubId: string;
   activeView: string;
   setActiveView: (view: 'chat' | 'feed' | 'events' | 'members') => void;
+  onBack?: () => void;
 }
 
 const ClubSidebar: React.FC<ClubSidebarProps> = ({ 
   clubId, 
   activeView, 
-  setActiveView 
+  setActiveView,
+  onBack
 }) => {
   const { currentClub, isUserClubMember, isUserClubAdmin, leaveCurrentClub } = useClub();
   const { user } = useAuth();
@@ -94,6 +97,16 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
       {/* Club header */}
       <div className="p-4 border-b border-dark-400">
         <div className="flex items-center space-x-2">
+          {onBack && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-400 hover:text-white hover:bg-dark-400 p-1 h-8 w-8"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <Avatar className="h-8 w-8">
             <AvatarImage 
               src={currentClub.logo_url || undefined} 
@@ -115,6 +128,7 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
         </div>
       </div>
       
+      {/* Rest of sidebar */}
       <ScrollArea className="flex-1">
         <div className="px-3 py-4">
           {/* Main navigation */}

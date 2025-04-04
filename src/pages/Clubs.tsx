@@ -1,8 +1,7 @@
 
 import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation, useSearchParams, Route, Routes } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import ClubList from '@/components/clubs/ClubList';
-import ClubHeader from '@/components/clubs/ClubHeader';
 import CreateClubForm from '@/components/clubs/CreateClubForm';
 import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
@@ -61,15 +60,19 @@ const Clubs: React.FC = () => {
     }
   }, [clubId, isCreatePath, isReceiptPath, clubs, loadingClubs]);
   
-  const renderContent = () => {
-    if (isReceiptPath) {
-      return <PurchaseReceipt />;
-    } else if (isCreatePath) {
-      return <CreateClubForm />;
-    } else if (clubId && currentClub) {
-      return <ClubLayout clubId={clubId} />;
-    } else if (clubId && !currentClub && !loadingClubs) {
-      return (
+  // When viewing a specific club, render the ClubLayout directly without container
+  if (clubId && currentClub && !isCreatePath && !isReceiptPath) {
+    return <ClubLayout clubId={clubId} />;
+  }
+  
+  // For other views (club list, create form, etc.), render with container
+  return (
+    <div className="container mx-auto py-6 px-0 max-w-full">
+      {isReceiptPath ? (
+        <PurchaseReceipt />
+      ) : isCreatePath ? (
+        <CreateClubForm />
+      ) : clubId && !currentClub && !loadingClubs ? (
         <div className="text-center py-16">
           <h2 className="text-xl mb-4">Club not found</h2>
           <Button 
@@ -80,15 +83,9 @@ const Clubs: React.FC = () => {
             Back to Clubs
           </Button>
         </div>
-      );
-    } else {
-      return <ClubList />;
-    }
-  };
-  
-  return (
-    <div className="container mx-auto py-6 px-0 max-w-full">
-      {renderContent()}
+      ) : (
+        <ClubList />
+      )}
     </div>
   );
 };

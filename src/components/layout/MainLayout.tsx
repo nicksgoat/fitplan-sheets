@@ -13,6 +13,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   
+  // Check if we're in a club detail view to hide sidebar completely
+  const isInClubDetailView = location.pathname.match(/^\/clubs\/[a-zA-Z0-9-]+$/);
+  
   // Set sidebar to collapsed by default on sheets page
   useEffect(() => {
     if (location.pathname === '/sheets') {
@@ -23,6 +26,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const handleToggleCollapse = () => {
     setCollapsed(prev => !prev);
   };
+  
+  // If we're in a club detail view, render only the Outlet without the main layout
+  if (isInClubDetailView) {
+    return <>{children || <Outlet />}</>;
+  }
   
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-black text-white">

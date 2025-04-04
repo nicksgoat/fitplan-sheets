@@ -10,7 +10,8 @@ import {
   Hash, 
   Bell,
   BellOff,
-  Search
+  Search,
+  ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -21,9 +22,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 interface ClubHeaderProps {
   clubId: string;
   activeView?: string;
+  onBack?: () => void;
 }
 
-const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
+const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) => {
   const { 
     currentClub, 
     members, 
@@ -101,6 +103,16 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView }) => {
   return (
     <div className="h-14 min-h-14 border-b border-dark-400 px-4 flex items-center justify-between bg-dark-300">
       <div className="flex items-center">
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mr-2 text-gray-400 hover:text-white hover:bg-dark-400"
+            onClick={onBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
         {viewIcon()}
         <h2 className="font-semibold flex items-center">
           {viewTitle()}
