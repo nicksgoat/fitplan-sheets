@@ -630,12 +630,15 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
       // Only add workout if it's valid (not an error object)
       let workout: Workout | undefined = undefined;
       
-      // The fix: More robust type checking to handle null and undefined cases
+      // Fixed type checking to handle null, undefined, and error cases
       if (post.workout && 
           typeof post.workout === 'object' && 
-          post.workout !== null && 
-          !('error' in post.workout as Record<string, any>)) {
-        workout = post.workout as Workout;
+          post.workout !== null) {
+        // Check if workout is an error object by safely checking for error property
+        const workoutObj = post.workout as Record<string, unknown>;
+        if (!('error' in workoutObj)) {
+          workout = post.workout as Workout;
+        }
       }
       
       return {
