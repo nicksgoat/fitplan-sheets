@@ -630,7 +630,7 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
       
       // Only add workout if it's valid (not an error object)
       let workout: Workout | undefined = undefined;
-      if (post.workout && typeof post.workout === 'object' && !('error' in post.workout)) {
+      if (post.workout && typeof post.workout === 'object' && post.workout !== null && !('error' in post.workout)) {
         workout = post.workout as Workout;
       }
       
