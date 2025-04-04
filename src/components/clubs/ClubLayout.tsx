@@ -27,13 +27,11 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const navigate = useNavigate();
   const [initialLoad, setInitialLoad] = useState(true);
   
-  // Enhanced logging
   useEffect(() => {
     console.log("[ClubLayout] Component mounted with clubId:", clubId);
     const isMember = isUserClubMember(clubId);
     console.log("[ClubLayout] Initial membership check:", isMember);
     
-    // Refresh membership info when the component loads
     const refreshData = async () => {
       try {
         console.log("[ClubLayout] Refreshing club data...");
@@ -42,7 +40,6 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
           refreshMembers()
         ]);
         
-        // Check membership after refresh
         const isMemberAfterRefresh = isUserClubMember(clubId);
         console.log("[ClubLayout] Membership after refresh:", isMemberAfterRefresh);
         console.log("[ClubLayout] Members after refresh:", members);
@@ -56,7 +53,6 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
     refreshData();
   }, [clubId]);
   
-  // Add a secondary effect to check if members is empty after loading
   useEffect(() => {
     if (!initialLoad && !loadingMembers && members.length === 0 && isUserClubMember(clubId)) {
       console.log("[ClubLayout] Members array is empty but user is a member, retrying refresh...");
@@ -83,7 +79,6 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   
   return (
     <div className="fixed inset-0 z-50 bg-black flex overflow-hidden">
-      {/* Sidebar */}
       <ClubSidebar 
         clubId={clubId} 
         activeView={activeView} 
@@ -91,14 +86,11 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
         onBack={() => navigate('/clubs')}
       />
       
-      {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <ClubHeader clubId={clubId} activeView={activeView} onBack={() => navigate('/clubs')} />
         <div className="flex-1 overflow-y-auto">
           {renderMainContent()}
         </div>
-        
-        {/* Removed debug panel for development */}
       </div>
     </div>
   );
