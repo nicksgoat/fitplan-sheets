@@ -52,8 +52,6 @@ serve(async (req) => {
     const { sqlName, params } = await req.json();
     console.log(`Processing RPC: ${sqlName}, params:`, params);
     
-    let result;
-    
     // Always create a separate admin client with service role key
     // This bypasses RLS policies and avoids infinite recursion
     const adminSupabase = createClient(
@@ -68,7 +66,7 @@ serve(async (req) => {
         console.log(`[JOIN_CLUB] User ${params.user_id} joining club ${params.club_id}`);
         
         try {
-          // Check if user is already a member
+          // Check if user is already a member - use admin client to avoid RLS issues
           const { data: existingMember, error: memberCheckError } = await adminSupabase
             .from('club_members')
             .select('*')
@@ -93,7 +91,7 @@ serve(async (req) => {
               club_id: params.club_id,
               user_id: params.user_id,
               role: params.role || 'member',
-              status: 'active',
+              status: params.status || 'active',
               membership_type: params.membership_type || 'free'
             })
             .select()
@@ -117,10 +115,11 @@ serve(async (req) => {
         }
         
       case 'check_club_member':
-        // New RPC to check if a user is a member without triggering the infinite recursion
+        // RPC to check if a user is a member without triggering the infinite recursion
         console.log(`[CHECK_CLUB_MEMBER] Checking if user ${params.user_id} is member of club ${params.club_id}`);
         
         try {
+          // Use admin client to bypass RLS policies completely
           const { data: memberData, error: checkError } = await adminSupabase
             .from('club_members')
             .select('*')
@@ -140,6 +139,62 @@ serve(async (req) => {
         } catch (error) {
           console.error("[CHECK_CLUB_MEMBER] Error:", error);
           throw new Error(`Failed to check club membership: ${error.message}`);
+        }
+      
+      case 'update_member_role':
+        // Handle updating member role
+        console.log(`[UPDATE_MEMBER_ROLE] Updating role to ${params.role} for member ${params.member_id}`);
+        
+        try {
+          // Update the member role using admin client to bypass RLS
+          const { data: updatedMember, error: updateError } = await adminSupabase
+            .from('club_members')
+            .update({ role: params.role })
+            .eq('id', params.member_id)
+            .select()
+            .single();
+            
+          console.log("[UPDATE_MEMBER_ROLE] Update result:", updatedMember, updateError);
+            
+          if (updateError) {
+            console.error("[UPDATE_MEMBER_ROLE] Error updating role:", updateError);
+            throw updateError;
+          }
+          
+          return new Response(
+            JSON.stringify(updatedMember),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("[UPDATE_MEMBER_ROLE] Error:", error);
+          throw new Error(`Failed to update member role: ${error.message}`);
+        }
+      
+      case 'leave_club':
+        // Handle leaving a club
+        console.log(`[LEAVE_CLUB] User ${params.user_id} leaving club ${params.club_id}`);
+        
+        try {
+          // Delete the membership record using admin client to bypass RLS
+          const { error: deleteError } = await adminSupabase
+            .from('club_members')
+            .delete()
+            .eq('club_id', params.club_id)
+            .eq('user_id', params.user_id);
+            
+          if (deleteError) {
+            console.error("[LEAVE_CLUB] Error leaving club:", deleteError);
+            throw deleteError;
+          }
+          
+          console.log("[LEAVE_CLUB] Successfully left club");
+          return new Response(
+            JSON.stringify({ success: true }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("[LEAVE_CLUB] Error:", error);
+          throw new Error(`Failed to leave club: ${error.message}`);
         }
       
       // Add other SQL RPCs here as needed

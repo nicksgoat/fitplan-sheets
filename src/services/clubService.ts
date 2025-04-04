@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -19,7 +18,7 @@ import {
   ClubPost,
   ClubPostComment,
   ClubMessage,
-  ClubType // Added missing ClubType import
+  ClubType
 } from '@/types/club';
 import { Profile } from '@/types/profile';
 import { safelyGetProfile } from '@/utils/profileUtils';
@@ -408,7 +407,7 @@ export async function joinClub(clubId: string, membershipType: MembershipType = 
   }
 }
 
-// Add a new function to check club membership that uses the edge function
+// Use the improved edge function for checking club membership
 export async function checkClubMembership(clubId: string): Promise<{ isMember: boolean, member?: ClubMember }> {
   try {
     const { data: userData } = await supabase.auth.getUser();
@@ -448,14 +447,19 @@ export async function checkClubMembership(clubId: string): Promise<{ isMember: b
   }
 }
 
+// Update member role function to use the edge function
 export async function updateMemberRole(memberId: string, role: MemberRole): Promise<ClubMember> {
   try {
-    const { data, error } = await supabase
-      .from('club_members')
-      .update({ role })
-      .eq('id', memberId)
-      .select()
-      .single();
+    // Use the edge function to update the role and bypass RLS
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'update_member_role',
+        params: {
+          member_id: memberId,
+          role: role
+        }
+      }
+    });
     
     if (error) throw error;
     if (!data) throw new Error('No data returned after role update');
@@ -477,11 +481,16 @@ export async function leaveClub(clubId: string): Promise<boolean> {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) throw new Error('No authenticated user');
     
-    const { error } = await supabase
-      .from('club_members')
-      .delete()
-      .eq('club_id', clubId)
-      .eq('user_id', userData.user.id);
+    // Use the edge function to leave the club and bypass RLS
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'leave_club',
+        params: {
+          club_id: clubId,
+          user_id: userData.user.id
+        }
+      }
+    });
     
     if (error) throw error;
     return true;

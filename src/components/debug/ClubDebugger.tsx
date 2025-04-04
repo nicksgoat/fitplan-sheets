@@ -1,37 +1,28 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-const ClubDebugger = ({ clubId }: { clubId: string }) => {
+interface ClubDebuggerProps {
+  clubId: string;
+}
+
+const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
+  const { members, isUserClubMember, currentClub } = useClub();
   const { user } = useAuth();
-  const { isUserClubMember, userClubs, currentClub, joinCurrentClub, refreshClubs, refreshMembers } = useClub();
+  const [directMembershipCheck, setDirectMembershipCheck] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>({});
+  const [edgeFunctionCheck, setEdgeFunctionCheck] = useState<any>(null);
   
-  const fetchDebugInfo = async () => {
+  const checkMembership = async () => {
     if (!user || !clubId) return;
     
     setLoading(true);
     try {
-      // Manual check for club membership using edge function
-      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'check_club_member',
-          params: {
-            club_id: clubId,
-            user_id: user.id
-          }
-        }
-      });
-      
-      // Direct database query (will likely trigger the recursion error)
-      let directQueryResult = null;
-      let directQueryError = null;
+      // Direct DB query check (will likely fail with RLS error)
       try {
         const { data, error } = await supabase
           .from('club_members')
@@ -40,161 +31,103 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
           .eq('user_id', user.id)
           .maybeSingle();
           
-        directQueryResult = data;
-        directQueryError = error;
-      } catch (e) {
-        directQueryError = e;
+        setDirectMembershipCheck({ data, error: error?.message });
+      } catch (error: any) {
+        setDirectMembershipCheck({ error: error.message });
       }
       
-      // Log user clubs
-      console.log("DEBUG - Current User Clubs:", userClubs);
-      
-      // Check club membership using context
-      const isMember = isUserClubMember(clubId);
-      console.log(`DEBUG - isUserClubMember result for club ${clubId}:`, isMember);
-      
-      setDebugInfo({
-        userId: user.id,
-        clubId,
-        contextMembership: isMember,
-        directQueryMembership: directQueryResult ? true : false,
-        membershipData: directQueryResult,
-        membershipError: directQueryError,
-        edgeFunctionMembership: edgeFunctionData?.is_member === true,
-        edgeFunctionData,
-        edgeFunctionError,
-        userClubs: userClubs,
-        currentClub: currentClub
-      });
-    } catch (error) {
-      console.error("Error fetching debug info:", error);
-      setDebugInfo({ error });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Force join the club with a direct database insert through edge function
-  const forceJoin = async () => {
-    if (!user || !clubId) return;
-    
-    setLoading(true);
-    try {
-      console.log("DEBUG - Forcing club join...");
-      toast.loading('Attempting to join club via admin route...');
-      
-      // Direct API call through edge function with service role token
-      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'join_club',
-          params: {
-            club_id: clubId,
-            user_id: user.id,
-            membership_type: 'free',
-            force: true  // Signal that this is a forced join
+      // Edge function check (should work)
+      try {
+        const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+          body: {
+            sqlName: 'check_club_member',
+            params: {
+              club_id: clubId,
+              user_id: user.id
+            }
           }
-        }
-      });
-      
-      console.log("DEBUG - Force join result:", { data, error });
-      
-      if (error) throw error;
-      
-      toast.dismiss();
-      toast.success('Successfully joined club!');
-      
-      // Refresh clubs and debug info
-      await refreshClubs();
-      await refreshMembers();
-      await fetchDebugInfo();
-      
-      // Force page reload to update UI state
-      window.location.reload();
-      
-    } catch (error) {
-      console.error("Error in force join:", error);
-      toast.dismiss();
-      toast.error(`Failed to join: ${error.message}`);
-      setDebugInfo(prev => ({ ...prev, forceJoinError: error }));
+        });
+        
+        setEdgeFunctionCheck({ data, error: error?.message });
+      } catch (error: any) {
+        setEdgeFunctionCheck({ error: error.message });
+      }
     } finally {
       setLoading(false);
     }
   };
-  
-  useEffect(() => {
-    if (user && clubId) {
-      fetchDebugInfo();
-    }
-  }, [user, clubId, userClubs]);
-  
-  if (!user) return <div>User not authenticated</div>;
   
   return (
-    <Card className="bg-zinc-800 border-zinc-700 my-2">
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Club Debugging Info</CardTitle>
-      </CardHeader>
-      <CardContent className="text-xs space-y-2">
-        <div className="grid grid-cols-2 gap-1">
-          <div>User ID:</div>
-          <div className="font-mono">{user.id}</div>
-          
-          <div>Club ID:</div>
-          <div className="font-mono">{clubId}</div>
-          
-          <div>Context says is member:</div>
-          <div>{debugInfo.contextMembership ? "Yes" : "No"}</div>
-          
-          <div>DB query says is member:</div>
-          <div>{debugInfo.directQueryMembership ? "Yes" : "No"}</div>
-          
-          <div>Edge function says is member:</div>
-          <div>{debugInfo.edgeFunctionMembership ? "Yes" : "No"}</div>
-          
-          <div>User Clubs Count:</div>
-          <div>{debugInfo.userClubs?.length || 0}</div>
-          
-          <div>Error in membership check:</div>
-          <div className="text-red-400">
-            {debugInfo.membershipError ? debugInfo.membershipError.message : "None"}
+    <div className="p-3 bg-dark-400 text-xs font-mono">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-gray-300 font-bold">Club Debug Info</h3>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="h-6 text-xs"
+          onClick={checkMembership}
+          disabled={loading}
+        >
+          {loading ? 'Checking...' : 'Check Membership'}
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        <div>
+          <span className="text-gray-400">Club ID:</span> {clubId}
+        </div>
+        <div>
+          <span className="text-gray-400">User ID:</span> {user?.id || 'Not logged in'}
+        </div>
+        <div>
+          <span className="text-gray-400">Context.isUserClubMember:</span>{' '}
+          <Badge className={isUserClubMember(clubId) ? 'bg-green-600' : 'bg-red-600'}>
+            {isUserClubMember(clubId) ? 'true' : 'false'}
+          </Badge>
+        </div>
+        <div>
+          <span className="text-gray-400">Members count:</span> {members.length}
+        </div>
+        <div>
+          <span className="text-gray-400">User in members:</span>{' '}
+          <Badge className={members.some(m => m.user_id === user?.id) ? 'bg-green-600' : 'bg-red-600'}>
+            {members.some(m => m.user_id === user?.id) ? 'true' : 'false'}
+          </Badge>
+        </div>
+        
+        {directMembershipCheck && (
+          <div className="mt-4 border border-gray-600 p-2 rounded">
+            <h4 className="font-bold mb-1">Direct DB Query:</h4>
+            {directMembershipCheck.error ? (
+              <div className="text-red-400">{directMembershipCheck.error}</div>
+            ) : (
+              <div className="text-green-400">
+                {directMembershipCheck.data ? 'Member found' : 'Not a member'} 
+              </div>
+            )}
+            <pre className="mt-1 whitespace-pre-wrap text-[10px] text-gray-400 max-h-20 overflow-y-auto">
+              {JSON.stringify(directMembershipCheck, null, 2)}
+            </pre>
           </div>
-        </div>
+        )}
         
-        <div className="flex flex-row space-x-2 pt-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={fetchDebugInfo} 
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={forceJoin} 
-            disabled={loading || debugInfo.edgeFunctionMembership}
-          >
-            Force Join
-          </Button>
-          <Button 
-            size="sm" 
-            variant="destructive" 
-            onClick={() => window.location.reload()} 
-            disabled={loading}
-          >
-            Reload Page
-          </Button>
-        </div>
-        
-        <details className="pt-2">
-          <summary className="cursor-pointer">Raw Debug Data</summary>
-          <pre className="text-xs mt-2 p-2 bg-zinc-900 rounded overflow-auto max-h-60">
-            {JSON.stringify(debugInfo, null, 2)}
-          </pre>
-        </details>
-      </CardContent>
-    </Card>
+        {edgeFunctionCheck && (
+          <div className="mt-2 border border-gray-600 p-2 rounded">
+            <h4 className="font-bold mb-1">Edge Function Check:</h4>
+            {edgeFunctionCheck.error ? (
+              <div className="text-red-400">{edgeFunctionCheck.error}</div>
+            ) : (
+              <div className="text-green-400">
+                {edgeFunctionCheck.data?.is_member ? 'Member found' : 'Not a member'} 
+              </div>
+            )}
+            <pre className="mt-1 whitespace-pre-wrap text-[10px] text-gray-400 max-h-20 overflow-y-auto">
+              {JSON.stringify(edgeFunctionCheck, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
