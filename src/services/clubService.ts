@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -20,7 +21,7 @@ import {
   ClubMessage
 } from '@/types/club';
 import { Profile } from '@/types/profile';
-import { safelyGetProfile } from '@/utils/profileUtils';
+import { safelyGetProfile, isValidProfile } from '@/utils/profileUtils';
 import { Workout } from '@/types/workout';
 
 /**
@@ -624,9 +625,8 @@ export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
     
     // Handle potentially missing profile/workout relationships
     return data.map(post => {
-      const validProfile = post.profile && typeof post.profile === 'object' && !('error' in post.profile) 
-        ? post.profile as Profile 
-        : undefined;
+      // Safely handle profile data with the utility function
+      const validProfile = safelyGetProfile(post.profile, post.user_id);
       
       // Only add workout if it's valid (not an error object)
       let workout: Workout | undefined = undefined;
