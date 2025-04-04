@@ -8,6 +8,7 @@ import ClubFeed from './ClubFeed';
 import ClubEvents from './ClubEvents';
 import ClubMembers from './ClubMembers';
 import { useNavigate } from 'react-router-dom';
+import ClubDebugger from '@/components/debug/ClubDebugger';
 
 interface ClubLayoutProps {
   clubId: string;
@@ -17,19 +18,29 @@ type ActiveView = 'chat' | 'feed' | 'events' | 'members';
 
 const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const [activeView, setActiveView] = useState<ActiveView>('chat');
-  const { currentClub, refreshClubs, refreshMembers } = useClub();
+  const { currentClub, refreshClubs, refreshMembers, isUserClubMember } = useClub();
   const navigate = useNavigate();
   
-  // Refresh membership info when the component loads
+  // Enhanced logging
   useEffect(() => {
+    console.log("[ClubLayout] Component mounted with clubId:", clubId);
+    const isMember = isUserClubMember(clubId);
+    console.log("[ClubLayout] Initial membership check:", isMember);
+    
+    // Refresh membership info when the component loads
     const refreshData = async () => {
       try {
+        console.log("[ClubLayout] Refreshing club data...");
         await Promise.all([
           refreshClubs(),
           refreshMembers()
         ]);
+        
+        // Check membership after refresh
+        const isMemberAfterRefresh = isUserClubMember(clubId);
+        console.log("[ClubLayout] Membership after refresh:", isMemberAfterRefresh);
       } catch (error) {
-        console.error('Error refreshing club data:', error);
+        console.error('[ClubLayout] Error refreshing club data:', error);
       }
     };
     
@@ -69,6 +80,13 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
         <div className="flex-1 overflow-y-auto">
           {renderMainContent()}
         </div>
+        
+        {/* Debug panel for development */}
+        {import.meta.env.DEV && (
+          <div className="border-t border-dark-400">
+            <ClubDebugger clubId={clubId} />
+          </div>
+        )}
       </div>
     </div>
   );

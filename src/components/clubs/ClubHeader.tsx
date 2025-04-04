@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ClubDebugger from '@/components/debug/ClubDebugger';
 
 interface ClubHeaderProps {
   clubId: string;
@@ -33,15 +34,18 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
     isUserClubMember,
     refreshClubs,
     refreshMembers,
+    userClubs
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
   
   if (!currentClub) return null;
   
-  // Check if the user is a member of this club
+  // Check if the user is a member of this club with improved logging
   const isMember = isUserClubMember(clubId);
-  console.log("ClubHeader - Is member:", isMember);
+  console.log("[ClubHeader] ClubId:", clubId, "User:", user?.id, "isMember:", isMember);
+  console.log("[ClubHeader] UserClubs:", userClubs);
+  console.log("[ClubHeader] Current club:", currentClub);
   
   const handleJoinClick = async () => {
     if (!user) {
@@ -51,7 +55,10 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
     }
     
     try {
-      console.log("Joining club:", clubId);
+      console.log("[ClubHeader] Joining club:", clubId);
+      console.log("[ClubHeader] Current user:", user.id);
+      console.log("[ClubHeader] Current userClubs:", userClubs);
+      
       await toast.promise(
         joinCurrentClub(),
         {
@@ -62,15 +69,20 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
       );
       
       // Force immediate refresh of membership data
+      console.log("[ClubHeader] Join completed, refreshing data...");
       await Promise.all([
         refreshClubs(),
         refreshMembers()
       ]);
       
+      console.log("[ClubHeader] Data refreshed, checking membership status...");
+      const newIsMember = isUserClubMember(clubId);
+      console.log("[ClubHeader] After join, isMember:", newIsMember);
+      
       // Force page refresh after joining
       window.location.reload();
     } catch (error) {
-      console.error('Error joining club:', error);
+      console.error('[ClubHeader] Error joining club:', error);
       toast.error('Failed to join club. Please try again.');
     }
   };
@@ -156,6 +168,13 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
           </>
         )}
       </div>
+      
+      {/* Add debug panel for development */}
+      {import.meta.env.DEV && false && (
+        <div className="absolute top-14 right-0 z-50 w-96">
+          <ClubDebugger clubId={clubId} />
+        </div>
+      )}
     </div>
   );
 };

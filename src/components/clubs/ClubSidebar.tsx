@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import ClubDebugger from '@/components/debug/ClubDebugger';
 
 interface ClubSidebarProps {
   clubId: string;
@@ -44,7 +44,8 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
     leaveCurrentClub,
     joinCurrentClub,
     refreshClubs,
-    refreshMembers
+    refreshMembers,
+    userClubs
   } = useClub();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +53,9 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
   if (!currentClub) return null;
   
   const isMember = isUserClubMember(clubId);
+  console.log(`[ClubSidebar] ClubId: ${clubId}, User: ${user?.id}, isMember: ${isMember}`);
+  console.log(`[ClubSidebar] UserClubs: `, userClubs);
+  
   const isAdmin = isUserClubAdmin(clubId);
   
   const handleLeaveClick = async () => {
@@ -71,7 +75,10 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
     }
     
     try {
-      console.log("Joining club:", clubId);
+      console.log("[ClubSidebar] Joining club:", clubId);
+      console.log("[ClubSidebar] Current user:", user.id);
+      console.log("[ClubSidebar] Current userClubs:", userClubs);
+      
       await toast.promise(
         joinCurrentClub(),
         {
@@ -81,16 +88,19 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
         }
       );
       
-      // Force immediate refresh of membership data
+      console.log("[ClubSidebar] Join completed, refreshing data...");
       await Promise.all([
         refreshClubs(),
         refreshMembers()
       ]);
       
-      // Force page refresh after joining
+      console.log("[ClubSidebar] Data refreshed, checking membership status...");
+      const newIsMember = isUserClubMember(clubId);
+      console.log("[ClubSidebar] After join, isMember:", newIsMember);
+      
       window.location.reload();
     } catch (error) {
-      console.error('Error joining club:', error);
+      console.error('[ClubSidebar] Error joining club:', error);
       toast.error('Failed to join club. Please try again.');
     }
   };
@@ -135,7 +145,6 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
   
   return (
     <div className="w-56 lg:w-64 bg-dark-300 flex flex-col border-r border-dark-400">
-      {/* Club header */}
       <div className="p-4 border-b border-dark-400">
         <div className="flex items-center space-x-2">
           {onBack && (
@@ -169,10 +178,8 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
         </div>
       </div>
       
-      {/* Rest of sidebar */}
       <ScrollArea className="flex-1">
         <div className="px-3 py-4">
-          {/* Main navigation */}
           <div className="mb-6">
             <div className="flex items-center justify-between px-2 mb-2">
               <h4 className="text-xs font-semibold text-gray-400 uppercase">Main</h4>
@@ -207,7 +214,6 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
             />
           </div>
           
-          {/* Chat channels */}
           <div className="mb-6">
             <div className="flex items-center justify-between px-2 mb-2">
               <h4 className="text-xs font-semibold text-gray-400 uppercase">Channels</h4>
@@ -237,7 +243,6 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
         </div>
       </ScrollArea>
       
-      {/* User controls */}
       <div className="p-3 border-t border-dark-400 bg-dark-400">
         {isMember ? (
           <div className="flex justify-between">
@@ -272,6 +277,10 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
           </Button>
         )}
       </div>
+
+      {import.meta.env.DEV && (
+        <ClubDebugger clubId={clubId} />
+      )}
     </div>
   );
 };

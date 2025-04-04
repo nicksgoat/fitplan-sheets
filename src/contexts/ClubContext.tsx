@@ -148,7 +148,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       refreshPosts();
       refreshMessages();
       
-      // Subscribe to real-time message updates
       const unsubscribe = subscribeToClubMessages(currentClub.id, (newMessage) => {
         setMessages(prev => [newMessage, ...prev]);
       });
@@ -173,7 +172,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUserClubs(userClubData);
         } catch (error) {
           console.error('Error fetching user clubs:', error);
-          // Don't fail the whole operation if we can't get user clubs
           setUserClubs([]);
         }
       } else {
@@ -252,24 +250,71 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const joinCurrentClub = async (membershipType: MembershipType = 'free') => {
     if (!currentClub || !user) {
+      console.log(`[ClubContext] joinCurrentClub: No club or user`, { 
+        hasCurrentClub: !!currentClub,
+        hasUser: !!user
+      });
       toast.error('You must be logged in to join a club');
       throw new Error('Cannot join club: either no club selected or user not logged in');
     }
     
     try {
-      console.log(`User ${user.id} joining club ${currentClub.id} with membership ${membershipType}`);
-      const membership = await joinClub(currentClub.id, membershipType);
-      console.log("Join club result:", membership);
+      console.log(`[ClubContext] User ${user.id} joining club ${currentClub.id} with membership ${membershipType}`);
+      console.log(`[ClubContext] Current userClubs before join:`, userClubs);
       
-      setMembers(prev => [...prev, membership]);
+      const alreadyMember = isUserClubMember(currentClub.id);
+      if (alreadyMember) {
+        console.log(`[ClubContext] User is already a member of this club`);
+        toast.info(`You're already a member of ${currentClub.name}`);
+        return userClubs.find(uc => uc.club.id === currentClub.id)?.membership;
+      }
       
-      // Refresh clubs to update userClubs
-      await refreshClubs();
+      console.log(`[ClubContext] Calling edge function to join club`);
+      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+        body: {
+          sqlName: 'join_club',
+          params: {
+            club_id: currentClub.id,
+            user_id: user.id,
+            membership_type: membershipType
+          }
+        }
+      });
+      
+      if (error) {
+        console.error(`[ClubContext] Error from edge function:`, error);
+        throw error;
+      }
+      
+      console.log(`[ClubContext] Join club edge function result:`, data);
+      
+      if (data) {
+        const membership = {
+          id: data.id,
+          club_id: data.club_id,
+          user_id: data.user_id,
+          role: data.role as MemberRole,
+          status: data.status as MemberStatus,
+          membership_type: data.membership_type as MembershipType,
+          joined_at: data.joined_at,
+        } as ClubMember;
+        
+        console.log(`[ClubContext] Adding new membership to members state:`, membership);
+        setMembers(prev => [...prev, membership]);
+        
+        console.log(`[ClubContext] Refreshing clubs to update userClubs`);
+        await refreshClubs();
+      }
       
       toast.success(`You've joined ${currentClub.name}`);
-      return membership;
+      
+      console.log(`[ClubContext] Checking membership after join`);
+      const isMember = isUserClubMember(currentClub.id);
+      console.log(`[ClubContext] After join, isUserClubMember returns: ${isMember}`);
+      
+      return data;
     } catch (error) {
-      console.error('Error joining club:', error);
+      console.error('[ClubContext] Error joining club:', error);
       toast.error('Failed to join club');
       throw error;
     }
@@ -368,7 +413,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await respondToEvent(eventId, status);
       
-      // Update the events list with the new participant
       setEvents(prev => prev.map(event => {
         if (event.id === eventId) {
           const updatedParticipants = event.participants || [];
@@ -433,20 +477,16 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     if (membershipType === 'premium') {
-      // Premium memberships are handled through Stripe checkout
-      // This will be implemented in the component that calls this function
       return null;
     }
     
     try {
       const updatedMember = await updateMembership(clubId, membershipType);
       
-      // Update the members list with the new membership type
       setMembers(prev => prev.map(member => 
         member.user_id === user.id ? updatedMember : member
       ));
       
-      // Also update userClubs to reflect the new membership type
       refreshClubs();
       
       return updatedMember;
@@ -513,7 +553,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const newComment = await createComment(comment);
       
-      // Update the post with the new comment
       setPosts(prev => prev.map(post => {
         if (post.id === comment.post_id) {
           const comments = post.comments || [];
@@ -534,7 +573,6 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await deleteComment(id);
       
-      // Update the posts to remove the deleted comment
       setPosts(prev => prev.map(post => {
         if (post.comments?.some(comment => comment.id === id)) {
           return {
@@ -603,9 +641,23 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   
   const isUserClubMember = (clubId: string): boolean => {
-    if (!user) return false;
+    if (!user) {
+      console.log(`[ClubContext] isUserClubMember: No user logged in`);
+      return false;
+    }
+    
+    console.log(`[ClubContext] isUserClubMember checking:`, {
+      clubId,
+      userId: user.id,
+      userClubsCount: userClubs.length,
+      userClubs: userClubs.map(uc => ({ 
+        clubId: uc.club.id,
+        isMatch: uc.club.id === clubId 
+      })),
+    });
+    
     const result = userClubs.some(uc => uc.club.id === clubId);
-    console.log(`Checking if user ${user.id} is member of club ${clubId}:`, result);
+    console.log(`[ClubContext] isUserClubMember result for club ${clubId}:`, result);
     return result;
   };
   
