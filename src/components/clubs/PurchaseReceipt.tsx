@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +20,7 @@ import {
   Receipt,
   RefreshCw
 } from 'lucide-react';
+import { getUserClubSubscription } from '@/services/clubService';
 
 const PurchaseReceipt: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -32,7 +32,6 @@ const PurchaseReceipt: React.FC = () => {
   const [subscription, setSubscription] = useState<ClubSubscription | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch purchase or subscription data
   useEffect(() => {
     const fetchData = async () => {
       if (!user) {
@@ -52,7 +51,6 @@ const PurchaseReceipt: React.FC = () => {
         }
         
         if (type === 'product') {
-          // Fetch product purchase by Stripe session ID
           const { data, error } = await supabase
             .from('club_product_purchases')
             .select(`
@@ -64,14 +62,12 @@ const PurchaseReceipt: React.FC = () => {
           
           if (error) throw error;
           
-          // Cast the data with proper types
           setPurchase({
             ...data,
             status: data.status as PurchaseStatus,
             product: data.product as ClubProduct
           } as ClubProductPurchase);
         } else if (type === 'subscription') {
-          // For subscription receipt, use the RPC function
           const { data, error } = await supabase.rpc('get_subscription_by_session', {
             session_id_param: sessionId
           });
@@ -82,10 +78,10 @@ const PurchaseReceipt: React.FC = () => {
             throw new Error('Subscription not found');
           }
           
-          // Cast to proper type
+          const subData = data[0];
           setSubscription({
-            ...data[0],
-            status: data[0].status as SubscriptionStatus
+            ...subData,
+            status: subData.status as SubscriptionStatus
           } as ClubSubscription);
         }
       } catch (err) {
