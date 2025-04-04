@@ -21,7 +21,7 @@ import {
   ClubMessage
 } from '@/types/club';
 import { Profile } from '@/types/profile';
-import { safelyGetProfile, isValidProfile } from '@/utils/profileUtils';
+import { safelyGetProfile } from '@/utils/profileUtils';
 import { Workout } from '@/types/workout';
 
 /**
