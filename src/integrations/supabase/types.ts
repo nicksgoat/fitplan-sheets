@@ -1059,6 +1059,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_club_member_safe: {
+        Args: {
+          club_id_param: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
       list_tables: {
         Args: Record<PropertyKey, never>
         Returns: {

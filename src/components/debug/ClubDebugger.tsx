@@ -5,21 +5,33 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle, Check, Database } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ClubDebuggerProps {
   clubId: string;
 }
 
 const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
-  const { members, isUserClubMember, currentClub, refreshMembers, loadingMembers, posts, messages, events } = useClub();
+  const { members, isUserClubMember, currentClub, refreshMembers, loadingMembers, posts, messages, events, refreshPosts, refreshMessages, refreshEvents } = useClub();
   const { user } = useAuth();
   const [directMembershipCheck, setDirectMembershipCheck] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [edgeFunctionCheck, setEdgeFunctionCheck] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [forceRefreshAttempts, setForceRefreshAttempts] = useState(0);
+  const [refreshingData, setRefreshingData] = useState<{
+    members: boolean;
+    posts: boolean;
+    messages: boolean;
+    events: boolean;
+  }>({
+    members: false,
+    posts: false,
+    messages: false,
+    events: false
+  });
   
   // Check if there's a data consistency issue
   const hasConsistencyIssue = isUserClubMember(clubId) && members.length > 0 && !members.some(m => m.user_id === user?.id);
@@ -42,6 +54,10 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
           
         console.log("Direct DB query result:", { data, error });
         setDirectMembershipCheck({ data, error: error?.message });
+        
+        if (!error && data) {
+          toast.success("Direct DB query successful! RLS policy is working.");
+        }
       } catch (error: any) {
         console.error("Direct DB query failed:", error);
         setDirectMembershipCheck({ error: error.message });
@@ -62,6 +78,10 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
         
         console.log("Edge function membership check result:", data);
         setEdgeFunctionCheck({ data, error: error?.message });
+        
+        if (!error && data?.is_member) {
+          toast.success("Edge function confirms you are a member");
+        }
       } catch (error: any) {
         console.error("Edge function check failed:", error);
         setEdgeFunctionCheck({ error: error.message });
@@ -76,7 +96,9 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
     setForceRefreshAttempts(prev => prev + 1);
     try {
       console.log("Force refreshing club members data...");
+      setRefreshingData(prev => ({ ...prev, members: true }));
       await refreshMembers();
+      setRefreshingData(prev => ({ ...prev, members: false }));
       console.log("Members after forced refresh:", members);
       
       // Check if members still empty after refresh
@@ -89,6 +111,49 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
     } catch (error) {
       console.error("Error during force refresh:", error);
       toast.error("Failed to refresh members data");
+      setRefreshingData(prev => ({ ...prev, members: false }));
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleForceRefreshAll = async () => {
+    setRefreshing(true);
+    setForceRefreshAttempts(prev => prev + 1);
+    try {
+      // Refresh all club data
+      console.log("Force refreshing all club data...");
+      
+      setRefreshingData(prev => ({ ...prev, members: true }));
+      await refreshMembers();
+      setRefreshingData(prev => ({ ...prev, members: false }));
+      console.log("Members after forced refresh:", members);
+      
+      setRefreshingData(prev => ({ ...prev, posts: true }));
+      await refreshPosts();
+      setRefreshingData(prev => ({ ...prev, posts: false }));
+      console.log("Posts after forced refresh:", posts);
+      
+      setRefreshingData(prev => ({ ...prev, messages: true }));
+      await refreshMessages();
+      setRefreshingData(prev => ({ ...prev, messages: false }));
+      console.log("Messages after forced refresh:", messages);
+      
+      setRefreshingData(prev => ({ ...prev, events: true }));
+      await refreshEvents();
+      setRefreshingData(prev => ({ ...prev, events: false }));
+      console.log("Events after forced refresh:", events);
+      
+      toast.success("All club data refreshed successfully");
+    } catch (error) {
+      console.error("Error during force refresh all:", error);
+      toast.error("Failed to refresh all club data");
+      setRefreshingData({
+        members: false,
+        posts: false,
+        messages: false,
+        events: false
+      });
     } finally {
       setRefreshing(false);
     }
@@ -111,16 +176,21 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                 Checking...
               </>
-            ) : 'Check Membership'}
+            ) : (
+              <>
+                <Database className="mr-1 h-3 w-3" />
+                Check Membership
+              </>
+            )}
           </Button>
           <Button 
             size="sm" 
             variant="outline" 
             className="h-6 text-xs"
             onClick={handleForceRefresh}
-            disabled={refreshing || loadingMembers}
+            disabled={refreshing || loadingMembers || refreshingData.members}
           >
-            {(refreshing || loadingMembers) ? (
+            {(refreshing || loadingMembers || refreshingData.members) ? (
               <>
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                 Refreshing...
@@ -128,7 +198,26 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
             ) : (
               <>
                 <RefreshCw className="mr-1 h-3 w-3" />
-                Force Refresh
+                Refresh Members
+              </>
+            )}
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
+            className="h-6 text-xs bg-fitbloom-purple/20 hover:bg-fitbloom-purple/30"
+            onClick={handleForceRefreshAll}
+            disabled={refreshing || Object.values(refreshingData).some(val => val)}
+          >
+            {(refreshing || Object.values(refreshingData).some(val => val)) ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Refreshing All...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Refresh All Data
               </>
             )}
           </Button>
@@ -136,14 +225,25 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
       </div>
       
       {(membersEmpty || hasConsistencyIssue) && (
-        <div className="mb-2 p-2 bg-amber-900/30 border border-amber-800/50 rounded flex items-center gap-2 text-amber-300">
+        <Alert className="mb-2 bg-amber-900/30 border border-amber-800/50 rounded text-amber-300">
           <AlertTriangle className="h-4 w-4" />
-          <span>
+          <AlertTitle className="text-xs">Data Inconsistency Detected</AlertTitle>
+          <AlertDescription className="text-xs">
             {membersEmpty 
-              ? "You appear to be a member, but the members list is empty. Try the Force Refresh button." 
-              : "Data consistency issue detected. Your user might be missing from members array."}
-          </span>
-        </div>
+              ? "You appear to be a member, but the members list is empty. Try the Refresh All Data button." 
+              : "Your user might be missing from members array. Try refreshing club data."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {directMembershipCheck?.data && !directMembershipCheck?.error && (
+        <Alert className="mb-2 bg-green-900/30 border border-green-800/50 rounded text-green-300">
+          <Check className="h-4 w-4" />
+          <AlertTitle className="text-xs">RLS Policy Fixed!</AlertTitle>
+          <AlertDescription className="text-xs">
+            Direct database queries for club membership are now working correctly.
+          </AlertDescription>
+        </Alert>
       )}
       
       <div className="space-y-2">
@@ -178,16 +278,19 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
           </Badge>
         </div>
         
-        <div>
+        <div className="flex gap-2 items-center">
           <span className="text-gray-400">Posts count:</span> {posts.length}
+          {refreshingData.posts && <Loader2 className="h-3 w-3 animate-spin" />}
         </div>
         
-        <div>
+        <div className="flex gap-2 items-center">
           <span className="text-gray-400">Messages count:</span> {messages.length}
+          {refreshingData.messages && <Loader2 className="h-3 w-3 animate-spin" />}
         </div>
         
-        <div>
+        <div className="flex gap-2 items-center">
           <span className="text-gray-400">Events count:</span> {events.length}
+          {refreshingData.events && <Loader2 className="h-3 w-3 animate-spin" />}
         </div>
         
         {directMembershipCheck && (
