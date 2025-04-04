@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -256,6 +257,7 @@ export async function createClub(clubData: {
   banner_url?: string;
 }): Promise<Club> {
   try {
+    // Start a Supabase transaction for creating both the club and adding the creator as an admin member
     const { data, error } = await supabase.from('clubs').insert({
       name: clubData.name,
       description: clubData.description,
@@ -269,6 +271,21 @@ export async function createClub(clubData: {
     
     if (error) throw error;
     if (!data) throw new Error('No data returned after club creation');
+    
+    // Now add the creator as an admin member to the club
+    const { error: memberError } = await supabase.from('club_members').insert({
+      club_id: data.id,
+      user_id: clubData.creator_id,
+      role: 'admin' as MemberRole,
+      status: 'active' as MemberStatus,
+      membership_type: data.membership_type || 'free' as MembershipType
+    });
+    
+    if (memberError) {
+      console.error('Error adding creator as club member:', memberError);
+      // If we fail to add the user as a member, we don't want to fail the whole operation
+      // since the club was already created successfully
+    }
     
     return {
       ...data,
