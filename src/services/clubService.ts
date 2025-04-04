@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -17,7 +18,8 @@ import {
   Club,
   ClubPost,
   ClubPostComment,
-  ClubMessage
+  ClubMessage,
+  ClubType // Added missing ClubType import
 } from '@/types/club';
 import { Profile } from '@/types/profile';
 import { safelyGetProfile } from '@/utils/profileUtils';
