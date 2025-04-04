@@ -18,8 +18,16 @@ type ActiveView = 'chat' | 'feed' | 'events' | 'members';
 
 const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const [activeView, setActiveView] = useState<ActiveView>('chat');
-  const { currentClub, refreshClubs, refreshMembers, isUserClubMember, members } = useClub();
+  const { 
+    currentClub, 
+    refreshClubs, 
+    refreshMembers, 
+    isUserClubMember, 
+    members,
+    loadingMembers
+  } = useClub();
   const navigate = useNavigate();
+  const [initialLoad, setInitialLoad] = useState(true);
   
   // Enhanced logging
   useEffect(() => {
@@ -40,13 +48,23 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
         const isMemberAfterRefresh = isUserClubMember(clubId);
         console.log("[ClubLayout] Membership after refresh:", isMemberAfterRefresh);
         console.log("[ClubLayout] Members after refresh:", members);
+        setInitialLoad(false);
       } catch (error) {
         console.error('[ClubLayout] Error refreshing club data:', error);
+        setInitialLoad(false);
       }
     };
     
     refreshData();
-  }, [clubId, refreshClubs, refreshMembers]);
+  }, [clubId]);
+  
+  // Add a secondary effect to check if members is empty after loading
+  useEffect(() => {
+    if (!initialLoad && !loadingMembers && members.length === 0 && isUserClubMember(clubId)) {
+      console.log("[ClubLayout] Members array is empty but user is a member, retrying refresh...");
+      refreshMembers();
+    }
+  }, [initialLoad, loadingMembers, members.length, clubId, isUserClubMember]);
   
   const renderMainContent = () => {
     switch (activeView) {

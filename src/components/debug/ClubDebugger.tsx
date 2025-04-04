@@ -5,13 +5,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface ClubDebuggerProps {
   clubId: string;
 }
 
 const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
-  const { members, isUserClubMember, currentClub, refreshMembers } = useClub();
+  const { members, isUserClubMember, currentClub, refreshMembers, loadingMembers } = useClub();
   const { user } = useAuth();
   const [directMembershipCheck, setDirectMembershipCheck] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -85,16 +86,26 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
             onClick={checkMembership}
             disabled={loading}
           >
-            {loading ? 'Checking...' : 'Check Membership'}
+            {loading ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Checking...
+              </>
+            ) : 'Check Membership'}
           </Button>
           <Button 
             size="sm" 
             variant="outline" 
             className="h-6 text-xs"
             onClick={handleForceRefresh}
-            disabled={refreshing}
+            disabled={refreshing || loadingMembers}
           >
-            {refreshing ? 'Refreshing...' : 'Force Refresh'}
+            {(refreshing || loadingMembers) ? (
+              <>
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Refreshing...
+              </>
+            ) : 'Force Refresh'}
           </Button>
         </div>
       </div>
@@ -113,7 +124,13 @@ const ClubDebugger: React.FC<ClubDebuggerProps> = ({ clubId }) => {
           </Badge>
         </div>
         <div>
-          <span className="text-gray-400">Members count:</span> {members.length}
+          <span className="text-gray-400">Members loading:</span>{' '}
+          <Badge className={loadingMembers ? 'bg-yellow-600' : 'bg-blue-600'}>
+            {loadingMembers ? 'true' : 'false'}
+          </Badge>
+        </div>
+        <div>
+          <span className="text-gray-400">Members count:</span> {loadingMembers ? 'Loading...' : members.length}
         </div>
         <div>
           <span className="text-gray-400">User in members:</span>{' '}
