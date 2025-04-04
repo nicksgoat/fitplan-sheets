@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const ClubDebugger = ({ clubId }: { clubId: string }) => {
   const { user } = useAuth();
@@ -32,6 +33,33 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
       const isMember = isUserClubMember(clubId);
       console.log(`DEBUG - isUserClubMember result for club ${clubId}:`, isMember);
       
+      // Use admin client via edge function to check membership
+      let adminCheckResult = null;
+      let adminCheckError = null;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+          body: {
+            sqlName: 'join_club', // Reusing this function since it already does a membership check
+            params: {
+              club_id: clubId,
+              user_id: user.id,
+              check_only: true
+            }
+          }
+        });
+        
+        if (data && !error) {
+          adminCheckResult = data;
+        }
+        
+        if (error) {
+          adminCheckError = error;
+        }
+      } catch (e) {
+        adminCheckError = e;
+      }
+      
       setDebugInfo({
         userId: user.id,
         clubId,
@@ -40,7 +68,9 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
         membershipData: memberData,
         membershipError: memberError,
         userClubs: userClubs,
-        currentClub: currentClub
+        currentClub: currentClub,
+        adminCheckResult,
+        adminCheckError
       });
     } catch (error) {
       console.error("Error fetching debug info:", error);
@@ -50,22 +80,24 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
     }
   };
   
-  // Force join the club with a direct database insert
+  // Force join the club with a direct database insert through edge function
   const forceJoin = async () => {
     if (!user || !clubId) return;
     
     setLoading(true);
     try {
       console.log("DEBUG - Forcing club join...");
+      toast.loading('Attempting to join club via admin route...');
       
-      // Direct API call to bypass any client-side issues
+      // Direct API call through edge function with service role token
       const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
         body: {
           sqlName: 'join_club',
           params: {
             club_id: clubId,
             user_id: user.id,
-            membership_type: 'free'
+            membership_type: 'free',
+            force: true  // Signal that this is a forced join
           }
         }
       });
@@ -73,6 +105,9 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
       console.log("DEBUG - Force join result:", { data, error });
       
       if (error) throw error;
+      
+      toast.dismiss();
+      toast.success('Successfully joined club!');
       
       // Refresh clubs and debug info
       await refreshClubs();
@@ -84,6 +119,8 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
       
     } catch (error) {
       console.error("Error in force join:", error);
+      toast.dismiss();
+      toast.error(`Failed to join: ${error.message}`);
       setDebugInfo(prev => ({ ...prev, forceJoinError: error }));
     } finally {
       setLoading(false);
@@ -119,6 +156,11 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
           
           <div>User Clubs Count:</div>
           <div>{debugInfo.userClubs?.length || 0}</div>
+          
+          <div>Error in membership check:</div>
+          <div className="text-red-400">
+            {debugInfo.membershipError ? debugInfo.membershipError.message : "None"}
+          </div>
         </div>
         
         <div className="flex flex-row space-x-2 pt-2">

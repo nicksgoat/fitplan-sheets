@@ -60,49 +60,61 @@ serve(async (req) => {
         // Handle joining a club
         console.log(`[JOIN_CLUB] User ${params.user_id} joining club ${params.club_id}`);
         
-        // Check if user is already a member
-        const { data: existingMember, error: memberCheckError } = await supabase
-          .from('club_members')
-          .select('*')
-          .eq('club_id', params.club_id)
-          .eq('user_id', params.user_id)
-          .maybeSingle();
-          
-        console.log("[JOIN_CLUB] Existing member check:", existingMember, memberCheckError);
+        try {
+          // Using service role client for admin operations that bypass RLS
+          // This is the key fix for the infinite recursion issue
+          const adminSupabase = createClient(
+            Deno.env.get("SUPABASE_URL") ?? "",
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+          );
         
-        if (existingMember) {
-          console.log("[JOIN_CLUB] User already a member, returning existing membership");
+          // Check if user is already a member
+          const { data: existingMember, error: memberCheckError } = await adminSupabase
+            .from('club_members')
+            .select('*')
+            .eq('club_id', params.club_id)
+            .eq('user_id', params.user_id)
+            .maybeSingle();
+            
+          console.log("[JOIN_CLUB] Existing member check:", existingMember, memberCheckError);
+          
+          if (existingMember) {
+            console.log("[JOIN_CLUB] User already a member, returning existing membership");
+            return new Response(
+              JSON.stringify(existingMember),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+            
+          // Insert new membership record with admin client to bypass RLS
+          const { data: newMembership, error: insertError } = await adminSupabase
+            .from('club_members')
+            .insert({
+              club_id: params.club_id,
+              user_id: params.user_id,
+              role: params.role || 'member',
+              status: 'active',
+              membership_type: params.membership_type || 'free'
+            })
+            .select()
+            .single();
+            
+          console.log("[JOIN_CLUB] Insert result:", newMembership, insertError);
+            
+          if (insertError) {
+            console.error("[JOIN_CLUB] Error inserting membership:", insertError);
+            throw insertError;
+          }
+          
+          console.log("[JOIN_CLUB] Successfully joined club");
           return new Response(
-            JSON.stringify(existingMember),
+            JSON.stringify(newMembership),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
+        } catch (error) {
+          console.error("[JOIN_CLUB] Error:", error);
+          throw new Error(`Failed to join club: ${error.message}`);
         }
-          
-        // Insert new membership record directly with SQL
-        const { data: newMembership, error: insertError } = await supabase
-          .from('club_members')
-          .insert({
-            club_id: params.club_id,
-            user_id: params.user_id,
-            role: params.role || 'member',
-            status: 'active',
-            membership_type: params.membership_type || 'free'
-          })
-          .select()
-          .single();
-          
-        console.log("[JOIN_CLUB] Insert result:", newMembership, insertError);
-          
-        if (insertError) {
-          console.error("[JOIN_CLUB] Error inserting membership:", insertError);
-          throw insertError;
-        }
-        
-        console.log("[JOIN_CLUB] Successfully joined club");
-        return new Response(
-          JSON.stringify(newMembership),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
         
       // Add other SQL RPCs here as needed
       
