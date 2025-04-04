@@ -67,11 +67,23 @@ export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
     if (error) throw error;
     if (!data || !Array.isArray(data)) return [];
     
-    // Cast the data to the correct type
+    // Cast the data to the correct type with proper mapping
     return data.map(sub => ({
-      ...sub,
-      status: sub.status as SubscriptionStatus
-    })) as ClubSubscription[];
+      id: sub.id,
+      user_id: sub.user_id,
+      club_id: sub.club_id,
+      stripe_subscription_id: sub.stripe_subscription_id,
+      status: sub.status as SubscriptionStatus,
+      created_at: sub.created_at,
+      updated_at: sub.updated_at,
+      current_period_start: sub.current_period_start,
+      current_period_end: sub.current_period_end,
+      cancel_at_period_end: sub.cancel_at_period_end,
+      canceled_at: sub.canceled_at,
+      plan_amount: sub.plan_amount,
+      plan_currency: sub.plan_currency,
+      plan_interval: sub.plan_interval
+    }));
   } catch (error) {
     console.error('Error getting user subscriptions:', error);
     return [];
@@ -94,15 +106,30 @@ export async function getUserClubSubscription(
 
     if (error) throw error;
     
+    // Handle the case where data is null, undefined, not an array, or empty array
     if (!data || !Array.isArray(data) || data.length === 0) {
       return null;
     }
 
     // Cast the data to the correct type
-    return {
-      ...data[0],
-      status: data[0].status as SubscriptionStatus
-    } as ClubSubscription;
+    const subscription: ClubSubscription = {
+      id: data[0].id,
+      user_id: data[0].user_id,
+      club_id: data[0].club_id,
+      stripe_subscription_id: data[0].stripe_subscription_id,
+      status: data[0].status as SubscriptionStatus,
+      created_at: data[0].created_at,
+      updated_at: data[0].updated_at,
+      current_period_start: data[0].current_period_start,
+      current_period_end: data[0].current_period_end,
+      cancel_at_period_end: data[0].cancel_at_period_end,
+      canceled_at: data[0].canceled_at,
+      plan_amount: data[0].plan_amount,
+      plan_currency: data[0].plan_currency,
+      plan_interval: data[0].plan_interval
+    };
+
+    return subscription;
   } catch (error) {
     console.error('Error getting user subscription:', error);
     return null;
@@ -224,7 +251,17 @@ export async function createClub(clubData: {
   banner_url?: string;
 }): Promise<Club> {
   try {
-    const { data, error } = await supabase.from('clubs').insert(clubData).select().single();
+    const { data, error } = await supabase.from('clubs').insert({
+      name: clubData.name,
+      description: clubData.description,
+      club_type: clubData.club_type,
+      membership_type: clubData.membership_type,
+      premium_price: clubData.premium_price,
+      creator_id: clubData.creator_id,
+      logo_url: clubData.logo_url,
+      banner_url: clubData.banner_url
+    }).select().single();
+    
     if (error) throw error;
     if (!data) throw new Error('No data returned after club creation');
     
@@ -249,7 +286,16 @@ export async function updateClub(id: string, updates: {
   banner_url?: string;
 }): Promise<Club> {
   try {
-    const { data, error } = await supabase.from('clubs').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('clubs').update({
+      name: updates.name,
+      description: updates.description,
+      club_type: updates.club_type,
+      membership_type: updates.membership_type,
+      premium_price: updates.premium_price,
+      logo_url: updates.logo_url,
+      banner_url: updates.banner_url
+    }).eq('id', id).select().single();
+    
     if (error) throw error;
     if (!data) throw new Error('No data returned after club update');
     
@@ -438,7 +484,16 @@ export async function createEvent(event: {
   try {
     const { data, error } = await supabase
       .from('club_events')
-      .insert(event)
+      .insert({
+        club_id: event.club_id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        image_url: event.image_url,
+        created_by: event.created_by
+      })
       .select()
       .single();
     
@@ -461,9 +516,19 @@ export async function updateEvent(id: string, updates: {
   image_url?: string;
 }): Promise<ClubEvent> {
   try {
+    const eventUpdates: Record<string, any> = {};
+    
+    // Only include fields that are actually being updated
+    if (updates.name) eventUpdates.name = updates.name;
+    if (updates.description !== undefined) eventUpdates.description = updates.description;
+    if (updates.location !== undefined) eventUpdates.location = updates.location;
+    if (updates.start_time) eventUpdates.start_time = updates.start_time;
+    if (updates.end_time) eventUpdates.end_time = updates.end_time;
+    if (updates.image_url !== undefined) eventUpdates.image_url = updates.image_url;
+
     const { data, error } = await supabase
       .from('club_events')
-      .update(updates)
+      .update(eventUpdates)
       .eq('id', id)
       .select()
       .single();
@@ -583,9 +648,18 @@ export async function createPost(post: {
   workout_id?: string;
 }): Promise<ClubPost> {
   try {
+    const postData: Record<string, any> = {
+      club_id: post.club_id,
+      content: post.content,
+      user_id: post.user_id
+    };
+    
+    if (post.image_url !== undefined) postData.image_url = post.image_url;
+    if (post.workout_id !== undefined) postData.workout_id = post.workout_id;
+    
     const { data, error } = await supabase
       .from('club_posts')
-      .insert(post)
+      .insert(postData)
       .select()
       .single();
     
@@ -644,9 +718,15 @@ export async function createComment(comment: {
   content: string;
 }): Promise<ClubPostComment> {
   try {
+    const commentData = {
+      post_id: comment.post_id,
+      user_id: comment.user_id,
+      content: comment.content
+    };
+    
     const { data, error } = await supabase
       .from('club_post_comments')
-      .insert(comment)
+      .insert(commentData)
       .select()
       .single();
     
@@ -703,9 +783,16 @@ export async function sendMessage(message: {
   is_pinned?: boolean;
 }): Promise<ClubMessage> {
   try {
+    const messageData = {
+      club_id: message.club_id,
+      user_id: message.user_id,
+      content: message.content,
+      is_pinned: message.is_pinned !== undefined ? message.is_pinned : false
+    };
+    
     const { data, error } = await supabase
       .from('club_messages')
-      .insert(message)
+      .insert(messageData)
       .select()
       .single();
     

@@ -72,6 +72,7 @@ const PurchaseReceipt: React.FC = () => {
             setPurchase({
               ...purchaseData,
               status: purchaseData.status as PurchaseStatus,
+              refund_status: purchaseData.refund_status as any,
               product: purchaseData.product ? {
                 ...purchaseData.product,
                 product_type: purchaseData.product.product_type as any
@@ -79,7 +80,7 @@ const PurchaseReceipt: React.FC = () => {
             } as ClubProductPurchase);
           }
         } else if (type === 'subscription') {
-          // Use the RPC function to get subscription by session ID
+          // Use proper typing for the subscription data
           const { data, error } = await supabase.rpc('get_subscription_by_session', {
             session_id_param: sessionId
           });
@@ -88,10 +89,26 @@ const PurchaseReceipt: React.FC = () => {
           
           if (data && Array.isArray(data) && data.length > 0) {
             const subData = data[0];
-            setSubscription({
-              ...subData,
-              status: subData.status as SubscriptionStatus
-            } as ClubSubscription);
+            
+            // Create a properly typed subscription object
+            const typedSubscription: ClubSubscription = {
+              id: subData.id,
+              user_id: subData.user_id,
+              club_id: subData.club_id,
+              stripe_subscription_id: subData.stripe_subscription_id,
+              status: subData.status as SubscriptionStatus,
+              created_at: subData.created_at,
+              updated_at: subData.updated_at,
+              current_period_start: subData.current_period_start,
+              current_period_end: subData.current_period_end,
+              cancel_at_period_end: subData.cancel_at_period_end,
+              canceled_at: subData.canceled_at,
+              plan_amount: subData.plan_amount,
+              plan_currency: subData.plan_currency,
+              plan_interval: subData.plan_interval
+            };
+            
+            setSubscription(typedSubscription);
           } else {
             throw new Error('Subscription not found');
           }

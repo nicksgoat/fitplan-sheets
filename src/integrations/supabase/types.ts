@@ -885,7 +885,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_user_profile: {
+        Args: {
+          user_id: string
+          user_username: string
+          user_display_name: string
+        }
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          social_links: Json | null
+          updated_at: string | null
+          username: string | null
+          website: string | null
+        }[]
+      }
+      get_table_structure: {
+        Args: {
+          table_name: string
+        }
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+          column_default: string
+        }[]
+      }
+      list_tables: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          table_schema: string
+        }[]
+      }
     }
     Enums: {
       club_type: "fitness" | "sports" | "wellness" | "nutrition" | "other"

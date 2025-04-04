@@ -156,22 +156,37 @@ export async function getUserClubSubscription(
 ): Promise<ClubSubscription | null> {
   try {
     // Use an RPC function to get a specific subscription with proper typing
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_club_subscription', {
+    const { data, error } = await supabase.rpc('get_user_club_subscription', {
       user_id_param: userId,
       club_id_param: clubId
     });
 
-    if (rpcError) throw rpcError;
+    if (error) throw error;
     
-    if (!rpcData || !Array.isArray(rpcData) || rpcData.length === 0) {
+    // Handle the case where data is null, undefined, not an array, or empty array
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return null;
     }
 
     // Cast the data to the correct type
-    return {
-      ...rpcData[0],
-      status: rpcData[0].status as SubscriptionStatus
-    } as ClubSubscription;
+    const subscription: ClubSubscription = {
+      id: data[0].id,
+      user_id: data[0].user_id,
+      club_id: data[0].club_id,
+      stripe_subscription_id: data[0].stripe_subscription_id,
+      status: data[0].status as SubscriptionStatus,
+      created_at: data[0].created_at,
+      updated_at: data[0].updated_at,
+      current_period_start: data[0].current_period_start,
+      current_period_end: data[0].current_period_end,
+      cancel_at_period_end: data[0].cancel_at_period_end,
+      canceled_at: data[0].canceled_at,
+      plan_amount: data[0].plan_amount,
+      plan_currency: data[0].plan_currency,
+      plan_interval: data[0].plan_interval
+    };
+
+    return subscription;
   } catch (error) {
     console.error('Error getting user subscription:', error);
     return null;

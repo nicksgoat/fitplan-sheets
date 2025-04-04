@@ -15,3 +15,10 @@ enabled = true
 [studio]
 enabled = true
 port = 54323
+
+[functions.get-subscription-rpcs]
+verify_jwt = true
+
+[functions.cancel-subscription]
+verify_jwt = true
+
