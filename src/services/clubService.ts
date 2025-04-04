@@ -1010,4 +1010,19 @@ export async function fetchClubProducts(clubId: string): Promise<ClubProduct[]> 
 
 export async function purchaseClubProduct(productId: string): Promise<ClubProductPurchase> {
   try {
-    const { data
+    const { data, error } = await supabase.functions.invoke('create-checkout', {
+      body: { productId }
+    });
+    
+    if (error) throw error;
+    if (!data || !data.purchase) throw new Error('No purchase data returned');
+    
+    return {
+      ...data.purchase,
+      status: data.purchase.status as PurchaseStatus
+    } as ClubProductPurchase;
+  } catch (error) {
+    console.error(`Error purchasing club product ${productId}:`, error);
+    throw error;
+  }
+}
