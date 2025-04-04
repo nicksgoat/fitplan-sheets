@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -75,18 +76,18 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
     }
     
     try {
+      console.log("[ClubSidebar] Starting join process");
+      toast.loading('Joining club...');
+      
       console.log("[ClubSidebar] Joining club:", clubId);
       console.log("[ClubSidebar] Current user:", user.id);
       console.log("[ClubSidebar] Current userClubs:", userClubs);
       
-      await toast.promise(
-        joinCurrentClub(),
-        {
-          loading: 'Joining club...',
-          success: `You've joined ${currentClub.name}`,
-          error: 'Failed to join club. Please try again.'
-        }
-      );
+      const membership = await joinCurrentClub();
+      toast.dismiss();
+      toast.success(`You've joined ${currentClub.name}`);
+      
+      console.log("[ClubSidebar] Join result:", membership);
       
       console.log("[ClubSidebar] Join completed, refreshing data...");
       await Promise.all([
@@ -98,9 +99,13 @@ const ClubSidebar: React.FC<ClubSidebarProps> = ({
       const newIsMember = isUserClubMember(clubId);
       console.log("[ClubSidebar] After join, isMember:", newIsMember);
       
-      window.location.reload();
+      if (!newIsMember) {
+        console.log("[ClubSidebar] Membership still not showing up, forcing page reload");
+        window.location.reload();
+      }
     } catch (error) {
       console.error('[ClubSidebar] Error joining club:', error);
+      toast.dismiss();
       toast.error('Failed to join club. Please try again.');
     }
   };

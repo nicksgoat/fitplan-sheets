@@ -55,18 +55,18 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
     }
     
     try {
+      console.log("[ClubHeader] Starting join process");
+      toast.loading('Joining club...');
+      
       console.log("[ClubHeader] Joining club:", clubId);
       console.log("[ClubHeader] Current user:", user.id);
       console.log("[ClubHeader] Current userClubs:", userClubs);
       
-      await toast.promise(
-        joinCurrentClub(),
-        {
-          loading: 'Joining club...',
-          success: `You've joined ${currentClub.name}`,
-          error: 'Failed to join club. Please try again.'
-        }
-      );
+      const membership = await joinCurrentClub();
+      
+      console.log("[ClubHeader] Join result:", membership);
+      toast.dismiss();
+      toast.success(`You've joined ${currentClub.name}`);
       
       // Force immediate refresh of membership data
       console.log("[ClubHeader] Join completed, refreshing data...");
@@ -79,10 +79,13 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
       const newIsMember = isUserClubMember(clubId);
       console.log("[ClubHeader] After join, isMember:", newIsMember);
       
-      // Force page refresh after joining
-      window.location.reload();
+      if (!newIsMember) {
+        console.log("[ClubHeader] Membership still not showing up, forcing page reload");
+        window.location.reload();
+      }
     } catch (error) {
       console.error('[ClubHeader] Error joining club:', error);
+      toast.dismiss();
       toast.error('Failed to join club. Please try again.');
     }
   };
@@ -169,8 +172,8 @@ const ClubHeader: React.FC<ClubHeaderProps> = ({ clubId, activeView, onBack }) =
         )}
       </div>
       
-      {/* Add debug panel for development */}
-      {import.meta.env.DEV && false && (
+      {/* Show debug panel in dev mode */}
+      {import.meta.env.DEV && (
         <div className="absolute top-14 right-0 z-50 w-96">
           <ClubDebugger clubId={clubId} />
         </div>

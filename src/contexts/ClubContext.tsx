@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   Club, 
@@ -10,7 +9,7 @@ import {
   ClubMessage,
   MembershipType,
   MemberRole,
-  MemberStatus,  // Added this missing import
+  MemberStatus,
   EventParticipationStatus,
   ClubProduct,
   ClubProductPurchase
@@ -267,8 +266,11 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const alreadyMember = isUserClubMember(currentClub.id);
       if (alreadyMember) {
         console.log(`[ClubContext] User is already a member of this club`);
-        toast.info(`You're already a member of ${currentClub.name}`);
-        return userClubs.find(uc => uc.club.id === currentClub.id)?.membership;
+        
+        const existingMembership = userClubs.find(uc => uc.club.id === currentClub.id)?.membership;
+        if (existingMembership) {
+          return existingMembership;
+        }
       }
       
       console.log(`[ClubContext] Calling edge function to join club`);
@@ -304,11 +306,18 @@ export const ClubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log(`[ClubContext] Adding new membership to members state:`, membership);
         setMembers(prev => [...prev, membership]);
         
+        if (currentClub) {
+          const userClub = {
+            membership,
+            club: currentClub
+          };
+          
+          setUserClubs(prev => [...prev, userClub]);
+        }
+        
         console.log(`[ClubContext] Refreshing clubs to update userClubs`);
         await refreshClubs();
       }
-      
-      toast.success(`You've joined ${currentClub.name}`);
       
       console.log(`[ClubContext] Checking membership after join`);
       const isMember = isUserClubMember(currentClub.id);

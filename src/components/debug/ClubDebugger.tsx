@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ClubDebugger = ({ clubId }: { clubId: string }) => {
   const { user } = useAuth();
-  const { isUserClubMember, userClubs, currentClub, joinCurrentClub, refreshClubs } = useClub();
+  const { isUserClubMember, userClubs, currentClub, joinCurrentClub, refreshClubs, refreshMembers } = useClub();
   const [loading, setLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>({});
   
@@ -50,7 +50,7 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
     }
   };
   
-  // Force join the club
+  // Force join the club with a direct database insert
   const forceJoin = async () => {
     if (!user || !clubId) return;
     
@@ -64,7 +64,8 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
           sqlName: 'join_club',
           params: {
             club_id: clubId,
-            user_id: user.id
+            user_id: user.id,
+            membership_type: 'free'
           }
         }
       });
@@ -75,7 +76,11 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
       
       // Refresh clubs and debug info
       await refreshClubs();
+      await refreshMembers();
       await fetchDebugInfo();
+      
+      // Force page reload to update UI state
+      window.location.reload();
       
     } catch (error) {
       console.error("Error in force join:", error);
@@ -111,6 +116,9 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
           
           <div>DB query says is member:</div>
           <div>{debugInfo.directQueryMembership ? "Yes" : "No"}</div>
+          
+          <div>User Clubs Count:</div>
+          <div>{debugInfo.userClubs?.length || 0}</div>
         </div>
         
         <div className="flex flex-row space-x-2 pt-2">
@@ -129,6 +137,14 @@ const ClubDebugger = ({ clubId }: { clubId: string }) => {
             disabled={loading || debugInfo.directQueryMembership}
           >
             Force Join
+          </Button>
+          <Button 
+            size="sm" 
+            variant="destructive" 
+            onClick={() => window.location.reload()} 
+            disabled={loading}
+          >
+            Reload Page
           </Button>
         </div>
         

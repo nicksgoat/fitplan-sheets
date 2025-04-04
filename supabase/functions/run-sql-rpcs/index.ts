@@ -12,54 +12,74 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
+  let authUser = null;
+  
   try {
-    // Parse request body for SQL execution parameters
-    const { sqlName, params } = await req.json();
-    console.log(`[DEBUG] Received request for SQL function: ${sqlName} with params:`, params);
-    
-    if (!sqlName) {
-      throw new Error('SQL name must be provided');
+    // Extract user token from request
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
     }
     
-    const supabaseAdmin = createClient(
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client with user's JWT token
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-    console.log(`[DEBUG] Created Supabase admin client successfully`);
-    
-    // Execute the stored SQL function by name with optional parameters
-    console.log(`[DEBUG] Executing SQL function: ${sqlName} with params:`, params);
-    
-    // Use service role to bypass RLS for certain operations
-    let data;
-    let error;
-    
-    if (sqlName === 'join_club' && params.club_id && params.user_id) {
-      // Special handling for joining clubs to bypass RLS
-      console.log(`[DEBUG] User ${params.user_id} joining club ${params.club_id} with membership type ${params.membership_type || 'free'}`);
-      
-      // Check if membership already exists to avoid duplicates
-      console.log(`[DEBUG] Checking for existing membership...`);
-      const { data: existingMembership, error: checkError } = await supabaseAdmin
-        .from('club_members')
-        .select()
-        .eq('club_id', params.club_id)
-        .eq('user_id', params.user_id)
-        .maybeSingle();
-      
-      if (checkError) {
-        console.error("[DEBUG] Error checking existing membership:", checkError);
-        throw checkError;
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       }
-      
-      if (existingMembership) {
-        console.log("[DEBUG] User is already a member of this club:", existingMembership);
-        data = existingMembership;
-      } else {
-        // Create new membership
-        console.log("[DEBUG] Creating new club membership...");
-        const { data: joinData, error: joinError } = await supabaseAdmin
+    );
+    
+    // Get the current user's ID
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !authData.user) {
+      console.error("Auth error:", authError);
+      throw new Error('Unauthorized or invalid token');
+    }
+    
+    authUser = authData.user;
+    console.log("Authorized user ID:", authUser.id);
+    
+    // Parse the request body
+    const { sqlName, params } = await req.json();
+    console.log(`Processing RPC: ${sqlName}, params:`, params);
+    
+    let result;
+    
+    // Execute the appropriate SQL RPC based on the sqlName parameter
+    switch (sqlName) {
+      case 'join_club':
+        // Handle joining a club
+        console.log(`[JOIN_CLUB] User ${params.user_id} joining club ${params.club_id}`);
+        
+        // Check if user is already a member
+        const { data: existingMember, error: memberCheckError } = await supabase
+          .from('club_members')
+          .select('*')
+          .eq('club_id', params.club_id)
+          .eq('user_id', params.user_id)
+          .maybeSingle();
+          
+        console.log("[JOIN_CLUB] Existing member check:", existingMember, memberCheckError);
+        
+        if (existingMember) {
+          console.log("[JOIN_CLUB] User already a member, returning existing membership");
+          return new Response(
+            JSON.stringify(existingMember),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+          
+        // Insert new membership record directly with SQL
+        const { data: newMembership, error: insertError } = await supabase
           .from('club_members')
           .insert({
             club_id: params.club_id,
@@ -68,46 +88,39 @@ serve(async (req) => {
             status: 'active',
             membership_type: params.membership_type || 'free'
           })
-          .select();
-        
-        if (joinError) {
-          console.error("[DEBUG] Error joining club:", joinError);
-          throw joinError;
+          .select()
+          .single();
+          
+        console.log("[JOIN_CLUB] Insert result:", newMembership, insertError);
+          
+        if (insertError) {
+          console.error("[JOIN_CLUB] Error inserting membership:", insertError);
+          throw insertError;
         }
         
-        data = joinData?.[0];
-        console.log("[DEBUG] User joined club successfully:", data);
-      }
-    } else {
-      // Regular RPC call for other functions
-      console.log(`[DEBUG] Executing regular RPC: ${sqlName}`);
-      const result = await supabaseAdmin.rpc(sqlName, params || {});
-      data = result.data;
-      error = result.error;
-      console.log(`[DEBUG] RPC result:`, { data, error });
+        console.log("[JOIN_CLUB] Successfully joined club");
+        return new Response(
+          JSON.stringify(newMembership),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+        
+      // Add other SQL RPCs here as needed
+      
+      default:
+        throw new Error(`Unknown SQL RPC: ${sqlName}`);
     }
-
-    if (error) {
-      console.error("[DEBUG] SQL RPC error:", error);
-      throw error;
-    }
-
-    console.log("[DEBUG] SQL RPC success, data:", data);
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (error) {
-    console.error("[DEBUG] Error executing SQL RPC:", error);
+    console.error('Error in SQL RPC:', error);
+    
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message || "Unknown error executing SQL RPC" 
+        error: error.message || 'An error occurred processing your request',
+        user_id: authUser?.id || null
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400
+      }
     );
   }
 });
