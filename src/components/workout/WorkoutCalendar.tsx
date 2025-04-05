@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { format, addDays, startOfWeek } from 'date-fns';
@@ -10,6 +9,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ItemTypes } from '@/hooks/useWorkoutLibraryIntegration';
+import { toast } from 'sonner';
 
 // Component for each workout item that can be dragged
 const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect: () => void }) => {
@@ -59,8 +59,11 @@ const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelect
       // Handle different types of drops
       if (item.fromLibrary) {
         // This is a library workout being dropped - load it into the current week at this day
-        loadWorkoutFromLibrary(item.id, weekId, dayNumber);
-        console.log(`Added library workout ${item.id} to day ${dayNumber} in week ${weekId}`);
+        const newWorkoutId = loadWorkoutFromLibrary(item.workout, weekId, dayNumber);
+        console.log(`Added library workout to day ${dayNumber} in week ${weekId}`);
+        toast.success(`Added "${item.workout.name}" to day ${dayNumber}`);
+        
+        return { didDrop: true };
       } else {
         // When a workout is dropped from calendar, update its day number and week
         updateWorkout(item.id, (workout) => {
@@ -69,8 +72,10 @@ const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelect
             workout.day = dayNumber;
             workout.weekId = weekId;
             console.log(`Moved workout ${item.id} to day ${dayNumber} in week ${weekId}`);
+            toast.success(`Moved workout to day ${dayNumber}`);
           }
         });
+        return { didDrop: true };
       }
     },
     collect: (monitor) => ({

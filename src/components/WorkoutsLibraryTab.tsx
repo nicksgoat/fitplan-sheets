@@ -24,7 +24,7 @@ interface DraggableWorkoutItemProps {
 
 const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, onDelete, onDragStart }) => {
   const { useDraggableLibraryWorkout } = useWorkoutLibraryIntegration();
-  const [{ isDragging }, drag] = useDraggableLibraryWorkout(workout);
+  const [{ isDragging }, drag] = useDraggableLibraryWorkout(workout, onDragStart);
   
   return (
     <div 
@@ -32,7 +32,6 @@ const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, on
       className={`flex items-center p-2 border rounded-md hover:bg-dark-300 cursor-grab active:cursor-grabbing transition-opacity ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}
-      onDragStart={onDragStart}
     >
       <div className="flex-1">
         <h3 className="text-sm font-medium">{workout.name}</h3>

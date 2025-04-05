@@ -1,3 +1,4 @@
+
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { createLibraryProgram, createLibraryWeek, createLibraryWorkout } from "@/utils/presets";
@@ -20,7 +21,12 @@ export const useWorkoutLibraryIntegration = () => {
     workouts: libraryWorkouts 
   } = useLibrary();
   
-  const { program, activeWorkoutId, activeWeekId } = useWorkout();
+  const { 
+    program, 
+    activeWorkoutId, 
+    activeWeekId,
+    loadWorkoutFromLibrary 
+  } = useWorkout();
   
   // Get active workout from program
   const getActiveWorkout = useCallback(() => {
@@ -89,7 +95,7 @@ export const useWorkoutLibraryIntegration = () => {
   }, [program, addProgramToLibrary]);
   
   // Create a hook for making a workout draggable, with onDragStart callback
-  const useDraggableLibraryWorkout = (workout: Workout) => {
+  const useDraggableLibraryWorkout = (workout: Workout, onDragStart?: () => void) => {
     return useDrag(() => ({
       type: ItemTypes.LIBRARY_WORKOUT,
       item: { 
@@ -100,6 +106,12 @@ export const useWorkoutLibraryIntegration = () => {
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
+      begin: () => {
+        // Call the onDragStart callback if provided
+        if (onDragStart) {
+          onDragStart();
+        }
+      }
     }));
   };
   
