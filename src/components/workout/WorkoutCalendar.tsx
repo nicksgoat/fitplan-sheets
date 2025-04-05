@@ -10,6 +10,11 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
+// Define the draggable item type
+const ItemTypes = {
+  WORKOUT: 'workout'
+};
+
 interface WorkoutDayCardProps {
   date: Date;
   day: string;
@@ -23,8 +28,12 @@ interface WorkoutDayCardProps {
 // Component for each workout item that can be dragged
 const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect: () => void }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'WORKOUT',
-    item: { id: workout.id },
+    type: ItemTypes.WORKOUT,
+    item: { 
+      id: workout.id, 
+      weekId: workout.weekId, 
+      sourceDay: workout.day 
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -46,28 +55,32 @@ const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect:
 
 // Component for each day in the calendar
 const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelectWorkout, weekId }: WorkoutDayCardProps) => {
-  const { addWorkout, moveWorkout } = useWorkout();
+  const { updateWorkout } = useWorkout();
   
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'WORKOUT',
-    drop: (item: { id: string }) => {
-      // When a workout is dropped, move it to this day
-      moveWorkout(item.id, weekId, weekId);
-      // Then update its day number
-      // Note: This is a simplified implementation - you'll need to update
-      // your WorkoutContext to handle day changes properly
+    accept: ItemTypes.WORKOUT,
+    drop: (item: { id: string; weekId: string; sourceDay: number }) => {
+      // When a workout is dropped, update its day number and week
+      updateWorkout(item.id, (workout) => {
+        // Only update the day if it's different
+        if (workout.day !== dayNumber || workout.weekId !== weekId) {
+          workout.day = dayNumber;
+          workout.weekId = weekId;
+          console.log(`Moved workout ${item.id} to day ${dayNumber} in week ${weekId}`);
+        }
+      });
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }));
+  }), [dayNumber, weekId, updateWorkout]);
 
   return (
     <div 
       ref={drop} 
       className={`flex-1 min-w-[150px] ${isOver ? 'bg-gray-800/50' : ''}`}
     >
-      <Card className="h-full bg-dark-200 border-dark-300">
+      <Card className={`h-full bg-dark-200 border-dark-300 ${isOver ? 'border-fitbloom-purple border-2' : ''}`}>
         <CardHeader className="py-2 px-3 border-b border-gray-800">
           <div className="flex justify-between items-center">
             <div>
