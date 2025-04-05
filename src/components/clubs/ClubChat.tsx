@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ClubMessage } from '@/types/club';
 
 interface ClubChatProps {
   clubId: string;
@@ -37,7 +38,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
   const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [displayedMessages, setDisplayedMessages] = useState<any[]>([]);
+  const [displayedMessages, setDisplayedMessages] = useState<ClubMessage[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = isUserClubAdmin(clubId);
@@ -99,7 +100,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
             // Check if message already exists to avoid duplicates
             const exists = prev.some(msg => msg.id === payload.new.id);
             if (!exists) {
-              return [...prev, payload.new];
+              return [...prev, payload.new as ClubMessage];
             }
             return prev;
           });
@@ -157,7 +158,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
         
         // Immediately add the new message to the local state
         if (data) {
-          setDisplayedMessages(prev => [...prev, data]);
+          setDisplayedMessages(prev => [...prev, data as ClubMessage]);
         }
         
         setMessageText('');
@@ -167,7 +168,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
         // If direct insert fails, fallback to the edge function
         console.log("Falling back to edge function...");
         
-        const { data: functionData, error: functionError } = await supabase.functions.invoke('run-sql-query', {
+        const { data, error: functionError } = await supabase.functions.invoke('run-sql-query', {
           body: {
             query: `
               INSERT INTO club_messages (club_id, user_id, content, is_pinned)
@@ -182,11 +183,12 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
           throw functionError;
         }
         
-        console.log("Message sent successfully via edge function:", functionData);
+        console.log("Message sent successfully via edge function:", data);
         
         // Add the new message returned from the edge function
-        if (functionData && Array.isArray(functionData) && functionData.length > 0) {
-          setDisplayedMessages(prev => [...prev, functionData[0]]);
+        if (data && Array.isArray(data) && data.length > 0) {
+          const newMessage = data[0] as ClubMessage;
+          setDisplayedMessages(prev => [...prev, newMessage]);
         }
         
         setMessageText('');
