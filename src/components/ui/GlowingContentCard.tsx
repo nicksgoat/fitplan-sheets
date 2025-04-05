@@ -5,6 +5,7 @@ import { GlowingEffect } from "./glowing-effect";
 import { contentCardStyles } from '@/styles/AssetLibrary';
 import { ItemType } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
+import ContentCard from './ContentCard';
 
 interface GlowingContentCardProps {
   item: ItemType;
@@ -48,32 +49,7 @@ const GlowingContentCard = ({
           inactiveZone={0.01}
           borderWidth={2}
         />
-        <div className={cn(
-          contentCardStyles({ variant: item.isFavorite ? 'featured' : 'default' }),
-          "overflow-hidden h-full"
-        )}>
-          {item.imageUrl && (
-            <div className="aspect-video w-full overflow-hidden">
-              <img 
-                src={item.imageUrl} 
-                alt={item.title} 
-                className="h-full w-full object-cover transition-transform hover:scale-105 duration-300"
-              />
-            </div>
-          )}
-          
-          <div className="p-3">
-            <h3 className="font-semibold text-sm truncate">{item.title}</h3>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground truncate">{item.creator}</p>
-              {item.difficulty && (
-                <span className="text-xs bg-muted py-0.5 px-2 rounded-full">
-                  {item.difficulty}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <ContentCard item={item} />
       </div>
     </div>
   );
