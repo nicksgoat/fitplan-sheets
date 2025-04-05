@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
@@ -85,7 +84,7 @@ const WorkoutHeader: React.FC = () => {
       if (type === "workout") {
         const workout = workoutLibrary.find(w => w.id === id);
         if (workout) {
-          loadWorkoutFromLibrary(workout, activeWeekId);
+          loadWorkoutFromLibrary(workout.id, activeWeekId);
         }
       } else if (type === "week") {
         const week = weekLibrary.find(w => w.id === id);
@@ -208,7 +207,6 @@ const WorkoutHeader: React.FC = () => {
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Save Program prominently displayed button */}
         <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
           <DialogTrigger asChild>
             <Button
@@ -331,7 +329,7 @@ const WorkoutHeader: React.FC = () => {
                                 size="icon"
                                 onClick={() => {
                                   if (activeWeekId) {
-                                    loadWorkoutFromLibrary(workout, activeWeekId);
+                                    loadWorkoutFromLibrary(workout.id, activeWeekId);
                                     toast.success(`Workout "${workout.name}" added to week`);
                                   }
                                 }}

@@ -54,7 +54,7 @@ interface WorkoutContextProps {
   saveWorkoutToLibrary: (workoutId: string, name: string) => void;
   saveWeekToLibrary: (weekId: string, name: string) => void;
   saveProgramToLibrary: (name: string) => void;
-  loadWorkoutFromLibrary: (workoutId: string, weekId: string, dayNumber?: number) => void;
+  loadWorkoutFromLibrary: (workoutIdOrObj: string | Workout, weekId: string, dayNumber?: number) => void;
   loadWeekFromLibrary: (week: WorkoutWeek) => void;
   loadProgramFromLibrary: (program: WorkoutProgram) => void;
   getWorkoutLibrary: () => Workout[];
@@ -771,11 +771,17 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     setProgramLibrary(prev => [...prev, savedProgram]);
   }, [program]);
   
-  const loadWorkoutFromLibrary = useCallback((workoutId: string, weekId: string, dayNumber?: number) => {
-    const libraryWorkout = workoutLibrary.find(w => w.id === workoutId);
+  const loadWorkoutFromLibrary = useCallback((workoutIdOrObj: string | Workout, weekId: string, dayNumber?: number) => {
+    let libraryWorkout: Workout | undefined;
+    
+    if (typeof workoutIdOrObj === 'string') {
+      libraryWorkout = workoutLibrary.find(w => w.id === workoutIdOrObj);
+    } else {
+      libraryWorkout = workoutIdOrObj;
+    }
     
     if (!libraryWorkout) {
-      console.error("Workout not found in library:", workoutId);
+      console.error("Workout not found in library:", workoutIdOrObj);
       return;
     }
     
