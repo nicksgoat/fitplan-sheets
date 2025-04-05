@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import ContentGrid from '@/components/ui/ContentGrid';
 import CollectionCard from '@/components/ui/CollectionCard';
+import GlowingContentCard from '@/components/ui/GlowingContentCard';
 import { useExercisesWithVisuals, useCustomExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
@@ -95,6 +97,44 @@ const Library = () => {
     }
   };
   
+  // Custom render function for content grid that uses GlowingContentCard for first few items
+  const renderContentItems = (items: ItemType[]) => {
+    if (!items || items.length === 0) return null;
+    
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {items.map((item, index) => (
+          index < 3 ? (
+            <GlowingContentCard key={item.id} item={item} />
+          ) : (
+            <div key={item.id} className="content-card">
+              {item.imageUrl && (
+                <div className="aspect-video w-full overflow-hidden">
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.title} 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-3">
+                <h3 className="font-semibold text-sm truncate">{item.title}</h3>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground truncate">{item.creator}</p>
+                  {item.difficulty && (
+                    <span className="text-xs bg-muted py-0.5 px-2 rounded-full">
+                      {item.difficulty}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        ))}
+      </div>
+    );
+  };
+  
   return (
     <div className="space-y-6 animate-fade-in p-4">
       <div className="flex justify-between items-center">
@@ -150,14 +190,14 @@ const Library = () => {
               <p className="text-red-400">Failed to load exercises. Using local data.</p>
               {filteredExercises.length > 0 ? (
                 <div className="mt-4">
-                  <ContentGrid items={filteredExercises} />
+                  {renderContentItems(filteredExercises)}
                 </div>
               ) : (
                 <p className="text-gray-400 mt-2">No exercises available.</p>
               )}
             </div>
           ) : filteredExercises.length > 0 ? (
-            <ContentGrid items={filteredExercises} />
+            renderContentItems(filteredExercises)
           ) : (
             <div className="text-center py-10">
               <p className="text-gray-400">No exercises found.</p>
@@ -185,7 +225,7 @@ const Library = () => {
               <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
             </div>
           ) : filteredCustomExercises && filteredCustomExercises.length > 0 ? (
-            <ContentGrid items={filteredCustomExercises} />
+            renderContentItems(filteredCustomExercises)
           ) : (
             <div className="text-center py-10">
               <p className="text-gray-400">You haven't created any content yet.</p>
