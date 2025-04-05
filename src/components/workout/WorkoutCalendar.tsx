@@ -10,9 +10,10 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-// Define the draggable item type
+// Define the draggable item types
 const ItemTypes = {
-  WORKOUT: 'workout'
+  WORKOUT: 'workout',
+  LIBRARY_WORKOUT: 'library-workout'
 };
 
 interface WorkoutDayCardProps {
@@ -55,25 +56,32 @@ const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect:
 
 // Component for each day in the calendar
 const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelectWorkout, weekId }: WorkoutDayCardProps) => {
-  const { updateWorkout } = useWorkout();
+  const { updateWorkout, loadWorkoutFromLibrary } = useWorkout();
   
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.WORKOUT,
-    drop: (item: { id: string; weekId: string; sourceDay: number }) => {
-      // When a workout is dropped, update its day number and week
-      updateWorkout(item.id, (workout) => {
-        // Only update the day if it's different
-        if (workout.day !== dayNumber || workout.weekId !== weekId) {
-          workout.day = dayNumber;
-          workout.weekId = weekId;
-          console.log(`Moved workout ${item.id} to day ${dayNumber} in week ${weekId}`);
-        }
-      });
+    accept: [ItemTypes.WORKOUT, ItemTypes.LIBRARY_WORKOUT],
+    drop: (item: { id: string; weekId?: string; sourceDay?: number; type?: string; fromLibrary?: boolean }) => {
+      // Handle different types of drops
+      if (item.fromLibrary) {
+        // This is a library workout being dropped - load it into the current week at this day
+        loadWorkoutFromLibrary(item.id, weekId, dayNumber);
+        console.log(`Added library workout ${item.id} to day ${dayNumber} in week ${weekId}`);
+      } else {
+        // When a workout is dropped from calendar, update its day number and week
+        updateWorkout(item.id, (workout) => {
+          // Only update the day if it's different
+          if (workout.day !== dayNumber || workout.weekId !== weekId) {
+            workout.day = dayNumber;
+            workout.weekId = weekId;
+            console.log(`Moved workout ${item.id} to day ${dayNumber} in week ${weekId}`);
+          }
+        });
+      }
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [dayNumber, weekId, updateWorkout]);
+  }), [dayNumber, weekId, updateWorkout, loadWorkoutFromLibrary]);
 
   return (
     <div 

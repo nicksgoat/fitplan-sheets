@@ -54,7 +54,7 @@ interface WorkoutContextProps {
   saveWorkoutToLibrary: (workoutId: string, name: string) => void;
   saveWeekToLibrary: (weekId: string, name: string) => void;
   saveProgramToLibrary: (name: string) => void;
-  loadWorkoutFromLibrary: (workout: Workout, weekId: string) => void;
+  loadWorkoutFromLibrary: (workoutId: string, weekId: string, dayNumber?: number) => void;
   loadWeekFromLibrary: (week: WorkoutWeek) => void;
   loadProgramFromLibrary: (program: WorkoutProgram) => void;
   getWorkoutLibrary: () => Workout[];
@@ -771,12 +771,20 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     setProgramLibrary(prev => [...prev, savedProgram]);
   }, [program]);
   
-  const loadWorkoutFromLibrary = useCallback((workout: Workout, weekId: string) => {
+  const loadWorkoutFromLibrary = useCallback((workoutId: string, weekId: string, dayNumber?: number) => {
+    const libraryWorkout = workoutLibrary.find(w => w.id === workoutId);
+    
+    if (!libraryWorkout) {
+      console.error("Workout not found in library:", workoutId);
+      return;
+    }
+    
     const newWorkout = {
-      ...workout,
+      ...libraryWorkout,
       id: uuidv4(),
       weekId: weekId,
-      exercises: workout.exercises.map(ex => ({
+      day: dayNumber || libraryWorkout.day,
+      exercises: libraryWorkout.exercises.map(ex => ({
         ...ex,
         id: uuidv4(),
         sets: ex.sets.map(set => ({
@@ -794,7 +802,9 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
         week.workouts.push(newWorkout.id);
       }
     });
-  }, [updateProgram]);
+    
+    return newWorkout.id;
+  }, [updateProgram, workoutLibrary]);
   
   const loadWeekFromLibrary = useCallback((week: WorkoutWeek) => {
     const newWeekId = uuidv4();

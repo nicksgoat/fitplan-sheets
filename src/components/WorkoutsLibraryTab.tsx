@@ -9,6 +9,47 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { ItemType } from "@/lib/types";
 import ContentGrid from "@/components/ui/ContentGrid";
 import { useNavigate } from "react-router-dom";
+import { useWorkoutLibraryIntegration } from "@/hooks/useWorkoutLibraryIntegration";
+
+// Define the draggable item types for consistency
+const ItemTypes = {
+  LIBRARY_WORKOUT: 'library-workout'
+};
+
+interface DraggableWorkoutItemProps {
+  workout: Workout;
+  onDelete: (event: React.MouseEvent, workoutId: string) => void;
+}
+
+const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, onDelete }) => {
+  const { useDraggableLibraryWorkout } = useWorkoutLibraryIntegration();
+  const [{ isDragging }, drag] = useDraggableLibraryWorkout(workout);
+  
+  return (
+    <div 
+      ref={drag}
+      className={`flex items-center p-2 border rounded-md hover:bg-dark-300 cursor-grab active:cursor-grabbing transition-opacity ${
+        isDragging ? 'opacity-50' : 'opacity-100'
+      }`}
+    >
+      <div className="flex-1">
+        <h3 className="text-sm font-medium">{workout.name}</h3>
+        <p className="text-xs text-gray-400">
+          {workout.day > 0 ? `Day ${workout.day} • ` : ''}{workout.exercises.length} exercises
+        </p>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => onDelete(e, workout.id)}
+        className="h-8 w-8"
+        title="Remove from library"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
 
 const WorkoutsLibraryTab: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -68,7 +109,22 @@ const WorkoutsLibraryTab: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <ContentGrid items={workoutItems} />
+        <>
+          <div className="mb-4">
+            <h3 className="font-medium mb-2">Drag workouts to the calendar</h3>
+            <p className="text-sm text-gray-400">Drag these workouts onto calendar days to add them to your program</p>
+            <div className="mt-4 space-y-2">
+              {workouts.map(workout => (
+                <DraggableWorkoutItem 
+                  key={workout.id} 
+                  workout={workout} 
+                  onDelete={handleDeleteWorkout} 
+                />
+              ))}
+            </div>
+          </div>
+          <ContentGrid items={workoutItems} />
+        </>
       )}
       
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

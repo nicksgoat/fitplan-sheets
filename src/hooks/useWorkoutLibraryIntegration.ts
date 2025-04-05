@@ -4,12 +4,20 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { createLibraryProgram, createLibraryWeek, createLibraryWorkout } from "@/utils/presets";
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { useDrag } from "react-dnd";
+import { Workout } from "@/types/workout";
+
+// Define the draggable item type for consistency across components
+const ItemTypes = {
+  LIBRARY_WORKOUT: 'library-workout'
+};
 
 export const useWorkoutLibraryIntegration = () => {
   const { 
     saveWorkout: addWorkoutToLibrary, 
     saveWeek: addWeekToLibrary, 
-    saveProgram: addProgramToLibrary 
+    saveProgram: addProgramToLibrary,
+    workouts: libraryWorkouts 
   } = useLibrary();
   
   const { program, activeWorkoutId, activeWeekId } = useWorkout();
@@ -80,9 +88,25 @@ export const useWorkoutLibraryIntegration = () => {
     console.log("Program saved to library:", programToSave);
   }, [program, addProgramToLibrary]);
   
+  // Create a hook for making a workout draggable
+  const useDraggableLibraryWorkout = (workout: Workout) => {
+    return useDrag(() => ({
+      type: ItemTypes.LIBRARY_WORKOUT,
+      item: { 
+        id: workout.id, 
+        fromLibrary: true 
+      },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }));
+  };
+  
   return {
     saveCurrentWorkoutToLibrary,
     saveCurrentWeekToLibrary,
-    saveCurrentProgramToLibrary
+    saveCurrentProgramToLibrary,
+    useDraggableLibraryWorkout,
+    libraryWorkouts
   };
 };
