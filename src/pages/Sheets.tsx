@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
 import WorkoutSession from "@/components/WorkoutSession";
@@ -10,7 +10,7 @@ import { Plus, Library } from "lucide-react";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import WorkoutCalendar from "@/components/workout/WorkoutCalendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import WorkoutLibrarySidebar from "@/components/workout/WorkoutLibrarySidebar";
+import WorkoutLibrarySidebar, { WorkoutLibrarySidebarRef } from "@/components/workout/WorkoutLibrarySidebar";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
@@ -27,6 +27,7 @@ const WorkoutApp: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<string>("workout");
   const [librarySidebarOpen, setLibrarySidebarOpen] = useState(false);
+  const librarySidebarRef = useRef<WorkoutLibrarySidebarRef>(null);
   
   // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
@@ -137,6 +138,7 @@ const WorkoutApp: React.FC = () => {
       </div>
       
       <WorkoutLibrarySidebar 
+        ref={librarySidebarRef}
         open={librarySidebarOpen}
         onOpenChange={setLibrarySidebarOpen}
       />

@@ -1,4 +1,3 @@
-
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { createLibraryProgram, createLibraryWeek, createLibraryWorkout } from "@/utils/presets";
@@ -89,7 +88,7 @@ export const useWorkoutLibraryIntegration = () => {
     console.log("Program saved to library:", programToSave);
   }, [program, addProgramToLibrary]);
   
-  // Create a hook for making a workout draggable
+  // Create a hook for making a workout draggable, with onDragStart callback
   const useDraggableLibraryWorkout = (workout: Workout) => {
     return useDrag(() => ({
       type: ItemTypes.LIBRARY_WORKOUT,
