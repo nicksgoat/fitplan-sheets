@@ -1,9 +1,8 @@
-
 "use client";
 
 import { memo, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { animate } from "motion/react";
+import { animate } from "@motionone/solid";
 
 interface GlowingEffectProps {
   blur?: number;
@@ -17,6 +16,7 @@ interface GlowingEffectProps {
   movementDuration?: number;
   borderWidth?: number;
 }
+
 const GlowingEffect = memo(
   ({
     blur = 0,
