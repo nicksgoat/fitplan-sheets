@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WorkoutLibrarySidebar from "@/components/workout/WorkoutLibrarySidebar";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -199,7 +200,9 @@ const Sheets: React.FC = () => {
         <DndProvider backend={HTML5Backend}>
           <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
             <WorkoutHeader />
-            <WorkoutApp />
+            <SidebarProvider>
+              <WorkoutApp />
+            </SidebarProvider>
           </div>
         </DndProvider>
       </LibraryProvider>

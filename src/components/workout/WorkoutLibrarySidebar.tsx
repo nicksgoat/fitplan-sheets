@@ -10,8 +10,7 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider
+  SidebarMenuItem
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Search, Trash2, Plus } from 'lucide-react';
@@ -72,13 +71,12 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
     );
   };
 
-  // Content of the sidebar
-  const sidebarContent = (
+  return (
     <Sidebar 
       className={`border-r border-dark-300 transition-all duration-300 ${
         expanded ? 'w-72' : 'w-0'
       }`}
-      collapsible="offcanvas"
+      collapsible={expanded ? undefined : "offcanvas"}
     >
       <SidebarHeader className="border-b border-dark-300">
         <div className="p-4 flex items-center justify-between">
@@ -140,13 +138,6 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
           </Button>
         </div>
       </SidebarFooter>
-    </Sidebar>
-  );
-
-  // Render with SidebarProvider wrapper
-  return (
-    <SidebarProvider defaultOpen={expanded}>
-      {sidebarContent}
       
       {saveDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -174,7 +165,7 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
           </div>
         </div>
       )}
-    </SidebarProvider>
+    </Sidebar>
   );
 };
 
