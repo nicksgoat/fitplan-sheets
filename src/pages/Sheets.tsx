@@ -2,14 +2,13 @@
 import React, { useEffect } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
-import WeekTabs from "@/components/WeekTabs";
-import SessionTabs from "@/components/SessionTabs";
 import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { LibraryProvider } from "@/contexts/LibraryContext";
+import WorkoutCalendar from "@/components/workout/WorkoutCalendar";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -115,40 +114,12 @@ const WorkoutApp: React.FC = () => {
     );
   }
   
-  // If we have a program and weeks but no active workout selected
-  if (!activeWorkoutId) {
-    return (
-      <div className="flex flex-col space-y-4">
-        <WeekTabs />
-        <div className="text-center py-8">
-          <p className="text-gray-400 mb-4">No workout selected</p>
-          <Button
-            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            onClick={() => {
-              if (program.weeks.length > 0) {
-                const activeWeekId = program.weeks[0].id;
-                const newWorkoutId = addWorkout(activeWeekId);
-                setActiveWeekId(activeWeekId);
-                if (typeof newWorkoutId === 'string') {
-                  setActiveWorkoutId(newWorkoutId);
-                }
-              }
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Workout
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
+      <WorkoutCalendar onSelectWorkout={(workoutId) => setActiveWorkoutId(workoutId)} />
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <WeekTabs />
-          <SessionTabs />
           {activeWorkoutId && (
             <motion.div
               key={activeWorkoutId}
@@ -177,10 +148,12 @@ const WorkoutApp: React.FC = () => {
 const Sheets: React.FC = () => {
   return (
     <WorkoutProvider>
-      <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
-        <WorkoutHeader />
-        <WorkoutApp />
-      </div>
+      <LibraryProvider>
+        <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
+          <WorkoutHeader />
+          <WorkoutApp />
+        </div>
+      </LibraryProvider>
     </WorkoutProvider>
   );
 };
