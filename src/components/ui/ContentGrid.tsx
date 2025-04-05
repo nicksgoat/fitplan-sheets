@@ -1,24 +1,29 @@
 
 import React from 'react';
-import ContentCard from './ContentCard';
 import { ItemType } from '@/lib/types';
-import { Exercise } from '@/types/exercise';
+import GlowingContentCard from './GlowingContentCard';
 
 interface ContentGridProps {
-  items: (ItemType | Exercise)[];
+  items: ItemType[];
   className?: string;
+  onItemClick?: (item: ItemType) => void;
 }
 
-const ContentGrid = ({ 
+const ContentGrid: React.FC<ContentGridProps> = ({ 
   items, 
-  className
-}: ContentGridProps) => {
+  className = "", 
+  onItemClick 
+}) => {
+  if (!items || items.length === 0) return null;
+  
   return (
-    <div className={`flex flex-wrap gap-3 md:gap-4 ${className || ''}`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}>
       {items.map((item) => (
-        <div key={item.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px]">
-          <ContentCard item={item} />
-        </div>
+        <GlowingContentCard 
+          key={item.id} 
+          item={item} 
+          onClick={onItemClick ? () => onItemClick(item) : undefined}
+        />
       ))}
     </div>
   );
