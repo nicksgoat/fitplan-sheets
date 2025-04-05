@@ -98,20 +98,22 @@ export const useWorkoutLibraryIntegration = () => {
   const useDraggableLibraryWorkout = (workout: Workout, onDragStart?: () => void) => {
     return useDrag(() => ({
       type: ItemTypes.LIBRARY_WORKOUT,
-      item: { 
-        id: workout.id, 
-        fromLibrary: true,
-        workout: workout // Include the entire workout for easier access
-      },
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
-      begin: () => {
-        // Call the onDragStart callback if provided
+      item: () => { 
+        // Execute the onDragStart callback if provided
         if (onDragStart) {
           onDragStart();
         }
-      }
+        
+        // Return the item data
+        return {
+          id: workout.id, 
+          fromLibrary: true,
+          workout: workout // Include the entire workout for easier access
+        };
+      },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      })
     }));
   };
   
