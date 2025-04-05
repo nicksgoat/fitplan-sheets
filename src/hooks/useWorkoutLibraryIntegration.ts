@@ -8,8 +8,9 @@ import { useDrag } from "react-dnd";
 import { Workout } from "@/types/workout";
 
 // Define the draggable item type for consistency across components
-const ItemTypes = {
-  LIBRARY_WORKOUT: 'library-workout'
+export const ItemTypes = {
+  LIBRARY_WORKOUT: 'library-workout',
+  WORKOUT: 'workout'
 };
 
 export const useWorkoutLibraryIntegration = () => {
@@ -94,7 +95,8 @@ export const useWorkoutLibraryIntegration = () => {
       type: ItemTypes.LIBRARY_WORKOUT,
       item: { 
         id: workout.id, 
-        fromLibrary: true 
+        fromLibrary: true,
+        workout: workout // Include the entire workout for easier access
       },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
@@ -107,6 +109,7 @@ export const useWorkoutLibraryIntegration = () => {
     saveCurrentWeekToLibrary,
     saveCurrentProgramToLibrary,
     useDraggableLibraryWorkout,
+    ItemTypes,
     libraryWorkouts
   };
 };

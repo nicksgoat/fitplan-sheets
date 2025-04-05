@@ -6,10 +6,13 @@ import WorkoutSession from "@/components/WorkoutSession";
 import WorkoutMobilePreview from "@/components/WorkoutMobilePreview";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Library } from "lucide-react";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import WorkoutCalendar from "@/components/workout/WorkoutCalendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import WorkoutLibrarySidebar from "@/components/workout/WorkoutLibrarySidebar";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -23,6 +26,7 @@ const WorkoutApp: React.FC = () => {
   } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>("workout");
+  const [librarySidebarOpen, setLibrarySidebarOpen] = useState(false);
   
   // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
@@ -120,49 +124,70 @@ const WorkoutApp: React.FC = () => {
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full mb-6 bg-dark-200">
-          <TabsTrigger value="workout" className="data-[state=active]:bg-fitbloom-purple">
-            Workout Editor
-          </TabsTrigger>
-          <TabsTrigger value="program" className="data-[state=active]:bg-fitbloom-purple">
-            Program Calendar
-          </TabsTrigger>
-        </TabsList>
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLibrarySidebarOpen(!librarySidebarOpen)}
+          className="flex items-center gap-1"
+        >
+          <Library className="h-4 w-4" />
+          <span>Library</span>
+        </Button>
+      </div>
+      
+      <div className="flex">
+        <WorkoutLibrarySidebar 
+          expanded={librarySidebarOpen}
+          onToggle={() => setLibrarySidebarOpen(!librarySidebarOpen)}
+        />
         
-        <TabsContent value="workout">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              {activeWorkoutId && (
-                <motion.div
-                  key={activeWorkoutId}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <WorkoutSession sessionId={activeWorkoutId} />
-                </motion.div>
-              )}
-            </div>
+        <div className={`flex-1 transition-all duration-300 ${librarySidebarOpen ? 'ml-72' : 'ml-0'}`}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full mb-6 bg-dark-200">
+              <TabsTrigger value="workout" className="data-[state=active]:bg-fitbloom-purple">
+                Workout Editor
+              </TabsTrigger>
+              <TabsTrigger value="program" className="data-[state=active]:bg-fitbloom-purple">
+                Program Calendar
+              </TabsTrigger>
+            </TabsList>
             
-            <div className="hidden lg:block">
-              <div className="sticky top-24">
-                {activeWorkoutId && (
-                  <WorkoutMobilePreview sessionId={activeWorkoutId} />
-                )}
+            <TabsContent value="workout">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  {activeWorkoutId && (
+                    <motion.div
+                      key={activeWorkoutId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <WorkoutSession sessionId={activeWorkoutId} />
+                    </motion.div>
+                  )}
+                </div>
+                
+                <div className="hidden lg:block">
+                  <div className="sticky top-24">
+                    {activeWorkoutId && (
+                      <WorkoutMobilePreview sessionId={activeWorkoutId} />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="program">
-          <WorkoutCalendar onSelectWorkout={(workoutId) => {
-            setActiveWorkoutId(workoutId);
-            setActiveTab("workout"); // Switch to workout tab when a workout is selected
-          }} />
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+            
+            <TabsContent value="program">
+              <WorkoutCalendar onSelectWorkout={(workoutId) => {
+                setActiveWorkoutId(workoutId);
+                setActiveTab("workout"); // Switch to workout tab when a workout is selected
+              }} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
@@ -171,10 +196,12 @@ const Sheets: React.FC = () => {
   return (
     <WorkoutProvider>
       <LibraryProvider>
-        <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
-          <WorkoutHeader />
-          <WorkoutApp />
-        </div>
+        <DndProvider backend={HTML5Backend}>
+          <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
+            <WorkoutHeader />
+            <WorkoutApp />
+          </div>
+        </DndProvider>
       </LibraryProvider>
     </WorkoutProvider>
   );

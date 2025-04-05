@@ -9,22 +9,7 @@ import { WorkoutSession } from '@/types/workout';
 import { useDrag, useDrop } from 'react-dnd';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
-// Define the draggable item types
-const ItemTypes = {
-  WORKOUT: 'workout',
-  LIBRARY_WORKOUT: 'library-workout'
-};
-
-interface WorkoutDayCardProps {
-  date: Date;
-  day: string;
-  dayNumber: number;
-  workouts: WorkoutSession[];
-  onAddWorkout: (dayNumber: number) => void;
-  onSelectWorkout: (workoutId: string) => void;
-  weekId: string;
-}
+import { ItemTypes } from '@/hooks/useWorkoutLibraryIntegration';
 
 // Component for each workout item that can be dragged
 const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect: () => void }) => {
@@ -54,13 +39,23 @@ const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect:
   );
 };
 
+interface WorkoutDayCardProps {
+  date: Date;
+  day: string;
+  dayNumber: number;
+  workouts: WorkoutSession[];
+  onAddWorkout: (dayNumber: number) => void;
+  onSelectWorkout: (workoutId: string) => void;
+  weekId: string;
+}
+
 // Component for each day in the calendar
 const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelectWorkout, weekId }: WorkoutDayCardProps) => {
   const { updateWorkout, loadWorkoutFromLibrary } = useWorkout();
   
   const [{ isOver }, drop] = useDrop(() => ({
     accept: [ItemTypes.WORKOUT, ItemTypes.LIBRARY_WORKOUT],
-    drop: (item: { id: string; weekId?: string; sourceDay?: number; type?: string; fromLibrary?: boolean }) => {
+    drop: (item: { id: string; weekId?: string; sourceDay?: number; fromLibrary?: boolean; workout?: any }) => {
       // Handle different types of drops
       if (item.fromLibrary) {
         // This is a library workout being dropped - load it into the current week at this day
@@ -249,69 +244,67 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
   }, [activeWeekId, program, activeWeek]);
   
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-fitbloom-purple" />
-            <h2 className="text-lg font-semibold">Program Calendar</h2>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={goToPreviousWeek}
-                className="text-gray-400 hover:text-white"
-                disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === 0}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              
-              <span className="text-sm">
-                Week {activeWeek ? program.weeks.findIndex(w => w.id === activeWeek.id) + 1 : 1}
-              </span>
-              
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={goToNextWeek}
-                className="text-gray-400 hover:text-white"
-                disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === program.weeks.length - 1}
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddWeek}
-              className="text-xs flex items-center gap-1 border-gray-700 hover:bg-gray-700"
-            >
-              <Plus className="h-3 w-3" />
-              New Week
-            </Button>
-          </div>
+    <div className="mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-fitbloom-purple" />
+          <h2 className="text-lg font-semibold">Program Calendar</h2>
         </div>
         
-        <div className="flex space-x-2 overflow-x-auto pb-4">
-          {weekDays.map(({ date, day, dayNumber }) => (
-            <WorkoutDayCard
-              key={day}
-              date={date}
-              day={day}
-              dayNumber={dayNumber}
-              workouts={workoutsByDay[dayNumber] || []}
-              onAddWorkout={handleAddWorkout}
-              onSelectWorkout={onSelectWorkout}
-              weekId={activeWeek?.id || ''}
-            />
-          ))}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={goToPreviousWeek}
+              className="text-gray-400 hover:text-white"
+              disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === 0}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            
+            <span className="text-sm">
+              Week {activeWeek ? program.weeks.findIndex(w => w.id === activeWeek.id) + 1 : 1}
+            </span>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={goToNextWeek}
+              className="text-gray-400 hover:text-white"
+              disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === program.weeks.length - 1}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddWeek}
+            className="text-xs flex items-center gap-1 border-gray-700 hover:bg-gray-700"
+          >
+            <Plus className="h-3 w-3" />
+            New Week
+          </Button>
         </div>
       </div>
-    </DndProvider>
+      
+      <div className="flex space-x-2 overflow-x-auto pb-4">
+        {weekDays.map(({ date, day, dayNumber }) => (
+          <WorkoutDayCard
+            key={day}
+            date={date}
+            day={day}
+            dayNumber={dayNumber}
+            workouts={workoutsByDay[dayNumber] || []}
+            onAddWorkout={handleAddWorkout}
+            onSelectWorkout={onSelectWorkout}
+            weekId={activeWeek?.id || ''}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
 
