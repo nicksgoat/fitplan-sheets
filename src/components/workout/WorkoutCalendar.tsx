@@ -109,7 +109,7 @@ interface WorkoutCalendarProps {
 }
 
 const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
-  const { program, activeWeekId, addWeek, addWorkout } = useWorkout();
+  const { program, activeWeekId, setActiveWeekId, addWeek, addWorkout } = useWorkout();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   
   if (!program) return null;
@@ -194,8 +194,11 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
   const handleAddWeek = () => {
     const newWeekId = addWeek();
     if (typeof newWeekId === 'string') {
-      // Automatically set the active week to the new week
-      activeWeek && activeWeek.id !== newWeekId && setCurrentWeekStart(addDays(currentWeekStart, 7));
+      // Set the active week to the new week
+      setActiveWeekId(newWeekId);
+      // Automatically advance to the next week view 
+      // when a new week is created
+      setCurrentWeekStart(addDays(currentWeekStart, 7));
     }
   };
   

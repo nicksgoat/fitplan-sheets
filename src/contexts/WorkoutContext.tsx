@@ -222,8 +222,10 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
   }, [updateProgram]);
 
   const addWeek = useCallback(() => {
+    if (!program) return null;
+    
     const newWeekId = uuidv4();
-    const weekOrder = program?.weeks.length || 0;
+    const weekOrder = program.weeks.length || 0;
     const newWeek: WorkoutWeek = {
       id: newWeekId,
       name: `Week ${weekOrder + 1}`,
@@ -236,7 +238,7 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
     });
     
     return newWeekId;
-  }, [updateProgram, program?.weeks.length]);
+  }, [updateProgram, program]);
 
   const addCircuit = useCallback((workoutId: string) => {
     const newCircuit: Circuit = {

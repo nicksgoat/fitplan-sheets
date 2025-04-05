@@ -18,7 +18,8 @@ const WorkoutApp: React.FC = () => {
     addWeek,
     addWorkout,
     setActiveWeekId,
-    setActiveWorkoutId
+    setActiveWorkoutId,
+    activeWeekId
   } = useWorkout();
   
   const [activeTab, setActiveTab] = useState<string>("workout");
