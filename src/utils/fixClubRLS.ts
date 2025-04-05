@@ -53,3 +53,26 @@ export async function initializeClubFunctions(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Helper to execute a direct SQL query through the edge function
+ */
+export async function runSQLQuery(query: string): Promise<any[]> {
+  try {
+    console.log("Running SQL query:", query);
+    
+    const { data, error } = await supabase.functions.invoke('run-sql-query', {
+      body: { query }
+    });
+    
+    if (error) {
+      console.error("Error running SQL query:", error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error executing SQL query:", error);
+    throw error;
+  }
+}

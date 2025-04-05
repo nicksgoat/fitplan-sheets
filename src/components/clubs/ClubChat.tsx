@@ -37,13 +37,21 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
   const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [displayedMessages, setDisplayedMessages] = useState<any[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = isUserClubAdmin(clubId);
   const isMember = isUserClubMember(clubId);
   
+  // Update local state when messages from context change
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      setDisplayedMessages(messages);
+    }
+  }, [messages]);
+  
   // Sort messages by creation time (oldest first)
-  const sortedMessages = [...messages].sort((a, b) => 
+  const sortedMessages = [...displayedMessages].sort((a, b) => 
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
   
@@ -55,15 +63,24 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     }
     groups[date].push(message);
     return groups;
-  }, {} as Record<string, typeof messages>);
+  }, {} as Record<string, typeof sortedMessages>);
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [displayedMessages]);
+
+  // Initial data fetch
+  useEffect(() => {
+    if (clubId) {
+      refreshMessages();
+    }
+  }, [clubId]);
   
   // Setup subscription to realtime updates for new messages
   useEffect(() => {
     if (!clubId) return;
+    
+    console.log(`Setting up realtime subscription for club ${clubId} messages`);
     
     // Create a subscription to the club_messages table for this club
     const subscription = supabase
@@ -74,14 +91,30 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
         table: 'club_messages',
         filter: `club_id=eq.${clubId}`
       }, payload => {
-        // When we get a new message, refresh all messages
-        console.log('New message received:', payload);
+        console.log('New message received via realtime:', payload);
+        
+        // Add the new message to local state immediately
+        if (payload.new) {
+          setDisplayedMessages(prev => {
+            // Check if message already exists to avoid duplicates
+            const exists = prev.some(msg => msg.id === payload.new.id);
+            if (!exists) {
+              return [...prev, payload.new];
+            }
+            return prev;
+          });
+        }
+        
+        // Also refresh all messages to ensure we have complete data
         refreshMessages();
       })
       .subscribe();
     
+    console.log("Subscription set up:", subscription);
+    
     // Cleanup subscription on unmount
     return () => {
+      console.log("Cleaning up subscription");
       subscription.unsubscribe();
     };
   }, [clubId, refreshMessages]);
@@ -121,6 +154,12 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
         }
         
         console.log("Message sent successfully via direct insert:", data);
+        
+        // Immediately add the new message to the local state
+        if (data) {
+          setDisplayedMessages(prev => [...prev, data]);
+        }
+        
         setMessageText('');
         toast.success("Message sent successfully");
         
@@ -144,12 +183,18 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
         }
         
         console.log("Message sent successfully via edge function:", functionData);
+        
+        // Add the new message returned from the edge function
+        if (functionData && Array.isArray(functionData) && functionData.length > 0) {
+          setDisplayedMessages(prev => [...prev, functionData[0]]);
+        }
+        
         setMessageText('');
         toast.success("Message sent successfully (via edge function)");
       }
       
-      // Refresh messages to show the new one
-      await refreshMessages();
+      // Refresh messages to ensure our local state matches the server
+      setTimeout(() => refreshMessages(), 1000);
       
     } catch (error) {
       console.error('Error sending message:', error);
@@ -162,6 +207,13 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
   const handlePinMessage = async (messageId: string, isPinned: boolean) => {
     try {
       await togglePinMessage(messageId, isPinned);
+      
+      // Update the local state immediately to reflect the pin status change
+      setDisplayedMessages(prev => 
+        prev.map(message => 
+          message.id === messageId ? { ...message, is_pinned: isPinned } : message
+        )
+      );
     } catch (error) {
       console.error('Error pinning/unpinning message:', error);
     }
@@ -190,7 +242,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId }) => {
     }
   };
   
-  const pinnedMessages = messages.filter(message => message.is_pinned);
+  const pinnedMessages = displayedMessages.filter(message => message.is_pinned);
   
   if (!isMember) {
     return (
