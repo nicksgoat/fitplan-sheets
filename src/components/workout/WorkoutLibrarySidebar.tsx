@@ -1,30 +1,25 @@
 
 import React from 'react';
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarHeader,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Search, Trash2, Plus } from 'lucide-react';
 import { useWorkoutLibraryIntegration } from '@/hooks/useWorkoutLibraryIntegration';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Workout } from '@/types/workout';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter
+} from '@/components/ui/sheet';
 
 interface WorkoutLibrarySidebarProps {
-  expanded: boolean;
-  onToggle: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProps) => {
+const WorkoutLibrarySidebar = ({ open, onOpenChange }: WorkoutLibrarySidebarProps) => {
   const { libraryWorkouts, useDraggableLibraryWorkout, saveCurrentWorkoutToLibrary } = useWorkoutLibraryIntegration();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
@@ -72,42 +67,26 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
   };
 
   return (
-    <Sidebar 
-      className={`border-r border-dark-300 transition-all duration-300 ${
-        expanded ? 'w-72' : 'w-0'
-      }`}
-      collapsible={expanded ? undefined : "offcanvas"}
-    >
-      <SidebarHeader className="border-b border-dark-300">
-        <div className="p-4 flex items-center justify-between">
-          <h3 className="text-lg font-medium">Workout Library</h3>
-          <Button 
-            onClick={onToggle}
-            size="icon" 
-            variant="ghost" 
-            className="h-8 w-8"
-          >
-            <span className="sr-only">Toggle Sidebar</span>
-            ×
-          </Button>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <div className="p-4">
-          <div className="relative mb-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search workouts..."
-              className="bg-dark-200 border-dark-300 pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-80 sm:w-96 bg-dark-100 text-white border-l border-dark-300">
+          <SheetHeader>
+            <SheetTitle className="text-white">Workout Library</SheetTitle>
+          </SheetHeader>
           
-          <SidebarGroup>
-            <SidebarGroupLabel>Drag to Calendar</SidebarGroupLabel>
-            <SidebarGroupContent>
+          <div className="py-4 flex-1 overflow-hidden">
+            <div className="relative mb-4">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search workouts..."
+                className="bg-dark-200 border-dark-300 pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <h3 className="text-sm font-medium mb-2 text-gray-300">Drag to Calendar</h3>
               <div className="space-y-1 max-h-[400px] overflow-y-auto pr-2">
                 {filteredWorkouts.length > 0 ? (
                   filteredWorkouts.map((workout) => (
@@ -119,25 +98,25 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
                   </div>
                 )}
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
-      </SidebarContent>
-      
-      <SidebarFooter className="border-t border-dark-300 p-4">
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full justify-start"
-            onClick={() => setSaveDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Save Current Workout
-          </Button>
-        </div>
-      </SidebarFooter>
+            </div>
+          </div>
+          
+          <SheetFooter className="border-t border-dark-300 pt-4">
+            <div className="space-y-2 w-full">
+              <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={() => setSaveDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Save Current Workout
+              </Button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
       {saveDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -165,7 +144,7 @@ const WorkoutLibrarySidebar = ({ expanded, onToggle }: WorkoutLibrarySidebarProp
           </div>
         </div>
       )}
-    </Sidebar>
+    </>
   );
 };
 
