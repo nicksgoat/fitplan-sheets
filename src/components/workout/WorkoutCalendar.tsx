@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -126,16 +126,26 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
   // Find active week or use the first week
   const activeWeek = program.weeks.find(w => w.id === activeWeekId) || program.weeks[0];
   
-  // Go to previous week
+  // Go to previous week - this now means selecting the previous week in the program
   const goToPreviousWeek = () => {
-    // For now just move the display
-    setCurrentWeekStart(addDays(currentWeekStart, -7));
+    if (!activeWeek) return;
+    
+    const currentWeekIndex = program.weeks.findIndex(w => w.id === activeWeek.id);
+    if (currentWeekIndex > 0) {
+      const prevWeek = program.weeks[currentWeekIndex - 1];
+      setActiveWeekId(prevWeek.id);
+    }
   };
   
-  // Go to next week
+  // Go to next week - this now means selecting the next week in the program
   const goToNextWeek = () => {
-    // For now just move the display
-    setCurrentWeekStart(addDays(currentWeekStart, 7));
+    if (!activeWeek) return;
+    
+    const currentWeekIndex = program.weeks.findIndex(w => w.id === activeWeek.id);
+    if (currentWeekIndex < program.weeks.length - 1) {
+      const nextWeek = program.weeks[currentWeekIndex + 1];
+      setActiveWeekId(nextWeek.id);
+    }
   };
   
   // Handle adding a workout to a specific day
@@ -176,7 +186,7 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
     }
   };
   
-  // Group workouts by day
+  // Group workouts by day for the active week
   const workoutsByDay: { [key: number]: WorkoutSession[] } = {};
   if (activeWeek) {
     activeWeek.workouts.forEach(workoutId => {
@@ -196,11 +206,26 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
     if (typeof newWeekId === 'string') {
       // Set the active week to the new week
       setActiveWeekId(newWeekId);
-      // Automatically advance to the next week view 
-      // when a new week is created
-      setCurrentWeekStart(addDays(currentWeekStart, 7));
     }
   };
+  
+  // Effect to update UI when activeWeekId changes
+  useEffect(() => {
+    if (activeWeekId && program) {
+      const weekIndex = program.weeks.findIndex(w => w.id === activeWeekId);
+      if (weekIndex !== -1) {
+        // This is just for visual feedback when switching weeks
+        // We're not actually changing the date, just showing which week is active
+        setCurrentWeekStart(prevDate => {
+          // Only change the date if we're actually switching weeks
+          if (activeWeek && activeWeek.id !== activeWeekId) {
+            return addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), weekIndex * 7);
+          }
+          return prevDate;
+        });
+      }
+    }
+  }, [activeWeekId, program, activeWeek]);
   
   return (
     <DndProvider backend={HTML5Backend}>
@@ -218,12 +243,13 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
                 size="icon"
                 onClick={goToPreviousWeek}
                 className="text-gray-400 hover:text-white"
+                disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === 0}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               
               <span className="text-sm">
-                Week {activeWeek ? activeWeek.order + 1 : 1}
+                Week {activeWeek ? program.weeks.findIndex(w => w.id === activeWeek.id) + 1 : 1}
               </span>
               
               <Button 
@@ -231,6 +257,7 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
                 size="icon"
                 onClick={goToNextWeek}
                 className="text-gray-400 hover:text-white"
+                disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === program.weeks.length - 1}
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
