@@ -205,7 +205,7 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-fitbloom-purple" />
-            <h2 className="text-lg font-semibold">Workout Calendar</h2>
+            <h2 className="text-lg font-semibold">Program Calendar</h2>
           </div>
           
           <div className="flex items-center gap-4">
