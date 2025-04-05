@@ -1,19 +1,19 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Search, Library, Heart, FileSpreadsheet, Calendar, Users } from 'lucide-react';
-import { ExpandableTabs } from '@/components/ui/expandable-tabs';
+import { ExpandableTabs, type TabItem } from '@/components/ui/expandable-tabs';
 
 const MobileNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Define navigation tabs
-  const tabs = [
+  // Define navigation tabs with correct type
+  const tabs: TabItem[] = [
     { title: 'Home', icon: Home },
     { title: 'Search', icon: Search },
     { title: 'Library', icon: Library },
     { title: 'Clubs', icon: Users },
-    { type: 'separator' },
+    { type: "separator" },
     { title: 'Schedule', icon: Calendar },
     { title: 'Liked', icon: Heart },
     { title: 'Sheets', icon: FileSpreadsheet },
