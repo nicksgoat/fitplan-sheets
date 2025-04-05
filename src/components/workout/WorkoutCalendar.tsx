@@ -142,14 +142,36 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
   const handleAddWorkout = (dayNumber: number) => {
     if (activeWeek) {
       const newWorkoutId = addWorkout(activeWeek.id);
-      // You would need to update the workout's day property here
-      // This would require an update to your addWorkout function
+      
+      // Update the workout's day property
+      if (typeof newWorkoutId === 'string') {
+        // Find the workout we just created
+        const workout = program.workouts.find(w => w.id === newWorkoutId);
+        if (workout) {
+          // Update its day number
+          workout.day = dayNumber;
+          
+          // Select this workout
+          onSelectWorkout(newWorkoutId);
+        }
+      }
     } else {
       // Create a new week first if there's no active week
       const newWeekId = addWeek();
       if (typeof newWeekId === 'string') {
         const newWorkoutId = addWorkout(newWeekId);
-        // Same as above, update day property
+        // Update the workout's day property
+        if (typeof newWorkoutId === 'string') {
+          // Find the workout we just created
+          const workout = program.workouts.find(w => w.id === newWorkoutId);
+          if (workout) {
+            // Update its day number
+            workout.day = dayNumber;
+            
+            // Select this workout
+            onSelectWorkout(newWorkoutId);
+          }
+        }
       }
     }
   };
@@ -168,6 +190,15 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
     });
   }
   
+  // Add a new week
+  const handleAddWeek = () => {
+    const newWeekId = addWeek();
+    if (typeof newWeekId === 'string') {
+      // Automatically set the active week to the new week
+      activeWeek && activeWeek.id !== newWeekId && setCurrentWeekStart(addDays(currentWeekStart, 7));
+    }
+  };
+  
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="mb-6">
@@ -177,27 +208,39 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
             <h2 className="text-lg font-semibold">Workout Calendar</h2>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={goToPreviousWeek}
-              className="text-gray-400 hover:text-white"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={goToPreviousWeek}
+                className="text-gray-400 hover:text-white"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              
+              <span className="text-sm">
+                Week {activeWeek ? activeWeek.order + 1 : 1}
+              </span>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={goToNextWeek}
+                className="text-gray-400 hover:text-white"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
             
-            <span className="text-sm">
-              Week {activeWeek ? activeWeek.order + 1 : 1}
-            </span>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={goToNextWeek}
-              className="text-gray-400 hover:text-white"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddWeek}
+              className="text-xs flex items-center gap-1 border-gray-700 hover:bg-gray-700"
             >
-              <ChevronRight className="h-5 w-5" />
+              <Plus className="h-3 w-3" />
+              New Week
             </Button>
           </div>
         </div>

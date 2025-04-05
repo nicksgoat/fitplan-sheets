@@ -26,8 +26,8 @@ interface WorkoutContextProps {
   setActiveWorkoutId: (workoutId: string | null) => void;
   setActiveWeekId: (weekId: string | null) => void;
   setProgram: (program: WorkoutProgram | null) => void;
-  addWorkout: (weekId: string) => void;
-  addWeek: () => void;
+  addWorkout: (weekId: string) => string;
+  addWeek: () => string;
   addCircuit: (workoutId: string) => void;
   addExercise: (workoutId: string, libraryExerciseId?: string) => void;
   addExerciseToWorkout: (workoutId: string) => void;
@@ -223,10 +223,11 @@ export const WorkoutProvider: React.FC<WorkoutProviderProps> = ({ children }) =>
 
   const addWeek = useCallback(() => {
     const newWeekId = uuidv4();
+    const weekOrder = program?.weeks.length || 0;
     const newWeek: WorkoutWeek = {
       id: newWeekId,
-      name: "Week 1",
-      order: program?.weeks.length || 0,
+      name: `Week ${weekOrder + 1}`,
+      order: weekOrder,
       workouts: [],
     };
 
