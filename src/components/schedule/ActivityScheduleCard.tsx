@@ -1,10 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSchedule } from '@/contexts/ScheduleContext';
-import { useLibrary } from '@/contexts/LibraryContext';
 import { format, parseISO, startOfToday, isToday, isFuture, isPast } from 'date-fns';
 import { ActivityCard, Goal, Metric } from '@/components/ui/activity-card';
-import { v4 as uuidv4 } from 'uuid';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -56,14 +54,14 @@ const calculateMetrics = (activeSchedule: any): Metric[] => {
 };
 
 // Convert today's workouts to goals
-const workoutsToGoals = (activeSchedule: any): Goal[] => {
-  if (!activeSchedule) return [];
+const workoutsToGoals = (scheduledWorkouts: any[]): Goal[] => {
+  if (!scheduledWorkouts || scheduledWorkouts.length === 0) return [];
   
-  const todayWorkouts = activeSchedule.scheduledWorkouts.filter((workout: any) => 
+  const todayWorkouts = scheduledWorkouts.filter(workout => 
     isToday(parseISO(workout.date))
   );
   
-  return todayWorkouts.map((workout: any) => ({
+  return todayWorkouts.map(workout => ({
     id: workout.id,
     title: workout.name || `Workout at ${format(parseISO(workout.date), 'h:mm a')}`,
     isCompleted: workout.completed
@@ -72,7 +70,6 @@ const workoutsToGoals = (activeSchedule: any): Goal[] => {
 
 const ActivityScheduleCard = () => {
   const { activeSchedule, completeWorkout } = useSchedule();
-  const { workouts } = useLibrary();
   
   // Generate goals from scheduled workouts
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -81,38 +78,18 @@ const ActivityScheduleCard = () => {
   // Update state when activeSchedule changes
   useEffect(() => {
     if (activeSchedule) {
-      // Enhance scheduled workouts with names from the library
-      const enhancedWorkouts = activeSchedule.scheduledWorkouts.map((sw: any) => {
-        const workoutData = workouts.find(w => w.id === sw.workoutId);
-        return {
-          ...sw,
-          name: workoutData?.name || 'Unknown Workout'
-        };
-      });
-      
-      // Update the goals with real workout data
-      const todayWorkouts = enhancedWorkouts.filter((workout: any) => 
-        isToday(parseISO(workout.date))
-      );
-      
-      const updatedGoals = todayWorkouts.map((workout: any) => ({
-        id: workout.id,
-        title: workout.name,
-        isCompleted: workout.completed
-      }));
-      
+      // Now we can use workout names directly from scheduledWorkouts
+      // No need to fetch from workouts library
+      const updatedGoals = workoutsToGoals(activeSchedule.scheduledWorkouts);
       setGoals(updatedGoals);
       
       // Update metrics
-      setMetrics(calculateMetrics({
-        ...activeSchedule,
-        scheduledWorkouts: enhancedWorkouts
-      }));
+      setMetrics(calculateMetrics(activeSchedule));
     } else {
       setGoals([]);
       setMetrics([]);
     }
-  }, [activeSchedule, workouts]);
+  }, [activeSchedule]);
   
   const handleToggleGoal = (goalId: string) => {
     completeWorkout(goalId);

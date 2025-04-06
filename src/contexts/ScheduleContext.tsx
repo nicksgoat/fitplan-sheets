@@ -4,14 +4,24 @@ import { v4 as uuidv4 } from 'uuid';
 import { ProgramSchedule, ScheduledWorkout, Workout, WorkoutProgram } from '@/types/workout';
 import { format, addDays, parseISO, isSameDay } from 'date-fns';
 
+// Update ScheduledWorkout type to include name
+interface EnhancedScheduledWorkout extends ScheduledWorkout {
+  name?: string; // Add workout name to scheduled workout
+}
+
+// Update ProgramSchedule to use the enhanced workout type
+interface EnhancedProgramSchedule extends Omit<ProgramSchedule, 'scheduledWorkouts'> {
+  scheduledWorkouts: EnhancedScheduledWorkout[];
+}
+
 // Define the context type
 interface ScheduleContextType {
-  schedules: ProgramSchedule[];
-  activeSchedule: ProgramSchedule | null;
-  workoutsForDay: (date: Date) => ScheduledWorkout[];
-  startProgram: (program: WorkoutProgram, startDate: Date) => ProgramSchedule;
+  schedules: EnhancedProgramSchedule[];
+  activeSchedule: EnhancedProgramSchedule | null;
+  workoutsForDay: (date: Date) => EnhancedScheduledWorkout[];
+  startProgram: (program: WorkoutProgram, startDate: Date) => EnhancedProgramSchedule;
   completeWorkout: (scheduledWorkoutId: string) => void;
-  getScheduledWorkoutById: (id: string) => ScheduledWorkout | undefined;
+  getScheduledWorkoutById: (id: string) => EnhancedScheduledWorkout | undefined;
 }
 
 // Create the context with a default value
@@ -37,14 +47,14 @@ const SCHEDULES_STORAGE_KEY = 'fitbloom-workout-schedules';
 
 // Provider component
 export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [schedules, setSchedules] = useState<ProgramSchedule[]>([]);
-  const [activeSchedule, setActiveSchedule] = useState<ProgramSchedule | null>(null);
+  const [schedules, setSchedules] = useState<EnhancedProgramSchedule[]>([]);
+  const [activeSchedule, setActiveSchedule] = useState<EnhancedProgramSchedule | null>(null);
 
   // Load schedules from local storage on mount
   useEffect(() => {
     const savedSchedules = localStorage.getItem(SCHEDULES_STORAGE_KEY);
     if (savedSchedules) {
-      const parsedSchedules: ProgramSchedule[] = JSON.parse(savedSchedules);
+      const parsedSchedules: EnhancedProgramSchedule[] = JSON.parse(savedSchedules);
       setSchedules(parsedSchedules);
       
       // Find the active schedule
@@ -63,7 +73,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [schedules]);
 
   // Get workouts scheduled for a specific day
-  const workoutsForDay = (date: Date): ScheduledWorkout[] => {
+  const workoutsForDay = (date: Date): EnhancedScheduledWorkout[] => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     return schedules.flatMap(schedule => 
@@ -74,7 +84,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   // Schedule a program starting from a specific date
-  const startProgram = (program: WorkoutProgram, startDate: Date): ProgramSchedule => {
+  const startProgram = (program: WorkoutProgram, startDate: Date): EnhancedProgramSchedule => {
     // Debug log to see what's coming in
     console.log("Starting program:", program);
     console.log("Program weeks:", program.weeks);
@@ -90,7 +100,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
     const scheduleId = uuidv4();
     
     // Map out all workouts from the program based on their day numbers
-    const scheduledWorkouts: ScheduledWorkout[] = [];
+    const scheduledWorkouts: EnhancedScheduledWorkout[] = [];
     
     // Track the maximum number of days to calculate end date
     let maxDays = 0;
@@ -138,13 +148,14 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
           // Calculate the actual date by adding the offset to the start date
           const workoutDate = addDays(startDate, dayOffset);
           
-          // Create a scheduled workout
-          const scheduledWorkout: ScheduledWorkout = {
+          // Create a scheduled workout with the workout name
+          const scheduledWorkout: EnhancedScheduledWorkout = {
             id: uuidv4(),
             date: workoutDate.toISOString(),
             workoutId: workout.id,
             programId: program.id,
-            completed: false
+            completed: false,
+            name: workout.name // Store the workout name directly in the scheduled workout
           };
           
           // Debug log each scheduled workout
@@ -164,7 +175,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
     const endDate = addDays(startDate, maxDays);
     
     // Create the new schedule
-    const newSchedule: ProgramSchedule = {
+    const newSchedule: EnhancedProgramSchedule = {
       id: scheduleId,
       programId: program.id,
       programName: program.name, // Store the program name
@@ -211,7 +222,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   // Get a scheduled workout by ID
-  const getScheduledWorkoutById = (id: string): ScheduledWorkout | undefined => {
+  const getScheduledWorkoutById = (id: string): EnhancedScheduledWorkout | undefined => {
     for (const schedule of schedules) {
       const workout = schedule.scheduledWorkouts.find(w => w.id === id);
       if (workout) return workout;
