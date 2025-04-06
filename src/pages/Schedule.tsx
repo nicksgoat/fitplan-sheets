@@ -1,13 +1,12 @@
 
 import { useSchedule } from "@/contexts/ScheduleContext";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import ScheduleCard from "@/components/schedule/ScheduleCard";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { CalendarClock, InfoIcon } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import ActivityScheduleCard from "@/components/schedule/ActivityScheduleCard";
 
 export default function Schedule() {
   const { activeSchedule } = useSchedule();
@@ -47,31 +46,19 @@ export default function Schedule() {
           </Alert>
         )}
         
-        {session && !activeSchedule && (
-          <Card className="bg-gray-900/30 border-gray-800">
-            <CardHeader>
-              <CardTitle>No Active Programs</CardTitle>
-              <CardDescription>
-                You don't have any active programs scheduled
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-center p-8 gap-3 text-gray-400">
-                <CalendarClock className="h-8 w-8 text-fitbloom-purple/70" />
-                <p>Start a program from the library to see your workout schedule here.</p>
-              </div>
-              <Button 
-                asChild
-                className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-              >
-                <Link to="/library">Browse Programs</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <div className="max-w-md mx-auto">
+          <ActivityScheduleCard />
+        </div>
         
-        {session && activeSchedule && (
-          <ScheduleCard />
+        {session && !activeSchedule && (
+          <div className="flex justify-center mt-4">
+            <Button 
+              asChild
+              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            >
+              <Link to="/library">Browse Programs</Link>
+            </Button>
+          </div>
         )}
       </div>
     </div>

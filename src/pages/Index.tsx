@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ScheduleCard from "@/components/schedule/ScheduleCard";
+import ActivityScheduleCard from "@/components/schedule/ActivityScheduleCard";
 
 export default function Index() {
   const { session } = useAuth();
@@ -44,7 +44,9 @@ export default function Index() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
           <TabsContent value="schedule">
-            <ScheduleCard />
+            <div className="max-w-md mx-auto">
+              <ActivityScheduleCard />
+            </div>
           </TabsContent>
           <TabsContent value="activity">
             <div className="bg-gray-900/30 border border-gray-800 rounded-lg p-6">

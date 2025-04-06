@@ -22,6 +22,7 @@ const ScheduleContext = createContext<ScheduleContextType>({
   startProgram: () => ({ 
     id: '', 
     programId: '', 
+    programName: '',
     startDate: '', 
     scheduledWorkouts: [], 
     active: false, 
@@ -100,6 +101,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
       return {
         id: scheduleId,
         programId: program.id,
+        programName: program.name,
         startDate: startDate.toISOString(),
         endDate: startDate.toISOString(),
         scheduledWorkouts: [],
@@ -165,6 +167,7 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
     const newSchedule: ProgramSchedule = {
       id: scheduleId,
       programId: program.id,
+      programName: program.name, // Store the program name
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       scheduledWorkouts,
@@ -191,6 +194,20 @@ export const ScheduleProvider: React.FC<{ children: ReactNode }> = ({ children }
         )
       }))
     );
+    
+    // Update the active schedule if necessary
+    if (activeSchedule) {
+      const updatedWorkouts = activeSchedule.scheduledWorkouts.map(workout => 
+        workout.id === scheduledWorkoutId 
+          ? { ...workout, completed: true } 
+          : workout
+      );
+      
+      setActiveSchedule({
+        ...activeSchedule,
+        scheduledWorkouts: updatedWorkouts
+      });
+    }
   };
 
   // Get a scheduled workout by ID

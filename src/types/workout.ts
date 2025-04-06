@@ -1,4 +1,3 @@
-
 export interface Set {
   id: string;
   reps: string;
@@ -24,7 +23,6 @@ export interface Exercise {
   repType?: RepType;
   intensityType?: IntensityType;
   weightType?: WeightType;
-  // Reference to the original library exercise
   libraryExerciseId?: string;
 }
 
@@ -114,9 +112,10 @@ export interface ScheduledWorkout {
 export interface ProgramSchedule {
   id: string;
   programId: string;
-  startDate: string; // ISO date string
-  endDate?: string; // Optional end date
+  programName?: string;
+  startDate: string;
+  endDate?: string;
   scheduledWorkouts: ScheduledWorkout[];
-  active: boolean; // Whether this is the active program
-  createdAt: string; // ISO date string
+  active: boolean;
+  createdAt: string;
 }
