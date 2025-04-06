@@ -6,9 +6,10 @@ import { contentCardStyles } from '@/styles/AssetLibrary';
 import { ItemType } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
 import ContentCard from './ContentCard';
+import { Exercise } from '@/types/exercise';
 
 interface GlowingContentCardProps {
-  item: ItemType;
+  item: ItemType | Exercise;
   className?: string;
   onClick?: () => void;
 }
@@ -24,13 +25,21 @@ const GlowingContentCard = ({
     if (onClick) {
       onClick();
     } else {
-      // Use the existing navigation logic based on item type
-      if (item.type === 'exercise') {
+      // Check if it's an Exercise or ItemType
+      const isExercise = 'primaryMuscle' in item;
+      
+      if (isExercise) {
+        // It's an Exercise object
         navigate(`/exercise/${item.id}`);
-      } else if (item.type === 'workout') {
-        navigate(`/workout/${item.id}`);
-      } else if (item.type === 'program') {
-        navigate(`/program/${item.id}`);
+      } else {
+        // It's an ItemType
+        if (item.type === 'exercise') {
+          navigate(`/exercise/${item.id}`);
+        } else if (item.type === 'workout') {
+          navigate(`/workout/${item.id}`);
+        } else if (item.type === 'program') {
+          navigate(`/program/${item.id}`);
+        }
       }
     }
   };

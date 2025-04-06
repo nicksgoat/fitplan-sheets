@@ -2,11 +2,12 @@
 import React from 'react';
 import { ItemType } from '@/lib/types';
 import GlowingContentCard from './GlowingContentCard';
+import { Exercise } from '@/types/exercise';
 
 interface ContentGridProps {
-  items: ItemType[];
+  items: (ItemType | Exercise)[];
   className?: string;
-  onItemClick?: (item: ItemType) => void;
+  onItemClick?: (item: ItemType | Exercise) => void;
 }
 
 const ContentGrid: React.FC<ContentGridProps> = ({ 
