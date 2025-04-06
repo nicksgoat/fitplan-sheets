@@ -5,6 +5,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { WorkoutProvider } from '@/contexts/WorkoutContext';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 interface WorkoutLibrarySidebarProps {
   open: boolean;
@@ -49,20 +52,24 @@ const WorkoutLibrarySidebar = forwardRef<WorkoutLibrarySidebarRef, WorkoutLibrar
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="workouts">
-                <WorkoutsLibraryTab onDragStart={() => onOpenChange(false)} />
-              </TabsContent>
-              
-              <TabsContent value="programs">
-                <ProgramsLibraryTab />
-              </TabsContent>
-              
-              <TabsContent value="weeks">
-                {/* Placeholder for Weeks Library Tab */}
-                <div className="text-center py-10 text-gray-400">
-                  Weeks library coming soon
-                </div>
-              </TabsContent>
+              <DndProvider backend={HTML5Backend}>
+                <WorkoutProvider>
+                  <TabsContent value="workouts">
+                    <WorkoutsLibraryTab onDragStart={() => onOpenChange(false)} />
+                  </TabsContent>
+                  
+                  <TabsContent value="programs">
+                    <ProgramsLibraryTab />
+                  </TabsContent>
+                  
+                  <TabsContent value="weeks">
+                    {/* Placeholder for Weeks Library Tab */}
+                    <div className="text-center py-10 text-gray-400">
+                      Weeks library coming soon
+                    </div>
+                  </TabsContent>
+                </WorkoutProvider>
+              </DndProvider>
             </Tabs>
           </div>
         </SheetContent>
