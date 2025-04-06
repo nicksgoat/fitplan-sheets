@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ItemType } from '@/lib/types';
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import ExerciseDetail from './ExerciseDetail';
@@ -15,6 +16,7 @@ interface DetailDrawerProps {
 const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
   const [open, setOpen] = React.useState(false);
   const { workouts, programs } = useLibrary();
+  const navigate = useNavigate();
 
   // Find the actual complete workout or program data from the library
   const workoutData = item.type === 'workout' 
@@ -29,6 +31,13 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
     setOpen(false);
   };
 
+  const handleViewFullDetails = () => {
+    setOpen(false);
+    if (item.type === 'workout') {
+      navigate(`/workout/${item.id}`);
+    }
+  };
+
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
@@ -41,14 +50,18 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
         {item.type === 'workout' && (
-          <WorkoutDetail item={item} workoutData={workoutData} onClose={handleClose} />
+          <WorkoutDetail 
+            item={item} 
+            workoutData={workoutData} 
+            onClose={handleClose} 
+            onViewDetails={handleViewFullDetails}
+          />
         )}
         {item.type === 'program' && (
           <ProgramDetail item={item} programData={programData} onClose={handleClose} />
         )}
         {item.type === 'collection' && (
           // For collections, we'll use the Exercise detail as a fallback
-          // Later, you can create a dedicated CollectionDetail component
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
       </DrawerContent>
