@@ -4,7 +4,7 @@ import { ItemType } from '@/lib/types';
 import { Workout } from '@/types/workout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Heart, ChevronDown, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Clock, Heart, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeaderboardTab from './LeaderboardTab';
 import { 
@@ -19,10 +19,9 @@ interface WorkoutDetailProps {
   item: ItemType;
   workoutData?: Workout;
   onClose: () => void;
-  onViewDetails?: () => void;
 }
 
-const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose, onViewDetails }) => {
+const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose }) => {
   const [activeTab, setActiveTab] = useState<string>("details");
   const [openExercises, setOpenExercises] = useState<number[]>([]);
 
@@ -35,7 +34,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   };
 
   return (
-    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe bg-dark-100">
+    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
       {/* Header Image */}
       <div className="relative w-full h-48 md:h-64">
         <img
@@ -208,18 +207,9 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
         <Button variant="outline" size="lg" className="flex-1" onClick={onClose}>
           Close
         </Button>
-        {onViewDetails ? (
-          <Button 
-            className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90 flex items-center justify-center gap-1"
-            onClick={onViewDetails}
-          >
-            View Details <ExternalLink className="h-3 w-3 ml-1" />
-          </Button>
-        ) : (
-          <Button className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
-            Start Workout
-          </Button>
-        )}
+        <Button className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
+          Start Workout
+        </Button>
       </div>
     </div>
   );

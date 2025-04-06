@@ -20,7 +20,6 @@ import { LibraryProvider } from "./contexts/LibraryContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ScheduleProvider } from "./contexts/ScheduleContext";
 import { ClubProvider } from "./contexts/ClubContext";
-import WorkoutDetail from "./pages/WorkoutDetail";
 
 // Initialize the query client
 const queryClient = new QueryClient({
@@ -54,8 +53,6 @@ function App() {
                     <Route path="clubs" element={<Clubs />} />
                     <Route path="clubs/create" element={<Clubs />} />
                     <Route path="clubs/:clubId" element={<Clubs />} />
-                    {/* Workout detail route */}
-                    <Route path="workout/:workoutId" element={<WorkoutDetail />} />
                     <Route path="profile" element={
                       <AuthenticatedRoute>
                         <Profile />

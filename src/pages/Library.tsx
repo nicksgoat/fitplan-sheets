@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,15 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import ContentGrid from '@/components/ui/ContentGrid';
 import CollectionCard from '@/components/ui/CollectionCard';
-import GlowingContentCard from '@/components/ui/GlowingContentCard';
 import { useExercisesWithVisuals, useCustomExercises } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -99,18 +95,6 @@ const Library = () => {
     }
   };
   
-  const renderContentItems = (items: ItemType[]) => {
-    if (!items || items.length === 0) return null;
-    
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {items.map((item) => (
-          <GlowingContentCard key={item.id} item={item} />
-        ))}
-      </div>
-    );
-  };
-  
   return (
     <div className="space-y-6 animate-fade-in p-4">
       <div className="flex justify-between items-center">
@@ -166,14 +150,14 @@ const Library = () => {
               <p className="text-red-400">Failed to load exercises. Using local data.</p>
               {filteredExercises.length > 0 ? (
                 <div className="mt-4">
-                  {renderContentItems(filteredExercises)}
+                  <ContentGrid items={filteredExercises} />
                 </div>
               ) : (
                 <p className="text-gray-400 mt-2">No exercises available.</p>
               )}
             </div>
           ) : filteredExercises.length > 0 ? (
-            renderContentItems(filteredExercises)
+            <ContentGrid items={filteredExercises} />
           ) : (
             <div className="text-center py-10">
               <p className="text-gray-400">No exercises found.</p>
@@ -188,9 +172,7 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="workouts" className="mt-4">
-          <DndProvider backend={HTML5Backend}>
-            <WorkoutsLibraryTab />
-          </DndProvider>
+          <WorkoutsLibraryTab />
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">
@@ -203,7 +185,7 @@ const Library = () => {
               <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
             </div>
           ) : filteredCustomExercises && filteredCustomExercises.length > 0 ? (
-            renderContentItems(filteredCustomExercises)
+            <ContentGrid items={filteredCustomExercises} />
           ) : (
             <div className="text-center py-10">
               <p className="text-gray-400">You haven't created any content yet.</p>

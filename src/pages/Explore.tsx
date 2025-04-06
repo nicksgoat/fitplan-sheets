@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryButton from '@/components/ui/CategoryButton';
 import ContentCarousel from '@/components/ui/ContentCarousel';
-import GlowingContentCarousel from '@/components/ui/GlowingContentCarousel';
 import { useExercisesWithVisuals } from '@/hooks/useExerciseLibrary';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
@@ -166,7 +165,7 @@ const Explore = () => {
                 <p className="text-red-400">Failed to load exercises.</p>
               </div>
             ) : getFilteredItems(exerciseItems).length > 0 ? (
-              <GlowingContentCarousel items={getFilteredItems(exerciseItems)} />
+              <ContentCarousel items={getFilteredItems(exerciseItems)} />
             ) : (
               <div className="text-center py-6">
                 <p className="text-gray-400">No exercises match your criteria.</p>
@@ -175,7 +174,7 @@ const Explore = () => {
           </TabsContent>
           <TabsContent value="workouts" className="mt-3">
             {workoutItems.length > 0 ? (
-              <GlowingContentCarousel items={getFilteredItems(workoutItems)} />
+              <ContentCarousel items={getFilteredItems(workoutItems)} />
             ) : (
               <div className="text-center py-6">
                 <p className="text-gray-400">You haven't created any workouts yet.</p>
@@ -190,7 +189,7 @@ const Explore = () => {
           </TabsContent>
           <TabsContent value="programs" className="mt-3">
             {programItems.length > 0 ? (
-              <GlowingContentCarousel items={getFilteredItems(programItems)} />
+              <ContentCarousel items={getFilteredItems(programItems)} />
             ) : (
               <div className="text-center py-6">
                 <p className="text-gray-400">You haven't created any programs yet.</p>
@@ -236,7 +235,7 @@ const Explore = () => {
           <a href="#" className="text-fitbloom-purple hover:underline text-sm">More</a>
         </div>
         {exerciseItems.length > 0 ? (
-          <GlowingContentCarousel items={getFilteredItems(exerciseItems.slice(0, 6))} />
+          <ContentCarousel items={getFilteredItems(exerciseItems.slice(0, 6))} />
         ) : (
           <div className="text-center py-6">
             <p className="text-gray-400">No exercises found.</p>
