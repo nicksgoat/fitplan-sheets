@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +13,8 @@ import { ItemType, CollectionType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -185,7 +188,9 @@ const Library = () => {
         </TabsContent>
         
         <TabsContent value="workouts" className="mt-4">
-          <WorkoutsLibraryTab />
+          <DndProvider backend={HTML5Backend}>
+            <WorkoutsLibraryTab />
+          </DndProvider>
         </TabsContent>
         
         <TabsContent value="programs" className="mt-4">

@@ -9,7 +9,7 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { ItemType } from "@/lib/types";
 import ContentGrid from "@/components/ui/ContentGrid";
 import { useNavigate } from "react-router-dom";
-import { useWorkoutLibraryIntegration } from "@/hooks/useWorkoutLibraryIntegration";
+import { useDrag } from "react-dnd";
 
 // Define the draggable item types for consistency
 const ItemTypes = {
@@ -23,8 +23,26 @@ interface DraggableWorkoutItemProps {
 }
 
 const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, onDelete, onDragStart }) => {
-  const { useDraggableLibraryWorkout } = useWorkoutLibraryIntegration();
-  const [{ isDragging }, drag] = useDraggableLibraryWorkout(workout, onDragStart);
+  // Use a simple drag implementation without WorkoutContext dependency
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.LIBRARY_WORKOUT,
+    item: () => { 
+      // Execute the onDragStart callback if provided
+      if (onDragStart) {
+        onDragStart();
+      }
+      
+      // Return the item data
+      return {
+        id: workout.id, 
+        fromLibrary: true,
+        workout: workout // Include the entire workout for easier access
+      };
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    })
+  }));
   
   return (
     <div 
