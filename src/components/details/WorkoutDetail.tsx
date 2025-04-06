@@ -35,7 +35,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   };
 
   return (
-    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe">
+    <div className="flex flex-col h-[80vh] overflow-y-auto pb-safe bg-dark-100">
       {/* Header Image */}
       <div className="relative w-full h-48 md:h-64">
         <img

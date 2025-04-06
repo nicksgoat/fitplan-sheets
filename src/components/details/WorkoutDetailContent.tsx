@@ -48,7 +48,7 @@ const WorkoutDetailContent: React.FC<WorkoutDetailContentProps> = ({ item, worko
         <ArrowLeft className="h-4 w-4" /> Back
       </Button>
 
-      <div className="bg-dark-200 border border-dark-300 rounded-lg overflow-hidden">
+      <div className="bg-dark-200 border border-dark-300 rounded-lg overflow-hidden shadow-lg">
         {/* Header Image */}
         <div className="relative w-full h-48 md:h-64">
           <img

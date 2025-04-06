@@ -49,14 +49,14 @@ const GlowingContentCard = ({
       className={cn("relative rounded-xl cursor-pointer", className)}
       onClick={handleClick}
     >
-      <div className="relative p-1.5">
+      <div className="relative p-1">
         <GlowingEffect 
           spread={30}
           glow={true}
           disabled={false}
           proximity={50}
           inactiveZone={0.01}
-          borderWidth={2}
+          borderWidth={1}
         />
         <ContentCard item={item} />
       </div>

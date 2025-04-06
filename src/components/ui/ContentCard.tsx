@@ -44,10 +44,6 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   const duration = normalizedItem.duration;
   const title = normalizedItem.title;
   
-  // Check if it's a Supabase Storage URL for videos
-  const isStorageVideo = videoUrl && videoUrl.includes('storage.googleapis.com') && 
-                         videoUrl.includes('exercise-videos');
-
   const handleCardClick = () => {
     if (onClick) {
       onClick();
@@ -57,7 +53,7 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   return (
     <DetailDrawer item={normalizedItem}>
       <Card 
-        className={cn("content-card h-full flex flex-col", className)}
+        className={cn("content-card h-full flex flex-col bg-gray-900 border-gray-800", className)}
         onClick={handleCardClick}
       >
         <div className="relative">
@@ -103,12 +99,12 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
         </CardContent>
         <CardFooter className="pt-0 px-2 pb-2 flex flex-wrap gap-1">
           {tags?.slice(0, 2).map((tag, index) => (
-            <Badge key={index} variant="outline" className="text-[10px] px-1.5 py-0">
+            <Badge key={index} variant="outline" className="text-xs px-1.5 py-0">
               {tag}
             </Badge>
           ))}
           {videoUrl && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-0.5">
+            <Badge variant="outline" className="text-xs px-1.5 py-0 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-0.5">
               <Video className="h-2 w-2" />
               Video
             </Badge>
