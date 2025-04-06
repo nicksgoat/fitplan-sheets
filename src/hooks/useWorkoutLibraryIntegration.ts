@@ -21,12 +21,26 @@ export const useWorkoutLibraryIntegration = () => {
     workouts: libraryWorkouts 
   } = useLibrary();
   
+  // Try to use the WorkoutContext, but handle the case where it might not be available
+  let workoutContext;
+  try {
+    workoutContext = useWorkout();
+  } catch (error) {
+    // WorkoutContext is not available, provide fallback values
+    workoutContext = {
+      program: null,
+      activeWorkoutId: null,
+      activeWeekId: null,
+      loadWorkoutFromLibrary: () => {}
+    };
+  }
+  
   const { 
     program, 
     activeWorkoutId, 
     activeWeekId,
     loadWorkoutFromLibrary 
-  } = useWorkout();
+  } = workoutContext;
   
   // Get active workout from program
   const getActiveWorkout = useCallback(() => {
@@ -119,8 +133,39 @@ export const useWorkoutLibraryIntegration = () => {
   
   return {
     saveCurrentWorkoutToLibrary,
-    saveCurrentWeekToLibrary,
-    saveCurrentProgramToLibrary,
+    saveCurrentWeekToLibrary: useCallback((name?: string) => {
+      const week = getActiveWeek();
+      if (!week) {
+        toast.error("No active week to save");
+        return;
+      }
+      
+      const weekToSave = createLibraryWeek(
+        name || week.name,
+        week.workouts
+      );
+      
+      addWeekToLibrary(weekToSave, name);
+      toast.success(`Week "${weekToSave.name}" saved to library`);
+    }, [getActiveWeek, addWeekToLibrary]),
+    saveCurrentProgramToLibrary: useCallback((name?: string) => {
+      if (!program) {
+        toast.error("No program to save");
+        return;
+      }
+      
+      const programToSave = createLibraryProgram(
+        name || program.name,
+        program.workouts,
+        program.weeks
+      );
+      
+      addProgramToLibrary(programToSave, name);
+      toast.success(`Program "${programToSave.name}" saved to library`);
+      
+      // Logging to debug if program is being saved correctly
+      console.log("Program saved to library:", programToSave);
+    }, [program, addProgramToLibrary]),
     useDraggableLibraryWorkout,
     ItemTypes,
     libraryWorkouts
