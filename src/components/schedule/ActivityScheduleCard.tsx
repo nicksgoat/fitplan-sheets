@@ -101,17 +101,22 @@ const ActivityScheduleCard = () => {
   }, [activeSchedule]);
   
   const handleToggleGoal = (goalId: string) => {
-    completeWorkout(goalId);
+    // Open workout detail when clicking on a goal
+    setSelectedWorkoutId(goalId);
+    setShowWorkoutDetail(true);
     
-    // Update local state immediately for responsive UI
-    setGoals(prev => prev.map(goal => 
-      goal.id === goalId 
-        ? { ...goal, isCompleted: true }
-        : goal
-    ));
-    
-    // Show success toast
-    toast.success("Workout marked as completed!");
+    // Optional: Complete the workout when viewing details
+    // completeWorkout(goalId);
+    // 
+    // // Update local state immediately for responsive UI
+    // setGoals(prev => prev.map(goal => 
+    //   goal.id === goalId 
+    //     ? { ...goal, isCompleted: true }
+    //     : goal
+    // ));
+    // 
+    // // Show success toast
+    // toast.success("Workout marked as completed!");
   };
   
   const handleAddGoal = () => {
@@ -157,13 +162,16 @@ const ActivityScheduleCard = () => {
   } : undefined;
 
   // Find the selected workout for the details view
-  const selectedWorkoutData = selectedWorkoutId && 
-    workouts.find(w => w.id === selectedWorkoutId);
+  const scheduledWorkout = selectedWorkoutId && getScheduledWorkoutById(selectedWorkoutId);
+  
+  // Find the actual workout data based on workoutId from the scheduled workout
+  const selectedWorkoutData = scheduledWorkout && 
+    workouts.find(w => w.id === scheduledWorkout.workoutId);
 
   // Convert workout to ItemType for the detail view 
   const workoutItem: ItemType | undefined = selectedWorkoutData ? {
     id: selectedWorkoutData.id,
-    title: selectedWorkoutData.name,
+    title: scheduledWorkout?.name || selectedWorkoutData.name,
     type: 'workout',
     creator: 'You',
     imageUrl: 'https://placehold.co/600x400?text=Workout',
@@ -171,13 +179,10 @@ const ActivityScheduleCard = () => {
     duration: `${selectedWorkoutData.exercises.length} exercises`,
     difficulty: 'intermediate',
     isFavorite: false,
-    description: `${selectedWorkoutData.name} with ${selectedWorkoutData.exercises.length} exercises`,
+    description: `${scheduledWorkout?.name || selectedWorkoutData.name} with ${selectedWorkoutData.exercises.length} exercises`,
     isCustom: true
   } : undefined;
 
-  // Find the scheduled workout if it exists
-  const scheduledWorkout = selectedWorkoutId && getScheduledWorkoutById(selectedWorkoutId);
-  
   return (
     <>
       <ActivityCard

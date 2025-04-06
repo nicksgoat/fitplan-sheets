@@ -7,11 +7,17 @@ import { Link } from "react-router-dom";
 import { InfoIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ActivityScheduleCard from "@/components/schedule/ActivityScheduleCard";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ProgramDetail from "@/components/details/ProgramDetail";
+import { useState } from "react";
+import { ItemType } from "@/lib/types";
 
 export default function Schedule() {
   const { activeSchedule } = useSchedule();
   const { programs } = useLibrary();
   const { session } = useAuth();
+  
+  const [showProgramDetail, setShowProgramDetail] = useState(false);
   
   // Find the program data for the active schedule
   const findProgramById = (programId: string) => {
@@ -19,6 +25,21 @@ export default function Schedule() {
   };
   
   const program = activeSchedule ? findProgramById(activeSchedule.programId) : undefined;
+
+  // Convert program to ItemType for the detail view
+  const programItem: ItemType | undefined = program ? {
+    id: program.id,
+    title: program.name,
+    type: 'program',
+    creator: 'You',
+    imageUrl: 'https://placehold.co/600x400?text=Program',
+    tags: ['Program', 'Custom'],
+    duration: `${program.weeks?.length || 0} weeks`,
+    difficulty: 'intermediate',
+    isFavorite: false,
+    description: `${program.name} - A program with ${program.workouts?.length || 0} workouts`,
+    isCustom: true
+  } : undefined;
   
   return (
     <div className="container max-w-6xl mx-auto pb-safe h-full overflow-x-hidden">
@@ -61,6 +82,19 @@ export default function Schedule() {
           </div>
         )}
       </div>
+
+      {/* Program Detail Dialog */}
+      {programItem && program && (
+        <Dialog open={showProgramDetail} onOpenChange={setShowProgramDetail}>
+          <DialogContent className="p-0 border-0 max-w-4xl bg-transparent shadow-none">
+            <ProgramDetail 
+              item={programItem}
+              programData={program}
+              onClose={() => setShowProgramDetail(false)} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
