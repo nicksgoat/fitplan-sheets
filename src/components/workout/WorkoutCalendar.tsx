@@ -1,129 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
-import { WorkoutSession } from '@/types/workout';
-import { useDrag, useDrop } from 'react-dnd';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ItemTypes } from '@/hooks/useWorkoutLibraryIntegration';
-import { toast } from 'sonner';
-
-// Component for each workout item that can be dragged
-const WorkoutItem = ({ workout, onSelect }: { workout: WorkoutSession; onSelect: () => void }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.WORKOUT,
-    item: { 
-      id: workout.id, 
-      weekId: workout.weekId, 
-      sourceDay: workout.day 
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  }));
-
-  return (
-    <div
-      ref={drag}
-      className={`p-2 mb-2 bg-gray-800 rounded-md cursor-pointer hover:bg-gray-700 transition-colors ${
-        isDragging ? 'opacity-50' : 'opacity-100'
-      }`}
-      onClick={onSelect}
-    >
-      <h4 className="text-sm font-medium">{workout.name}</h4>
-      <p className="text-xs text-gray-400 mt-1">{workout.exercises.length} exercises</p>
-    </div>
-  );
-};
-
-interface WorkoutDayCardProps {
-  date: Date;
-  day: string;
-  dayNumber: number;
-  workouts: WorkoutSession[];
-  onAddWorkout: (dayNumber: number) => void;
-  onSelectWorkout: (workoutId: string) => void;
-  weekId: string;
-}
-
-// Component for each day in the calendar
-const WorkoutDayCard = ({ date, day, dayNumber, workouts, onAddWorkout, onSelectWorkout, weekId }: WorkoutDayCardProps) => {
-  const { updateWorkout, loadWorkoutFromLibrary } = useWorkout();
-  
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: [ItemTypes.WORKOUT, ItemTypes.LIBRARY_WORKOUT],
-    drop: (item: { id: string; weekId?: string; sourceDay?: number; fromLibrary?: boolean; workout?: any }) => {
-      // Handle different types of drops
-      if (item.fromLibrary) {
-        // This is a library workout being dropped - load it into the current week at this day
-        const newWorkoutId = loadWorkoutFromLibrary(item.workout, weekId, dayNumber);
-        console.log(`Added library workout to day ${dayNumber} in week ${weekId}`);
-        toast.success(`Added "${item.workout.name}" to day ${dayNumber}`);
-        
-        return { didDrop: true };
-      } else {
-        // When a workout is dropped from calendar, update its day number and week
-        updateWorkout(item.id, (workout) => {
-          // Only update the day if it's different
-          if (workout.day !== dayNumber || workout.weekId !== weekId) {
-            workout.day = dayNumber;
-            workout.weekId = weekId;
-            console.log(`Moved workout ${item.id} to day ${dayNumber} in week ${weekId}`);
-            toast.success(`Moved workout to day ${dayNumber}`);
-          }
-        });
-        return { didDrop: true };
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  }), [dayNumber, weekId, updateWorkout, loadWorkoutFromLibrary]);
-
-  return (
-    <div 
-      ref={drop} 
-      className={`flex-1 min-w-[150px] ${isOver ? 'bg-gray-800/50' : ''}`}
-    >
-      <Card className={`h-full bg-dark-200 border-dark-300 ${isOver ? 'border-fitbloom-purple border-2' : ''}`}>
-        <CardHeader className="py-2 px-3 border-b border-gray-800">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-sm font-medium">{day}</CardTitle>
-              <p className="text-xs text-gray-400">Day {dayNumber}</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => onAddWorkout(dayNumber)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-2 space-y-2 overflow-y-auto max-h-[300px]">
-          {workouts.length > 0 ? (
-            workouts.map((workout) => (
-              <WorkoutItem 
-                key={workout.id} 
-                workout={workout}
-                onSelect={() => onSelectWorkout(workout.id)}
-              />
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center h-16 text-gray-500">
-              <p className="text-xs">No workouts</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+import { WorkoutSession } from '@/types/workout';
+import WorkoutDayCard from './WorkoutDayCard';
+import CalendarHeader from './CalendarHeader';
 
 interface WorkoutCalendarProps {
   onSelectWorkout: (workoutId: string) => void;
@@ -247,69 +130,38 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
       }
     }
   }, [activeWeekId, program, activeWeek]);
-  
+
+  // Get the current week number (1-based index)
+  const currentWeek = activeWeek ? program.weeks.findIndex(w => w.id === activeWeek.id) + 1 : 1;
+  const totalWeeks = program.weeks.length;
+
   return (
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-fitbloom-purple" />
-          <h2 className="text-lg font-semibold">Program Calendar</h2>
-        </div>
+    <DndProvider backend={HTML5Backend}>
+      <div className="mb-6">
+        <CalendarHeader
+          currentWeek={currentWeek}
+          totalWeeks={totalWeeks}
+          onPrevWeek={goToPreviousWeek}
+          onNextWeek={goToNextWeek}
+          onAddWeek={handleAddWeek}
+        />
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={goToPreviousWeek}
-              className="text-gray-400 hover:text-white"
-              disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === 0}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            
-            <span className="text-sm">
-              Week {activeWeek ? program.weeks.findIndex(w => w.id === activeWeek.id) + 1 : 1}
-            </span>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={goToNextWeek}
-              className="text-gray-400 hover:text-white"
-              disabled={!activeWeek || program.weeks.findIndex(w => w.id === activeWeek.id) === program.weeks.length - 1}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddWeek}
-            className="text-xs flex items-center gap-1 border-gray-700 hover:bg-gray-700"
-          >
-            <Plus className="h-3 w-3" />
-            New Week
-          </Button>
+        <div className="flex space-x-2 overflow-x-auto pb-4">
+          {weekDays.map(({ date, day, dayNumber }) => (
+            <WorkoutDayCard
+              key={day}
+              date={date}
+              day={day}
+              dayNumber={dayNumber}
+              workouts={workoutsByDay[dayNumber] || []}
+              onAddWorkout={handleAddWorkout}
+              onSelectWorkout={onSelectWorkout}
+              weekId={activeWeek?.id || ''}
+            />
+          ))}
         </div>
       </div>
-      
-      <div className="flex space-x-2 overflow-x-auto pb-4">
-        {weekDays.map(({ date, day, dayNumber }) => (
-          <WorkoutDayCard
-            key={day}
-            date={date}
-            day={day}
-            dayNumber={dayNumber}
-            workouts={workoutsByDay[dayNumber] || []}
-            onAddWorkout={handleAddWorkout}
-            onSelectWorkout={onSelectWorkout}
-            weekId={activeWeek?.id || ''}
-          />
-        ))}
-      </div>
-    </div>
+    </DndProvider>
   );
 };
 
