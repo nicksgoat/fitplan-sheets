@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
@@ -29,13 +28,10 @@ const WorkoutApp: React.FC = () => {
   const [librarySidebarOpen, setLibrarySidebarOpen] = useState(false);
   const librarySidebarRef = useRef<WorkoutLibrarySidebarRef>(null);
   
-  // Initialize with Week 1 and Day 1 when the component loads
   useEffect(() => {
-    // Only initialize if the program exists but has no weeks yet
     if (program) {
       if (program.weeks.length === 0) {
         const newWeekId = addWeek();
-        // Check if newWeekId is a string before using it
         if (typeof newWeekId === 'string') {
           const newWorkoutId = addWorkout(newWeekId);
           setActiveWeekId(newWeekId);
@@ -44,22 +40,17 @@ const WorkoutApp: React.FC = () => {
           }
         }
       } else if (program.weeks.length > 0 && !activeWorkoutId) {
-        // If we have weeks but no active workout, set the first week and workout
         setActiveWeekId(program.weeks[0].id);
-        
-        // Find first workout in the active week
         const firstWeekWorkouts = program.weeks[0].workouts;
         if (firstWeekWorkouts.length > 0) {
           setActiveWorkoutId(firstWeekWorkouts[0]);
         } else if (program.workouts.length > 0) {
-          // If no workouts in first week, use the first workout regardless of week
           setActiveWorkoutId(program.workouts[0].id);
         }
       }
     }
   }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId, activeWorkoutId]);
   
-  // Handle empty state - no program or empty program (this is a fallback)
   if (!program) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -71,9 +62,7 @@ const WorkoutApp: React.FC = () => {
           <Button 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             onClick={() => {
-              // Create a new week
               const newWeekId = addWeek();
-              // Check if newWeekId is a string before using it
               if (typeof newWeekId === 'string') {
                 const newWorkoutId = addWorkout(newWeekId);
                 setActiveWeekId(newWeekId);
@@ -91,7 +80,6 @@ const WorkoutApp: React.FC = () => {
     );
   }
   
-  // If we have a program but no weeks
   if (program.weeks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -103,9 +91,7 @@ const WorkoutApp: React.FC = () => {
           <Button 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             onClick={() => {
-              // Create a new week
               const newWeekId = addWeek();
-              // Check if newWeekId is a string before using it
               if (typeof newWeekId === 'string') {
                 const newWorkoutId = addWorkout(newWeekId);
                 setActiveWeekId(newWeekId);
@@ -183,7 +169,7 @@ const WorkoutApp: React.FC = () => {
           <TabsContent value="program">
             <WorkoutCalendar onSelectWorkout={(workoutId) => {
               setActiveWorkoutId(workoutId);
-              setActiveTab("workout"); // Switch to workout tab when a workout is selected
+              setActiveTab("workout");
             }} />
           </TabsContent>
         </Tabs>
