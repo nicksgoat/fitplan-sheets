@@ -84,6 +84,8 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
     setError(null);
     
     try {
+      console.log('Fetching data with filters:', { selectedPosition, selectedYear, sortMetric });
+      
       let query = supabase
         .from('NFL Combine Database')
         .select('*');
@@ -98,10 +100,8 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         query = query.eq('Draft_Year', selectedYear);
       }
 
-      // Filter out null values for the sort metric
-      query = query.not(sortMetric, 'is', null);
-
-      // Apply sorting
+      // Apply sorting - REMOVED the not(sortMetric, 'is', null) filter
+      // to display all records with NULL values sorted last
       if (sortMetric) {
         query = query.order(sortMetric, { ascending: true, nullsFirst: false });
       } else {
@@ -119,6 +119,8 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         setCombineData([]);
       } else {
         if (data && data.length > 0) {
+          console.log(`Success: Retrieved ${data.length} records`);
+          console.log('Sample data:', data[0]);
           setCombineData(data);
         } else {
           console.log('No data found with current filters');
