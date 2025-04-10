@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NFLCombineTab from '@/components/leaderboard/NFLCombineTab';
 import LeaderboardTab from '@/components/leaderboard/LeaderboardTab';
+import UserCombineComparison from '@/components/leaderboard/UserCombineComparison';
 
 const Leaderboards = () => {
   const [activeTab, setActiveTab] = useState("nfl-combine");
@@ -18,14 +19,19 @@ const Leaderboards = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 md:w-[400px]">
+          <TabsList className="grid grid-cols-4 md:w-[500px]">
             <TabsTrigger value="nfl-combine">NFL Combine</TabsTrigger>
+            <TabsTrigger value="your-combine">Your Stats</TabsTrigger>
             <TabsTrigger value="local">Local</TabsTrigger>
             <TabsTrigger value="friends">Friends</TabsTrigger>
           </TabsList>
           
           <TabsContent value="nfl-combine" className="mt-6">
             <NFLCombineTab />
+          </TabsContent>
+          
+          <TabsContent value="your-combine" className="mt-6">
+            <UserCombineComparison />
           </TabsContent>
           
           <TabsContent value="local" className="mt-6">

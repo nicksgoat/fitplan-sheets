@@ -4,11 +4,17 @@ import CombineFilters from './filters/CombineFilters';
 import CombineDataTable from './tables/CombineDataTable';
 import CombineInfoSection from './info/CombineInfoSection';
 import { useNFLCombineData } from '@/hooks/useNFLCombineData';
+import { useUserCombineData } from '@/hooks/useUserCombineData';
+import { useAuth } from '@/hooks/useAuth';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight } from 'lucide-react';
 
 const NFLCombineTab: React.FC = () => {
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [sortMetric, setSortMetric] = useState<string>("40yd");
+  const { user } = useAuth();
   
   const { 
     combineData,
@@ -20,6 +26,18 @@ const NFLCombineTab: React.FC = () => {
     fetchFilterOptions
   } = useNFLCombineData();
 
+  const {
+    userEstimations,
+    loading: loadingUserData
+  } = useUserCombineData();
+
+  // Get user estimation for the current sort metric
+  const getUserEstimationForMetric = () => {
+    if (!sortMetric || !userEstimations || userEstimations.length === 0) return null;
+    
+    return userEstimations.find(est => est.drill_name === sortMetric);
+  };
+  
   // Load filter options on component mount
   useEffect(() => {
     fetchFilterOptions();
@@ -61,6 +79,8 @@ const NFLCombineTab: React.FC = () => {
     localStorage.removeItem('nfl_combine_year');
   };
 
+  const userEstimation = getUserEstimationForMetric();
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -76,6 +96,29 @@ const NFLCombineTab: React.FC = () => {
         onClearFilters={clearFilters}
       />
 
+      {/* User Estimation Summary (if available) */}
+      {user && userEstimation && (
+        <Card className="p-3 bg-gray-900/30 border border-gray-700 flex items-center justify-between">
+          <div className="flex items-center">
+            <Badge className="mr-3 bg-fitbloom-purple">Your {sortMetric}</Badge>
+            <span className="font-semibold">{userEstimation.estimated_score}</span>
+            <Badge variant="outline" className="ml-2 text-xs">
+              {userEstimation.estimation_type}
+            </Badge>
+          </div>
+          <a 
+            href="#" 
+            onClick={(e) => {
+              e.preventDefault();
+              document.querySelector('[data-value="your-combine"]')?.click();
+            }}
+            className="flex items-center text-sm text-blue-400 hover:text-blue-300"
+          >
+            View all your stats <ArrowRight className="h-3 w-3 ml-1" />
+          </a>
+        </Card>
+      )}
+
       {/* Error Message */}
       {error && (
         <div className="p-4 text-center text-red-400 bg-red-900/20 border border-red-800 rounded-lg">
@@ -86,6 +129,7 @@ const NFLCombineTab: React.FC = () => {
       {/* Table */}
       <CombineDataTable 
         combineData={combineData}
+        userEstimation={userEstimation}
         isLoading={isLoading}
         error={error}
         sortMetric={sortMetric}
