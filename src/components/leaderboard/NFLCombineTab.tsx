@@ -5,8 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowUpDown, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowUpDown } from 'lucide-react';
 
 interface NFLCombineResult {
   id: number;
@@ -34,52 +33,40 @@ const NFLCombineTab: React.FC = () => {
   const [sortMetric, setSortMetric] = useState<string>("40yd");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [queryInfo, setQueryInfo] = useState<string | null>(null);
 
   // Fetch available positions and years on component mount
   useEffect(() => {
     const fetchFilterOptions = async () => {
-      try {
-        // Fetch unique positions without filters first
-        const { data: posData, error: posError } = await supabase
-          .from('NFL Combine Database')
-          .select('Pos');
+      // Fetch unique positions
+      const { data: posData, error: posError } = await supabase
+        .from('NFL Combine Database')
+        .select('Pos')
+        .not('Pos', 'is', null)
+        .order('Pos');
 
-        if (posError) {
-          console.error('Error fetching positions:', posError);
-          setError('Failed to load position filters');
-        } else if (posData && posData.length > 0) {
-          // Extract unique positions
-          const uniquePositions = Array.from(new Set(posData.map(item => item.Pos)))
-            .filter(Boolean)
-            .sort();
-          console.log('Found positions:', uniquePositions);
-          setPositions(uniquePositions);
-        } else {
-          console.log('No position data found');
-        }
+      if (posError) {
+        console.error('Error fetching positions:', posError);
+        setError('Failed to load position filters');
+      } else if (posData) {
+        // Extract unique positions
+        const uniquePositions = Array.from(new Set(posData.map(item => item.Pos))).filter(Boolean);
+        setPositions(uniquePositions);
+      }
 
-        // Fetch unique draft years without filters first
-        const { data: yearData, error: yearError } = await supabase
-          .from('NFL Combine Database')
-          .select('Draft_Year');
+      // Fetch unique draft years
+      const { data: yearData, error: yearError } = await supabase
+        .from('NFL Combine Database')
+        .select('Draft_Year')
+        .not('Draft_Year', 'is', null)
+        .order('Draft_Year', { ascending: false });
 
-        if (yearError) {
-          console.error('Error fetching years:', yearError);
-          setError('Failed to load year filters');
-        } else if (yearData && yearData.length > 0) {
-          // Extract unique years
-          const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year)))
-            .filter(Boolean)
-            .sort((a, b) => b - a); // Sort descending
-          console.log('Found years:', uniqueYears);
-          setYears(uniqueYears);
-        } else {
-          console.log('No year data found');
-        }
-      } catch (err) {
-        console.error('Unexpected error in fetchFilterOptions:', err);
-        setError('Failed to load filter options');
+      if (yearError) {
+        console.error('Error fetching years:', yearError);
+        setError('Failed to load year filters');
+      } else if (yearData) {
+        // Extract unique years
+        const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year))).filter(Boolean);
+        setYears(uniqueYears);
       }
     };
 
@@ -91,15 +78,8 @@ const NFLCombineTab: React.FC = () => {
     const fetchCombineData = async () => {
       setIsLoading(true);
       setError(null);
-      setQueryInfo(null);
       
       try {
-        console.log('Fetching with filters:', { 
-          position: selectedPosition, 
-          year: selectedYear, 
-          sortMetric 
-        });
-        
         let query = supabase
           .from('NFL Combine Database')
           .select('*');
@@ -114,49 +94,36 @@ const NFLCombineTab: React.FC = () => {
           query = query.eq('Draft_Year', selectedYear);
         }
 
-        // We'll get all data first without any filters on the sort metric
+        // Filter out null values for the sort metric
+        query = query.not(sortMetric, 'is', null);
+
+        // Apply sorting
+        if (sortMetric) {
+          query = query.order(sortMetric, { ascending: true, nullsFirst: false });
+        } else {
+          query = query.order('40yd', { ascending: true, nullsFirst: false });
+        }
+
+        // Limit to a reasonable number for performance
+        query = query.limit(100);
+
         const { data, error } = await query;
 
         if (error) {
           console.error('Error fetching combine data:', error);
-          setError(`Failed to load combine data: ${error.message}`);
+          setError('Failed to load combine data');
           setCombineData([]);
         } else {
-          console.log(`Raw data count: ${data?.length || 0}`);
-          
           if (data && data.length > 0) {
-            // Check if we have data with non-null sort metric values
-            const filteredData = data.filter(item => item[sortMetric] !== null);
-            console.log(`Filtered data with valid ${sortMetric}: ${filteredData.length}`);
-            
-            // Sort manually since we're getting all data first
-            filteredData.sort((a, b) => {
-              // Handle null values
-              if (a[sortMetric] === null) return 1;
-              if (b[sortMetric] === null) return -1;
-              
-              // For numeric metrics (stored as strings), convert to numbers
-              const valA = parseFloat(a[sortMetric]) || 0;
-              const valB = parseFloat(b[sortMetric]) || 0;
-              
-              // For time-based metrics (lower is better), sort ascending
-              return valA - valB;
-            });
-            
-            setCombineData(filteredData.slice(0, 100)); // Limit to 100 rows
-            
-            if (filteredData.length === 0) {
-              setQueryInfo(`No data was found with valid values for the selected sort metric (${sortMetric}). Try selecting a different sort field.`);
-            }
+            setCombineData(data);
           } else {
             console.log('No data found with current filters');
             setCombineData([]);
-            setQueryInfo(`No NFL combine data found matching the selected filters. Try adjusting your filters.`);
           }
         }
       } catch (err) {
         console.error('Unexpected error:', err);
-        setError('An unexpected error occurred while fetching data');
+        setError('An unexpected error occurred');
         setCombineData([]);
       } finally {
         setIsLoading(false);
@@ -268,22 +235,9 @@ const NFLCombineTab: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <Alert variant="destructive" className="bg-red-900/20 border-red-800 text-red-400">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {/* Query Info */}
-      {queryInfo && !error && (
-        <Alert className="bg-blue-900/20 border-blue-800 text-blue-400">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {queryInfo}
-          </AlertDescription>
-        </Alert>
+        <div className="p-4 text-center text-red-400 bg-red-900/20 border border-red-800 rounded-lg">
+          {error}. Please try adjusting filters or try again later.
+        </div>
       )}
 
       {/* Table */}
