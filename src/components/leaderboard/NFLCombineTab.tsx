@@ -99,9 +99,9 @@ const NFLCombineTab: React.FC = () => {
 
         // Apply sorting
         if (sortMetric) {
-          query = query.order(sortMetric, { ascending: true, nullsLast: true });
+          query = query.order(sortMetric, { ascending: true, nullsFirst: false });
         } else {
-          query = query.order('40yd', { ascending: true, nullsLast: true });
+          query = query.order('40yd', { ascending: true, nullsFirst: false });
         }
 
         // Limit to a reasonable number for performance
