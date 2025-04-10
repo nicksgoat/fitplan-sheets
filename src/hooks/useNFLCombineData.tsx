@@ -1,0 +1,146 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface NFLCombineResult {
+  id: number;
+  Player: string;
+  Pos: string;
+  School: string;
+  "40yd": string;
+  Vertical: string;
+  Bench: string;
+  "Broad Jump": string;
+  "3Cone": string;
+  Shuttle: string;
+  Draft_Team: string;
+  Draft_Year: number;
+  Height_in: number;
+  Weight_lb: number;
+}
+
+interface UseNFLCombineDataResult {
+  combineData: NFLCombineResult[];
+  positions: string[];
+  years: number[];
+  isLoading: boolean;
+  error: string | null;
+  fetchCombineData: (position: string | null, year: number | null, sortMetric: string) => Promise<void>;
+  fetchFilterOptions: () => Promise<void>;
+}
+
+export function useNFLCombineData(): UseNFLCombineDataResult {
+  const [combineData, setCombineData] = useState<NFLCombineResult[]>([]);
+  const [positions, setPositions] = useState<string[]>([]);
+  const [years, setYears] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchFilterOptions = async () => {
+    try {
+      // Fetch unique positions
+      const { data: posData, error: posError } = await supabase
+        .from('NFL Combine Database')
+        .select('Pos')
+        .not('Pos', 'is', null)
+        .order('Pos');
+
+      if (posError) {
+        console.error('Error fetching positions:', posError);
+        setError('Failed to load position filters');
+      } else if (posData) {
+        // Extract unique positions
+        const uniquePositions = Array.from(new Set(posData.map(item => item.Pos))).filter(Boolean);
+        setPositions(uniquePositions);
+      }
+
+      // Fetch unique draft years
+      const { data: yearData, error: yearError } = await supabase
+        .from('NFL Combine Database')
+        .select('Draft_Year')
+        .not('Draft_Year', 'is', null)
+        .order('Draft_Year', { ascending: false });
+
+      if (yearError) {
+        console.error('Error fetching years:', yearError);
+        setError('Failed to load year filters');
+      } else if (yearData) {
+        // Extract unique years
+        const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year))).filter(Boolean);
+        setYears(uniqueYears);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching filter options:', err);
+      setError('Failed to load filter options');
+    }
+  };
+
+  const fetchCombineData = async (
+    selectedPosition: string | null, 
+    selectedYear: number | null,
+    sortMetric: string
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      let query = supabase
+        .from('NFL Combine Database')
+        .select('*');
+
+      // Apply position filter if selected
+      if (selectedPosition) {
+        query = query.eq('Pos', selectedPosition);
+      }
+
+      // Apply year filter if selected
+      if (selectedYear) {
+        query = query.eq('Draft_Year', selectedYear);
+      }
+
+      // Filter out null values for the sort metric
+      query = query.not(sortMetric, 'is', null);
+
+      // Apply sorting
+      if (sortMetric) {
+        query = query.order(sortMetric, { ascending: true, nullsFirst: false });
+      } else {
+        query = query.order('40yd', { ascending: true, nullsFirst: false });
+      }
+
+      // Limit to a reasonable number for performance
+      query = query.limit(100);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching combine data:', error);
+        setError('Failed to load combine data');
+        setCombineData([]);
+      } else {
+        if (data && data.length > 0) {
+          setCombineData(data);
+        } else {
+          console.log('No data found with current filters');
+          setCombineData([]);
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setError('An unexpected error occurred');
+      setCombineData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    combineData,
+    positions,
+    years,
+    isLoading,
+    error,
+    fetchCombineData,
+    fetchFilterOptions
+  };
+}
