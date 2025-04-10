@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
+import { ArrowUpDown } from 'lucide-react';
 
 interface NFLCombineResult {
   id: number;
@@ -31,6 +32,7 @@ const NFLCombineTab: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [sortMetric, setSortMetric] = useState<string>("40yd");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch available positions and years on component mount
   useEffect(() => {
@@ -44,6 +46,7 @@ const NFLCombineTab: React.FC = () => {
 
       if (posError) {
         console.error('Error fetching positions:', posError);
+        setError('Failed to load position filters');
       } else if (posData) {
         // Extract unique positions
         const uniquePositions = Array.from(new Set(posData.map(item => item.Pos))).filter(Boolean);
@@ -59,6 +62,7 @@ const NFLCombineTab: React.FC = () => {
 
       if (yearError) {
         console.error('Error fetching years:', yearError);
+        setError('Failed to load year filters');
       } else if (yearData) {
         // Extract unique years
         const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year))).filter(Boolean);
@@ -73,40 +77,57 @@ const NFLCombineTab: React.FC = () => {
   useEffect(() => {
     const fetchCombineData = async () => {
       setIsLoading(true);
+      setError(null);
       
-      let query = supabase
-        .from('NFL Combine Database')
-        .select('*');
+      try {
+        let query = supabase
+          .from('NFL Combine Database')
+          .select('*');
 
-      // Apply position filter if selected
-      if (selectedPosition) {
-        query = query.eq('Pos', selectedPosition);
+        // Apply position filter if selected
+        if (selectedPosition) {
+          query = query.eq('Pos', selectedPosition);
+        }
+
+        // Apply year filter if selected
+        if (selectedYear) {
+          query = query.eq('Draft_Year', selectedYear);
+        }
+
+        // Filter out null values for the sort metric
+        query = query.not(sortMetric, 'is', null);
+
+        // Apply sorting
+        if (sortMetric) {
+          query = query.order(sortMetric, { ascending: true, nullsLast: true });
+        } else {
+          query = query.order('40yd', { ascending: true, nullsLast: true });
+        }
+
+        // Limit to a reasonable number for performance
+        query = query.limit(100);
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching combine data:', error);
+          setError('Failed to load combine data');
+          setCombineData([]);
+        } else {
+          if (data && data.length > 0) {
+            setCombineData(data);
+          } else {
+            console.log('No data found with current filters');
+            setCombineData([]);
+          }
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('An unexpected error occurred');
+        setCombineData([]);
+      } finally {
+        setIsLoading(false);
       }
-
-      // Apply year filter if selected
-      if (selectedYear) {
-        query = query.eq('Draft_Year', selectedYear);
-      }
-
-      // Apply sorting
-      if (sortMetric) {
-        query = query.order(sortMetric, { ascending: true, nullsFirst: false });
-      } else {
-        query = query.order('40yd', { ascending: true, nullsFirst: false });
-      }
-
-      // Limit to a reasonable number for performance
-      query = query.limit(100);
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching combine data:', error);
-      } else {
-        setCombineData(data || []);
-      }
-      
-      setIsLoading(false);
     };
 
     // Save filters to localStorage
@@ -212,6 +233,13 @@ const NFLCombineTab: React.FC = () => {
         )}
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 text-center text-red-400 bg-red-900/20 border border-red-800 rounded-lg">
+          {error}. Please try adjusting filters or try again later.
+        </div>
+      )}
+
       {/* Table */}
       <div className="rounded-md border border-gray-800 overflow-hidden">
         <Table>
@@ -220,12 +248,42 @@ const NFLCombineTab: React.FC = () => {
               <TableHead className="whitespace-nowrap">Player</TableHead>
               <TableHead className="text-center whitespace-nowrap">Position</TableHead>
               <TableHead className="whitespace-nowrap">School</TableHead>
-              <TableHead className="text-center whitespace-nowrap">40-Yard</TableHead>
-              <TableHead className="text-center whitespace-nowrap">Vertical</TableHead>
-              <TableHead className="text-center whitespace-nowrap">Bench</TableHead>
-              <TableHead className="text-center whitespace-nowrap">Broad Jump</TableHead>
-              <TableHead className="text-center whitespace-nowrap">3-Cone</TableHead>
-              <TableHead className="text-center whitespace-nowrap">Shuttle</TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  40-Yard
+                  {sortMetric === '40yd' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  Vertical
+                  {sortMetric === 'Vertical' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  Bench
+                  {sortMetric === 'Bench' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  Broad Jump
+                  {sortMetric === 'Broad Jump' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  3-Cone
+                  {sortMetric === '3Cone' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
+              <TableHead className="text-center whitespace-nowrap">
+                <div className="flex items-center justify-center gap-1">
+                  Shuttle
+                  {sortMetric === 'Shuttle' && <ArrowUpDown className="h-3 w-3" />}
+                </div>
+              </TableHead>
               <TableHead className="whitespace-nowrap">Drafted By</TableHead>
               <TableHead className="text-center whitespace-nowrap">Year</TableHead>
             </TableRow>
@@ -240,7 +298,7 @@ const NFLCombineTab: React.FC = () => {
             ) : combineData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={11} className="h-24 text-center">
-                  No combine data found. Try adjusting filters.
+                  No combine data found. Try adjusting filters or selecting a different sort metric.
                 </TableCell>
               </TableRow>
             ) : (
