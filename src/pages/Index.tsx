@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActivityScheduleCard from "@/components/schedule/ActivityScheduleCard";
+import LeaderboardTab from "@/components/leaderboard/LeaderboardTab";
 
 export default function Index() {
   const { session } = useAuth();
@@ -39,9 +40,10 @@ export default function Index() {
         )}
         
         <Tabs defaultValue="schedule" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 mb-4">
+          <TabsList className="w-full grid grid-cols-3 mb-4">
             <TabsTrigger value="schedule">Schedule</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           </TabsList>
           <TabsContent value="schedule">
             <div className="max-w-md mx-auto">
@@ -55,6 +57,9 @@ export default function Index() {
                 Your workout activity and stats will appear here as you track your progress.
               </p>
             </div>
+          </TabsContent>
+          <TabsContent value="leaderboard">
+            <LeaderboardTab />
           </TabsContent>
         </Tabs>
       </div>

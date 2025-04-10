@@ -27,13 +27,7 @@ const ScheduledGoalList: FC<ScheduledGoalListProps> = ({ onToggleGoal }) => {
   const { activeSchedule } = useSchedule();
   const goals = activeSchedule ? workoutsToGoals(activeSchedule.scheduledWorkouts) : [];
 
-  // Return the goals data for use in the parent component
-  return (
-    <>
-      {/* This component doesn't render UI directly but passes data to parent */}
-      {/* This is empty Fragment to satisfy React component requirements */}
-    </>
-  );
+  return { goals };
 };
 
 export default ScheduledGoalList;
