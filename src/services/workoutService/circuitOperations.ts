@@ -23,7 +23,7 @@ export async function addCircuit(workoutId: string, circuit: Partial<Circuit>) {
     const circuitExercises = circuit.exercises.map((exerciseId, index) => ({
       circuit_id: data.id,
       exercise_id: exerciseId,
-      order_num: index
+      exercise_order: index  // Changed from order_num to exercise_order
     }));
     
     const { error: circuitExercisesError } = await supabase
@@ -75,7 +75,7 @@ export async function updateCircuit(circuitId: string, updates: Partial<Circuit>
     const circuitExercises = updates.exercises.map((exerciseId, index) => ({
       circuit_id: circuitId,
       exercise_id: exerciseId,
-      order_num: index
+      exercise_order: index  // Changed from order_num to exercise_order
     }));
     
     if (circuitExercises.length > 0) {
@@ -122,7 +122,7 @@ export async function addExerciseToCircuit(circuitId: string, exerciseId: string
     .insert({
       circuit_id: circuitId,
       exercise_id: exerciseId,
-      order_num: orderNum
+      exercise_order: orderNum  // Changed from order_num to exercise_order
     });
   
   if (error) throw error;

@@ -186,6 +186,7 @@ export type Database = {
       }
       club_events: {
         Row: {
+          attendee_count: number | null
           club_id: string
           created_at: string
           created_by: string
@@ -199,6 +200,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attendee_count?: number | null
           club_id: string
           created_at?: string
           created_by: string
@@ -212,6 +214,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attendee_count?: number | null
           club_id?: string
           created_at?: string
           created_by?: string
