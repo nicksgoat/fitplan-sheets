@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { useSchedule } from '@/contexts/ScheduleContext';
 import { format, parseISO, isToday, isFuture, isPast } from 'date-fns';
 import { Metric } from '@/components/ui/activity-card';
@@ -55,6 +56,7 @@ const ActivityMetrics: React.FC = () => {
   
   const metrics = calculateMetrics(activeSchedule);
   
+  // Return the metrics array directly - this component is meant to be used as a prop value
   return metrics.length > 0 
     ? metrics 
     : [
