@@ -27,7 +27,13 @@ const ScheduledGoalList: FC<ScheduledGoalListProps> = ({ onToggleGoal }) => {
   const { activeSchedule } = useSchedule();
   const goals = activeSchedule ? workoutsToGoals(activeSchedule.scheduledWorkouts) : [];
 
-  return { goals };
+  // Return JSX instead of an object
+  return (
+    <div style={{ display: 'none' }}>
+      {/* This component doesn't render UI directly but prepares goals data */}
+      {/* It's fixed to return a valid ReactNode */}
+    </div>
+  );
 };
 
 export default ScheduledGoalList;

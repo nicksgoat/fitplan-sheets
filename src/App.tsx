@@ -13,6 +13,7 @@ import Liked from "./pages/Liked";
 import Search from "./pages/Search";
 import Schedule from "./pages/Schedule";
 import Clubs from "./pages/Clubs";
+import Leaderboards from "./pages/Leaderboards";
 import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import CreateExercise from "./pages/CreateExercise";
 import EditExercise from "./pages/EditExercise";
@@ -48,6 +49,7 @@ function App() {
                     <Route path="auth" element={<Auth />} />
                     <Route path="liked" element={<Liked />} />
                     <Route path="search" element={<Search />} />
+                    <Route path="leaderboards" element={<Leaderboards />} />
                     <Route path="schedule" element={<Schedule />} />
                     {/* Club routes - specificity matters here */}
                     <Route path="clubs" element={<Clubs />} />

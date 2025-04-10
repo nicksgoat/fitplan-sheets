@@ -1,6 +1,6 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, Library, Heart, FileSpreadsheet, Calendar, Users } from 'lucide-react';
+import { Home, Search, Library, Heart, FileSpreadsheet, Calendar, Users, Award } from 'lucide-react';
 import { ExpandableTabs, type TabItem } from '@/components/ui/expandable-tabs';
 
 const MobileNavbar = () => {
@@ -15,6 +15,7 @@ const MobileNavbar = () => {
     { title: 'Clubs', icon: Users },
     { type: "separator" },
     { title: 'Schedule', icon: Calendar },
+    { title: 'Leaderboards', icon: Award },
     { title: 'Liked', icon: Heart },
     { title: 'Sheets', icon: FileSpreadsheet },
   ];
@@ -24,7 +25,7 @@ const MobileNavbar = () => {
     if (index === null) return;
     
     // Map the tab index to the corresponding route
-    const routes = ['/explore', '/search', '/library', '/clubs', '', '/schedule', '/liked', '/sheets'];
+    const routes = ['/explore', '/search', '/library', '/clubs', '', '/schedule', '/leaderboards', '/liked', '/sheets'];
     // Skip separators when mapping (index 4 is a separator in our tabs array)
     const routeIndex = index >= 4 ? index + 1 : index;
     
