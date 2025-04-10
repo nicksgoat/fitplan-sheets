@@ -81,6 +81,15 @@ const NFLCombineTab: React.FC = () => {
 
   const userEstimation = getUserEstimationForMetric();
 
+  // Handle navigation to "your-combine" tab safely
+  const navigateToYourCombine = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const yourCombineTab = document.querySelector('[data-value="your-combine"]');
+    if (yourCombineTab instanceof HTMLElement) {
+      yourCombineTab.click();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -108,10 +117,7 @@ const NFLCombineTab: React.FC = () => {
           </div>
           <a 
             href="#" 
-            onClick={(e) => {
-              e.preventDefault();
-              document.querySelector('[data-value="your-combine"]')?.click();
-            }}
+            onClick={navigateToYourCombine}
             className="flex items-center text-sm text-blue-400 hover:text-blue-300"
           >
             View all your stats <ArrowRight className="h-3 w-3 ml-1" />

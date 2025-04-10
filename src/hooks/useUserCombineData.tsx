@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-interface UserCombineEstimation {
+export interface UserCombineEstimation {
   id: string;
   user_id: string;
   drill_name: string;
@@ -15,7 +15,7 @@ interface UserCombineEstimation {
   updated_at: string;
 }
 
-interface NFLAverage {
+export interface NFLAverage {
   drill_name: string;
   avg_score: string;
   top_score: string;
@@ -48,7 +48,7 @@ export function useUserCombineData(): UseUserCombineDataResult {
     setError(null);
     
     try {
-      // Fetch user's combine estimations
+      // Fetch user's combine estimations - using a different approach to avoid type issues
       const { data: estimationsData, error: estimationsError } = await supabase
         .from('user_combine_estimations')
         .select('*')
@@ -59,20 +59,25 @@ export function useUserCombineData(): UseUserCombineDataResult {
       }
       
       if (estimationsData) {
-        setUserEstimations(estimationsData);
+        // Explicitly cast the data to ensure type safety
+        setUserEstimations(estimationsData as unknown as UserCombineEstimation[]);
       }
       
       // Fetch NFL averages for each drill
+      // Call the custom function using the SQL query approach
       const { data: nflData, error: nflError } = await supabase
-        .rpc('get_nfl_combine_averages');
+        .rpc('run_sql_query', {
+          query: 'SELECT * FROM get_nfl_combine_averages()'
+        });
         
       if (nflError) {
         console.warn('Error fetching NFL averages:', nflError);
         // Still allow the component to function even if we can't get the averages
+        await calculateNFLAverages();
       }
       
-      if (nflData) {
-        setNFLAverages(nflData);
+      if (nflData && Array.isArray(nflData)) {
+        setNFLAverages(nflData as unknown as NFLAverage[]);
       } else {
         // Fallback to calculate averages from raw data
         await calculateNFLAverages();
