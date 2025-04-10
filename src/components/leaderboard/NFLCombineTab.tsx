@@ -146,14 +146,14 @@ const NFLCombineTab: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="position-filter">Position</Label>
             <Select 
-              value={selectedPosition || ''} 
-              onValueChange={(value) => setSelectedPosition(value || null)}
+              value={selectedPosition || 'all'} 
+              onValueChange={(value) => setSelectedPosition(value === 'all' ? null : value)}
             >
               <SelectTrigger id="position-filter" className="bg-gray-800 border-gray-700">
                 <SelectValue placeholder="All Positions" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="">All Positions</SelectItem>
+                <SelectItem value="all">All Positions</SelectItem>
                 {positions.map(pos => (
                   <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                 ))}
@@ -165,14 +165,14 @@ const NFLCombineTab: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="year-filter">Draft Year</Label>
             <Select 
-              value={selectedYear?.toString() || ''} 
-              onValueChange={(value) => setSelectedYear(value ? parseInt(value) : null)}
+              value={selectedYear?.toString() || 'all'} 
+              onValueChange={(value) => setSelectedYear(value === 'all' ? null : parseInt(value))}
             >
               <SelectTrigger id="year-filter" className="bg-gray-800 border-gray-700">
                 <SelectValue placeholder="All Years" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="">All Years</SelectItem>
+                <SelectItem value="all">All Years</SelectItem>
                 {years.map(year => (
                   <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                 ))}
