@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useSchedule } from '@/contexts/ScheduleContext';
+import { ActivityCard } from '@/components/ui/activity-card';
 import { toast } from 'sonner';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -9,86 +10,6 @@ import ProgramDetail from '@/components/details/ProgramDetail';
 import { ItemType } from '@/lib/types';
 import ActivityMetrics from './ActivityMetrics';
 import ScheduledGoalList from './ScheduledGoalList';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-
-// This is a component that mimics the ActivityCard in the UI library
-// We need to create it since it's not actually exported from the module
-const ActivityCard = ({ 
-  title, 
-  category, 
-  metrics, 
-  dailyGoals, 
-  onToggleGoal, 
-  onAddGoal, 
-  onViewDetails 
-}) => {
-  return (
-    <Card className="bg-gray-900/30 border border-gray-800 rounded-lg overflow-hidden">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{category}</CardDescription>
-          </div>
-          {onViewDetails && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onViewDetails}
-              className="text-xs"
-            >
-              View Details
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Metrics section */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          {Array.isArray(metrics) && metrics.map((metric, idx) => (
-            <div key={idx} className="flex flex-col items-center">
-              <div className="text-xs text-gray-400">{metric.label}</div>
-              <div className="text-xl font-semibold">{metric.value}</div>
-              <div className="text-xs text-gray-400">{metric.unit}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Daily goals section */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Today's Goals</h3>
-            {onAddGoal && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onAddGoal}
-                className="text-xs"
-              >
-                Add Goal
-              </Button>
-            )}
-          </div>
-          <div className="space-y-2">
-            {Array.isArray(dailyGoals) && dailyGoals.map(goal => (
-              <div 
-                key={goal.id} 
-                className="flex items-center gap-2 p-2 rounded-md bg-gray-800/50 cursor-pointer hover:bg-gray-800"
-                onClick={() => onToggleGoal(goal.id)}
-              >
-                <div className={`h-4 w-4 rounded-full ${goal.isCompleted ? 'bg-green-500' : 'border border-gray-400'}`}></div>
-                <span className={`text-sm ${goal.isCompleted ? 'line-through text-gray-400' : ''}`}>
-                  {goal.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 const ActivityScheduleCard = () => {
   const { activeSchedule, getScheduledWorkoutById } = useSchedule();

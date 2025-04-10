@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Goal } from '@/components/ui/activity-card';
 import { isToday, parseISO } from 'date-fns';
 import { useSchedule } from '@/contexts/ScheduleContext';
@@ -31,7 +30,6 @@ const ScheduledGoalList: React.FC<ScheduledGoalListProps> = ({ onToggleGoal }) =
     ? workoutsToGoals(activeSchedule.scheduledWorkouts)
     : [];
     
-  // Return the goals array directly - this component is meant to be used as a prop value
   return goals.length > 0 
     ? goals 
     : [{ id: "empty", title: "Start a program to see goals here", isCompleted: false }];
