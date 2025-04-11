@@ -41,10 +41,20 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
         {item.type === 'workout' && (
-          <WorkoutDetail item={item} workoutData={workoutData} onClose={handleClose} />
+          <WorkoutDetail item={{
+            ...item,
+            // Ensure price and purchasable status are properly passed
+            price: item.price || workoutData?.price,
+            isPurchasable: item.isPurchasable || workoutData?.isPurchasable
+          }} workoutData={workoutData} onClose={handleClose} />
         )}
         {item.type === 'program' && (
-          <ProgramDetail item={item} programData={programData} onClose={handleClose} />
+          <ProgramDetail item={{
+            ...item,
+            // Ensure price and purchasable status are properly passed
+            price: item.price || programData?.price,
+            isPurchasable: item.isPurchasable || programData?.isPurchasable
+          }} programData={programData} onClose={handleClose} />
         )}
         {item.type === 'collection' && (
           // For collections, we'll use the Exercise detail as a fallback

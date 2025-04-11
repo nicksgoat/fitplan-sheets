@@ -7,6 +7,8 @@ import { Dumbbell, Calendar, Clock, Tag, DollarSign, X } from 'lucide-react';
 import { Workout } from '@/types/workout';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { useStripeCheckout } from '@/hooks/useStripeCheckout';
+import { useAuth } from '@/hooks/useAuth';
 
 interface WorkoutDetailProps {
   item: ItemType;
@@ -15,6 +17,9 @@ interface WorkoutDetailProps {
 }
 
 const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose }) => {
+  const { user } = useAuth();
+  const { initiateCheckout, loading } = useStripeCheckout();
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown";
     try {
@@ -30,6 +35,18 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   }, 0) || 0;
 
   const hasPrice = item.isPurchasable && item.price && item.price > 0;
+  
+  const handlePurchase = () => {
+    if (!hasPrice || !user) return;
+    
+    initiateCheckout({
+      itemType: 'workout',
+      itemId: item.id,
+      itemName: item.title,
+      price: parseFloat(item.price.toString()),
+      creatorId: workoutData?.userId || ''
+    });
+  };
 
   return (
     <div className="max-h-[85vh] overflow-y-auto p-4">
@@ -109,9 +126,10 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
           {hasPrice && (
             <Button 
               className="flex-1 bg-green-600 hover:bg-green-700"
-              onClick={() => {/* Add purchase functionality */}}
+              onClick={handlePurchase}
+              disabled={loading || !user}
             >
-              Buy for ${Number(item.price).toFixed(2)}
+              {loading ? 'Processing...' : `Buy for $${Number(item.price).toFixed(2)}`}
             </Button>
           )}
         </div>
