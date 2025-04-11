@@ -48,45 +48,65 @@ export function useUserCombineData(): UseUserCombineDataResult {
     setError(null);
     
     try {
-      // Fetch user's combine estimations - using a different approach to avoid type issues
-      const { data: estimationsData, error: estimationsError } = await supabase
+      // Generate placeholder data for the current user to ensure they have some data
+      if (user.id) {
+        await supabase.rpc('generate_user_combine_data', { user_id_param: user.id });
+      }
+
+      // Now fetch the user's data
+      const { data, error: fetchError } = await supabase
         .from('user_combine_estimations')
         .select('*')
         .eq('user_id', user.id);
         
-      if (estimationsError) {
-        throw estimationsError;
+      if (fetchError) {
+        throw fetchError;
       }
       
-      if (estimationsData) {
-        // Explicitly cast the data to ensure type safety
-        setUserEstimations(estimationsData as unknown as UserCombineEstimation[]);
-      }
+      setUserEstimations(data || []);
       
-      // Fetch NFL averages for each drill
-      // Call the custom function using the SQL query approach
-      const { data: nflData, error: nflError } = await supabase
-        .rpc('run_sql_query', {
-          query: 'SELECT * FROM get_nfl_combine_averages()'
-        });
-        
-      if (nflError) {
-        console.warn('Error fetching NFL averages:', nflError);
-        // Still allow the component to function even if we can't get the averages
-        await calculateNFLAverages();
-      }
-      
-      if (nflData && Array.isArray(nflData)) {
-        setNFLAverages(nflData as unknown as NFLAverage[]);
-      } else {
-        // Fallback to calculate averages from raw data
-        await calculateNFLAverages();
-      }
+      // Fetch NFL averages
+      await fetchNFLAverages();
     } catch (err) {
       console.error('Error fetching user combine data:', err);
       setError('Failed to load your combine data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to fetch NFL averages
+  const fetchNFLAverages = async () => {
+    try {
+      // Use the run_sql_query function to call our custom SQL function
+      const { data, error } = await supabase
+        .rpc('run_sql_query', {
+          query: 'SELECT * FROM get_nfl_combine_averages()'
+        });
+        
+      if (error) {
+        console.warn('Error fetching NFL averages:', error);
+        // Fallback to calculate averages
+        await calculateNFLAverages();
+        return;
+      }
+      
+      if (data && Array.isArray(data)) {
+        const parsedData = data.map(item => {
+          const row = typeof item === 'string' ? JSON.parse(item) : item;
+          return {
+            drill_name: row.drill_name,
+            avg_score: row.avg_score,
+            top_score: row.top_score
+          };
+        });
+        setNFLAverages(parsedData);
+      } else {
+        await calculateNFLAverages();
+      }
+    } catch (err) {
+      console.error('Error fetching NFL averages:', err);
+      await calculateNFLAverages();
     }
   };
 
