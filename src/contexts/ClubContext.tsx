@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +12,9 @@ import {
   EventParticipationStatus, 
   EventParticipant, 
   ClubProduct,
-  MembershipType
+  MembershipType,
+  MemberStatus,
+  ProductType
 } from '@/types/club';
 
 interface ClubContextType {
@@ -370,7 +373,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           ...data,
           status: data.status as EventParticipationStatus,
-          created_at: data.created_at || data.joined_at || new Date().toISOString()
+          created_at: data.created_at || data.joined_at || new Date().toISOString(),
+          updated_at: data.updated_at
         } as EventParticipant;
       } else {
         const { data, error } = await supabase
@@ -388,7 +392,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           ...data,
           status: data.status as EventParticipationStatus,
-          created_at: data.created_at || data.joined_at || new Date().toISOString()
+          created_at: data.created_at || data.joined_at || new Date().toISOString(),
+          updated_at: data.updated_at
         } as EventParticipant;
       }
     } catch (error) {
@@ -603,7 +608,13 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setProducts(data || []);
+      
+      const typedProducts = (data || []).map(product => ({
+        ...product,
+        product_type: product.product_type as ProductType
+      }));
+      
+      setProducts(typedProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
     }

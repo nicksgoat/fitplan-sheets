@@ -9,10 +9,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Receipt, AlertCircle } from 'lucide-react';
+import { ClubProductPurchase, RefundStatus, PurchaseStatus } from '@/types/club';
 
-// We're using types from the club.ts file
 interface PurchaseReceiptProps {
-  purchase: any; // Using 'any' to avoid type errors since we're fixing the types
+  purchase: ClubProductPurchase | null; // Allow null for loading state
   onRequestRefund?: () => void;
   isRequesting?: boolean;
 }
@@ -22,6 +22,22 @@ const PurchaseReceipt: React.FC<PurchaseReceiptProps> = ({
   onRequestRefund, 
   isRequesting = false 
 }) => {
+  // If no purchase data is available, show loading state
+  if (!purchase) {
+    return (
+      <Card className="bg-dark-300 border-dark-400 max-w-lg mx-auto my-8">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex justify-between items-center">
+            <div>Loading Receipt...</div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const isCompleted = purchase.status === 'completed';
   const isRefunded = purchase.status === 'refunded';
   const hasRefundRequest = purchase.refund_status === 'requested';
@@ -68,7 +84,7 @@ const PurchaseReceipt: React.FC<PurchaseReceiptProps> = ({
   };
   
   return (
-    <Card className="bg-dark-300 border-dark-400">
+    <Card className="bg-dark-300 border-dark-400 max-w-lg mx-auto my-8">
       <CardHeader className="pb-2">
         <CardTitle className="flex justify-between items-center">
           <div>

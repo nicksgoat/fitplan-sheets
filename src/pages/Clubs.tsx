@@ -9,6 +9,8 @@ import { ArrowLeft } from 'lucide-react';
 import ClubLayout from '@/components/clubs/ClubLayout';
 import PurchaseReceipt from '@/components/clubs/PurchaseReceipt';
 import { toast } from 'sonner';
+import { getUserPurchases } from '@/utils/clubUtils';
+import { useState } from 'react';
 
 const Clubs: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
@@ -16,6 +18,7 @@ const Clubs: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { currentClub, setCurrentClub, clubs, loadingClubs, refreshMembers, refreshProducts } = useClub();
   const navigate = useNavigate();
+  const [purchaseData, setPurchaseData] = useState(null);
   
   // Check if the current path is the create club path
   const isCreatePath = location.pathname.endsWith('/create');
@@ -24,6 +27,24 @@ const Clubs: React.FC = () => {
   
   // Handle checkout status from query params
   const checkoutStatus = searchParams.get('checkout');
+  
+  useEffect(() => {
+    // If on receipt path, load purchase data
+    if (isReceiptPath) {
+      const purchaseId = location.pathname.split('/').pop();
+      if (purchaseId) {
+        // Fetch purchase data
+        getUserPurchases().then(purchases => {
+          const purchase = purchases.find(p => p.id === purchaseId);
+          if (purchase) {
+            setPurchaseData(purchase);
+          }
+        }).catch(err => {
+          console.error('Error fetching purchase data:', err);
+        });
+      }
+    }
+  }, [isReceiptPath, location.pathname]);
   
   useEffect(() => {
     if (checkoutStatus) {
@@ -69,7 +90,7 @@ const Clubs: React.FC = () => {
   return (
     <div className="container mx-auto py-6 px-0 max-w-full">
       {isReceiptPath ? (
-        <PurchaseReceipt />
+        <PurchaseReceipt purchase={purchaseData} />
       ) : isCreatePath ? (
         <CreateClubForm />
       ) : clubId && !currentClub && !loadingClubs ? (
