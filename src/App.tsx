@@ -1,76 +1,48 @@
+import React from 'react';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import RootLayout from '@/RootLayout';
+import Home from '@/pages/Home';
+import Sheets from '@/pages/Sheets';
+import Library from '@/pages/Library';
+import CreateExercise from '@/pages/CreateExercise';
+import ExerciseDetails from '@/pages/ExerciseDetails';
+import Club from '@/pages/Club';
+import Pricing from '@/pages/Pricing';
+import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
+import Auth from '@/pages/Auth';
+import Admin from '@/pages/Admin';
+import NotFound from '@/pages/NotFound';
+import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import MainLayout from "./components/layout/MainLayout";
-import Index from "./pages/Index";
-import Library from "./pages/Library";
-import Explore from "./pages/Explore";
-import Sheets from "./pages/Sheets";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import Liked from "./pages/Liked";
-import Search from "./pages/Search";
-import Schedule from "./pages/Schedule";
-import Clubs from "./pages/Clubs";
-import Leaderboards from "./pages/Leaderboards";
-import AuthenticatedRoute from "./components/AuthenticatedRoute";
-import CreateExercise from "./pages/CreateExercise";
-import EditExercise from "./pages/EditExercise";
-import { LibraryProvider } from "./contexts/LibraryContext";
-import { AuthProvider } from "./hooks/useAuth";
-import { ScheduleProvider } from "./contexts/ScheduleContext";
-import { ClubProvider } from "./contexts/ClubContext";
-
-// Initialize the query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Add our new purchase result pages
+import PurchaseSuccess from '@/pages/PurchaseSuccess';
+import PurchaseCancel from '@/pages/PurchaseCancel';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LibraryProvider>
-          <ScheduleProvider>
-            <ClubProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route element={<MainLayout />}>
-                    <Route index element={<Index />} />
-                    <Route path="library" element={<Library />} />
-                    <Route path="explore" element={<Explore />} />
-                    <Route path="sheets" element={<Sheets />} />
-                    <Route path="auth" element={<Auth />} />
-                    <Route path="liked" element={<Liked />} />
-                    <Route path="search" element={<Search />} />
-                    <Route path="leaderboards" element={<Leaderboards />} />
-                    <Route path="schedule" element={<Schedule />} />
-                    {/* Club routes - specificity matters here */}
-                    <Route path="clubs" element={<Clubs />} />
-                    <Route path="clubs/create" element={<Clubs />} />
-                    <Route path="clubs/:clubId" element={<Clubs />} />
-                    <Route path="profile" element={
-                      <AuthenticatedRoute>
-                        <Profile />
-                      </AuthenticatedRoute>
-                    } />
-                    <Route path="create-exercise" element={<CreateExercise />} />
-                    <Route path="edit-exercise/:id" element={<EditExercise />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </ClubProvider>
-          </ScheduleProvider>
-        </LibraryProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<RootLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/sheets" element={<Sheets />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/create-exercise" element={<CreateExercise />} />
+          <Route path="/exercise/:id" element={<ExerciseDetails />} />
+          <Route path="/club/:id" element={<Club />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<NotFound />} />
+          <Route path="/purchase/success" element={<PurchaseSuccess />} />
+          <Route path="/purchase/cancel" element={<PurchaseCancel />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

@@ -1011,25 +1011,84 @@ export type Database = {
         }
         Relationships: []
       }
+      program_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          creator_earnings: number
+          id: string
+          platform_fee: number
+          program_id: string
+          purchase_date: string | null
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          creator_earnings: number
+          id?: string
+          platform_fee: number
+          program_id: string
+          purchase_date?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          creator_earnings?: number
+          id?: string
+          platform_fee?: number
+          program_id?: string
+          purchase_date?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_purchases_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       programs: {
         Row: {
           created_at: string
           id: string
+          is_public: boolean | null
+          is_purchasable: boolean | null
           name: string
+          price: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_public?: boolean | null
+          is_purchasable?: boolean | null
           name: string
+          price?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_public?: boolean | null
+          is_purchasable?: boolean | null
           name?: string
+          price?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -1533,6 +1592,56 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          creator_earnings: number
+          id: string
+          platform_fee: number
+          purchase_date: string | null
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string | null
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          creator_earnings: number
+          id?: string
+          platform_fee: number
+          purchase_date?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          creator_earnings?: number
+          id?: string
+          platform_fee?: number
+          purchase_date?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_purchases_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_sessions: {
         Row: {
           completed_at: string | null
@@ -1617,7 +1726,9 @@ export type Database = {
           created_at: string
           day_num: number
           id: string
+          is_purchasable: boolean | null
           name: string
+          price: number | null
           updated_at: string
           week_id: string
         }
@@ -1625,7 +1736,9 @@ export type Database = {
           created_at?: string
           day_num: number
           id?: string
+          is_purchasable?: boolean | null
           name: string
+          price?: number | null
           updated_at?: string
           week_id: string
         }
@@ -1633,7 +1746,9 @@ export type Database = {
           created_at?: string
           day_num?: number
           id?: string
+          is_purchasable?: boolean | null
           name?: string
+          price?: number | null
           updated_at?: string
           week_id?: string
         }

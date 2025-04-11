@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WorkoutProgram } from "@/types/workout";
 import { DbProgram, DbWeek, DbWorkout, DbExercise, DbSet, DbCircuit } from '@/types/supabase';
@@ -235,6 +234,96 @@ export async function getPublicPrograms() {
   
   if (error) throw error;
   return data as DbProgram[];
+}
+
+export async function updateProgramPrice(programId: string, price: number, isPurchasable: boolean) {
+  const { error } = await supabase
+    .from('programs')
+    .update({ 
+      price: price,
+      is_purchasable: isPurchasable
+    })
+    .eq('id', programId);
+  
+  if (error) throw error;
+}
+
+export async function updateWorkoutPrice(workoutId: string, price: number, isPurchasable: boolean) {
+  const { error } = await supabase
+    .from('workouts')
+    .update({ 
+      price: price,
+      is_purchasable: isPurchasable
+    })
+    .eq('id', workoutId);
+  
+  if (error) throw error;
+}
+
+export async function getProgramPurchases(programId: string) {
+  const { data, error } = await supabase
+    .from('program_purchases')
+    .select('*')
+    .eq('program_id', programId);
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function getWorkoutPurchases(workoutId: string) {
+  const { data, error } = await supabase
+    .from('workout_purchases')
+    .select('*')
+    .eq('workout_id', workoutId);
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function getUserPurchasedPrograms(userId: string) {
+  const { data, error } = await supabase
+    .from('program_purchases')
+    .select('program_id')
+    .eq('user_id', userId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return data.map(purchase => purchase.program_id);
+}
+
+export async function getUserPurchasedWorkouts(userId: string) {
+  const { data, error } = await supabase
+    .from('workout_purchases')
+    .select('workout_id')
+    .eq('user_id', userId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return data.map(purchase => purchase.workout_id);
+}
+
+export async function hasUserPurchasedProgram(userId: string, programId: string) {
+  const { count, error } = await supabase
+    .from('program_purchases')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('program_id', programId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return count > 0;
+}
+
+export async function hasUserPurchasedWorkout(userId: string, workoutId: string) {
+  const { count, error } = await supabase
+    .from('workout_purchases')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('workout_id', workoutId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return count > 0;
 }
 
 export async function cloneProgram(programId: string) {

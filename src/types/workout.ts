@@ -45,6 +45,8 @@ export interface Workout {
   weekId?: string; // Field to associate workout with a week
   savedAt?: string; // Timestamp when the workout was saved to library
   lastModified?: string; // Timestamp when the workout was last modified
+  price?: number; // Price for purchasing this workout
+  isPurchasable?: boolean; // Whether this workout can be purchased
 }
 
 export interface WorkoutWeek {
@@ -64,6 +66,9 @@ export interface WorkoutProgram {
   savedAt?: string; // Timestamp when the program was saved to library
   lastModified?: string; // Timestamp when the program was last modified
   isPublic?: boolean; // Adding isPublic property to support public/private programs
+  price?: number; // Price for purchasing this program
+  isPurchasable?: boolean; // Whether this program can be purchased
+  userId?: string; // The creator of this program
 }
 
 // For backward compatibility

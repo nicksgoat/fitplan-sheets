@@ -102,3 +102,85 @@ export function useCloneProgram() {
     }
   });
 }
+
+// New monetization hooks
+export function useUpdateProgramPrice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ 
+      programId, 
+      price, 
+      isPurchasable 
+    }: { 
+      programId: string, 
+      price: number, 
+      isPurchasable: boolean 
+    }) => workoutService.updateProgramPrice(programId, price, isPurchasable),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['program', variables.programId] });
+      toast.success('Program price updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating program price:', error);
+      toast.error(`Error updating program price: ${error.message}`);
+    }
+  });
+}
+
+export function useUpdateWorkoutPrice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ 
+      workoutId, 
+      price, 
+      isPurchasable 
+    }: { 
+      workoutId: string, 
+      price: number, 
+      isPurchasable: boolean 
+    }) => workoutService.updateWorkoutPrice(workoutId, price, isPurchasable),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      toast.success('Workout price updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating workout price:', error);
+      toast.error(`Error updating workout price: ${error.message}`);
+    }
+  });
+}
+
+export function useHasUserPurchasedProgram(userId: string, programId: string) {
+  return useQuery({
+    queryKey: ['program-purchase', programId, userId],
+    queryFn: () => workoutService.hasUserPurchasedProgram(userId, programId),
+    enabled: !!userId && !!programId
+  });
+}
+
+export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
+  return useQuery({
+    queryKey: ['workout-purchase', workoutId, userId],
+    queryFn: () => workoutService.hasUserPurchasedWorkout(userId, workoutId),
+    enabled: !!userId && !!workoutId
+  });
+}
+
+export function useUserPurchasedPrograms(userId: string) {
+  return useQuery({
+    queryKey: ['user-purchased-programs', userId],
+    queryFn: () => workoutService.getUserPurchasedPrograms(userId),
+    enabled: !!userId
+  });
+}
+
+export function useUserPurchasedWorkouts(userId: string) {
+  return useQuery({
+    queryKey: ['user-purchased-workouts', userId],
+    queryFn: () => workoutService.getUserPurchasedWorkouts(userId),
+    enabled: !!userId
+  });
+}
