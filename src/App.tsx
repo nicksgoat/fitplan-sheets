@@ -1,10 +1,11 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
 import './App.css';
-import Home from './pages/Home';
+import Index from './pages/Index';
 import Library from './pages/Library';
 import Sheets from './pages/Sheets';
 import Clubs from './pages/Clubs';
@@ -25,7 +26,7 @@ import SalesDashboard from './pages/SalesDashboard';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: <Index />,
   },
   {
     path: "/library",
