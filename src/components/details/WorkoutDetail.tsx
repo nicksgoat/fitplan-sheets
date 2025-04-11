@@ -44,7 +44,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
       itemId: item.id,
       itemName: item.title,
       price: parseFloat(item.price.toString()),
-      creatorId: workoutData?.userId || ''
+      creatorId: '' // Since Workout type doesn't have userId, we'll pass an empty string as fallback
     });
   };
 
