@@ -1170,6 +1170,42 @@ export type Database = {
           },
         ]
       }
+      user_combine_estimations: {
+        Row: {
+          created_at: string
+          drill_name: string
+          estimated_score: string
+          estimation_type: string
+          id: string
+          percentile: number | null
+          position_percentile: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drill_name: string
+          estimated_score: string
+          estimation_type?: string
+          id?: string
+          percentile?: number | null
+          position_percentile?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          drill_name?: string
+          estimated_score?: string
+          estimation_type?: string
+          id?: string
+          percentile?: number | null
+          position_percentile?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weeks: {
         Row: {
           created_at: string
@@ -1515,6 +1551,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      get_nfl_combine_averages: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_table_structure: {
         Args: { table_name: string }
         Returns: {
@@ -1545,6 +1585,15 @@ export type Database = {
         Returns: {
           table_name: string
           table_schema: string
+        }[]
+      }
+      recommend_combine_exercises: {
+        Args: { user_id_param: string }
+        Returns: {
+          drill_name: string
+          current_score: string
+          percentile: number
+          recommended_exercises: Json
         }[]
       }
       run_sql_query: {
