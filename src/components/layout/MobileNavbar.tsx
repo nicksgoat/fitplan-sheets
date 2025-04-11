@@ -24,9 +24,10 @@ const MobileNavbar = () => {
   const handleTabChange = (index: number | null) => {
     if (index === null) return;
     
-    // Map the tab index to the corresponding route
-    const routes = ['/explore', '/search', '/library', '/clubs', '', '/schedule', '/leaderboards', '/liked', '/sheets'];
-    // Skip separators when mapping (index 4 is a separator in our tabs array)
+    // Map the tab index to the corresponding route - fixed routes for search and leaderboards
+    const routes = ['/', '/search', '/library', '/clubs', '', '/schedule', '/leaderboards', '/liked', '/sheets'];
+    
+    // Skip separator when mapping (index 4 is a separator in our tabs array)
     const routeIndex = index >= 4 ? index + 1 : index;
     
     if (routes[routeIndex]) {
