@@ -68,3 +68,37 @@ export function useDeleteProgram() {
     }
   });
 }
+
+export function useUpdateProgramVisibility() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ programId, isPublic }: { programId: string, isPublic: boolean }) => 
+      workoutService.updateProgramVisibility(programId, isPublic),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['program', variables.programId] });
+      toast.success(`Program visibility ${variables.isPublic ? 'made public' : 'made private'}`);
+    },
+    onError: (error: any) => {
+      console.error('Error updating program visibility:', error);
+      toast.error(`Error updating program visibility: ${error.message}`);
+    }
+  });
+}
+
+export function useCloneProgram() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (programId: string) => workoutService.cloneProgram(programId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+      toast.success('Program cloned successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error cloning program:', error);
+      toast.error(`Error cloning program: ${error.message}`);
+    }
+  });
+}

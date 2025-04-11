@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WorkoutProgram } from "@/types/workout";
 import { DbProgram, DbWeek, DbWorkout, DbExercise, DbSet, DbCircuit } from '@/types/supabase';
@@ -10,7 +11,7 @@ export async function getPrograms() {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data;
+  return data as DbProgram[];
 }
 
 export async function getProgram(programId: string): Promise<WorkoutProgram> {
@@ -233,7 +234,7 @@ export async function getPublicPrograms() {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data;
+  return data as DbProgram[];
 }
 
 export async function cloneProgram(programId: string) {
