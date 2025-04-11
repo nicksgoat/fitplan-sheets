@@ -7,6 +7,7 @@ import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import ClubLayout from '@/components/clubs/ClubLayout';
+import ClubDetailPage from '@/components/clubs/ClubDetailPage';
 import PurchaseReceipt from '@/components/clubs/PurchaseReceipt';
 import { toast } from 'sonner';
 import { getUserPurchases } from '@/utils/clubUtils';
@@ -81,9 +82,9 @@ const Clubs: React.FC = () => {
     }
   }, [clubId, isCreatePath, isReceiptPath, clubs, loadingClubs]);
   
-  // When viewing a specific club, render the ClubLayout directly without container
+  // When viewing a specific club, render the ClubDetailPage
   if (clubId && currentClub && !isCreatePath && !isReceiptPath) {
-    return <ClubLayout clubId={clubId} />;
+    return <ClubDetailPage />;
   }
   
   // For other views (club list, create form, etc.), render with container
