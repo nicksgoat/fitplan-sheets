@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 
 interface NFLCombineResult {
   id: number;
@@ -124,21 +124,28 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
             </TableRow>
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center text-red-400">
-                {error}. Please try adjusting filters or try again later.
+              <TableCell colSpan={6} className="h-24">
+                <div className="flex flex-col items-center justify-center text-center text-red-400 p-4">
+                  <AlertCircle className="h-6 w-6 mb-2" />
+                  <p className="font-semibold">{error}</p>
+                  <p className="text-sm mt-1">Please try adjusting filters or initialize the data.</p>
+                </div>
               </TableCell>
             </TableRow>
           ) : combineData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                No combine data found. Try adjusting filters or selecting a different sort metric.
+              <TableCell colSpan={6} className="h-24">
+                <div className="flex flex-col items-center justify-center text-center p-4">
+                  <p className="font-semibold">No combine data found</p>
+                  <p className="text-sm mt-1">Try initializing data using the button on the top right.</p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
             combineData.map((player, index) => (
               <TableRow 
                 key={player.id} 
-                className={`border-b border-gray-800 hover:bg-gray-900/50 even:bg-gray-900/20 ${userBeatsStat(player) ? 'bg-green-900/10' : ''}`}
+                className={`border-b border-gray-800 hover:bg-gray-900/50 ${index % 2 === 0 ? 'bg-gray-900/20' : ''} ${userBeatsStat(player) ? 'bg-green-900/10' : ''}`}
               >
                 <TableCell className="font-medium text-center">
                   {index + 1}
