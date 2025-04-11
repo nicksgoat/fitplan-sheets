@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import CombineFilters from './filters/CombineFilters';
 import CombineDataTable from './tables/CombineDataTable';
@@ -5,11 +6,8 @@ import CombineInfoSection from './info/CombineInfoSection';
 import { useNFLCombineData } from '@/hooks/useNFLCombineData';
 import { useUserCombineData } from '@/hooks/useUserCombineData';
 import { useAuth } from '@/hooks/useAuth';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Info, Trophy, Activity } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
+import MetricInfoCard from './cards/MetricInfoCard';
+import UserStatsCard from './cards/UserStatsCard';
 
 const NFLCombineTab: React.FC = () => {
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
@@ -36,7 +34,6 @@ const NFLCombineTab: React.FC = () => {
 
   const getUserEstimationForMetric = () => {
     if (!sortMetric || !userEstimations || userEstimations.length === 0) return null;
-    
     return userEstimations.find(est => est.drill_name === sortMetric);
   };
   
@@ -94,52 +91,12 @@ const NFLCombineTab: React.FC = () => {
     }
   };
 
-  const getMetricDisplayName = (metric: string): string => {
-    const metricNames = {
-      '40yd': '40-Yard Dash',
-      'Vertical': 'Vertical Jump',
-      'Bench': 'Bench Press',
-      'Broad Jump': 'Broad Jump',
-      '3Cone': '3-Cone Drill',
-      'Shuttle': 'Shuttle'
-    };
-    return metricNames[metric as keyof typeof metricNames] || metric;
-  };
-
-  const isLowerValueBetter = (metric: string): boolean => {
-    return ['40yd', '3Cone', 'Shuttle'].includes(metric);
-  };
-
   return (
     <div className="space-y-6">
-      <Card className="p-4 bg-gray-900/50 border border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-fitbloom-purple" />
-            <h2 className="text-lg font-semibold">
-              {getMetricDisplayName(sortMetric)}
-            </h2>
-          </div>
-          
-          {nflAverage && (
-            <Badge variant="outline" className="font-mono">
-              NFL Avg: {nflAverage.avg_score}
-              {isLowerValueBetter(sortMetric) ? ' (lower is better)' : ' (higher is better)'}
-            </Badge>
-          )}
-        </div>
-        
-        <Separator className="my-3" />
-        
-        <p className="text-sm text-gray-300">
-          {sortMetric === '40yd' && 'The 40-yard dash measures a player\'s straight-line speed. Lower times indicate faster players.'}
-          {sortMetric === 'Vertical' && 'The vertical jump measures a player\'s lower-body explosiveness and leaping ability.'}
-          {sortMetric === 'Bench' && 'The bench press (225 lbs) tests upper body strength and endurance.'}
-          {sortMetric === 'Broad Jump' && 'The broad jump measures a player\'s lower-body explosiveness and horizontal power.'}
-          {sortMetric === '3Cone' && 'The 3-cone drill tests a player\'s ability to change directions at high speeds.'}
-          {sortMetric === 'Shuttle' && 'The shuttle run measures short-area quickness, acceleration and lateral movement.'}
-        </p>
-      </Card>
+      <MetricInfoCard 
+        sortMetric={sortMetric} 
+        nflAverage={nflAverage} 
+      />
 
       <CombineFilters 
         positions={positions}
@@ -154,64 +111,12 @@ const NFLCombineTab: React.FC = () => {
       />
 
       {user && userEstimation && (
-        <Card className="p-3 bg-gray-900/30 border border-gray-700 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Badge className="mr-1 bg-fitbloom-purple">Your {sortMetric}</Badge>
-            <span className="font-semibold">{userEstimation.estimated_score}</span>
-            
-            <Badge variant="outline" className="text-xs">
-              {userEstimation.estimation_type}
-            </Badge>
-            
-            {userEstimation.percentile !== undefined && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge className={`${
-                      userEstimation.percentile > 75 ? 'bg-green-600' : 
-                      userEstimation.percentile > 50 ? 'bg-blue-600' : 
-                      userEstimation.percentile > 25 ? 'bg-yellow-600' : 
-                      'bg-red-600'
-                    } text-white`}>
-                      Top {100 - userEstimation.percentile}%
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>You're better than {userEstimation.percentile}% of NFL players in this drill</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-          
-          <div className="flex items-center">
-            {nflAverage && (
-              <div className="mr-4 flex items-center">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center text-sm text-gray-400">
-                        <Info className="h-3 w-3 mr-1" />
-                        NFL Avg: <span className="font-medium ml-1 text-white">{nflAverage.avg_score}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Average score for NFL athletes in this drill</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
-            
-            <a 
-              href="#" 
-              onClick={navigateToYourCombine}
-              className="flex items-center text-sm text-blue-400 hover:text-blue-300"
-            >
-              View all your stats <ArrowRight className="h-3 w-3 ml-1" />
-            </a>
-          </div>
-        </Card>
+        <UserStatsCard 
+          userEstimation={userEstimation}
+          nflAverage={nflAverage}
+          sortMetric={sortMetric}
+          onNavigateToYourCombine={navigateToYourCombine}
+        />
       )}
 
       {error && (
