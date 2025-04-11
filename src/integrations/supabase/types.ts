@@ -1525,6 +1525,17 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      create_club_event: {
+        Args: {
+          p_club_id: string
+          p_name: string
+          p_description: string
+          p_start_time: string
+          p_end_time: string
+          p_created_by: string
+        }
+        Returns: string
+      }
       create_event: {
         Args: {
           p_club_id: string
@@ -1562,6 +1573,23 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      get_club_events: {
+        Args: { p_club_id: string }
+        Returns: {
+          attendee_count: number | null
+          club_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_time: string
+          id: string
+          image_url: string | null
+          location: string | null
+          name: string
+          start_time: string
+          updated_at: string
+        }[]
+      }
       get_nfl_combine_averages: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1589,6 +1617,14 @@ export type Database = {
       }
       is_club_member_safe: {
         Args: { club_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      join_event: {
+        Args: { p_event_id: string; p_user_id: string; p_status?: string }
+        Returns: boolean
+      }
+      leave_event: {
+        Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
       list_tables: {

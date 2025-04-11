@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import CombineFilters from './filters/CombineFilters';
 import CombineDataTable from './tables/CombineDataTable';
@@ -35,21 +34,17 @@ const NFLCombineTab: React.FC = () => {
     calculatePercentile
   } = useUserCombineData();
 
-  // Get user estimation for the current sort metric
   const getUserEstimationForMetric = () => {
     if (!sortMetric || !userEstimations || userEstimations.length === 0) return null;
     
     return userEstimations.find(est => est.drill_name === sortMetric);
   };
   
-  // Load filter options on component mount
   useEffect(() => {
     fetchFilterOptions();
   }, []);
 
-  // Fetch data with filters
   useEffect(() => {
-    // Save filters to localStorage
     if (selectedPosition) localStorage.setItem('nfl_combine_position', selectedPosition);
     if (selectedYear) localStorage.setItem('nfl_combine_year', selectedYear.toString());
     localStorage.setItem('nfl_combine_sort', sortMetric);
@@ -57,7 +52,6 @@ const NFLCombineTab: React.FC = () => {
     fetchCombineData(selectedPosition, selectedYear, sortMetric);
   }, [selectedPosition, selectedYear, sortMetric]);
 
-  // Load saved preferences on mount
   useEffect(() => {
     const savedPosition = localStorage.getItem('nfl_combine_position');
     const savedYear = localStorage.getItem('nfl_combine_year');
@@ -85,7 +79,6 @@ const NFLCombineTab: React.FC = () => {
 
   const userEstimation = getUserEstimationForMetric();
   
-  // Get NFL average for the current sort metric
   const getNFLAverageForMetric = () => {
     if (!sortMetric || !nflAverages || nflAverages.length === 0) return null;
     return nflAverages.find(avg => avg.drill_name === sortMetric);
@@ -93,37 +86,32 @@ const NFLCombineTab: React.FC = () => {
   
   const nflAverage = getNFLAverageForMetric();
 
-  // Handle navigation to "your-combine" tab safely
   const navigateToYourCombine = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Find the tab element and trigger a click event safely
     const yourCombineTab = document.querySelector('[data-value="your-combine"]');
     if (yourCombineTab && 'click' in yourCombineTab) {
       (yourCombineTab as HTMLElement).click();
     }
   };
 
-  // Display name for the current metric
   const getMetricDisplayName = (metric: string): string => {
-    switch (metric) {
-      case '40yd': return '40-Yard Dash';
-      case 'Vertical': return 'Vertical Jump';
-      case 'Bench': return 'Bench Press';
-      case 'Broad Jump': return 'Broad Jump';
-      case '3Cone': return '3-Cone Drill';
-      case 'Shuttle': return 'Shuttle';
-      default: return metric;
-    }
+    const metricNames = {
+      '40yd': '40-Yard Dash',
+      'Vertical': 'Vertical Jump',
+      'Bench': 'Bench Press',
+      'Broad Jump': 'Broad Jump',
+      '3Cone': '3-Cone Drill',
+      'Shuttle': 'Shuttle'
+    };
+    return metricNames[metric as keyof typeof metricNames] || metric;
   };
 
-  // Determine if a lower value is better for this metric
   const isLowerValueBetter = (metric: string): boolean => {
     return ['40yd', '3Cone', 'Shuttle'].includes(metric);
   };
 
   return (
     <div className="space-y-6">
-      {/* Selected Metric Card */}
       <Card className="p-4 bg-gray-900/50 border border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -144,16 +132,15 @@ const NFLCombineTab: React.FC = () => {
         <Separator className="my-3" />
         
         <p className="text-sm text-gray-300">
-          {sortMetric === '40yd' && 'The 40-yard dash measures a player's straight-line speed. Lower times indicate faster players.'}
-          {sortMetric === 'Vertical' && 'The vertical jump measures a player's lower-body explosiveness and leaping ability.'}
+          {sortMetric === '40yd' && 'The 40-yard dash measures a player\'s straight-line speed. Lower times indicate faster players.'}
+          {sortMetric === 'Vertical' && 'The vertical jump measures a player\'s lower-body explosiveness and leaping ability.'}
           {sortMetric === 'Bench' && 'The bench press (225 lbs) tests upper body strength and endurance.'}
-          {sortMetric === 'Broad Jump' && 'The broad jump measures a player's lower-body explosiveness and horizontal power.'}
-          {sortMetric === '3Cone' && 'The 3-cone drill tests a player's ability to change directions at high speeds.'}
+          {sortMetric === 'Broad Jump' && 'The broad jump measures a player\'s lower-body explosiveness and horizontal power.'}
+          {sortMetric === '3Cone' && 'The 3-cone drill tests a player\'s ability to change directions at high speeds.'}
           {sortMetric === 'Shuttle' && 'The shuttle run measures short-area quickness, acceleration and lateral movement.'}
         </p>
       </Card>
 
-      {/* Filters */}
       <CombineFilters 
         positions={positions}
         years={years}
@@ -166,7 +153,6 @@ const NFLCombineTab: React.FC = () => {
         onClearFilters={clearFilters}
       />
 
-      {/* User Estimation Summary (if available) */}
       {user && userEstimation && (
         <Card className="p-3 bg-gray-900/30 border border-gray-700 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -228,14 +214,12 @@ const NFLCombineTab: React.FC = () => {
         </Card>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="p-4 text-center text-red-400 bg-red-900/20 border border-red-800 rounded-lg">
           {error}. Please try adjusting filters or try again later.
         </div>
       )}
 
-      {/* Table */}
       <CombineDataTable 
         combineData={combineData}
         userEstimation={userEstimation}
@@ -244,7 +228,6 @@ const NFLCombineTab: React.FC = () => {
         sortMetric={sortMetric}
       />
 
-      {/* Explanatory Section */}
       <CombineInfoSection />
     </div>
   );
