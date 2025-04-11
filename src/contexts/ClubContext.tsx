@@ -370,13 +370,19 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
-        // Ensure all required EventParticipant properties are present
-        return {
+        // Create a properly typed EventParticipant with all required fields
+        const participant: EventParticipant = {
           ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
           status: data.status as EventParticipationStatus,
-          created_at: data.created_at || data.joined_at || new Date().toISOString(),
-          updated_at: data.updated_at || new Date().toISOString()
-        } as EventParticipant;
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: data.profile
+        };
+        
+        return participant;
       } else {
         const { data, error } = await supabase
           .from('event_participants')
@@ -390,13 +396,19 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
-        // Ensure all required EventParticipant properties are present
-        return {
+        // Create a properly typed EventParticipant with all required fields
+        const participant: EventParticipant = {
           ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
           status: data.status as EventParticipationStatus,
-          created_at: data.created_at || data.joined_at || new Date().toISOString(),
-          updated_at: data.updated_at || new Date().toISOString()
-        } as EventParticipant;
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: data.profile
+        };
+        
+        return participant;
       }
     } catch (error) {
       console.error('Error responding to event:', error);
