@@ -3,6 +3,7 @@ import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
+  Outlet,
 } from "react-router-dom";
 import './App.css';
 import Library from './pages/Library';
@@ -14,32 +15,16 @@ import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
 import SalesDashboard from './pages/SalesDashboard';
 import Leaderboards from './pages/Leaderboards';
+import MainLayout from './components/layout/MainLayout';
+import Index from './pages/Index';
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Library />,
-  },
-  {
-    path: "/library",
-    element: <Library />,
-  },
-  {
-    path: "/sheets",
-    element: <Sheets />,
-  },
-  {
-    path: "/clubs",
-    element: <Clubs />,
-  },
-  {
-    path: "/profile",
-    element: <Profile />,
-  },
+  // Auth route without MainLayout
   {
     path: "/auth",
     element: <Auth />,
   },
+  // Purchase routes without MainLayout
   {
     path: "/purchase/success",
     element: <PurchaseSuccess />,
@@ -48,13 +33,44 @@ const router = createBrowserRouter([
     path: "/purchase/cancel",
     element: <PurchaseCancel />,
   },
+  // Routes with MainLayout
   {
-    path: "/sales",
-    element: <SalesDashboard />
-  },
-  {
-    path: "/leaderboards",
-    element: <Leaderboards />
+    path: "/",
+    element: <MainLayout><Outlet /></MainLayout>,
+    children: [
+      {
+        path: "/",
+        element: <Index />,
+      },
+      {
+        path: "/home",
+        element: <Index />,
+      },
+      {
+        path: "/library",
+        element: <Library />,
+      },
+      {
+        path: "/sheets",
+        element: <Sheets />,
+      },
+      {
+        path: "/clubs",
+        element: <Clubs />,
+      },
+      {
+        path: "/profile",
+        element: <Profile />,
+      },
+      {
+        path: "/sales",
+        element: <SalesDashboard />
+      },
+      {
+        path: "/leaderboards",
+        element: <Leaderboards />
+      },
+    ]
   },
 ]);
 
