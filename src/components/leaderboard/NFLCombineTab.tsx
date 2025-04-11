@@ -84,9 +84,10 @@ const NFLCombineTab: React.FC = () => {
   // Handle navigation to "your-combine" tab safely
   const navigateToYourCombine = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Find the tab element and trigger a click event safely
     const yourCombineTab = document.querySelector('[data-value="your-combine"]');
-    if (yourCombineTab instanceof HTMLElement) {
-      yourCombineTab.click();
+    if (yourCombineTab && 'click' in yourCombineTab) {
+      (yourCombineTab as HTMLElement).click();
     }
   };
 
