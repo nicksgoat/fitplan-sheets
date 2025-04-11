@@ -10,13 +10,10 @@ import Sheets from './pages/Sheets';
 import Clubs from './pages/Clubs';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
-import { useAuth } from './hooks/useAuth';
-import { useEffect } from 'react';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
-
-// Import the new SalesDashboard component
 import SalesDashboard from './pages/SalesDashboard';
+import Leaderboards from './pages/Leaderboards';
 
 const router = createBrowserRouter([
   {
@@ -55,19 +52,13 @@ const router = createBrowserRouter([
     path: "/sales",
     element: <SalesDashboard />
   },
+  {
+    path: "/leaderboards",
+    element: <Leaderboards />
+  },
 ]);
 
 function App() {
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    console.log('User data loaded:', user);
-  }, [user]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return <RouterProvider router={router} />;
 }
 
