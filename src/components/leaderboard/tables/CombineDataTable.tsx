@@ -1,152 +1,179 @@
-// src/pages/NFLCombinePage.jsx or similar
-import { useState, useEffect } from 'react';
-import CombineDataTable from '@/components/CombineDataTable';
-import { useNFLCombineData } from '@/hooks/useNFLCombineData';
-import { supabase } from '@/integrations/supabase/client';
 
-export default function NFLCombinePage() {
-  const [selectedPosition, setSelectedPosition] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [sortMetric, setSortMetric] = useState('40yd');
-  const {
-    combineData,
-    positions,
-    years,
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+
+interface NFLCombineResult {
+  id: number;
+  Player: string;
+  Pos: string;
+  School: string;
+  "40yd": string;
+  Vertical: string;
+  Bench: string;
+  "Broad Jump": string;
+  "3Cone": string;
+  Shuttle: string;
+  Draft_Team: string;
+  Draft_Year: number;
+  Height_in: number;
+  Weight_lb: number;
+}
+
+interface UserCombineEstimation {
+  id: string;
+  user_id: string;
+  drill_name: string;
+  estimated_score: string;
+  estimation_type: 'estimated' | 'actual' | 'placeholder';
+  percentile?: number;
+  position_percentile?: number;
+}
+
+interface CombineDataTableProps {
+  combineData: NFLCombineResult[];
+  userEstimation?: UserCombineEstimation | null;
+  isLoading: boolean;
+  error: string | null;
+  sortMetric: string;
+}
+
+const CombineDataTable: React.FC<CombineDataTableProps> = ({
+  combineData,
+  userEstimation,
+  isLoading,
+  error,
+  sortMetric
+}) => {
+  console.log('CombineDataTable props:', {
+    combineDataLength: combineData?.length,
+    sortMetric,
     isLoading,
-    error,
-    fetchCombineData,
-    fetchFilterOptions
-  } = useNFLCombineData();
-
-  // On initial load, fetch filter options and data
-  useEffect(() => {
-    // Verify Supabase connection first
-    async function checkConnection() {
-      try {
-        // Simple test query to verify database connection
-        const { data, error } = await supabase
-          .from('NFL Combine Database')
-          .select('count(*)')
-          .limit(1);
-        
-        console.log('Supabase connection test:', { data, error });
-        
-        if (error) {
-          console.error('Supabase connection error:', error);
-        } else {
-          // If connection works, load our data
-          fetchFilterOptions();
-          fetchCombineData(selectedPosition, selectedYear, sortMetric);
-        }
-      } catch (err) {
-        console.error('Failed to connect to Supabase:', err);
-      }
-    }
-    
-    checkConnection();
-  }, []);
-
-  // Fetch data when filters change
-  useEffect(() => {
-    fetchCombineData(selectedPosition, selectedYear, sortMetric);
-  }, [selectedPosition, selectedYear, sortMetric]);
-
-  // Handle position selection
-  const handlePositionChange = (position) => {
-    setSelectedPosition(position === 'All Positions' ? null : position);
-  };
-
-  // Handle year selection
-  const handleYearChange = (year) => {
-    setSelectedYear(year === 'All Years' ? null : parseInt(year));
-  };
-
-  // Handle sort metric change
-  const handleSortMetricChange = (metric) => {
-    setSortMetric(metric);
-  };
-
-  // Debug output
-  console.log('Rendering page with:', {
-    dataCount: combineData?.length || 0,
-    hasPositions: positions?.length || 0,
-    hasYears: years?.length || 0,
-    currentFilters: {
-      position: selectedPosition,
-      year: selectedYear,
-      sortMetric
-    }
+    hasError: !!error
   });
 
+  // Helper to determine if user beats the NFL player's score
+  const userBeatsStat = (player: NFLCombineResult): boolean => {
+    if (!userEstimation || userEstimation.drill_name !== sortMetric) return false;
+    
+    const userScore = parseFloat(userEstimation.estimated_score);
+    const playerScore = parseFloat(player[sortMetric as keyof NFLCombineResult] as string);
+    
+    if (isNaN(userScore) || isNaN(playerScore)) return false;
+    
+    // For 40yd, 3Cone, Shuttle - lower is better; for others higher is better
+    if (['40yd', '3Cone', 'Shuttle'].includes(sortMetric)) {
+      return userScore < playerScore;
+    } else {
+      return userScore > playerScore;
+    }
+  };
+
+  // Get display name for the current metric
+  const getMetricDisplayName = (metric: string): string => {
+    switch (metric) {
+      case '40yd': return '40-Yard Dash (seconds)';
+      case 'Vertical': return 'Vertical Jump (inches)';
+      case 'Bench': return 'Bench Press (reps)';
+      case 'Broad Jump': return 'Broad Jump (inches)';
+      case '3Cone': return '3-Cone Drill (seconds)';
+      case 'Shuttle': return 'Shuttle (seconds)';
+      default: return metric;
+    }
+  };
+
+  // Determine if lower values are better for this metric
+  const isLowerBetter = (metric: string): boolean => {
+    return ['40yd', '3Cone', 'Shuttle'].includes(metric);
+  };
+
+  // Get the actual metric value from the player record
+  const getPlayerMetricValue = (player: NFLCombineResult): string => {
+    const value = player[sortMetric as keyof NFLCombineResult];
+    return value?.toString() || '-';
+  };
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">NFL Combine Results</h1>
-      
-      {/* Filter Controls */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block mb-2 text-sm font-medium">Position</label>
-          <select
-            className="w-full p-2 border rounded bg-gray-900 text-white"
-            onChange={(e) => handlePositionChange(e.target.value)}
-            value={selectedPosition || 'All Positions'}
-          >
-            <option value="All Positions">All Positions</option>
-            {positions.map((pos) => (
-              <option key={pos} value={pos}>
-                {pos}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="flex-1 min-w-[200px]">
-          <label className="block mb-2 text-sm font-medium">Draft Year</label>
-          <select
-            className="w-full p-2 border rounded bg-gray-900 text-white"
-            onChange={(e) => handleYearChange(e.target.value)}
-            value={selectedYear || 'All Years'}
-          >
-            <option value="All Years">All Years</option>
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="flex-1 min-w-[200px]">
-          <label className="block mb-2 text-sm font-medium">Sort By</label>
-          <select
-            className="w-full p-2 border rounded bg-gray-900 text-white"
-            onChange={(e) => handleSortMetricChange(e.target.value)}
-            value={sortMetric}
-          >
-            <option value="40yd">40-Yard Dash</option>
-            <option value="Vertical">Vertical Jump</option>
-            <option value="Bench">Bench Press</option>
-            <option value="Broad Jump">Broad Jump</option>
-            <option value="3Cone">3-Cone Drill</option>
-            <option value="Shuttle">Shuttle</option>
-          </select>
-        </div>
-      </div>
-      
-      {/* Debug Info - Remove in production */}
-      {error && (
-        <div className="bg-red-800 text-white p-3 rounded mb-4">
-          Error: {error}
-        </div>
-      )}
-      
-      {/* Table Component */}
-      <CombineDataTable
-        combineData={combineData}
-        isLoading={isLoading}
-        error={error}
-        sortMetric={sortMetric}
-      />
+    <div className="rounded-md border border-gray-800 overflow-hidden">
+      <Table>
+        <TableHeader className="bg-gray-900 sticky top-0">
+          <TableRow className="border-b border-gray-800">
+            <TableHead className="whitespace-nowrap">Rank</TableHead>
+            <TableHead className="whitespace-nowrap">Player</TableHead>
+            <TableHead className="text-center whitespace-nowrap">Position</TableHead>
+            <TableHead className="whitespace-nowrap">School</TableHead>
+            <TableHead className="text-center whitespace-nowrap">
+              <div className="flex items-center justify-center gap-1">
+                {getMetricDisplayName(sortMetric)}
+                <ArrowUpDown className="h-3 w-3" />
+              </div>
+            </TableHead>
+            <TableHead className="text-center whitespace-nowrap">Draft Year</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center">
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Loading combine data...
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : error ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center text-red-400">
+                {error}. Please try adjusting filters or try again later.
+              </TableCell>
+            </TableRow>
+          ) : combineData.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center">
+                No combine data found. Try adjusting filters or selecting a different sort metric.
+              </TableCell>
+            </TableRow>
+          ) : (
+            combineData.map((player, index) => (
+              <TableRow 
+                key={player.id} 
+                className={`border-b border-gray-800 hover:bg-gray-900/50 even:bg-gray-900/20 ${userBeatsStat(player) ? 'bg-green-900/10' : ''}`}
+              >
+                <TableCell className="font-medium text-center">
+                  {index + 1}
+                </TableCell>
+                <TableCell className="font-medium">{player.Player || '-'}</TableCell>
+                <TableCell className="text-center">
+                  <Badge variant="outline" className="bg-gray-800 text-gray-300">
+                    {player.Pos || '-'}
+                  </Badge>
+                </TableCell>
+                <TableCell>{player.School || '-'}</TableCell>
+                <TableCell className={`text-center font-semibold ${userBeatsStat(player) ? 'text-green-400' : ''}`}>
+                  <div className="flex items-center justify-center">
+                    {userBeatsStat(player) && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
+                    <span className="text-lg">{getPlayerMetricValue(player)}</span>
+                    
+                    {/* Show trend icon for first 5 places */}
+                    {index < 5 && (
+                      isLowerBetter(sortMetric) 
+                        ? <TrendingDown className="h-3 w-3 ml-1 text-green-500" /> 
+                        : <TrendingUp className="h-3 w-3 ml-1 text-green-500" />
+                    )}
+                    
+                    {/* Show trophy for first place */}
+                    {index === 0 && <Trophy className="h-3 w-3 ml-1 text-yellow-500" />}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">{player.Draft_Year || '-'}</TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
-}
+};
+
+export default CombineDataTable;
