@@ -8,6 +8,8 @@ import { DollarSign, Pencil, Tag } from 'lucide-react';
 import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
 import { Workout, WorkoutProgram } from '@/types/workout';
 import * as workoutHooks from '@/hooks/useWorkoutData';
+import { mapDbProgramToWorkoutProgram } from '@/hooks/workout/useProgramData';
+import { DbProgram } from '@/types/supabase';
 
 export default function PricingManagement() {
   const { user } = useAuth();
@@ -16,13 +18,21 @@ export default function PricingManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Get workout and program data
-  const { data: programs, isLoading: programsLoading } = workoutHooks.usePrograms();
-  const { 
-    updateWorkoutPrice: updateWorkoutPriceHook, 
-    updateProgramPrice: updateProgramPriceHook 
-  } = workoutHooks;
+  const { data: dbPrograms, isLoading: programsLoading } = workoutHooks.usePrograms();
   
-  const userPrograms = programs?.filter(program => program.user_id === user?.id) || [];
+  // Create hook references
+  const updateWorkoutPriceMutation = workoutHooks.useUpdateWorkoutPrice();
+  const updateProgramPriceMutation = workoutHooks.useUpdateProgramPrice();
+  
+  // Convert DB programs to WorkoutProgram type
+  const programs = React.useMemo(() => {
+    if (!dbPrograms) return [];
+    return dbPrograms.map(program => mapDbProgramToWorkoutProgram(program)) as WorkoutProgram[];
+  }, [dbPrograms]);
+  
+  const userPrograms = programs.filter(program => 
+    (program as any).user_id === user?.id || program.id.includes(user?.id || '')
+  );
   
   // Get workout data from programs
   const workouts = React.useMemo(() => {
@@ -30,30 +40,26 @@ export default function PricingManagement() {
     
     const allWorkouts: Workout[] = [];
     
-    programs.forEach(program => {
-      if (program.user_id === user?.id && program.workouts) {
+    userPrograms.forEach(program => {
+      if (program.workouts) {
         allWorkouts.push(...program.workouts);
       }
     });
     
     return allWorkouts;
-  }, [programs, user?.id]);
-  
-  // Mutation hooks
-  const workoutPriceMutation = updateWorkoutPriceHook();
-  const programPriceMutation = updateProgramPriceHook();
+  }, [programs, userPrograms]);
   
   const handleSavePricing = (price: number, isPurchasable: boolean) => {
     if (!selectedItem) return;
 
     if (selectedItem.type === 'workout') {
-      workoutPriceMutation.mutate({
+      updateWorkoutPriceMutation.mutate({
         workoutId: selectedItem.id,
         price,
         isPurchasable
       });
     } else if (selectedItem.type === 'program') {
-      programPriceMutation.mutate({
+      updateProgramPriceMutation.mutate({
         programId: selectedItem.id,
         price,
         isPurchasable
@@ -235,7 +241,7 @@ export default function PricingManagement() {
           currentPrice={selectedItem.currentPrice}
           isPurchasable={selectedItem.isPurchasable}
           onSave={handleSavePricing}
-          isSaving={workoutPriceMutation.isPending || programPriceMutation.isPending}
+          isSaving={updateWorkoutPriceMutation.isPending || updateProgramPriceMutation.isPending}
         />
       )}
     </>

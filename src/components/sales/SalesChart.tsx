@@ -17,7 +17,7 @@ interface SalesDataPoint {
 export default function SalesChart() {
   const { user } = useAuth();
   
-  const { data: salesData, isLoading } = useQuery({
+  const { data: salesDataRaw, isLoading } = useQuery({
     queryKey: ['sales-chart', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -71,6 +71,9 @@ export default function SalesChart() {
     },
     enabled: !!user
   });
+  
+  // Type guard to ensure salesData is an array
+  const salesData = Array.isArray(salesDataRaw) ? salesDataRaw as SalesDataPoint[] : [];
   
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Loading chart data...</div>;

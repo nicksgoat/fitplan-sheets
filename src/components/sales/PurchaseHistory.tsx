@@ -27,7 +27,7 @@ export default function PurchaseHistory() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
 
-  const { data: purchaseHistory, isLoading } = useQuery({
+  const { data: purchaseHistoryData, isLoading } = useQuery({
     queryKey: ['purchase-history', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -80,26 +80,27 @@ export default function PurchaseHistory() {
       });
       
       // Ensure we return an array of purchase records
-      return Array.isArray(data) ? data as PurchaseRecord[] : [];
+      return Array.isArray(data) ? data as unknown as PurchaseRecord[] : [];
     },
     enabled: !!user
   });
 
   const filterPurchases = () => {
-    if (!purchaseHistory) return [];
-    if (!search.trim()) return purchaseHistory;
+    if (!purchaseHistoryData || !Array.isArray(purchaseHistoryData)) return [];
+    if (!search.trim()) return purchaseHistoryData;
     
     const searchLower = search.toLowerCase();
-    return purchaseHistory.filter(purchase => {
+    return purchaseHistoryData.filter((purchase: PurchaseRecord) => {
       return (
-        purchase.product_name?.toLowerCase().includes(searchLower) ||
-        purchase.customer_name?.toLowerCase().includes(searchLower) ||
-        purchase.customer_username?.toLowerCase().includes(searchLower)
+        (purchase.product_name?.toLowerCase().includes(searchLower)) ||
+        (purchase.customer_name?.toLowerCase().includes(searchLower)) ||
+        (purchase.customer_username?.toLowerCase().includes(searchLower))
       );
     });
   };
 
   const exportToCsv = () => {
+    const purchaseHistory = purchaseHistoryData as PurchaseRecord[];
     if (!purchaseHistory || purchaseHistory.length === 0) return;
     
     // Prepare CSV content
@@ -134,7 +135,7 @@ export default function PurchaseHistory() {
     document.body.removeChild(link);
   };
 
-  const filteredPurchases = filterPurchases();
+  const filteredPurchases = filterPurchases() as PurchaseRecord[];
   
   return (
     <Card className="bg-dark-100 border-dark-300">
@@ -145,7 +146,7 @@ export default function PurchaseHistory() {
           size="sm"
           className="flex items-center gap-1"
           onClick={exportToCsv}
-          disabled={!purchaseHistory || purchaseHistory.length === 0}
+          disabled={!purchaseHistoryData || !(purchaseHistoryData as PurchaseRecord[]).length}
         >
           <Download className="h-4 w-4" />
           <span>Export</span>
@@ -164,9 +165,9 @@ export default function PurchaseHistory() {
         
         {isLoading ? (
           <div className="text-center py-8">Loading purchase history...</div>
-        ) : !filteredPurchases.length ? (
+        ) : !filteredPurchases?.length ? (
           <div className="text-center py-8 text-gray-400">
-            {purchaseHistory && purchaseHistory.length > 0 ? 
+            {purchaseHistoryData && (purchaseHistoryData as PurchaseRecord[]).length > 0 ? 
               'No results match your search criteria.' : 
               'No purchase history found.'}
           </div>

@@ -5,11 +5,18 @@ import { DbProgram, DbWeek, DbWorkout, DbExercise, DbSet, DbCircuit } from '@/ty
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
+// Define collection type
+export interface Collection {
+  id: string;
+  name: string;
+}
+
 // Define the context type
 interface LibraryContextType {
   workouts: Workout[];
   programs: WorkoutProgram[];
   weeks: WorkoutWeek[];
+  collections?: Collection[];
   isLoaded: boolean;
   refreshLibrary: () => void;
   saveWorkout: (workout: Workout, name?: string) => Promise<void>;
@@ -28,6 +35,7 @@ const LibraryContext = createContext<LibraryContextType>({
   workouts: [],
   programs: [],
   weeks: [],
+  collections: [],
   isLoaded: false,
   refreshLibrary: () => {},
   saveWorkout: async () => {},
@@ -46,6 +54,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
   const [weeks, setWeeks] = useState<WorkoutWeek[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const { user } = useAuth();
   
@@ -747,6 +756,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
       workouts,
       programs,
       weeks,
+      collections,
       isLoaded,
       refreshLibrary,
       saveWorkout,

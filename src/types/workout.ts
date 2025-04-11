@@ -62,14 +62,13 @@ export interface WorkoutWeek {
 export interface WorkoutProgram {
   id: string;
   name: string;
+  weeks: WorkoutWeek[];
   workouts: Workout[];
-  weeks: WorkoutWeek[]; // Weeks array
-  savedAt?: string; // Timestamp when the program was saved to library
-  lastModified?: string; // Timestamp when the program was last modified
-  isPublic?: boolean; // Adding isPublic property to support public/private programs
-  price?: number; // Price for purchasing this program
-  isPurchasable?: boolean; // Whether this program can be purchased
-  userId?: string; // The creator of this program
+  savedAt?: string;
+  lastModified?: string;
+  isPublic?: boolean;
+  price?: number;
+  isPurchasable?: boolean;
 }
 
 // For backward compatibility
