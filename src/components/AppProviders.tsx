@@ -4,6 +4,7 @@ import { LikedProvider } from '@/contexts/LikedContext';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
 import { LibraryProvider } from '@/contexts/LibraryContext';
 import { ScheduleProvider } from '@/contexts/ScheduleContext';
+import { ClubProvider } from '@/contexts/ClubContext';
 import { AuthProvider } from '@/hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -29,7 +30,9 @@ const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
           <LibraryProvider>
             <WorkoutProvider>
               <ScheduleProvider>
-                {children}
+                <ClubProvider>
+                  {children}
+                </ClubProvider>
               </ScheduleProvider>
             </WorkoutProvider>
           </LibraryProvider>

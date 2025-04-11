@@ -18,6 +18,7 @@ import EditExercise from './pages/EditExercise';
 import AppProviders from './components/AppProviders';
 import { Toaster } from './components/ui/sonner';
 import Index from './pages/Index';
+import Leaderboards from './pages/Leaderboards';
 
 // Add our purchase result pages
 import PurchaseSuccess from './pages/PurchaseSuccess';
@@ -36,6 +37,7 @@ function App() {
             <Route path="library" element={<Library />} />
             <Route path="schedule" element={<AuthenticatedRoute><Schedule /></AuthenticatedRoute>} />
             <Route path="clubs/*" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>} />
+            <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="liked" element={<Liked />} />
             <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />
             <Route path="profile" element={<AuthenticatedRoute><Profile /></AuthenticatedRoute>} />
