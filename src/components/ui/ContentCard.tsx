@@ -38,9 +38,6 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
       }
     : item as ItemType;
   
-  // Debug what price information we have
-  console.log("ContentCard - Item:", normalizedItem);
-  
   const imageUrl = normalizedItem.imageUrl;
   const videoUrl = normalizedItem.videoUrl;
   const tags = normalizedItem.tags || [];
@@ -99,7 +96,7 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
           {isPurchasable && price && price > 0 && (
             <div className="absolute bottom-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <DollarSign className="h-3 w-3 mr-0.5" />
-              {typeof price === 'number' ? price.toFixed(2) : price}
+              {price}
             </div>
           )}
         </div>

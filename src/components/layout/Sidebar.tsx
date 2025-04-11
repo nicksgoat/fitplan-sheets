@@ -1,155 +1,148 @@
-
-import React from "react"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Separator } from "@/components/ui/separator"
-import { Link } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
-import {
-  Home,
-  LayoutDashboard,
-  ListChecks,
-  Settings,
-  User2,
-  Plus,
-  DollarSign
-} from "lucide-react"
-import { useLibrary } from "@/contexts/LibraryContext"
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut, Calendar, Users, Award } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
+  mobileFooter?: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
 }
 
-interface Collection {
-  id: string;
-  name: string;
-}
+const Sidebar = ({ 
+  mobileFooter = false, 
+  collapsed = false,
+  onToggleCollapse
+}: SidebarProps) => {
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
-export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
-  const { user, signOut } = useAuth()
-  const libraryContext = useLibrary()
-  // Safely access collections or provide an empty array
-  const collections = libraryContext && 'collections' in libraryContext ? 
-    (libraryContext.collections as Collection[] || []) : []
-
-  const navigationItems = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      disabled: false
-    },
-    {
-      name: 'Home',
-      href: '/',
-      icon: Home,
-      disabled: false
-    },
-    {
-      name: 'Workout List',
-      href: '/sheets',
-      icon: ListChecks,
-      disabled: false
-    },
-    {
-      name: 'Create New',
-      href: '/new',
-      icon: Plus,
-      disabled: false
-    },
-    {
-      name: 'Sales Dashboard',
-      href: '/sales',
-      icon: DollarSign,
-      disabled: false
-    },
+  const navItems = [
+    { name: 'Home', path: '/explore', icon: <Home className="h-5 w-5" /> },
+    { name: 'Search', path: '/search', icon: <Search className="h-5 w-5" /> },
+    { name: 'My Library', path: '/library', icon: <Library className="h-5 w-5" /> },
+    { name: 'Schedule', path: '/schedule', icon: <Calendar className="h-5 w-5" /> },
+    { name: 'Clubs', path: '/clubs', icon: <Users className="h-5 w-5" /> },
+    { name: 'Leaderboards', path: '/leaderboards', icon: <Award className="h-5 w-5" /> },
+    { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
+    { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (mobileFooter) {
+    return (
+      <div className="flex justify-around items-center h-16 px-2">
+        {navItems.map((item) => (
+          <Link key={item.path} to={item.path} className="flex flex-col items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "rounded-full",
+                location.pathname === item.path ? "text-fitbloom-purple" : "text-gray-400"
+              )}
+            >
+              {item.icon}
+            </Button>
+            <span className="text-xs mt-1">{item.name}</span>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <LayoutDashboard className="h-4 w-4" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="w-full sm:w-60 dark:border-border bg-secondary dark:bg-secondary flex flex-col">
-        <SheetHeader className="text-left">
-          <SheetTitle>Menu</SheetTitle>
-          <SheetDescription>
-            Navigate your account.
-          </SheetDescription>
-        </SheetHeader>
-        <Separator className="my-4" />
-        <div className="flex-1">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="profile">
-              <AccordionTrigger className="data-[state=open]:text-foreground">
-                <div className="flex items-center space-x-2">
-                  <Avatar>
-                    <AvatarImage src={user?.user_metadata?.avatar_url} />
-                    <AvatarFallback>{user?.user_metadata?.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span>{user?.user_metadata?.name}</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid gap-4">
-                  <Link to="/account" className="flex items-center space-x-2">
-                    <User2 className="h-4 w-4" />
-                    <span>Account</span>
-                  </Link>
-                  <Link to="/settings" className="flex items-center space-x-2">
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                  <Button variant="ghost" className="justify-start" onClick={() => signOut()}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span>Sign Out</span>
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          <Separator className="my-4" />
-          <div className="grid gap-2">
-            {navigationItems.map((item) => (
-              <Link to={item.href} key={item.name} className="flex items-center space-x-2">
-                <item.icon className="h-4 w-4" />
-                <span>{item.name}</span>
+    <div className={cn(
+      "bg-black h-full flex flex-col transition-all duration-300",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      <div className={cn(
+        "p-6",
+        collapsed && "p-4 flex justify-center"
+      )}>
+        {!collapsed ? (
+          <h1 className="text-2xl font-bold flex items-center">
+            <span className="text-fitbloom-purple">Fit</span>
+            <span className="text-white">Bloom</span>
+          </h1>
+        ) : (
+          <span className="text-2xl font-bold text-fitbloom-purple">F</span>
+        )}
+      </div>
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <Link to={item.path}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-white hover:bg-gray-900 hover:text-white",
+                    location.pathname === item.path && "bg-gray-900 text-fitbloom-purple font-medium",
+                    collapsed && "justify-center px-2"
+                  )}
+                  title={collapsed ? item.name : undefined}
+                >
+                  {item.icon}
+                  {!collapsed && <span className="ml-3">{item.name}</span>}
+                </Button>
               </Link>
-            ))}
-          </div>
-          {collections && collections.length > 0 && (
-            <>
-              <Separator className="my-4" />
-              <div className="grid gap-2">
-                <h4 className="font-medium">Collections</h4>
-                {collections.map((collection) => (
-                  <Link to={`/collection/${collection.id}`} key={collection.id} className="flex items-center space-x-2">
-                    <span>{collection.name}</span>
-                  </Link>
-                ))}
-              </div>
-            </>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="p-4 border-t border-gray-800 space-y-2">
+        <Link to="/profile">
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "w-full text-white hover:bg-gray-900",
+              collapsed ? "justify-center px-2" : "justify-start"
+            )}
+            title={collapsed ? "Profile" : undefined}
+          >
+            <User className="h-5 w-5" />
+            {!collapsed && <span className="ml-3">Profile</span>}
+          </Button>
+        </Link>
+        
+        <Button 
+          variant="ghost"
+          onClick={handleLogout}
+          className={cn(
+            "w-full text-white hover:bg-gray-900 hover:text-red-400",
+            collapsed ? "justify-center px-2" : "justify-start"
           )}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <LogOut className="h-5 w-5" />
+          {!collapsed && <span className="ml-3">Logout</span>}
+        </Button>
+      </div>
+      {onToggleCollapse && (
+        <div className="p-4 border-t border-gray-800">
+          <Button 
+            variant="ghost" 
+            onClick={onToggleCollapse} 
+            className="w-full justify-center text-gray-400 hover:text-white"
+          >
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
         </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
+      )}
+    </div>
+  );
+};
+
+export default Sidebar;
