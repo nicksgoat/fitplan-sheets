@@ -83,7 +83,22 @@ export function useUserCombineData(): UseUserCombineDataResult {
         }
         
         if (userData) {
-          setUserEstimations(userData as UserCombineEstimation[]);
+          // Explicit type casting with the 'as' keyword
+          const typedData = (userData as any[]).map(item => {
+            return {
+              id: item.id,
+              user_id: item.user_id,
+              drill_name: item.drill_name,
+              estimated_score: item.estimated_score,
+              estimation_type: item.estimation_type,
+              percentile: item.percentile,
+              position_percentile: item.position_percentile,
+              created_at: item.created_at,
+              updated_at: item.updated_at
+            } as UserCombineEstimation;
+          });
+          
+          setUserEstimations(typedData);
         } else {
           setUserEstimations([]);
         }
@@ -118,7 +133,16 @@ export function useUserCombineData(): UseUserCombineDataResult {
       }
       
       if (data) {
-        setNFLAverages(data as NFLAverage[]);
+        // Properly type the returned data
+        const typedData = (data as any[]).map(item => {
+          return {
+            drill_name: item.drill_name,
+            avg_score: item.avg_score,
+            top_score: item.top_score
+          } as NFLAverage;
+        });
+        
+        setNFLAverages(typedData);
       } else {
         setNFLAverages([]);
       }
@@ -143,7 +167,17 @@ export function useUserCombineData(): UseUserCombineDataResult {
       }
       
       if (data) {
-        setRecommendations(data as ExerciseRecommendation[]);
+        // Properly cast the data to our expected type
+        const typedData = (data as any[]).map(item => {
+          return {
+            drill_name: item.drill_name,
+            current_score: item.current_score,
+            percentile: item.percentile,
+            recommended_exercises: item.recommended_exercises || []
+          } as ExerciseRecommendation;
+        });
+        
+        setRecommendations(typedData);
       } else {
         setRecommendations([]);
       }
@@ -169,7 +203,9 @@ export function useUserCombineData(): UseUserCombineDataResult {
       }
       
       if (data && Array.isArray(data) && data.length > 0) {
-        return data[0].percentile;
+        // Properly access the percentile value from the returned data
+        const result = data[0] as any;
+        return result.percentile;
       }
       
       return null;
