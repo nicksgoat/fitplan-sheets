@@ -7,7 +7,7 @@ import Search from './pages/Search';
 import Library from './pages/Library';
 import Profile from './pages/Profile';
 import Sheets from './pages/Sheets';
-import Clubs from './pages/Clubs';
+import ClubsHome from './pages/ClubsHome';
 import Schedule from './pages/Schedule';
 import Liked from './pages/Liked';
 import Auth from './pages/Auth';
@@ -19,6 +19,7 @@ import AppProviders from './components/AppProviders';
 import { Toaster } from './components/ui/sonner';
 import Index from './pages/Index';
 import Leaderboards from './pages/Leaderboards';
+import CreateEvent from './pages/CreateEvent';
 
 // Add our purchase result pages
 import PurchaseSuccess from './pages/PurchaseSuccess';
@@ -36,7 +37,8 @@ function App() {
             <Route path="search" element={<Search />} />
             <Route path="library" element={<Library />} />
             <Route path="schedule" element={<AuthenticatedRoute><Schedule /></AuthenticatedRoute>} />
-            <Route path="clubs/*" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>} />
+            <Route path="clubs" element={<AuthenticatedRoute><ClubsHome /></AuthenticatedRoute>} />
+            <Route path="clubs/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
             <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="liked" element={<Liked />} />
             <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />
