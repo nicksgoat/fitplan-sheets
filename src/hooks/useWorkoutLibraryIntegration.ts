@@ -54,7 +54,7 @@ export const useWorkoutLibraryIntegration = () => {
     return program.weeks.find(w => w.id === activeWeekId) || null;
   }, [program, activeWeekId]);
   
-  const saveCurrentWorkoutToLibrary = useCallback((name?: string) => {
+  const saveCurrentWorkoutToLibrary = useCallback((name?: string, price?: number, isPurchasable?: boolean) => {
     const workout = getActiveWorkout();
     if (!workout) {
       toast.error("No active workout to save");
@@ -68,6 +68,10 @@ export const useWorkoutLibraryIntegration = () => {
     
     // Set the day number
     workoutToSave.day = workout.day;
+    
+    // Add pricing information if provided
+    if (price !== undefined) workoutToSave.price = price;
+    if (isPurchasable !== undefined) workoutToSave.isPurchasable = isPurchasable;
     
     addWorkoutToLibrary(workoutToSave, name);
     toast.success(`Workout "${workoutToSave.name}" saved to library`);
@@ -89,7 +93,7 @@ export const useWorkoutLibraryIntegration = () => {
     toast.success(`Week "${weekToSave.name}" saved to library`);
   }, [getActiveWeek, addWeekToLibrary]);
   
-  const saveCurrentProgramToLibrary = useCallback((name?: string) => {
+  const saveCurrentProgramToLibrary = useCallback((name?: string, price?: number, isPurchasable?: boolean) => {
     if (!program) {
       toast.error("No program to save");
       return;
@@ -100,6 +104,10 @@ export const useWorkoutLibraryIntegration = () => {
       program.workouts,
       program.weeks
     );
+    
+    // Add pricing information if provided
+    if (price !== undefined) programToSave.price = price;
+    if (isPurchasable !== undefined) programToSave.isPurchasable = isPurchasable;
     
     addProgramToLibrary(programToSave, name);
     toast.success(`Program "${programToSave.name}" saved to library`);
@@ -133,39 +141,8 @@ export const useWorkoutLibraryIntegration = () => {
   
   return {
     saveCurrentWorkoutToLibrary,
-    saveCurrentWeekToLibrary: useCallback((name?: string) => {
-      const week = getActiveWeek();
-      if (!week) {
-        toast.error("No active week to save");
-        return;
-      }
-      
-      const weekToSave = createLibraryWeek(
-        name || week.name,
-        week.workouts
-      );
-      
-      addWeekToLibrary(weekToSave, name);
-      toast.success(`Week "${weekToSave.name}" saved to library`);
-    }, [getActiveWeek, addWeekToLibrary]),
-    saveCurrentProgramToLibrary: useCallback((name?: string) => {
-      if (!program) {
-        toast.error("No program to save");
-        return;
-      }
-      
-      const programToSave = createLibraryProgram(
-        name || program.name,
-        program.workouts,
-        program.weeks
-      );
-      
-      addProgramToLibrary(programToSave, name);
-      toast.success(`Program "${programToSave.name}" saved to library`);
-      
-      // Logging to debug if program is being saved correctly
-      console.log("Program saved to library:", programToSave);
-    }, [program, addProgramToLibrary]),
+    saveCurrentWeekToLibrary,
+    saveCurrentProgramToLibrary,
     useDraggableLibraryWorkout,
     ItemTypes,
     libraryWorkouts

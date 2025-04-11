@@ -282,7 +282,10 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
           .from('programs')
           .insert({
             name: 'My Library Program',
-            user_id: user.id
+            user_id: user.id,
+            // Add price and purchasability if defined
+            price: workoutToSave.price,
+            is_purchasable: workoutToSave.isPurchasable
           })
           .select()
           .single();
@@ -308,13 +311,15 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
         // Set the week ID for this workout
         workoutToSave.weekId = weekData.id;
         
-        // Insert workout
+        // Insert workout with pricing fields if they exist
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
           .insert({
             name: workoutToSave.name,
             week_id: weekData.id,
-            day_num: workoutToSave.day || 1
+            day_num: workoutToSave.day || 1,
+            price: workoutToSave.price,
+            is_purchasable: workoutToSave.isPurchasable
           })
           .select()
           .single();
@@ -468,9 +473,113 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
     }
     
     try {
-      // Create or update program
-      // Implementation similar to saveWorkout but for programs
-      // This would be more complex as programs contain weeks and workouts
+      // Create a new program with pricing fields if they exist
+      const { data: programData, error: programError } = await supabase
+        .from('programs')
+        .insert({
+          name: name || program.name,
+          user_id: user.id,
+          is_public: program.isPublic || false,
+          price: program.price,
+          is_purchasable: program.isPurchasable
+        })
+        .select()
+        .single();
+      
+      if (programError) {
+        throw programError;
+      }
+      
+      // Clone all weeks
+      for (const week of program.weeks) {
+        const { data: weekData, error: weekError } = await supabase
+          .from('weeks')
+          .insert({
+            program_id: programData.id,
+            name: week.name,
+            order_num: week.order
+          })
+          .select()
+          .single();
+        
+        if (weekError) {
+          throw weekError;
+        }
+        
+        // Clone all workouts for this week
+        const weekWorkouts = program.workouts.filter(w => {
+          // Find workouts that belong to this week
+          const workoutId = typeof w === 'string' ? w : w.id;
+          return week.workouts.includes(workoutId);
+        });
+        
+        for (const workout of weekWorkouts) {
+          const workoutObj = typeof workout === 'string' 
+            ? program.workouts.find(w => w.id === workout)
+            : workout;
+            
+          if (workoutObj) {
+            const { data: newWorkoutData, error: workoutError } = await supabase
+              .from('workouts')
+              .insert({
+                week_id: weekData.id,
+                name: workoutObj.name,
+                day_num: workoutObj.day || 1,
+                price: workoutObj.price,
+                is_purchasable: workoutObj.isPurchasable
+              })
+              .select()
+              .single();
+            
+            if (workoutError) {
+              throw workoutError;
+            }
+            
+            // Clone exercises and sets
+            for (const exercise of workoutObj.exercises) {
+              const { data: newExerciseData, error: exerciseError } = await supabase
+                .from('exercises')
+                .insert({
+                  workout_id: newWorkoutData.id,
+                  name: exercise.name,
+                  notes: exercise.notes,
+                  is_circuit: exercise.isCircuit,
+                  is_in_circuit: exercise.isInCircuit,
+                  circuit_id: exercise.circuitId,
+                  circuit_order: exercise.circuitOrder,
+                  is_group: exercise.isGroup,
+                  group_id: exercise.groupId,
+                  rep_type: exercise.repType,
+                  intensity_type: exercise.intensityType,
+                  weight_type: exercise.weightType
+                })
+                .select()
+                .single();
+              
+              if (exerciseError) {
+                throw exerciseError;
+              }
+              
+              // Clone all sets
+              for (const set of exercise.sets) {
+                const { error: setError } = await supabase
+                  .from('exercise_sets')
+                  .insert({
+                    exercise_id: newExerciseData.id,
+                    reps: set.reps,
+                    weight: set.weight,
+                    intensity: set.intensity,
+                    intensity_type: set.intensityType,
+                    weight_type: set.weightType,
+                    rest: set.rest
+                  });
+                
+                if (setError) throw setError;
+              }
+            }
+          }
+        }
+      }
       
       toast.success("Program saved to database");
       refreshLibrary();
@@ -573,13 +682,14 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
   
   // Update existing items
   const updateWorkout = async (workout: Workout) => {
-    // Implementation similar to saveWorkout but for updates only
     try {
       const { error } = await supabase
         .from('workouts')
         .update({
           name: workout.name,
-          day_num: workout.day
+          day_num: workout.day,
+          price: workout.price,
+          is_purchasable: workout.isPurchasable
         })
         .eq('id', workout.id);
       
@@ -616,7 +726,10 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
       const { error } = await supabase
         .from('programs')
         .update({
-          name: program.name
+          name: program.name,
+          is_public: program.isPublic || false,
+          price: program.price,
+          is_purchasable: program.isPurchasable
         })
         .eq('id', program.id);
       
