@@ -1,4 +1,3 @@
-
 export type ExerciseCategory = 
   | "barbell"
   | "dumbbell" 
@@ -45,6 +44,9 @@ export interface Exercise {
   difficulty?: Difficulty;
   duration?: string;
   creator?: string;
+  // Monetization properties
+  price?: number;
+  isPurchasable?: boolean;
 }
 
 // Helper type for workout integration
