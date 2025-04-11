@@ -20,6 +20,10 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   const { user } = useAuth();
   const { initiateCheckout, loading } = useStripeCheckout();
   
+  // Log the pricing information we receive
+  console.log("WorkoutDetail - item:", item);
+  console.log("WorkoutDetail - workoutData:", workoutData);
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown";
     try {
@@ -34,7 +38,12 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
     return acc + (exercise.sets?.length || 0);
   }, 0) || 0;
 
-  const hasPrice = item.isPurchasable && item.price && item.price > 0;
+  // Check if this workout has a price (from either source)
+  const price = item.price || (workoutData?.price !== undefined ? workoutData.price : undefined);
+  const isPurchasable = item.isPurchasable || (workoutData?.isPurchasable !== undefined ? workoutData.isPurchasable : false);
+  
+  const hasPrice = isPurchasable && price && price > 0;
+  console.log("WorkoutDetail - hasPrice:", hasPrice, "price:", price, "isPurchasable:", isPurchasable);
   
   const handlePurchase = () => {
     if (!hasPrice || !user) return;
@@ -43,7 +52,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
       itemType: 'workout',
       itemId: item.id,
       itemName: item.title,
-      price: parseFloat(item.price.toString()),
+      price: parseFloat(price.toString()),
       creatorId: '' // Since Workout type doesn't have userId, we'll pass an empty string as fallback
     });
   };
@@ -60,7 +69,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
         {hasPrice && (
           <div className="flex items-center mt-2 text-lg font-semibold text-green-500">
             <DollarSign className="h-5 w-5 mr-1" />
-            ${Number(item.price).toFixed(2)}
+            ${Number(price).toFixed(2)}
           </div>
         )}
         <DrawerDescription className="mt-2">
@@ -89,7 +98,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
         </div>
 
         {hasPrice && (
-          <Badge className="bg-green-600 mb-4">Available for purchase - ${Number(item.price).toFixed(2)}</Badge>
+          <Badge className="bg-green-600 mb-4">Available for purchase - ${Number(price).toFixed(2)}</Badge>
         )}
 
         <div className="my-4">
@@ -129,7 +138,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
               onClick={handlePurchase}
               disabled={loading || !user}
             >
-              {loading ? 'Processing...' : `Buy for $${Number(item.price).toFixed(2)}`}
+              {loading ? 'Processing...' : `Buy for $${Number(price).toFixed(2)}`}
             </Button>
           )}
         </div>

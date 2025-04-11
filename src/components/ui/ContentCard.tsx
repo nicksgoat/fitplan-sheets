@@ -38,6 +38,9 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
       }
     : item as ItemType;
   
+  // Debug what price information we have
+  console.log("ContentCard - Item:", normalizedItem);
+  
   const imageUrl = normalizedItem.imageUrl;
   const videoUrl = normalizedItem.videoUrl;
   const tags = normalizedItem.tags || [];

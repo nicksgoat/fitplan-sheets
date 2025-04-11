@@ -25,6 +25,20 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
     ? programs.find(program => program.id === item.id)
     : undefined;
 
+  // Make sure we're properly capturing price and purchasable status
+  console.log("Item data in DetailDrawer:", item);
+  console.log("Workout data found:", workoutData);
+  
+  // Create a properly enhanced item with price information
+  const enhancedItem = {
+    ...item,
+    price: item.price || (workoutData?.price !== undefined ? workoutData.price : undefined),
+    isPurchasable: item.isPurchasable !== undefined ? item.isPurchasable : 
+                   (workoutData?.isPurchasable !== undefined ? workoutData.isPurchasable : false)
+  };
+  
+  console.log("Enhanced item with price:", enhancedItem);
+
   const handleClose = () => {
     setOpen(false);
   };
@@ -41,17 +55,11 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
         {item.type === 'workout' && (
-          <WorkoutDetail item={{
-            ...item,
-            // Ensure price and purchasable status are properly passed
-            price: item.price || workoutData?.price,
-            isPurchasable: item.isPurchasable || workoutData?.isPurchasable
-          }} workoutData={workoutData} onClose={handleClose} />
+          <WorkoutDetail item={enhancedItem} workoutData={workoutData} onClose={handleClose} />
         )}
         {item.type === 'program' && (
           <ProgramDetail item={{
             ...item,
-            // Ensure price and purchasable status are properly passed
             price: item.price || programData?.price,
             isPurchasable: item.isPurchasable || programData?.isPurchasable
           }} programData={programData} onClose={handleClose} />
