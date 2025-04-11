@@ -1,7 +1,7 @@
 
-import { Exercise, Set, WorkoutProgram, Workout, WorkoutWeek, Circuit } from "@/types/workout";
+import { Workout, WorkoutWeek, Exercise, Set, Circuit } from '@/types/workout';
 
-// Function to convert database snake_case to camelCase types
+// Map database workout to model
 export function mapDbWorkoutToModel(dbWorkout: any): Workout {
   return {
     id: dbWorkout.id,
@@ -9,28 +9,45 @@ export function mapDbWorkoutToModel(dbWorkout: any): Workout {
     day: dbWorkout.day_num,
     weekId: dbWorkout.week_id,
     exercises: [],
-    circuits: []
+    circuits: [],
+    savedAt: dbWorkout.created_at,
+    lastModified: dbWorkout.updated_at
   };
 }
 
+// Map database week to model
+export function mapDbWeekToModel(dbWeek: any): WorkoutWeek {
+  return {
+    id: dbWeek.id,
+    name: dbWeek.name,
+    order: dbWeek.order_num,
+    workouts: [],
+    savedAt: dbWeek.created_at,
+    lastModified: dbWeek.updated_at
+  };
+}
+
+// Map database exercise to model
 export function mapDbExerciseToModel(dbExercise: any): Exercise {
   return {
     id: dbExercise.id,
     name: dbExercise.name,
-    notes: dbExercise.notes || '',
     sets: [],
+    notes: dbExercise.notes || '',
+    isCircuit: dbExercise.is_circuit || false,
+    isInCircuit: dbExercise.is_in_circuit || false,
+    circuitId: dbExercise.circuit_id,
+    circuitOrder: dbExercise.circuit_order,
+    isGroup: dbExercise.is_group || false,
+    groupId: dbExercise.group_id,
     repType: dbExercise.rep_type,
     intensityType: dbExercise.intensity_type,
     weightType: dbExercise.weight_type,
-    isCircuit: dbExercise.is_circuit,
-    isInCircuit: dbExercise.is_in_circuit,
-    circuitId: dbExercise.circuit_id,
-    circuitOrder: dbExercise.circuit_order,
-    isGroup: dbExercise.is_group,
-    groupId: dbExercise.group_id
+    libraryExerciseId: dbExercise.library_exercise_id
   };
 }
 
+// Map database set to model
 export function mapDbSetToModel(dbSet: any): Set {
   return {
     id: dbSet.id,
@@ -43,6 +60,7 @@ export function mapDbSetToModel(dbSet: any): Set {
   };
 }
 
+// Map database circuit to model
 export function mapDbCircuitToModel(dbCircuit: any): Circuit {
   return {
     id: dbCircuit.id,
@@ -51,14 +69,5 @@ export function mapDbCircuitToModel(dbCircuit: any): Circuit {
     rounds: dbCircuit.rounds,
     restBetweenExercises: dbCircuit.rest_between_exercises,
     restBetweenRounds: dbCircuit.rest_between_rounds
-  };
-}
-
-export function mapDbWeekToModel(dbWeek: any): WorkoutWeek {
-  return {
-    id: dbWeek.id,
-    name: dbWeek.name,
-    order: dbWeek.order_num,
-    workouts: []
   };
 }

@@ -1170,6 +1170,149 @@ export type Database = {
           },
         ]
       }
+      standalone_exercise_sets: {
+        Row: {
+          created_at: string | null
+          id: string
+          reps: string
+          rest_time: number | null
+          set_number: number
+          updated_at: string | null
+          weight: string | null
+          workout_exercise_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reps: string
+          rest_time?: number | null
+          set_number: number
+          updated_at?: string | null
+          weight?: string | null
+          workout_exercise_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reps?: string
+          rest_time?: number | null
+          set_number?: number
+          updated_at?: string | null
+          weight?: string | null
+          workout_exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_exercise_sets_workout_exercise_id_fkey"
+            columns: ["workout_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_workout_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_workout_exercises: {
+        Row: {
+          created_at: string | null
+          exercise_id: string
+          exercise_order: number
+          id: string
+          notes: string | null
+          updated_at: string | null
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id: string
+          exercise_order: number
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          workout_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: string
+          exercise_order?: number
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_workout_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_workout_exercises_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_workouts: {
+        Row: {
+          category: string
+          comments: number | null
+          created_at: string
+          creator: Json | null
+          description: string | null
+          difficulty: string
+          duration: number
+          id: string
+          image_url: string | null
+          is_custom: boolean | null
+          likes: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          comments?: number | null
+          created_at?: string
+          creator?: Json | null
+          description?: string | null
+          difficulty: string
+          duration: number
+          id?: string
+          image_url?: string | null
+          is_custom?: boolean | null
+          likes?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          comments?: number | null
+          created_at?: string
+          creator?: Json | null
+          description?: string | null
+          difficulty?: string
+          duration?: number
+          id?: string
+          image_url?: string | null
+          is_custom?: boolean | null
+          likes?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       user_combine_estimations: {
         Row: {
           created_at: string

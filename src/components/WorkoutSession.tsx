@@ -9,15 +9,20 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useLibrary } from "@/contexts/LibraryContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WorkoutSessionProps {
   sessionId: string;
 }
 
 const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
-  const { program, saveWorkoutToLibrary } = useWorkout();
+  const { program } = useWorkout();
+  const { saveWorkout } = useLibrary();
+  const { user } = useAuth();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [workoutName, setWorkoutName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   
   if (!program || !program.workouts) return null;
   
@@ -26,20 +31,34 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
   if (!session) return null;
   
   const handleSaveToLibrary = () => {
+    if (!user) {
+      toast.error("Please sign in to save workouts to your library");
+      return;
+    }
+    
     // Set initial name from current workout
     setWorkoutName(session.name);
     setSaveDialogOpen(true);
   };
   
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     if (!workoutName.trim()) {
       toast.error("Please enter a name for your workout");
       return;
     }
     
-    saveWorkoutToLibrary(sessionId, workoutName);
-    toast.success("Workout saved to library");
-    setSaveDialogOpen(false);
+    setIsSaving(true);
+    
+    try {
+      await saveWorkout(session, workoutName);
+      toast.success("Workout saved to database library");
+    } catch (error) {
+      console.error("Error saving workout:", error);
+      toast.error("Failed to save workout to library");
+    } finally {
+      setIsSaving(false);
+      setSaveDialogOpen(false);
+    }
   };
   
   return (
@@ -51,6 +70,7 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
           size="sm" 
           className="text-gray-300 border-gray-600 hover:bg-dark-300"
           onClick={handleSaveToLibrary}
+          disabled={!user}
         >
           <BookmarkPlus className="h-4 w-4 mr-2" />
           Save to Library
@@ -77,14 +97,19 @@ const WorkoutSession: React.FC<WorkoutSessionProps> = ({ sessionId }) => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setSaveDialogOpen(false)}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
             <Button 
               className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
               onClick={handleConfirmSave}
+              disabled={isSaving}
             >
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
