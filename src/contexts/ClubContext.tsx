@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -370,7 +369,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
-        // Create a properly typed EventParticipant with all required fields
         const participant: EventParticipant = {
           ...data,
           id: data.id,
@@ -379,7 +377,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: data.status as EventParticipationStatus,
           created_at: data.joined_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          profile: data.profile
+          profile: null
         };
         
         return participant;
@@ -396,7 +394,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
-        // Create a properly typed EventParticipant with all required fields
         const participant: EventParticipant = {
           ...data,
           id: data.id,
@@ -405,7 +402,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: data.status as EventParticipationStatus,
           created_at: data.joined_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          profile: data.profile
+          profile: null
         };
         
         return participant;
@@ -514,7 +511,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // Ensure the role is properly cast to MemberRole
       return {
         ...data,
         role: data.role as MemberRole,
@@ -630,7 +626,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Explicitly cast the product_type to ProductType to fix the type error
       const typedProducts = (data || []).map(product => ({
         ...product,
         product_type: product.product_type as ProductType
@@ -738,3 +733,5 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </ClubContext.Provider>
   );
 };
+
+export default ClubProvider;
