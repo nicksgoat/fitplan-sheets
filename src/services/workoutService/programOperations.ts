@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { WorkoutProgram } from "@/types/workout";
+import { DbProgram, DbWeek, DbWorkout, DbExercise, DbSet, DbCircuit } from '@/types/supabase';
 import { mapDbWorkoutToModel, mapDbWeekToModel, mapDbExerciseToModel, mapDbSetToModel, mapDbCircuitToModel } from './mappers';
 
 export async function getPrograms() {
@@ -22,6 +23,8 @@ export async function getProgram(programId: string): Promise<WorkoutProgram> {
   
   if (programError) throw programError;
   
+  const program = programData as DbProgram;
+  
   // Fetch the weeks
   const { data: weeksData, error: weeksError } = await supabase
     .from('weeks')
@@ -31,7 +34,7 @@ export async function getProgram(programId: string): Promise<WorkoutProgram> {
   
   if (weeksError) throw weeksError;
   
-  const weeks = weeksData.map(mapDbWeekToModel);
+  const weeks = (weeksData as DbWeek[]).map(mapDbWeekToModel);
   
   // For each week, fetch the workouts
   for (const week of weeks) {
@@ -113,11 +116,11 @@ export async function getProgram(programId: string): Promise<WorkoutProgram> {
   }
   
   return {
-    id: programData.id,
-    name: programData.name,
+    id: program.id,
+    name: program.name,
     weeks,
     workouts,
-    isPublic: programData.is_public || false
+    isPublic: program.is_public || false
   };
 }
 
@@ -234,7 +237,7 @@ export async function getPublicPrograms() {
 }
 
 export async function cloneProgram(programId: string) {
-  // First get the user
+  // Get the user
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {

@@ -1,8 +1,9 @@
 
 import { Workout, WorkoutWeek, Exercise, Set, Circuit } from '@/types/workout';
+import { DbWorkout, DbWeek, DbExercise, DbSet, DbCircuit } from '@/types/supabase';
 
 // Map database workout to model
-export function mapDbWorkoutToModel(dbWorkout: any): Workout {
+export function mapDbWorkoutToModel(dbWorkout: DbWorkout): Workout {
   return {
     id: dbWorkout.id,
     name: dbWorkout.name,
@@ -16,7 +17,7 @@ export function mapDbWorkoutToModel(dbWorkout: any): Workout {
 }
 
 // Map database week to model
-export function mapDbWeekToModel(dbWeek: any): WorkoutWeek {
+export function mapDbWeekToModel(dbWeek: DbWeek): WorkoutWeek {
   return {
     id: dbWeek.id,
     name: dbWeek.name,
@@ -28,7 +29,7 @@ export function mapDbWeekToModel(dbWeek: any): WorkoutWeek {
 }
 
 // Map database exercise to model
-export function mapDbExerciseToModel(dbExercise: any): Exercise {
+export function mapDbExerciseToModel(dbExercise: DbExercise): Exercise {
   return {
     id: dbExercise.id,
     name: dbExercise.name,
@@ -40,28 +41,28 @@ export function mapDbExerciseToModel(dbExercise: any): Exercise {
     circuitOrder: dbExercise.circuit_order,
     isGroup: dbExercise.is_group || false,
     groupId: dbExercise.group_id,
-    repType: dbExercise.rep_type,
-    intensityType: dbExercise.intensity_type,
-    weightType: dbExercise.weight_type,
+    repType: dbExercise.rep_type as any,
+    intensityType: dbExercise.intensity_type as any,
+    weightType: dbExercise.weight_type as any,
     libraryExerciseId: dbExercise.library_exercise_id
   };
 }
 
 // Map database set to model
-export function mapDbSetToModel(dbSet: any): Set {
+export function mapDbSetToModel(dbSet: DbSet): Set {
   return {
     id: dbSet.id,
     reps: dbSet.reps || '',
     weight: dbSet.weight || '',
     intensity: dbSet.intensity || '',
-    intensityType: dbSet.intensity_type,
-    weightType: dbSet.weight_type,
+    intensityType: dbSet.intensity_type as any,
+    weightType: dbSet.weight_type as any,
     rest: dbSet.rest || ''
   };
 }
 
 // Map database circuit to model
-export function mapDbCircuitToModel(dbCircuit: any): Circuit {
+export function mapDbCircuitToModel(dbCircuit: DbCircuit): Circuit {
   return {
     id: dbCircuit.id,
     name: dbCircuit.name,

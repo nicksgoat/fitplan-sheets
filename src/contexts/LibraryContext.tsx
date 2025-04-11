@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutProgram, WorkoutWeek } from '@/types/workout';
+import { DbProgram, DbWeek, DbWorkout, DbExercise, DbSet, DbCircuit } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -70,7 +71,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
       }
       
       // Fetch all related data for each program
-      const fullPrograms: WorkoutProgram[] = await Promise.all(programsData.map(async (program) => {
+      const fullPrograms: WorkoutProgram[] = await Promise.all((programsData as DbProgram[]).map(async (program) => {
         // Get weeks for this program
         const { data: weeksData, error: weeksError } = await supabase
           .from('weeks')
@@ -91,7 +92,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
         }
         
         // Map database weeks to application model
-        const weeks = weeksData.map(dbWeek => ({
+        const weeks = (weeksData as DbWeek[]).map(dbWeek => ({
           id: dbWeek.id,
           name: dbWeek.name,
           order: dbWeek.order_num,
@@ -103,7 +104,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
         // Get workouts for each week
         const workouts: Workout[] = [];
         
-        for (const week of weeksData) {
+        for (const week of weeksData as DbWeek[]) {
           const { data: workoutsData, error: workoutsError } = await supabase
             .from('workouts')
             .select('*')
