@@ -17,6 +17,8 @@ import SalesDashboard from './pages/SalesDashboard';
 import Leaderboards from './pages/Leaderboards';
 import MainLayout from './components/layout/MainLayout';
 import Index from './pages/Index';
+import Explore from './pages/Explore';
+import NotFound from './pages/NotFound';
 
 const router = createBrowserRouter([
   // Auth route without MainLayout
@@ -47,6 +49,10 @@ const router = createBrowserRouter([
         element: <Index />,
       },
       {
+        path: "/explore",
+        element: <Explore />,
+      },
+      {
         path: "/library",
         element: <Library />,
       },
@@ -69,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: "/leaderboards",
         element: <Leaderboards />
+      },
+      {
+        path: "*",
+        element: <NotFound />
       },
     ]
   },
