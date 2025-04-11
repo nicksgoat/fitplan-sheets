@@ -9,6 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Calendar as CalendarIcon, Download, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
+interface PurchaseData {
+  purchase_type: string;
+  product_id: string;
+  product_name: string;
+  purchase_date: string;
+  amount_paid: number;
+  platform_fee: number;
+  creator_earnings: number;
+  status: string;
+  customer_username?: string;
+  customer_name?: string;
+  customer_avatar?: string;
+}
+
 export default function PurchaseHistory() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
@@ -65,7 +79,7 @@ export default function PurchaseHistory() {
         `
       });
       
-      return data || [];
+      return (data || []) as PurchaseData[];
     },
     enabled: !!user
   });

@@ -40,7 +40,7 @@ export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const { user, signOut } = useAuth()
   const libraryContext = useLibrary()
   // Safely access collections or provide an empty array
-  const collections = libraryContext?.collections || []
+  const collections = libraryContext && 'collections' in libraryContext ? libraryContext.collections || [] : []
 
   const navigationItems = [
     {
