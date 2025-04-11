@@ -1525,6 +1525,17 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      create_event: {
+        Args: {
+          p_club_id: string
+          p_name: string
+          p_description: string
+          p_start_time: string
+          p_end_time: string
+          p_created_by: string
+        }
+        Returns: string
+      }
       create_user_profile: {
         Args: {
           user_id: string

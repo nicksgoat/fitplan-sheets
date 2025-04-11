@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, Star } from 'lucide-react';
+import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface NFLCombineResult {
   id: number;
@@ -47,20 +47,38 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
   sortMetric
 }) => {
   // Helper to determine if user beats the NFL player's score
-  const userBeatsStat = (player: NFLCombineResult, metric: string): boolean => {
-    if (!userEstimation || userEstimation.drill_name !== metric) return false;
+  const userBeatsStat = (player: NFLCombineResult): boolean => {
+    if (!userEstimation || userEstimation.drill_name !== sortMetric) return false;
     
     const userScore = parseFloat(userEstimation.estimated_score);
-    const playerScore = parseFloat(player[metric as keyof NFLCombineResult] as string);
+    const playerScore = parseFloat(player[sortMetric as keyof NFLCombineResult] as string);
     
     if (isNaN(userScore) || isNaN(playerScore)) return false;
     
     // For 40yd, 3Cone, Shuttle - lower is better; for others higher is better
-    if (['40yd', '3Cone', 'Shuttle'].includes(metric)) {
+    if (['40yd', '3Cone', 'Shuttle'].includes(sortMetric)) {
       return userScore < playerScore;
     } else {
       return userScore > playerScore;
     }
+  };
+
+  // Get display name for the current metric
+  const getMetricDisplayName = (metric: string): string => {
+    switch (metric) {
+      case '40yd': return '40-Yard Dash (seconds)';
+      case 'Vertical': return 'Vertical Jump (inches)';
+      case 'Bench': return 'Bench Press (reps)';
+      case 'Broad Jump': return 'Broad Jump (inches)';
+      case '3Cone': return '3-Cone Drill (seconds)';
+      case 'Shuttle': return 'Shuttle (seconds)';
+      default: return metric;
+    }
+  };
+
+  // Determine if lower values are better for this metric
+  const isLowerBetter = (metric: string): boolean => {
+    return ['40yd', '3Cone', 'Shuttle'].includes(metric);
   };
 
   return (
@@ -68,74 +86,47 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
       <Table>
         <TableHeader className="bg-gray-900 sticky top-0">
           <TableRow className="border-b border-gray-800">
+            <TableHead className="whitespace-nowrap">Rank</TableHead>
             <TableHead className="whitespace-nowrap">Player</TableHead>
             <TableHead className="text-center whitespace-nowrap">Position</TableHead>
             <TableHead className="whitespace-nowrap">School</TableHead>
             <TableHead className="text-center whitespace-nowrap">
               <div className="flex items-center justify-center gap-1">
-                40-Yard
-                {sortMetric === '40yd' && <ArrowUpDown className="h-3 w-3" />}
+                {getMetricDisplayName(sortMetric)}
+                <ArrowUpDown className="h-3 w-3" />
               </div>
             </TableHead>
-            <TableHead className="text-center whitespace-nowrap">
-              <div className="flex items-center justify-center gap-1">
-                Vertical
-                {sortMetric === 'Vertical' && <ArrowUpDown className="h-3 w-3" />}
-              </div>
-            </TableHead>
-            <TableHead className="text-center whitespace-nowrap">
-              <div className="flex items-center justify-center gap-1">
-                Bench
-                {sortMetric === 'Bench' && <ArrowUpDown className="h-3 w-3" />}
-              </div>
-            </TableHead>
-            <TableHead className="text-center whitespace-nowrap">
-              <div className="flex items-center justify-center gap-1">
-                Broad Jump
-                {sortMetric === 'Broad Jump' && <ArrowUpDown className="h-3 w-3" />}
-              </div>
-            </TableHead>
-            <TableHead className="text-center whitespace-nowrap">
-              <div className="flex items-center justify-center gap-1">
-                3-Cone
-                {sortMetric === '3Cone' && <ArrowUpDown className="h-3 w-3" />}
-              </div>
-            </TableHead>
-            <TableHead className="text-center whitespace-nowrap">
-              <div className="flex items-center justify-center gap-1">
-                Shuttle
-                {sortMetric === 'Shuttle' && <ArrowUpDown className="h-3 w-3" />}
-              </div>
-            </TableHead>
-            <TableHead className="whitespace-nowrap">Drafted By</TableHead>
-            <TableHead className="text-center whitespace-nowrap">Year</TableHead>
+            <TableHead className="text-center whitespace-nowrap">Draft Year</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={6} className="h-24 text-center">
                 Loading combine data...
               </TableCell>
             </TableRow>
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center text-red-400">
+              <TableCell colSpan={6} className="h-24 text-center text-red-400">
                 {error}. Please try adjusting filters or try again later.
               </TableCell>
             </TableRow>
           ) : combineData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={6} className="h-24 text-center">
                 No combine data found. Try adjusting filters or selecting a different sort metric.
               </TableCell>
             </TableRow>
           ) : (
-            combineData.map((player) => (
+            combineData.map((player, index) => (
               <TableRow 
                 key={player.id} 
-                className="border-b border-gray-800 hover:bg-gray-900/50 even:bg-gray-900/20"
+                className={`border-b border-gray-800 hover:bg-gray-900/50 even:bg-gray-900/20 ${userBeatsStat(player) ? 'bg-green-900/10' : ''}`}
               >
+                <TableCell className="font-medium text-center">
+                  {index + 1}
+                </TableCell>
                 <TableCell className="font-medium">{player.Player || '-'}</TableCell>
                 <TableCell className="text-center">
                   <Badge variant="outline" className="bg-gray-800 text-gray-300">
@@ -143,43 +134,22 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
                   </Badge>
                 </TableCell>
                 <TableCell>{player.School || '-'}</TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, '40yd') ? 'text-green-400' : ''}`}>
+                <TableCell className={`text-center font-semibold ${userBeatsStat(player) ? 'text-green-400' : ''}`}>
                   <div className="flex items-center justify-center">
-                    {userBeatsStat(player, '40yd') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player["40yd"] || '-'}
+                    {userBeatsStat(player) && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
+                    <span className="text-lg">{player[sortMetric as keyof NFLCombineResult] || '-'}</span>
+                    
+                    {/* Show trend icon for first 5 places */}
+                    {index < 5 && (
+                      isLowerBetter(sortMetric) 
+                        ? <TrendingDown className="h-3 w-3 ml-1 text-green-500" /> 
+                        : <TrendingUp className="h-3 w-3 ml-1 text-green-500" />
+                    )}
+                    
+                    {/* Show trophy for first place */}
+                    {index === 0 && <Trophy className="h-3 w-3 ml-1 text-yellow-500" />}
                   </div>
                 </TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, 'Vertical') ? 'text-green-400' : ''}`}>
-                  <div className="flex items-center justify-center">
-                    {userBeatsStat(player, 'Vertical') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player.Vertical || '-'}
-                  </div>
-                </TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, 'Bench') ? 'text-green-400' : ''}`}>
-                  <div className="flex items-center justify-center">
-                    {userBeatsStat(player, 'Bench') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player.Bench || '-'}
-                  </div>
-                </TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, 'Broad Jump') ? 'text-green-400' : ''}`}>
-                  <div className="flex items-center justify-center">
-                    {userBeatsStat(player, 'Broad Jump') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player["Broad Jump"] || '-'}
-                  </div>
-                </TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, '3Cone') ? 'text-green-400' : ''}`}>
-                  <div className="flex items-center justify-center">
-                    {userBeatsStat(player, '3Cone') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player["3Cone"] || '-'}
-                  </div>
-                </TableCell>
-                <TableCell className={`text-center ${userBeatsStat(player, 'Shuttle') ? 'text-green-400' : ''}`}>
-                  <div className="flex items-center justify-center">
-                    {userBeatsStat(player, 'Shuttle') && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    {player.Shuttle || '-'}
-                  </div>
-                </TableCell>
-                <TableCell>{player.Draft_Team || '-'}</TableCell>
                 <TableCell className="text-center">{player.Draft_Year || '-'}</TableCell>
               </TableRow>
             ))

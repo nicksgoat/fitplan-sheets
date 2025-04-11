@@ -6,7 +6,7 @@ import LeaderboardTab from '@/components/leaderboard/LeaderboardTab';
 import UserCombineComparison from '@/components/leaderboard/UserCombineComparison';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CircleDashed, Database } from 'lucide-react';
+import { CircleDashed, Database, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -49,8 +49,11 @@ const Leaderboards = () => {
       <div className="flex flex-col gap-6 p-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Leaderboards</h1>
-            <p className="text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Award className="h-6 w-6 text-fitbloom-purple" />
+              <h1 className="text-2xl font-bold">Performance Stats</h1>
+            </div>
+            <p className="text-muted-foreground mt-2">
               Compare yourself with athletes and see where you rank
             </p>
           </div>
@@ -78,10 +81,10 @@ const Leaderboards = () => {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-4 md:w-[500px]">
-            <TabsTrigger value="nfl-combine">NFL Combine</TabsTrigger>
-            <TabsTrigger value="your-combine">Your Stats</TabsTrigger>
-            <TabsTrigger value="local">Local</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="nfl-combine" data-value="nfl-combine">NFL Combine</TabsTrigger>
+            <TabsTrigger value="your-combine" data-value="your-combine">Your Stats</TabsTrigger>
+            <TabsTrigger value="local" data-value="local">Local</TabsTrigger>
+            <TabsTrigger value="friends" data-value="friends">Friends</TabsTrigger>
           </TabsList>
           
           <TabsContent value="nfl-combine" className="mt-6">

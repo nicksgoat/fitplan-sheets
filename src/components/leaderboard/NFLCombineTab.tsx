@@ -8,8 +8,9 @@ import { useUserCombineData } from '@/hooks/useUserCombineData';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, Info, Trophy, Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 const NFLCombineTab: React.FC = () => {
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
@@ -102,8 +103,56 @@ const NFLCombineTab: React.FC = () => {
     }
   };
 
+  // Display name for the current metric
+  const getMetricDisplayName = (metric: string): string => {
+    switch (metric) {
+      case '40yd': return '40-Yard Dash';
+      case 'Vertical': return 'Vertical Jump';
+      case 'Bench': return 'Bench Press';
+      case 'Broad Jump': return 'Broad Jump';
+      case '3Cone': return '3-Cone Drill';
+      case 'Shuttle': return 'Shuttle';
+      default: return metric;
+    }
+  };
+
+  // Determine if a lower value is better for this metric
+  const isLowerValueBetter = (metric: string): boolean => {
+    return ['40yd', '3Cone', 'Shuttle'].includes(metric);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Selected Metric Card */}
+      <Card className="p-4 bg-gray-900/50 border border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-fitbloom-purple" />
+            <h2 className="text-lg font-semibold">
+              {getMetricDisplayName(sortMetric)}
+            </h2>
+          </div>
+          
+          {nflAverage && (
+            <Badge variant="outline" className="font-mono">
+              NFL Avg: {nflAverage.avg_score}
+              {isLowerValueBetter(sortMetric) ? ' (lower is better)' : ' (higher is better)'}
+            </Badge>
+          )}
+        </div>
+        
+        <Separator className="my-3" />
+        
+        <p className="text-sm text-gray-300">
+          {sortMetric === '40yd' && 'The 40-yard dash measures a player's straight-line speed. Lower times indicate faster players.'}
+          {sortMetric === 'Vertical' && 'The vertical jump measures a player's lower-body explosiveness and leaping ability.'}
+          {sortMetric === 'Bench' && 'The bench press (225 lbs) tests upper body strength and endurance.'}
+          {sortMetric === 'Broad Jump' && 'The broad jump measures a player's lower-body explosiveness and horizontal power.'}
+          {sortMetric === '3Cone' && 'The 3-cone drill tests a player's ability to change directions at high speeds.'}
+          {sortMetric === 'Shuttle' && 'The shuttle run measures short-area quickness, acceleration and lateral movement.'}
+        </p>
+      </Card>
+
       {/* Filters */}
       <CombineFilters 
         positions={positions}
