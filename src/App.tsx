@@ -19,6 +19,9 @@ import MainLayout from './components/layout/MainLayout';
 import Index from './pages/Index';
 import Explore from './pages/Explore';
 import NotFound from './pages/NotFound';
+import Search from './pages/Search';
+import Schedule from './pages/Schedule';
+import Liked from './pages/Liked';
 
 const router = createBrowserRouter([
   // Auth route without MainLayout
@@ -53,8 +56,16 @@ const router = createBrowserRouter([
         element: <Explore />,
       },
       {
+        path: "/search",
+        element: <Search />,
+      },
+      {
         path: "/library",
         element: <Library />,
+      },
+      {
+        path: "/schedule",
+        element: <Schedule />,
       },
       {
         path: "/sheets",
@@ -63,6 +74,10 @@ const router = createBrowserRouter([
       {
         path: "/clubs",
         element: <Clubs />,
+      },
+      {
+        path: "/liked",
+        element: <Liked />,
       },
       {
         path: "/profile",
