@@ -27,7 +27,7 @@ interface UseUserCombineDataResult {
   loading: boolean;
   error: string | null;
   fetchUserEstimations: () => Promise<void>;
-  calculatePercentile: (userScore: string, drill: string, position?: string) => number | null;
+  calculatePercentile: (userScore: string, drill: string, position?: string) => Promise<number | null>;
 }
 
 export function useUserCombineData(): UseUserCombineDataResult {
@@ -48,7 +48,7 @@ export function useUserCombineData(): UseUserCombineDataResult {
     setError(null);
     
     try {
-      // Generate placeholder data for the current user to ensure they have some data
+      // Generate combine data for the current user using our new function
       if (user.id) {
         // Use run_sql_query instead of direct RPC call as a workaround for TypeScript errors
         await supabase.rpc('run_sql_query', {
@@ -82,7 +82,18 @@ export function useUserCombineData(): UseUserCombineDataResult {
             updated_at: row.updated_at
           } as UserCombineEstimation;
         });
-        setUserEstimations(parsedData);
+        
+        // For each estimation, calculate the percentile if it's not already set
+        const estimationsWithPercentiles = await Promise.all(
+          parsedData.map(async (est) => {
+            if (est.percentile === undefined) {
+              est.percentile = await calculatePercentile(est.estimated_score, est.drill_name);
+            }
+            return est;
+          })
+        );
+        
+        setUserEstimations(estimationsWithPercentiles);
       } else {
         setUserEstimations([]);
       }
@@ -188,15 +199,28 @@ export function useUserCombineData(): UseUserCombineDataResult {
     }
   };
 
-  // Function to calculate percentile for a given score
-  const calculatePercentile = (userScore: string, drill: string, position?: string): number | null => {
+  // Function to calculate percentile for a given score using our new database function
+  const calculatePercentile = async (userScore: string, drill: string, position?: string): Promise<number | null> => {
     try {
       const score = parseFloat(userScore);
       if (isNaN(score)) return null;
       
-      // This is a placeholder implementation
-      // In a real implementation, you would compare to actual NFL data
-      // For now, we'll return a random percentile between 30 and 95
+      // Use our new database function for accurate percentile calculation
+      const { data, error } = await supabase.rpc('run_sql_query', {
+        query: `SELECT * FROM calculate_combine_percentiles('${userScore}', '${drill}'${position ? `, '${position}'` : ''})`
+      });
+      
+      if (error) {
+        console.error('Error calculating percentile:', error);
+        return null;
+      }
+      
+      if (data && Array.isArray(data) && data.length > 0) {
+        const result = typeof data[0] === 'string' ? JSON.parse(data[0]) : data[0];
+        return result.percentile;
+      }
+      
+      // Fallback to a random percentile between 30 and 95 if the function fails
       return Math.floor(Math.random() * (95 - 30 + 1)) + 30;
     } catch (err) {
       console.error('Error calculating percentile:', err);

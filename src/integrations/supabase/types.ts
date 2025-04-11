@@ -615,6 +615,39 @@ export type Database = {
         }
         Relationships: []
       }
+      combine_correlations: {
+        Row: {
+          correlation_strength: number
+          created_at: string
+          drill_name: string
+          exercise_category: string | null
+          exercise_name: string
+          id: string
+          is_direct_measurement: boolean
+          updated_at: string
+        }
+        Insert: {
+          correlation_strength: number
+          created_at?: string
+          drill_name: string
+          exercise_category?: string | null
+          exercise_name: string
+          id?: string
+          is_direct_measurement?: boolean
+          updated_at?: string
+        }
+        Update: {
+          correlation_strength?: number
+          created_at?: string
+          drill_name?: string
+          exercise_category?: string | null
+          exercise_name?: string
+          id?: string
+          is_direct_measurement?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_participants: {
         Row: {
           event_id: string
@@ -1440,6 +1473,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_combine_percentiles: {
+        Args: {
+          user_score: string
+          drill_name: string
+          player_position?: string
+        }
+        Returns: {
+          percentile: number
+          position_percentile: number
+          top_score: string
+        }[]
+      }
+      calculate_user_combine_estimates: {
+        Args: { user_id_param: string }
+        Returns: Json
+      }
       create_user_profile: {
         Args: {
           user_id: string
@@ -1461,6 +1510,10 @@ export type Database = {
       ensure_club_creators_are_owners: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_user_combine_data: {
+        Args: { user_id_param: string }
+        Returns: Json
       }
       get_table_structure: {
         Args: { table_name: string }
