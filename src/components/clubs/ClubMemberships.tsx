@@ -53,8 +53,9 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('memberships');
 
-  const currentMembership = isUserClubMember(clubId) ? 
-    members.find(member => member.user_id === user?.id)?.membership_type : null;
+  // Find current member and get membership type
+  const currentMember = user && members.find(member => member.user_id === user.id);
+  const currentMembershipType = currentMember ? currentMember.membership_type : null;
 
   useEffect(() => {
     // Load products when component mounts
@@ -94,7 +95,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
         }
       } else if (membershipType === 'free') {
         // Downgrade to free
-        await upgradeToMembership(clubId, membershipType);
+        await upgradeToMembership(clubId);
         toast.success(`Your membership has been changed to Free`);
       }
     } catch (error) {
@@ -193,7 +194,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
                 </ul>
               </CardContent>
               <CardFooter>
-                {currentMembership === 'free' ? (
+                {currentMembershipType === 'free' ? (
                   <Button disabled className="w-full bg-green-700">
                     Current Plan
                   </Button>
@@ -202,7 +203,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
                     variant="outline" 
                     className="w-full" 
                     onClick={() => handleUpgrade('free')}
-                    disabled={loading.free || !currentMembership}
+                    disabled={loading.free || !currentMembershipType}
                   >
                     {loading.free ? (
                       <>
@@ -217,7 +218,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
 
             {/* Premium Tier */}
             <Card className="bg-dark-300 border-dark-400 relative overflow-hidden">
-              {currentMembership === 'premium' && (
+              {currentMembershipType === 'premium' && (
                 <div className="absolute top-0 right-0 bg-fitbloom-purple text-white px-2 py-1 text-xs transform translate-x-[30%] translate-y-[-30%] rotate-45">
                   Current
                 </div>
@@ -256,7 +257,7 @@ const ClubMemberships: React.FC<ClubMembershipsProps> = ({ clubId }) => {
                 </ul>
               </CardContent>
               <CardFooter>
-                {currentMembership === 'premium' ? (
+                {currentMembershipType === 'premium' ? (
                   <Button 
                     className="w-full bg-fitbloom-purple"
                     onClick={() => setActiveTab('payment-history')}

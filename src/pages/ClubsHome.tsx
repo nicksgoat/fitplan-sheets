@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
 import ClubsList from '@/components/clubs/ClubsList';
 import EventsList from '@/components/clubs/EventsList';
-import { Plus, Users, Calendar } from 'lucide-react';
+import { Plus, Users as PeopleIcon, Calendar } from 'lucide-react';
 
 const ClubsHome = () => {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ const ClubsHome = () => {
             value="clubs" 
             className="flex-1 py-3 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-fitbloom-purple data-[state=active]:text-white data-[state=active]:shadow-none data-[state=inactive]:bg-transparent data-[state=inactive]:text-gray-500"
           >
-            <Users className="h-5 w-5 mr-2" />
+            <PeopleIcon className="h-5 w-5 mr-2" />
             Clubs
           </TabsTrigger>
           <TabsTrigger 

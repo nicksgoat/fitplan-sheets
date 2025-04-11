@@ -1,11 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Club, 
   ClubMember, 
-  ClubProduct, 
-  ClubProductPurchase,
-  MembershipType, 
+  ClubProduct,
+  MembershipType,
   ProductType,
   RefundStatus,
   SubscriptionStatus,

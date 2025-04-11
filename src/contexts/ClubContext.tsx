@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Club, ClubEvent, ClubMember, ClubPost, ClubMessage, MemberRole, EventParticipationStatus, EventParticipant, ClubProduct } from '@/types/club';
+import { 
+  Club, 
+  ClubEvent, 
+  ClubMember, 
+  ClubPost, 
+  ClubMessage, 
+  MemberRole, 
+  EventParticipationStatus, 
+  EventParticipant, 
+  ClubProduct,
+  MembershipType
+} from '@/types/club';
 
 interface ClubContextType {
   clubs: Club[];
@@ -76,7 +87,7 @@ const ClubContext = createContext<ClubContextType>({
   isUserClubMember: () => false,
   isUserClubAdmin: () => false,
   isUserClubCreator: () => false,
-  joinCurrentClub: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null }),
+  joinCurrentClub: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null, membership_type: 'free' }),
   leaveCurrentClub: async () => {},
   createNewClub: async () => ({ id: '', name: '', description: '', created_at: '', created_by: '', updated_at: '', club_type: 'fitness', membership_type: 'free' }),
   createNewEvent: async () => ({ id: '', club_id: '', name: '', description: '', start_time: '', end_time: '', created_at: '', created_by: '', attendee_count: 0, category: 'Event' }),
@@ -90,7 +101,7 @@ const ClubContext = createContext<ClubContextType>({
   getUserClubRole: () => null,
   upgradeToMembership: async () => ({}),
   purchaseProduct: async () => ({}),
-  updateMemberRole: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null }),
+  updateMemberRole: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null, membership_type: 'free' }),
 });
 
 export const useClub = () => useContext(ClubContext);
@@ -126,7 +137,15 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .order('created_at', { ascending: false });
         
       if (clubsError) throw clubsError;
-      setClubs(allClubs || []);
+      
+      const typedClubs: Club[] = (allClubs || []).map(club => ({
+        ...club,
+        club_type: club.club_type as any,
+        membership_type: club.membership_type as any,
+        created_by: club.creator_id || '',
+      }));
+      
+      setClubs(typedClubs);
       
       const { data: membershipData, error: membershipError } = await supabase
         .from('club_members')
@@ -145,7 +164,15 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .in('id', clubIds);
           
         if (userClubsError) throw userClubsError;
-        setUserClubs(userClubsData || []);
+        
+        const typedUserClubs: Club[] = (userClubsData || []).map(club => ({
+          ...club,
+          club_type: club.club_type as any,
+          membership_type: club.membership_type as any,
+          created_by: club.creator_id || '',
+        }));
+        
+        setUserClubs(typedUserClubs);
       } else {
         setUserClubs([]);
       }
@@ -207,13 +234,20 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           club_id: currentClub.id,
           user_id: user.id,
           role: 'member',
-          status: 'active'
+          status: 'active',
+          membership_type: 'free' as MembershipType
         })
         .select('*')
         .single();
         
       if (error) throw error;
-      return data;
+      
+      return {
+        ...data,
+        role: data.role as MemberRole,
+        status: data.status as MemberStatus,
+        membership_type: data.membership_type as MembershipType
+      } as ClubMember;
     } catch (error) {
       console.error('Error joining club:', error);
       throw error;
@@ -332,7 +366,12 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
           
         if (error) throw error;
-        return data;
+        
+        return {
+          ...data,
+          status: data.status as EventParticipationStatus,
+          created_at: data.created_at || data.joined_at || new Date().toISOString()
+        } as EventParticipant;
       } else {
         const { data, error } = await supabase
           .from('event_participants')
@@ -345,7 +384,12 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
           
         if (error) throw error;
-        return data;
+        
+        return {
+          ...data,
+          status: data.status as EventParticipationStatus,
+          created_at: data.created_at || data.joined_at || new Date().toISOString()
+        } as EventParticipant;
       }
     } catch (error) {
       console.error('Error responding to event:', error);
@@ -457,6 +501,34 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const refreshMembers = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      setLoadingMembers(true);
+      
+      const { data, error } = await supabase
+        .from('club_members')
+        .select('*, profile:user_id(*)')
+        .eq('club_id', currentClub.id);
+      
+      if (error) throw error;
+      
+      const typedMembers = (data || []).map(member => ({
+        ...member,
+        role: member.role as MemberRole,
+        status: member.status as MemberStatus,
+        membership_type: member.membership_type as MembershipType
+      }));
+      
+      setMembers(typedMembers);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [currentClub]);
+
   const refreshPosts = useCallback(async () => {
     if (!currentClub) return;
     
@@ -519,6 +591,58 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoadingEvents(false);
     }
   }, [currentClub]);
+  
+  const refreshProducts = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_products')
+        .select('*')
+        .eq('club_id', currentClub.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, [currentClub]);
+  
+  const createNewClub = useCallback(async (clubData: any): Promise<Club> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data, error } = await supabase
+        .from('clubs')
+        .insert({
+          name: clubData.name,
+          description: clubData.description,
+          club_type: clubData.club_type || 'fitness',
+          membership_type: clubData.membership_type || 'free',
+          premium_price: clubData.premium_price,
+          creator_id: user.id,
+          logo_url: clubData.logo_url,
+          banner_url: clubData.banner_url
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      const typedClub: Club = {
+        ...data,
+        created_by: data.creator_id,
+        club_type: data.club_type as any,
+        membership_type: data.membership_type as any
+      };
+      
+      return typedClub;
+    } catch (error) {
+      console.error('Error creating club:', error);
+      throw error;
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
