@@ -69,6 +69,7 @@ export interface WorkoutProgram {
   isPublic?: boolean;
   price?: number;
   isPurchasable?: boolean;
+  creatorId?: string; // Added creatorId field
 }
 
 // For backward compatibility
