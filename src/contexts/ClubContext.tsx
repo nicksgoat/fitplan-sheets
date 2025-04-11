@@ -370,11 +370,12 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
+        // Ensure all required EventParticipant properties are present
         return {
           ...data,
           status: data.status as EventParticipationStatus,
           created_at: data.created_at || data.joined_at || new Date().toISOString(),
-          updated_at: data.updated_at
+          updated_at: data.updated_at || new Date().toISOString()
         } as EventParticipant;
       } else {
         const { data, error } = await supabase
@@ -389,11 +390,12 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (error) throw error;
         
+        // Ensure all required EventParticipant properties are present
         return {
           ...data,
           status: data.status as EventParticipationStatus,
           created_at: data.created_at || data.joined_at || new Date().toISOString(),
-          updated_at: data.updated_at
+          updated_at: data.updated_at || new Date().toISOString()
         } as EventParticipant;
       }
     } catch (error) {
@@ -499,7 +501,14 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (error) throw error;
-      return data;
+      
+      // Ensure the role is properly cast to MemberRole
+      return {
+        ...data,
+        role: data.role as MemberRole,
+        status: data.status as MemberStatus,
+        membership_type: data.membership_type as MembershipType
+      } as ClubMember;
     } catch (error) {
       console.error('Error updating member role:', error);
       throw error;
@@ -609,6 +618,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
+      // Explicitly cast the product_type to ProductType to fix the type error
       const typedProducts = (data || []).map(product => ({
         ...product,
         product_type: product.product_type as ProductType
