@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -41,6 +40,8 @@ import {
 import { Exercise, ExerciseCategory, PrimaryMuscle, Difficulty } from '@/types/exercise';
 import { useAuth } from '@/hooks/useAuth';
 import VideoUploader from '@/components/exercise/VideoUploader';
+import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
+import { useUpdateWorkoutPrice } from '@/hooks/workout/useWorkoutOperations';
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -96,6 +97,8 @@ const EditExercise: React.FC = () => {
   } = useExercise(id || '');
   
   const updateExerciseMutation = useUpdateExercise();
+  const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
+  const updateWorkoutPriceMutation = useUpdateWorkoutPrice();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -158,6 +161,17 @@ const EditExercise: React.FC = () => {
 
   const handleVideoFileChange = (file: File | null) => {
     setVideoFile(file);
+  };
+
+  const handlePriceSave = (price: number, isPurchasable: boolean) => {
+    if (exercise) {
+      updateWorkoutPriceMutation.mutate({
+        workoutId: exercise.id,
+        price,
+        isPurchasable
+      });
+      setIsPriceDialogOpen(false);
+    }
   };
 
   const onSubmit = async (formData: z.infer<typeof formSchema>) => {
@@ -501,7 +515,14 @@ const EditExercise: React.FC = () => {
           </Card>
           
           <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-10">
-            <div className="container mx-auto max-w-3xl flex justify-end">
+            <div className="container mx-auto max-w-3xl flex justify-between items-center">
+              <Button 
+                variant="outline"
+                onClick={() => setIsPriceDialogOpen(true)}
+              >
+                Set Pricing
+              </Button>
+              
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
@@ -521,6 +542,16 @@ const EditExercise: React.FC = () => {
               </Button>
             </div>
           </div>
+          
+          <PriceSettingsDialog 
+            open={isPriceDialogOpen}
+            onOpenChange={setIsPriceDialogOpen}
+            title="Workout Pricing"
+            currentPrice={exercise?.price || 0}
+            isPurchasable={exercise?.isPurchasable || false}
+            onSave={handlePriceSave}
+            isSaving={updateWorkoutPriceMutation.isLoading}
+          />
         </form>
       </Form>
     </div>

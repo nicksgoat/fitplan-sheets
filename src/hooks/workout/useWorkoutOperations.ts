@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
@@ -50,6 +49,30 @@ export function useDeleteWorkout() {
     onError: (error: any) => {
       console.error('Error deleting workout:', error);
       toast.error(`Error deleting workout: ${error.message}`);
+    }
+  });
+}
+
+export function useUpdateWorkoutPrice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ 
+      workoutId, 
+      price, 
+      isPurchasable 
+    }: { 
+      workoutId: string, 
+      price: number, 
+      isPurchasable: boolean 
+    }) => workoutService.updateWorkoutPrice(workoutId, price, isPurchasable),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      toast.success('Workout pricing updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating workout pricing:', error);
+      toast.error(`Error updating workout pricing: ${error.message}`);
     }
   });
 }

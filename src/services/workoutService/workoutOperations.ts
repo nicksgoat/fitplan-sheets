@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export async function addWorkout(weekId: string, name: string, dayNum: number) {
@@ -59,6 +58,18 @@ export async function deleteWorkout(workoutId: string) {
   const { error } = await supabase
     .from('workouts')
     .delete()
+    .eq('id', workoutId);
+  
+  if (error) throw error;
+}
+
+export async function updateWorkoutPrice(workoutId: string, price: number, isPurchasable: boolean) {
+  const { error } = await supabase
+    .from('workouts')
+    .update({
+      price,
+      is_purchasable: isPurchasable
+    })
     .eq('id', workoutId);
   
   if (error) throw error;
