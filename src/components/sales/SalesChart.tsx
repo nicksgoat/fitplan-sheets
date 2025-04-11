@@ -66,7 +66,9 @@ export default function SalesChart() {
         `
       });
       
-      return (data || []) as SalesData[];
+      // Cast the result as SalesData[] and provide a safe default
+      const typedData = data ? (data as any[]).map(item => item as SalesData) : [];
+      return typedData;
     },
     enabled: !!user
   });
@@ -77,13 +79,13 @@ export default function SalesChart() {
   
   if (!salesData || salesData.length === 0) {
     // If no data, provide sample data
-    const sampleData = [
-      { name: 'Jan', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
-      { name: 'Feb', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
-      { name: 'Mar', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
-      { name: 'Apr', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
-      { name: 'May', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
-      { name: 'Jun', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+    const sampleData: SalesData[] = [
+      { name: 'Jan', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+      { name: 'Feb', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+      { name: 'Mar', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+      { name: 'Apr', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+      { name: 'May', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+      { name: 'Jun', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
     ];
     
     return (

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import * as useWorkoutData from '@/hooks/useWorkoutData';
+import * as workoutHooks from '@/hooks/useWorkoutData';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Pencil, Tag } from 'lucide-react';
@@ -16,13 +16,13 @@ export default function PricingManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Get workout and program data
-  const { data: programs, isLoading: programsLoading } = useWorkoutData.usePrograms();
-  const { 
-    updateWorkoutPrice, 
-    updateProgramPrice 
-  } = useWorkoutData;
+  const { data: programs, isLoading: programsLoading } = workoutHooks.usePrograms();
   
-  const userPrograms = programs?.filter(program => program.userId === user?.id) || [];
+  // Get defined mutation hooks
+  const updateWorkoutPrice = workoutHooks.useUpdateWorkoutPrice();
+  const updateProgramPrice = workoutHooks.useUpdateProgramPrice();
+  
+  const userPrograms = programs?.filter(program => program.user_id === user?.id) || [];
   
   // Get workout data from programs
   const workouts = React.useMemo(() => {
@@ -31,29 +31,29 @@ export default function PricingManagement() {
     const allWorkouts: Workout[] = [];
     
     programs.forEach(program => {
-      if (program.userId === user?.id && program.workouts) {
-        allWorkouts.push(...program.workouts);
+      if (program.user_id === user?.id && 'workouts' in program) {
+        // Cast to match expected type with workouts property
+        const programWithWorkouts = program as unknown as WorkoutProgram;
+        if (programWithWorkouts.workouts) {
+          allWorkouts.push(...programWithWorkouts.workouts);
+        }
       }
     });
     
     return allWorkouts;
   }, [programs, user?.id]);
   
-  // Mutation hooks
-  const workoutPriceMutation = updateWorkoutPrice();
-  const programPriceMutation = updateProgramPrice();
-  
   const handleSavePricing = (price: number, isPurchasable: boolean) => {
     if (!selectedItem) return;
 
     if (selectedItem.type === 'workout') {
-      workoutPriceMutation.mutate({
+      updateWorkoutPrice.mutate({
         workoutId: selectedItem.id,
         price,
         isPurchasable
       });
     } else if (selectedItem.type === 'program') {
-      programPriceMutation.mutate({
+      updateProgramPrice.mutate({
         programId: selectedItem.id,
         price,
         isPurchasable
@@ -172,54 +172,59 @@ export default function PricingManagement() {
                     <div className="col-span-2"></div>
                   </div>
                   
-                  {userPrograms.map((program: WorkoutProgram) => (
-                    <div 
-                      key={program.id} 
-                      className="grid grid-cols-12 gap-4 items-center p-4 rounded-md bg-dark-200 border border-dark-300"
-                    >
-                      <div className="col-span-5 font-medium">{program.name}</div>
-                      <div className="col-span-2">
-                        {program.isPurchasable ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            For Sale
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                            Not For Sale
-                          </span>
-                        )}
-                      </div>
-                      <div className="col-span-3 flex items-center">
-                        {program.isPurchasable ? (
-                          <span className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1 text-green-500" />
-                            <span className="text-green-500 font-medium">
-                              {typeof program.price === 'number' ? program.price.toFixed(2) : '0.00'}
+                  {userPrograms.map((program) => {
+                    // Cast program to WorkoutProgram type to get the expected properties
+                    const workoutProgram = program as unknown as WorkoutProgram;
+                    
+                    return (
+                      <div 
+                        key={program.id} 
+                        className="grid grid-cols-12 gap-4 items-center p-4 rounded-md bg-dark-200 border border-dark-300"
+                      >
+                        <div className="col-span-5 font-medium">{program.name}</div>
+                        <div className="col-span-2">
+                          {workoutProgram.isPurchasable ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                              For Sale
                             </span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </div>
-                      <div className="col-span-2 flex justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex items-center gap-1"
-                          onClick={() => handleEditPrice(
-                            program.id, 
-                            'program', 
-                            program.name, 
-                            program.price || 0,
-                            program.isPurchasable || false
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                              Not For Sale
+                            </span>
                           )}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          <span>Edit</span>
-                        </Button>
+                        </div>
+                        <div className="col-span-3 flex items-center">
+                          {workoutProgram.isPurchasable ? (
+                            <span className="flex items-center">
+                              <DollarSign className="h-4 w-4 mr-1 text-green-500" />
+                              <span className="text-green-500 font-medium">
+                                {typeof workoutProgram.price === 'number' ? workoutProgram.price.toFixed(2) : '0.00'}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </div>
+                        <div className="col-span-2 flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                            onClick={() => handleEditPrice(
+                              program.id, 
+                              'program', 
+                              program.name, 
+                              workoutProgram.price || 0,
+                              workoutProgram.isPurchasable || false
+                            )}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -235,7 +240,7 @@ export default function PricingManagement() {
           currentPrice={selectedItem.currentPrice}
           isPurchasable={selectedItem.isPurchasable}
           onSave={handleSavePricing}
-          isSaving={workoutPriceMutation.isPending || programPriceMutation.isPending}
+          isSaving={updateWorkoutPrice.isPending || updateProgramPrice.isPending}
         />
       )}
     </>

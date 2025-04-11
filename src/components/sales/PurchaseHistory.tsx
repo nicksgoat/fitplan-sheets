@@ -79,7 +79,9 @@ export default function PurchaseHistory() {
         `
       });
       
-      return (data || []) as PurchaseData[];
+      // Cast the result as PurchaseData[] and provide a safe default
+      const typedData = data ? (data as any[]).map(item => item as PurchaseData) : [];
+      return typedData;
     },
     enabled: !!user
   });
@@ -99,7 +101,7 @@ export default function PurchaseHistory() {
   };
 
   const exportToCsv = () => {
-    if (!purchaseHistory?.length) return;
+    if (!purchaseHistory || purchaseHistory.length === 0) return;
     
     // Prepare CSV content
     const headers = ['Date', 'Type', 'Product', 'Customer', 'Amount', 'Platform Fee', 'Earnings', 'Status'];
@@ -165,7 +167,7 @@ export default function PurchaseHistory() {
           <div className="text-center py-8">Loading purchase history...</div>
         ) : !filteredPurchases.length ? (
           <div className="text-center py-8 text-gray-400">
-            {purchaseHistory?.length ? 
+            {purchaseHistory && purchaseHistory.length > 0 ? 
               'No results match your search criteria.' : 
               'No purchase history found.'}
           </div>
