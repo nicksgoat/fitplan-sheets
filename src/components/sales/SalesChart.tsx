@@ -5,19 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface SalesDataPoint {
-  name: string;
-  workout_revenue: number;
-  program_revenue: number;
-  workout_count: number;
-  program_count: number;
-  total_revenue: number;
-}
-
 export default function SalesChart() {
   const { user } = useAuth();
   
-  const { data: salesDataRaw, isLoading } = useQuery({
+  const { data: salesData, isLoading } = useQuery({
     queryKey: ['sales-chart', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -66,28 +57,24 @@ export default function SalesChart() {
         `
       });
       
-      // Ensure we're returning an array of data points with the right type
-      return Array.isArray(data) ? data as unknown as SalesDataPoint[] : [];
+      return data || [];
     },
     enabled: !!user
   });
-  
-  // Type guard to ensure salesData is an array
-  const salesData = Array.isArray(salesDataRaw) ? salesDataRaw as SalesDataPoint[] : [];
   
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Loading chart data...</div>;
   }
   
-  if (!salesData || salesData.length === 0) {
+  if (!salesData?.length) {
     // If no data, provide sample data
-    const sampleData: SalesDataPoint[] = [
-      { name: 'Jan', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
-      { name: 'Feb', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
-      { name: 'Mar', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
-      { name: 'Apr', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
-      { name: 'May', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
-      { name: 'Jun', workout_revenue: 0, program_revenue: 0, workout_count: 0, program_count: 0, total_revenue: 0 },
+    const sampleData = [
+      { name: 'Jan', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+      { name: 'Feb', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+      { name: 'Mar', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+      { name: 'Apr', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+      { name: 'May', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
+      { name: 'Jun', workout_revenue: 0, program_revenue: 0, total_revenue: 0 },
     ];
     
     return (

@@ -2,14 +2,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useWorkoutData } from '@/hooks/useWorkoutData';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Pencil, Tag } from 'lucide-react';
 import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
 import { Workout, WorkoutProgram } from '@/types/workout';
-import * as workoutHooks from '@/hooks/useWorkoutData';
-import { mapDbProgramToWorkoutProgram } from '@/hooks/workout/useProgramData';
-import { DbProgram } from '@/types/supabase';
 
 export default function PricingManagement() {
   const { user } = useAuth();
@@ -18,21 +16,13 @@ export default function PricingManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Get workout and program data
-  const { data: dbPrograms, isLoading: programsLoading } = workoutHooks.usePrograms();
+  const { data: programs, isLoading: programsLoading } = useWorkoutData.usePrograms();
+  const { 
+    updateWorkoutPrice, 
+    updateProgramPrice 
+  } = useWorkoutData;
   
-  // Create hook references
-  const updateWorkoutPriceMutation = workoutHooks.useUpdateWorkoutPrice();
-  const updateProgramPriceMutation = workoutHooks.useUpdateProgramPrice();
-  
-  // Convert DB programs to WorkoutProgram type
-  const programs = React.useMemo(() => {
-    if (!dbPrograms) return [];
-    return dbPrograms.map(program => mapDbProgramToWorkoutProgram(program)) as WorkoutProgram[];
-  }, [dbPrograms]);
-  
-  const userPrograms = programs.filter(program => 
-    (program as any).user_id === user?.id || program.id.includes(user?.id || '')
-  );
+  const userPrograms = programs?.filter(program => program.userId === user?.id) || [];
   
   // Get workout data from programs
   const workouts = React.useMemo(() => {
@@ -40,26 +30,30 @@ export default function PricingManagement() {
     
     const allWorkouts: Workout[] = [];
     
-    userPrograms.forEach(program => {
-      if (program.workouts) {
+    programs.forEach(program => {
+      if (program.userId === user?.id && program.workouts) {
         allWorkouts.push(...program.workouts);
       }
     });
     
     return allWorkouts;
-  }, [programs, userPrograms]);
+  }, [programs, user?.id]);
+  
+  // Mutation hooks
+  const workoutPriceMutation = updateWorkoutPrice();
+  const programPriceMutation = updateProgramPrice();
   
   const handleSavePricing = (price: number, isPurchasable: boolean) => {
     if (!selectedItem) return;
 
     if (selectedItem.type === 'workout') {
-      updateWorkoutPriceMutation.mutate({
+      workoutPriceMutation.mutate({
         workoutId: selectedItem.id,
         price,
         isPurchasable
       });
     } else if (selectedItem.type === 'program') {
-      updateProgramPriceMutation.mutate({
+      programPriceMutation.mutate({
         programId: selectedItem.id,
         price,
         isPurchasable
@@ -178,7 +172,7 @@ export default function PricingManagement() {
                     <div className="col-span-2"></div>
                   </div>
                   
-                  {userPrograms.map((program) => (
+                  {userPrograms.map((program: WorkoutProgram) => (
                     <div 
                       key={program.id} 
                       className="grid grid-cols-12 gap-4 items-center p-4 rounded-md bg-dark-200 border border-dark-300"
@@ -241,7 +235,7 @@ export default function PricingManagement() {
           currentPrice={selectedItem.currentPrice}
           isPurchasable={selectedItem.isPurchasable}
           onSave={handleSavePricing}
-          isSaving={updateWorkoutPriceMutation.isPending || updateProgramPriceMutation.isPending}
+          isSaving={workoutPriceMutation.isPending || programPriceMutation.isPending}
         />
       )}
     </>

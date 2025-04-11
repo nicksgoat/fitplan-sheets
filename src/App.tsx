@@ -1,35 +1,64 @@
-
 import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
-  Outlet,
 } from "react-router-dom";
 import './App.css';
+import Home from './pages/Home';
 import Library from './pages/Library';
 import Sheets from './pages/Sheets';
 import Clubs from './pages/Clubs';
+import ClubDetail from './pages/ClubDetail';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
+import { useAuth } from './hooks/useAuth';
+import { useEffect } from 'react';
+import { useUser } from './hooks/useUser';
+import ProgramDetail from './pages/ProgramDetail';
+import WorkoutDetail from './pages/WorkoutDetail';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
+
+// Import the new SalesDashboard component
 import SalesDashboard from './pages/SalesDashboard';
-import Leaderboards from './pages/Leaderboards';
-import MainLayout from './components/layout/MainLayout';
-import Index from './pages/Index';
-import Explore from './pages/Explore';
-import NotFound from './pages/NotFound';
-import Search from './pages/Search';
-import Schedule from './pages/Schedule';
-import Liked from './pages/Liked';
 
 const router = createBrowserRouter([
-  // Auth route without MainLayout
+  {
+    path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/library",
+    element: <Library />,
+  },
+  {
+    path: "/sheets",
+    element: <Sheets />,
+  },
+  {
+    path: "/clubs",
+    element: <Clubs />,
+  },
+  {
+    path: "/clubs/:clubId",
+    element: <ClubDetail />,
+  },
+  {
+    path: "/profile",
+    element: <Profile />,
+  },
   {
     path: "/auth",
     element: <Auth />,
   },
-  // Purchase routes without MainLayout
+  {
+    path: "/programs/:programId",
+    element: <ProgramDetail />,
+  },
+  {
+    path: "/workouts/:workoutId",
+    element: <WorkoutDetail />,
+  },
   {
     path: "/purchase/success",
     element: <PurchaseSuccess />,
@@ -38,68 +67,28 @@ const router = createBrowserRouter([
     path: "/purchase/cancel",
     element: <PurchaseCancel />,
   },
-  // Routes with MainLayout
   {
-    path: "/",
-    element: <MainLayout><Outlet /></MainLayout>,
-    children: [
-      {
-        path: "/",
-        element: <Index />,
-      },
-      {
-        path: "/home",
-        element: <Index />,
-      },
-      {
-        path: "/explore",
-        element: <Explore />,
-      },
-      {
-        path: "/search",
-        element: <Search />,
-      },
-      {
-        path: "/library",
-        element: <Library />,
-      },
-      {
-        path: "/schedule",
-        element: <Schedule />,
-      },
-      {
-        path: "/sheets",
-        element: <Sheets />,
-      },
-      {
-        path: "/clubs",
-        element: <Clubs />,
-      },
-      {
-        path: "/liked",
-        element: <Liked />,
-      },
-      {
-        path: "/profile",
-        element: <Profile />,
-      },
-      {
-        path: "/sales",
-        element: <SalesDashboard />
-      },
-      {
-        path: "/leaderboards",
-        element: <Leaderboards />
-      },
-      {
-        path: "*",
-        element: <NotFound />
-      },
-    ]
+    path: "/sales",
+    element: <SalesDashboard />
   },
 ]);
 
 function App() {
+  const { authState } = useAuth();
+  const { user, isLoading } = useUser();
+
+  useEffect(() => {
+    console.log('Auth State changed:', authState);
+  }, [authState]);
+
+  useEffect(() => {
+    console.log('User data loaded:', user);
+  }, [user]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return <RouterProvider router={router} />;
 }
 

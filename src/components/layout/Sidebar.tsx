@@ -1,4 +1,3 @@
-
 import React from "react"
 import {
   Sheet,
@@ -33,7 +32,7 @@ import { useLibrary } from "@/contexts/LibraryContext"
 
 export function Sidebar() {
   const { user, signOut } = useAuth()
-  const library = useLibrary()
+  const { collections } = useLibrary()
 
   const navigationItems = [
     {
@@ -122,12 +121,12 @@ export function Sidebar() {
               </Link>
             ))}
           </div>
-          {library?.collections && library.collections.length > 0 && (
+          {collections && collections.length > 0 && (
             <>
               <Separator className="my-4" />
               <div className="grid gap-2">
                 <h4 className="font-medium">Collections</h4>
-                {library.collections.map((collection) => (
+                {collections.map((collection) => (
                   <Link to={`/collection/${collection.id}`} key={collection.id} className="flex items-center space-x-2">
                     <span>{collection.name}</span>
                   </Link>

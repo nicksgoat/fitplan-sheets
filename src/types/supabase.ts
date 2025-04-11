@@ -7,9 +7,6 @@ export interface DbProgram {
   created_at: string;
   updated_at: string;
   is_public?: boolean;
-  price?: number;
-  is_purchasable?: boolean;
-  workouts?: any[];
 }
 
 export interface DbWeek {
@@ -28,8 +25,6 @@ export interface DbWorkout {
   day_num: number;
   created_at: string;
   updated_at: string;
-  price?: number;
-  is_purchasable?: boolean;
 }
 
 export interface DbExercise {

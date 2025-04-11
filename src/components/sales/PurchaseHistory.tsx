@@ -9,25 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Calendar as CalendarIcon, Download, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface PurchaseRecord {
-  purchase_type: string;
-  product_id: string;
-  product_name: string;
-  purchase_date: string;
-  amount_paid: number;
-  platform_fee: number;
-  creator_earnings: number;
-  status: string;
-  customer_username?: string;
-  customer_name?: string;
-  customer_avatar?: string;
-}
-
 export default function PurchaseHistory() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
 
-  const { data: purchaseHistoryData, isLoading } = useQuery({
+  const { data: purchaseHistory, isLoading } = useQuery({
     queryKey: ['purchase-history', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -79,29 +65,27 @@ export default function PurchaseHistory() {
         `
       });
       
-      // Ensure we return an array of purchase records
-      return Array.isArray(data) ? data as unknown as PurchaseRecord[] : [];
+      return data || [];
     },
     enabled: !!user
   });
 
   const filterPurchases = () => {
-    if (!purchaseHistoryData || !Array.isArray(purchaseHistoryData)) return [];
-    if (!search.trim()) return purchaseHistoryData;
+    if (!purchaseHistory) return [];
+    if (!search.trim()) return purchaseHistory;
     
     const searchLower = search.toLowerCase();
-    return purchaseHistoryData.filter((purchase: PurchaseRecord) => {
+    return purchaseHistory.filter(purchase => {
       return (
-        (purchase.product_name?.toLowerCase().includes(searchLower)) ||
-        (purchase.customer_name?.toLowerCase().includes(searchLower)) ||
-        (purchase.customer_username?.toLowerCase().includes(searchLower))
+        purchase.product_name?.toLowerCase().includes(searchLower) ||
+        purchase.customer_name?.toLowerCase().includes(searchLower) ||
+        purchase.customer_username?.toLowerCase().includes(searchLower)
       );
     });
   };
 
   const exportToCsv = () => {
-    const purchaseHistory = purchaseHistoryData as PurchaseRecord[];
-    if (!purchaseHistory || purchaseHistory.length === 0) return;
+    if (!purchaseHistory?.length) return;
     
     // Prepare CSV content
     const headers = ['Date', 'Type', 'Product', 'Customer', 'Amount', 'Platform Fee', 'Earnings', 'Status'];
@@ -135,7 +119,7 @@ export default function PurchaseHistory() {
     document.body.removeChild(link);
   };
 
-  const filteredPurchases = filterPurchases() as PurchaseRecord[];
+  const filteredPurchases = filterPurchases();
   
   return (
     <Card className="bg-dark-100 border-dark-300">
@@ -146,7 +130,7 @@ export default function PurchaseHistory() {
           size="sm"
           className="flex items-center gap-1"
           onClick={exportToCsv}
-          disabled={!purchaseHistoryData || !(purchaseHistoryData as PurchaseRecord[]).length}
+          disabled={!purchaseHistory?.length}
         >
           <Download className="h-4 w-4" />
           <span>Export</span>
@@ -165,9 +149,9 @@ export default function PurchaseHistory() {
         
         {isLoading ? (
           <div className="text-center py-8">Loading purchase history...</div>
-        ) : !filteredPurchases?.length ? (
+        ) : !filteredPurchases.length ? (
           <div className="text-center py-8 text-gray-400">
-            {purchaseHistoryData && (purchaseHistoryData as PurchaseRecord[]).length > 0 ? 
+            {purchaseHistory?.length ? 
               'No results match your search criteria.' : 
               'No purchase history found.'}
           </div>
