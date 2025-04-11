@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProgram, useUpdateProgram, useUpdateProgramPrice } from '@/hooks/workout/useProgramOperations';
@@ -125,9 +126,9 @@ const UpdateProgram: React.FC = () => {
           <Button 
             onClick={handleUpdateProgram} 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            disabled={updateProgramMutation.isLoading}
+            disabled={updateProgramMutation.isPending}
           >
-            {updateProgramMutation.isLoading ? (
+            {updateProgramMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Updating...
@@ -158,7 +159,7 @@ const UpdateProgram: React.FC = () => {
         currentPrice={program.price || 0}
         isPurchasable={program.isPurchasable || false}
         onSave={handlePriceSave}
-        isSaving={updateProgramPriceMutation.isLoading}
+        isSaving={updateProgramPriceMutation.isPending}
       />
     </div>
   );

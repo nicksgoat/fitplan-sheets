@@ -1,4 +1,3 @@
-
 export interface Set {
   id: string;
   reps: string;
@@ -25,6 +24,8 @@ export interface Exercise {
   intensityType?: IntensityType;
   weightType?: WeightType;
   libraryExerciseId?: string;
+  price?: number; // Added for monetization
+  isPurchasable?: boolean; // Added for monetization
 }
 
 export interface Circuit {

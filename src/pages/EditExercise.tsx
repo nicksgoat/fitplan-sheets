@@ -550,7 +550,7 @@ const EditExercise: React.FC = () => {
             currentPrice={exercise?.price || 0}
             isPurchasable={exercise?.isPurchasable || false}
             onSave={handlePriceSave}
-            isSaving={updateWorkoutPriceMutation.isLoading}
+            isSaving={updateWorkoutPriceMutation.isPending}
           />
         </form>
       </Form>

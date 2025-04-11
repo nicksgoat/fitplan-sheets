@@ -1,6 +1,8 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
+import { WorkoutProgram } from '@/types/workout';
 
 export function useAddWorkout() {
   const queryClient = useQueryClient();

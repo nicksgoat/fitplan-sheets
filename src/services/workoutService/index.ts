@@ -1,5 +1,5 @@
 
-// Export all workout service functions
+// Export all workout service functions from their respective files
 export * from './programOperations';
 export * from './weekOperations';
 export * from './workoutOperations';
