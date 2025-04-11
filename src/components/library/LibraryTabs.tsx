@@ -6,9 +6,11 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
+import WeeksLibraryTab from '@/components/WeeksLibraryTab';
 import CollectionsTab from './CollectionsTab';
 import ExercisesTab from './ExercisesTab';
 import CreatedContentTab from './CreatedContentTab';
+import PurchasesTab from './PurchasesTab';
 import { CollectionType, ItemType } from '@/lib/types';
 
 interface LibraryTabsProps {
@@ -43,6 +45,8 @@ const LibraryTabs = ({
         <TabsTrigger value="exercises">Exercises</TabsTrigger>
         <TabsTrigger value="workouts">Workouts</TabsTrigger>
         <TabsTrigger value="programs">Programs</TabsTrigger>
+        <TabsTrigger value="weeks">Weeks</TabsTrigger>
+        <TabsTrigger value="purchases">My Purchases</TabsTrigger>
         <TabsTrigger value="created">Created by me</TabsTrigger>
       </TabsList>
       
@@ -73,6 +77,18 @@ const LibraryTabs = ({
             <ProgramsLibraryTab />
           </WorkoutProvider>
         </DndProvider>
+      </TabsContent>
+      
+      <TabsContent value="weeks" className="mt-4">
+        <DndProvider backend={HTML5Backend}>
+          <WorkoutProvider>
+            <WeeksLibraryTab />
+          </WorkoutProvider>
+        </DndProvider>
+      </TabsContent>
+      
+      <TabsContent value="purchases" className="mt-4">
+        <PurchasesTab />
       </TabsContent>
 
       <TabsContent value="created" className="mt-4 overflow-x-auto">

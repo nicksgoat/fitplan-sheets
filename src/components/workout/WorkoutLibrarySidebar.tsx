@@ -4,6 +4,7 @@ import { useLibrary } from '@/contexts/LibraryContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
+import WeeksLibraryTab from '@/components/WeeksLibraryTab';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
 import { DndProvider } from 'react-dnd';
@@ -63,10 +64,7 @@ const WorkoutLibrarySidebar = forwardRef<WorkoutLibrarySidebarRef, WorkoutLibrar
                   </TabsContent>
                   
                   <TabsContent value="weeks">
-                    {/* Placeholder for Weeks Library Tab */}
-                    <div className="text-center py-10 text-gray-400">
-                      Weeks library coming soon
-                    </div>
+                    <WeeksLibraryTab />
                   </TabsContent>
                 </WorkoutProvider>
               </DndProvider>

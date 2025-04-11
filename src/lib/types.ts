@@ -14,6 +14,8 @@ export interface ItemType {
   isCustom?: boolean;
   savedAt?: string; // Added timestamp when the item was saved
   lastModified?: string; // Added timestamp when the item was last modified
+  price?: number; // Added for monetization
+  isPurchasable?: boolean; // Added to indicate if the item can be purchased
 }
 
 export interface CollectionType {

@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, CalendarDays, LayoutIcon } from "lucide-react";
+import { Plus, Trash2, CalendarDays, LayoutIcon, DollarSign } from "lucide-react";
 import { Workout } from "@/types/workout";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,6 +10,7 @@ import { ItemType } from "@/lib/types";
 import ContentGrid from "@/components/ui/ContentGrid";
 import { useNavigate } from "react-router-dom";
 import { useWorkoutLibraryIntegration } from "@/hooks/useWorkoutLibraryIntegration";
+import { Badge } from "@/components/ui/badge";
 
 // Define the draggable item types for consistency
 const ItemTypes = {
@@ -34,7 +35,15 @@ const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, on
       }`}
     >
       <div className="flex-1">
-        <h3 className="text-sm font-medium">{workout.name}</h3>
+        <div className="flex items-center">
+          <h3 className="text-sm font-medium">{workout.name}</h3>
+          {workout.isPurchasable && workout.price && workout.price > 0 && (
+            <Badge variant="outline" className="ml-2 text-xs flex items-center text-green-500 border-green-500">
+              <DollarSign className="h-3 w-3 mr-0.5" />
+              {Number(workout.price).toFixed(2)}
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-gray-400">
           {workout.day > 0 ? `Day ${workout.day} • ` : ''}{workout.exercises.length} exercises
         </p>
@@ -97,7 +106,9 @@ const WorkoutsLibraryTab: React.FC<WorkoutsLibraryTabProps> = ({ onDragStart }) 
     description: `Day ${workout.day} workout with ${workout.exercises.length} exercises`,
     isCustom: true,
     savedAt: workout.savedAt,
-    lastModified: workout.lastModified
+    lastModified: workout.lastModified,
+    price: workout.price,
+    isPurchasable: workout.isPurchasable
   }));
   
   return (

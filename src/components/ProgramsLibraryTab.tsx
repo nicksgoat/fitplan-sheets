@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, DollarSign } from "lucide-react";
 import { WorkoutProgram } from "@/types/workout";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { ItemType } from "@/lib/types";
 import ContentGrid from "@/components/ui/ContentGrid";
 import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const ProgramsLibraryTab: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -51,7 +52,9 @@ const ProgramsLibraryTab: React.FC = () => {
     description: `Program with ${program.weeks?.length || 0} weeks and ${program.workouts?.length || 0} workouts`,
     isCustom: true,
     savedAt: program.savedAt,
-    lastModified: program.lastModified
+    lastModified: program.lastModified,
+    price: program.price,
+    isPurchasable: program.isPurchasable
   }));
   
   return (
@@ -68,7 +71,45 @@ const ProgramsLibraryTab: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <ContentGrid items={programItems} />
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {programs.map(program => (
+              <div 
+                key={program.id}
+                className="bg-dark-200 p-4 rounded-lg border border-dark-300 hover:border-fitbloom-purple/50 transition-all cursor-pointer"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{program.name}</h3>
+                    <p className="text-sm text-gray-400">
+                      {program.weeks.length} {program.weeks.length === 1 ? 'week' : 'weeks'} • {program.workouts.length} workouts
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => handleDeleteProgram(e, program.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {program.isPurchasable && program.price && program.price > 0 && (
+                  <Badge variant="outline" className="mt-2 text-xs flex items-center w-fit text-green-500 border-green-500">
+                    <DollarSign className="h-3 w-3 mr-0.5" />
+                    {Number(program.price).toFixed(2)}
+                  </Badge>
+                )}
+                
+                <div className="mt-2 text-xs text-gray-500">
+                  Last updated: {formatDate(program.lastModified)}
+                </div>
+              </div>
+            ))}
+          </div>
+          <ContentGrid items={programItems} />
+        </>
       )}
       
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

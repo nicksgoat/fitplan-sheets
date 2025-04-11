@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Video } from 'lucide-react';
+import { Heart, Video, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import DetailDrawer from '../details/DetailDrawer';
 import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ContentCardProps {
   item: Exercise | ItemType;
@@ -43,10 +44,22 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   const creator = normalizedItem.creator;
   const duration = normalizedItem.duration;
   const title = normalizedItem.title;
+  const price = normalizedItem.price;
+  const isPurchasable = normalizedItem.isPurchasable;
+  const lastModified = normalizedItem.lastModified;
   
   // Check if it's a Supabase Storage URL for videos
   const isStorageVideo = videoUrl && videoUrl.includes('storage.googleapis.com') && 
                          videoUrl.includes('exercise-videos');
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return "";
+    }
+  };
 
   const handleCardClick = () => {
     if (onClick) {
@@ -79,40 +92,33 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
               className="content-card-image h-[120px] w-full object-cover"
             />
           )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute top-1 right-1 rounded-full bg-black/30 hover:bg-black/50 h-7 w-7 p-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Handle favorite toggle logic here
-            }}
-          >
-            <Heart className={cn("h-3 w-3", normalizedItem.isFavorite ? "fill-fitbloom-purple text-fitbloom-purple" : "text-white")} />
-          </Button>
-        </div>
-        <CardContent className="p-2 flex-grow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase text-fitbloom-text-medium">{normalizedItem.type}</span>
-            {duration && (
-              <span className="text-xs text-fitbloom-text-medium">{duration}</span>
-            )}
-          </div>
-          <h3 className="font-semibold mt-1 text-xs sm:text-sm line-clamp-1">{title}</h3>
-          <p className="text-xs text-fitbloom-text-medium mt-0.5 line-clamp-1">{creator}</p>
-        </CardContent>
-        <CardFooter className="pt-0 px-2 pb-2 flex flex-wrap gap-1">
-          {tags?.slice(0, 2).map((tag, index) => (
-            <Badge key={index} variant="outline" className="text-[10px] px-1.5 py-0">
-              {tag}
-            </Badge>
-          ))}
-          {videoUrl && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-0.5">
-              <Video className="h-2 w-2" />
-              Video
-            </Badge>
+
+          {isPurchasable && price && price > 0 && (
+            <div className="absolute bottom-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
+              <DollarSign className="h-3 w-3 mr-0.5" />
+              {price}
+            </div>
           )}
+        </div>
+        
+        <CardContent className="py-2 flex-1">
+          <h3 className="font-medium text-sm line-clamp-1">{title}</h3>
+          <p className="text-xs text-gray-400 mt-1 line-clamp-1">
+            {duration}
+          </p>
+        </CardContent>
+        
+        <CardFooter className="pt-0 pb-2 justify-between items-center">
+          <div className="text-xs text-gray-500">
+            {lastModified && formatDate(lastModified)}
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+          >
+            <Heart className="h-4 w-4" />
+          </Button>
         </CardFooter>
       </Card>
     </DetailDrawer>
