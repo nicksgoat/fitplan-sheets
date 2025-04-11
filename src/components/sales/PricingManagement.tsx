@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, Pencil, Tag } from 'lucide-react';
 import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
 import { Workout, WorkoutProgram } from '@/types/workout';
-import * as useWorkoutData from '@/hooks/useWorkoutData';
+import * as workoutHooks from '@/hooks/useWorkoutData';
 
 export default function PricingManagement() {
   const { user } = useAuth();
@@ -16,13 +16,13 @@ export default function PricingManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Get workout and program data
-  const { data: programs, isLoading: programsLoading } = useWorkoutData.usePrograms();
+  const { data: programs, isLoading: programsLoading } = workoutHooks.usePrograms();
   const { 
-    updateWorkoutPrice, 
-    updateProgramPrice 
-  } = useWorkoutData;
+    updateWorkoutPrice: updateWorkoutPriceHook, 
+    updateProgramPrice: updateProgramPriceHook 
+  } = workoutHooks;
   
-  const userPrograms = programs?.filter(program => program.userId === user?.id) || [];
+  const userPrograms = programs?.filter(program => program.user_id === user?.id) || [];
   
   // Get workout data from programs
   const workouts = React.useMemo(() => {
@@ -31,7 +31,7 @@ export default function PricingManagement() {
     const allWorkouts: Workout[] = [];
     
     programs.forEach(program => {
-      if (program.userId === user?.id && program.workouts) {
+      if (program.user_id === user?.id && program.workouts) {
         allWorkouts.push(...program.workouts);
       }
     });
@@ -40,8 +40,8 @@ export default function PricingManagement() {
   }, [programs, user?.id]);
   
   // Mutation hooks
-  const workoutPriceMutation = updateWorkoutPrice();
-  const programPriceMutation = updateProgramPrice();
+  const workoutPriceMutation = updateWorkoutPriceHook();
+  const programPriceMutation = updateProgramPriceHook();
   
   const handleSavePricing = (price: number, isPurchasable: boolean) => {
     if (!selectedItem) return;
@@ -172,7 +172,7 @@ export default function PricingManagement() {
                     <div className="col-span-2"></div>
                   </div>
                   
-                  {userPrograms.map((program: WorkoutProgram) => (
+                  {userPrograms.map((program) => (
                     <div 
                       key={program.id} 
                       className="grid grid-cols-12 gap-4 items-center p-4 rounded-md bg-dark-200 border border-dark-300"

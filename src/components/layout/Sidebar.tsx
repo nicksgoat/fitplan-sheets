@@ -122,7 +122,7 @@ export function Sidebar() {
               </Link>
             ))}
           </div>
-          {library && library.collections && library.collections.length > 0 && (
+          {library?.collections && library.collections.length > 0 && (
             <>
               <Separator className="my-4" />
               <div className="grid gap-2">

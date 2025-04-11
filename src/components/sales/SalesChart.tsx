@@ -66,8 +66,8 @@ export default function SalesChart() {
         `
       });
       
-      // Ensure we're returning an array of data points
-      return Array.isArray(data) ? data as SalesDataPoint[] : [];
+      // Ensure we're returning an array of data points with the right type
+      return Array.isArray(data) ? data as unknown as SalesDataPoint[] : [];
     },
     enabled: !!user
   });
