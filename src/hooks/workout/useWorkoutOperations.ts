@@ -1,5 +1,5 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
 import { WorkoutProgram } from '@/types/workout';
@@ -76,5 +76,23 @@ export function useUpdateWorkoutPrice() {
       console.error('Error updating workout pricing:', error);
       toast.error(`Error updating workout pricing: ${error.message}`);
     }
+  });
+}
+
+// Add the missing hooks for workout purchases
+
+export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
+  return useQuery({
+    queryKey: ['workout-purchase', workoutId, userId],
+    queryFn: () => workoutService.hasUserPurchasedWorkout(userId, workoutId),
+    enabled: !!userId && !!workoutId
+  });
+}
+
+export function useUserPurchasedWorkouts(userId: string) {
+  return useQuery({
+    queryKey: ['user-purchased-workouts', userId],
+    queryFn: () => workoutService.getUserPurchasedWorkouts(userId),
+    enabled: !!userId
   });
 }

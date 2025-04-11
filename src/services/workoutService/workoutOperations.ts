@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export async function addWorkout(weekId: string, name: string, dayNum: number) {
@@ -73,4 +74,29 @@ export async function updateWorkoutPrice(workoutId: string, price: number, isPur
     .eq('id', workoutId);
   
   if (error) throw error;
+}
+
+// Add the missing functions for workout purchases
+
+export async function hasUserPurchasedWorkout(userId: string, workoutId: string) {
+  const { count, error } = await supabase
+    .from('workout_purchases')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('workout_id', workoutId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return count > 0;
+}
+
+export async function getUserPurchasedWorkouts(userId: string) {
+  const { data, error } = await supabase
+    .from('workout_purchases')
+    .select('workout_id')
+    .eq('user_id', userId)
+    .eq('status', 'completed');
+  
+  if (error) throw error;
+  return data.map(purchase => purchase.workout_id);
 }

@@ -1,6 +1,14 @@
 
 // Export specific hooks from their respective files to avoid naming conflicts
-import { useAddWorkout, useUpdateWorkout, useDeleteWorkout } from './workout/useWorkoutOperations';
+import { 
+  useAddWorkout, 
+  useUpdateWorkout, 
+  useDeleteWorkout,
+  useUpdateWorkoutPrice,
+  useHasUserPurchasedWorkout,
+  useUserPurchasedWorkouts
+} from './workout/useWorkoutOperations';
+
 import { 
   usePrograms, 
   useProgram, 
@@ -72,10 +80,3 @@ export {
   useAddExerciseToCircuit,
   useRemoveExerciseFromCircuit
 };
-
-// Import the types that aren't directly imported above
-import { 
-  useUpdateWorkoutPrice, 
-  useHasUserPurchasedWorkout, 
-  useUserPurchasedWorkouts 
-} from './workout/useWorkoutOperations';
