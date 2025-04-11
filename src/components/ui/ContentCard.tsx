@@ -96,7 +96,7 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
           {isPurchasable && price && price > 0 && (
             <div className="absolute bottom-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center">
               <DollarSign className="h-3 w-3 mr-0.5" />
-              {price}
+              {typeof price === 'number' ? price.toFixed(2) : price}
             </div>
           )}
         </div>

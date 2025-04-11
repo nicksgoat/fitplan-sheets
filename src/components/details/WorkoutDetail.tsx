@@ -29,7 +29,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
     return acc + (exercise.sets?.length || 0);
   }, 0) || 0;
 
-  const hasPrice = workoutData?.isPurchasable && workoutData?.price && workoutData.price > 0;
+  const hasPrice = item.isPurchasable && item.price && item.price > 0;
 
   return (
     <div className="max-h-[85vh] overflow-y-auto p-4">
@@ -43,7 +43,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
         {hasPrice && (
           <div className="flex items-center mt-2 text-lg font-semibold text-green-500">
             <DollarSign className="h-5 w-5 mr-1" />
-            ${Number(workoutData?.price).toFixed(2)}
+            ${Number(item.price).toFixed(2)}
           </div>
         )}
         <DrawerDescription className="mt-2">
@@ -71,8 +71,8 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
           </div>
         </div>
 
-        {workoutData?.isPurchasable && (
-          <Badge className="bg-green-600 mb-4">Available for purchase</Badge>
+        {hasPrice && (
+          <Badge className="bg-green-600 mb-4">Available for purchase - ${Number(item.price).toFixed(2)}</Badge>
         )}
 
         <div className="my-4">
@@ -106,6 +106,14 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
           >
             Start Workout
           </Button>
+          {hasPrice && (
+            <Button 
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={() => {/* Add purchase functionality */}}
+            >
+              Buy for ${Number(item.price).toFixed(2)}
+            </Button>
+          )}
         </div>
       </DrawerFooter>
     </div>
