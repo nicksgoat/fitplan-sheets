@@ -9,20 +9,16 @@ import Index from './pages/Index';
 import Library from './pages/Library';
 import Sheets from './pages/Sheets';
 import Clubs from './pages/Clubs';
-import ClubDetail from './pages/ClubDetail';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 import { useAuth } from './hooks/useAuth';
 import { useEffect } from 'react';
-import { useUser } from './hooks/useUser';
-import ProgramDetail from './pages/ProgramDetail';
-import WorkoutDetail from './pages/WorkoutDetail';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
-
-// Import the new SalesDashboard component
 import SalesDashboard from './pages/SalesDashboard';
+import MainLayout from './components/layout/MainLayout';
 
+// Create router with existing pages
 const router = createBrowserRouter([
   {
     path: "/",
@@ -37,12 +33,8 @@ const router = createBrowserRouter([
     element: <Sheets />,
   },
   {
-    path: "/clubs",
+    path: "/clubs/*",
     element: <Clubs />,
-  },
-  {
-    path: "/clubs/:clubId",
-    element: <ClubDetail />,
   },
   {
     path: "/profile",
@@ -51,14 +43,6 @@ const router = createBrowserRouter([
   {
     path: "/auth",
     element: <Auth />,
-  },
-  {
-    path: "/programs/:programId",
-    element: <ProgramDetail />,
-  },
-  {
-    path: "/workouts/:workoutId",
-    element: <WorkoutDetail />,
   },
   {
     path: "/purchase/success",
@@ -75,20 +59,15 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const { authState } = useAuth();
-  const { user, isLoading } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
-    console.log('Auth State changed:', authState);
-  }, [authState]);
+    console.log('Auth State changed:', user);
+  }, [user]);
 
   useEffect(() => {
     console.log('User data loaded:', user);
   }, [user]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return <RouterProvider router={router} />;
 }

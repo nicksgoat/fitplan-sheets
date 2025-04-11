@@ -1,3 +1,4 @@
+
 import React from "react"
 import {
   Sheet,
@@ -30,9 +31,16 @@ import {
 } from "lucide-react"
 import { useLibrary } from "@/contexts/LibraryContext"
 
-export function Sidebar() {
+interface SidebarProps {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+export function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
   const { user, signOut } = useAuth()
-  const { collections } = useLibrary()
+  const libraryContext = useLibrary()
+  // Safely access collections or provide an empty array
+  const collections = libraryContext?.collections || []
 
   const navigationItems = [
     {

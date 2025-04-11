@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import { Sidebar } from './Sidebar';
 import MobileNavbar from './MobileNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
