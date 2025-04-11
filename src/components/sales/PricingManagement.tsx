@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useWorkoutData } from '@/hooks/useWorkoutData';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Pencil, Tag } from 'lucide-react';
 import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
 import { Workout, WorkoutProgram } from '@/types/workout';
+import * as useWorkoutData from '@/hooks/useWorkoutData';
 
 export default function PricingManagement() {
   const { user } = useAuth();

@@ -9,6 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Calendar as CalendarIcon, Download, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
+interface PurchaseRecord {
+  purchase_type: string;
+  product_id: string;
+  product_name: string;
+  purchase_date: string;
+  amount_paid: number;
+  platform_fee: number;
+  creator_earnings: number;
+  status: string;
+  customer_username?: string;
+  customer_name?: string;
+  customer_avatar?: string;
+}
+
 export default function PurchaseHistory() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
@@ -65,7 +79,8 @@ export default function PurchaseHistory() {
         `
       });
       
-      return data || [];
+      // Ensure we return an array of purchase records
+      return Array.isArray(data) ? data as PurchaseRecord[] : [];
     },
     enabled: !!user
   });
@@ -85,7 +100,7 @@ export default function PurchaseHistory() {
   };
 
   const exportToCsv = () => {
-    if (!purchaseHistory?.length) return;
+    if (!purchaseHistory || purchaseHistory.length === 0) return;
     
     // Prepare CSV content
     const headers = ['Date', 'Type', 'Product', 'Customer', 'Amount', 'Platform Fee', 'Earnings', 'Status'];
@@ -130,7 +145,7 @@ export default function PurchaseHistory() {
           size="sm"
           className="flex items-center gap-1"
           onClick={exportToCsv}
-          disabled={!purchaseHistory?.length}
+          disabled={!purchaseHistory || purchaseHistory.length === 0}
         >
           <Download className="h-4 w-4" />
           <span>Export</span>
@@ -151,7 +166,7 @@ export default function PurchaseHistory() {
           <div className="text-center py-8">Loading purchase history...</div>
         ) : !filteredPurchases.length ? (
           <div className="text-center py-8 text-gray-400">
-            {purchaseHistory?.length ? 
+            {purchaseHistory && purchaseHistory.length > 0 ? 
               'No results match your search criteria.' : 
               'No purchase history found.'}
           </div>
