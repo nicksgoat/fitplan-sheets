@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WorkoutProgram } from "@/types/workout";
 import { mapDbWorkoutToModel, mapDbWeekToModel, mapDbExerciseToModel, mapDbSetToModel, mapDbCircuitToModel } from './mappers';

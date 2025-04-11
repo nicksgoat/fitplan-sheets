@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutProgram, WorkoutWeek } from '@/types/workout';
@@ -71,7 +70,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
       }
       
       // Fetch all related data for each program
-      const fullPrograms = await Promise.all(programsData.map(async (program) => {
+      const fullPrograms: WorkoutProgram[] = await Promise.all(programsData.map(async (program) => {
         // Get weeks for this program
         const { data: weeksData, error: weeksError } = await supabase
           .from('weeks')
@@ -80,7 +79,15 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
         
         if (weeksError) {
           console.error("Error loading weeks:", weeksError);
-          return program;
+          return {
+            id: program.id,
+            name: program.name,
+            weeks: [],
+            workouts: [],
+            savedAt: program.created_at,
+            lastModified: program.updated_at,
+            isPublic: program.is_public || false
+          };
         }
         
         // Map database weeks to application model
@@ -94,7 +101,7 @@ export const LibraryProvider: React.FC<{children: ReactNode}> = ({ children }) =
         }));
         
         // Get workouts for each week
-        const workouts = [];
+        const workouts: Workout[] = [];
         
         for (const week of weeksData) {
           const { data: workoutsData, error: workoutsError } = await supabase

@@ -20,7 +20,7 @@ interface WorkoutSessionHeaderProps {
 }
 
 const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }) => {
-  const { program, renameWorkout, deleteWorkout } = useWorkout();
+  const { program, updateWorkoutName, deleteWorkout } = useWorkout();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -38,7 +38,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
 
   const handleSaveClick = () => {
     if (newName.trim()) {
-      renameWorkout(sessionId, newName);
+      updateWorkoutName(sessionId, newName);
     }
     setIsEditing(false);
   };
@@ -48,7 +48,7 @@ const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({ sessionId }
   };
 
   const confirmDelete = () => {
-    deleteWorkout(sessionId);
+    deleteWorkout(session.weekId || "", sessionId);
     setShowDeleteAlert(false);
   };
 

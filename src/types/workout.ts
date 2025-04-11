@@ -1,3 +1,4 @@
+
 export interface Set {
   id: string;
   reps: string;
@@ -62,6 +63,7 @@ export interface WorkoutProgram {
   weeks: WorkoutWeek[]; // Weeks array
   savedAt?: string; // Timestamp when the program was saved to library
   lastModified?: string; // Timestamp when the program was last modified
+  isPublic?: boolean; // Adding isPublic property to support public/private programs
 }
 
 // For backward compatibility
