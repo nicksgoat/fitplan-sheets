@@ -38,6 +38,7 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
 
   const fetchFilterOptions = async () => {
     try {
+      console.log('Fetching filter options...');
       // Fetch unique positions
       const { data: posData, error: posError } = await supabase
         .from('NFL Combine Database')
@@ -51,6 +52,7 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
       } else if (posData) {
         // Extract unique positions
         const uniquePositions = Array.from(new Set(posData.map(item => item.Pos))).filter(Boolean);
+        console.log('Positions loaded:', uniquePositions);
         setPositions(uniquePositions);
       }
 
@@ -67,6 +69,7 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
       } else if (yearData) {
         // Extract unique years
         const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year))).filter(Boolean);
+        console.log('Years loaded:', uniqueYears);
         setYears(uniqueYears);
       }
     } catch (err) {
@@ -100,25 +103,46 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         query = query.eq('Draft_Year', selectedYear);
       }
 
-      // Apply sorting - REMOVED the not(sortMetric, 'is', null) filter
-      // to display all records with NULL values sorted last
+      // Apply sorting based on the metric
+      // Make sure to properly handle the case where the field might be null
       if (sortMetric) {
-        query = query.order(sortMetric, { ascending: true, nullsFirst: false });
+        // First, get rows where the sort metric is not null
+        const { data: notNullData, error: notNullError } = await query
+          .not(sortMetric, 'is', null)
+          .order(sortMetric, { 
+            ascending: ['40yd', '3Cone', 'Shuttle'].includes(sortMetric), 
+            nullsFirst: false 
+          })
+          .limit(100);
+
+        if (notNullError) {
+          console.error('Error fetching combine data:', notNullError);
+          setError('Failed to load combine data');
+          setCombineData([]);
+          setIsLoading(false);
+          return;
+        }
+
+        if (notNullData && notNullData.length > 0) {
+          console.log(`Success: Retrieved ${notNullData.length} records`);
+          console.log('Sample data:', notNullData[0]);
+          setCombineData(notNullData);
+        } else {
+          console.log('No data found with current filters');
+          setCombineData([]);
+        }
       } else {
-        query = query.order('40yd', { ascending: true, nullsFirst: false });
-      }
+        // Default to 40yd sorting if no sortMetric provided
+        const { data, error } = await query
+          .not('40yd', 'is', null)
+          .order('40yd', { ascending: true, nullsFirst: false })
+          .limit(100);
 
-      // Limit to a reasonable number for performance
-      query = query.limit(100);
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching combine data:', error);
-        setError('Failed to load combine data');
-        setCombineData([]);
-      } else {
-        if (data && data.length > 0) {
+        if (error) {
+          console.error('Error fetching combine data:', error);
+          setError('Failed to load combine data');
+          setCombineData([]);
+        } else if (data && data.length > 0) {
           console.log(`Success: Retrieved ${data.length} records`);
           console.log('Sample data:', data[0]);
           setCombineData(data);

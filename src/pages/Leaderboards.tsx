@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NFLCombineTab from '@/components/leaderboard/NFLCombineTab';
 import LeaderboardTab from '@/components/leaderboard/LeaderboardTab';
@@ -14,6 +14,32 @@ const Leaderboards = () => {
   const [activeTab, setActiveTab] = useState("nfl-combine");
   const [isInitializing, setIsInitializing] = useState(false);
   const { user } = useAuth();
+
+  // Check if we have combine data on mount
+  useEffect(() => {
+    const checkCombineData = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('NFL Combine Database')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.error("Error checking combine data:", error);
+          return;
+        }
+        
+        if (count === 0) {
+          toast.info("No combine data found. Please initialize data to see NFL combine statistics.", {
+            duration: 5000,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to check combine data:", err);
+      }
+    };
+    
+    checkCombineData();
+  }, []);
 
   // Function to initialize sample data
   const initializeCombineData = async () => {

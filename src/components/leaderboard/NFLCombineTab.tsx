@@ -8,6 +8,7 @@ import { useUserCombineData } from '@/hooks/useUserCombineData';
 import { useAuth } from '@/hooks/useAuth';
 import MetricInfoCard from './cards/MetricInfoCard';
 import UserStatsCard from './cards/UserStatsCard';
+import { toast } from 'sonner';
 
 const NFLCombineTab: React.FC = () => {
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
@@ -29,7 +30,6 @@ const NFLCombineTab: React.FC = () => {
     userEstimations,
     nflAverages,
     loading: loadingUserData,
-    calculatePercentile
   } = useUserCombineData();
 
   const getUserEstimationForMetric = () => {
@@ -37,41 +37,52 @@ const NFLCombineTab: React.FC = () => {
     return userEstimations.find(est => est.drill_name === sortMetric);
   };
   
+  // Fetch filter options on component mount
   useEffect(() => {
+    console.log('Component mounted, fetching filter options...');
     fetchFilterOptions();
   }, []);
 
+  // Fetch data when filters change
   useEffect(() => {
     if (selectedPosition) localStorage.setItem('nfl_combine_position', selectedPosition);
     if (selectedYear) localStorage.setItem('nfl_combine_year', selectedYear.toString());
     localStorage.setItem('nfl_combine_sort', sortMetric);
 
+    console.log('Filters changed, fetching combine data...');
     fetchCombineData(selectedPosition, selectedYear, sortMetric);
   }, [selectedPosition, selectedYear, sortMetric]);
 
+  // Load saved filters from localStorage
   useEffect(() => {
     const savedPosition = localStorage.getItem('nfl_combine_position');
     const savedYear = localStorage.getItem('nfl_combine_year');
     const savedSort = localStorage.getItem('nfl_combine_sort');
 
+    console.log('Loading saved filters:', { savedPosition, savedYear, savedSort });
+    
     if (savedPosition) setSelectedPosition(savedPosition);
     if (savedYear) setSelectedYear(parseInt(savedYear));
     if (savedSort) setSortMetric(savedSort);
   }, []);
 
   const handlePositionChange = (value: string) => {
+    console.log('Position changed to:', value);
     setSelectedPosition(value === 'all' ? null : value);
   };
 
   const handleYearChange = (value: string) => {
+    console.log('Year changed to:', value);
     setSelectedYear(value === 'all' ? null : parseInt(value));
   };
 
   const clearFilters = () => {
+    console.log('Clearing filters');
     setSelectedPosition(null);
     setSelectedYear(null);
     localStorage.removeItem('nfl_combine_position');
     localStorage.removeItem('nfl_combine_year');
+    toast.info("Filters cleared");
   };
 
   const userEstimation = getUserEstimationForMetric();
@@ -90,6 +101,15 @@ const NFLCombineTab: React.FC = () => {
       (yourCombineTab as HTMLElement).click();
     }
   };
+
+  console.log('Rendering with data:', { 
+    combineDataLength: combineData?.length,
+    sortMetric, 
+    isLoading, 
+    error,
+    userEstimation,
+    nflAverage
+  });
 
   return (
     <div className="space-y-6">

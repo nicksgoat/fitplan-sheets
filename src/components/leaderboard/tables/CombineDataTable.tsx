@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowUpDown, Star, Trophy, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 
 interface NFLCombineResult {
   id: number;
@@ -46,6 +46,13 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
   error,
   sortMetric
 }) => {
+  console.log('CombineDataTable props:', {
+    combineDataLength: combineData?.length,
+    sortMetric,
+    isLoading,
+    hasError: !!error
+  });
+
   // Helper to determine if user beats the NFL player's score
   const userBeatsStat = (player: NFLCombineResult): boolean => {
     if (!userEstimation || userEstimation.drill_name !== sortMetric) return false;
@@ -81,6 +88,12 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
     return ['40yd', '3Cone', 'Shuttle'].includes(metric);
   };
 
+  // Get the actual metric value from the player record
+  const getPlayerMetricValue = (player: NFLCombineResult): string => {
+    const value = player[sortMetric as keyof NFLCombineResult];
+    return value?.toString() || '-';
+  };
+
   return (
     <div className="rounded-md border border-gray-800 overflow-hidden">
       <Table>
@@ -103,7 +116,10 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
           {isLoading ? (
             <TableRow>
               <TableCell colSpan={6} className="h-24 text-center">
-                Loading combine data...
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Loading combine data...
+                </div>
               </TableCell>
             </TableRow>
           ) : error ? (
@@ -137,7 +153,7 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
                 <TableCell className={`text-center font-semibold ${userBeatsStat(player) ? 'text-green-400' : ''}`}>
                   <div className="flex items-center justify-center">
                     {userBeatsStat(player) && <Star className="h-3 w-3 mr-1 text-yellow-500" />}
-                    <span className="text-lg">{player[sortMetric as keyof NFLCombineResult] || '-'}</span>
+                    <span className="text-lg">{getPlayerMetricValue(player)}</span>
                     
                     {/* Show trend icon for first 5 places */}
                     {index < 5 && (
