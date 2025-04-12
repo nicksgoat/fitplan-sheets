@@ -23,6 +23,8 @@ import CreateEvent from './pages/CreateEvent';
 import EventDetailScreen from './components/clubs/EventDetailScreen';
 import ClubDetailPage from './components/clubs/ClubDetailPage';
 import Clubs from './pages/Clubs';
+import PurchaseSuccess from './pages/PurchaseSuccess';
+import PurchaseCancel from './pages/PurchaseCancel';
 
 function App() {
   return (
