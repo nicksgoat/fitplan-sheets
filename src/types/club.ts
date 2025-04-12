@@ -50,7 +50,7 @@ export interface EventParticipant {
   status: EventParticipationStatus;
   created_at: string;
   updated_at?: string;
-  profile?: any;
+  profile?: any | null; // Make sure profile is optional
   joined_at?: string; // Added for compatibility
 }
 

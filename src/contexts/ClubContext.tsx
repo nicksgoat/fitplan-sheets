@@ -279,8 +279,9 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const typedParticipants = (data || []).map(participant => ({
         ...participant,
         created_at: participant.joined_at || new Date().toISOString(),
-        updated_at: participant.joined_at ? undefined : undefined,
-        status: participant.status as EventParticipationStatus
+        updated_at: participant.joined_at ? new Date().toISOString() : undefined,
+        status: participant.status as EventParticipationStatus,
+        profile: participant.profile || null
       } as EventParticipant));
       
       setCurrentEventParticipants(typedParticipants);
@@ -296,6 +297,71 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       participant => participant.user_id === user.id && participant.event_id === eventId
     );
   }, [user, currentEventParticipants]);
+
+  const respondToClubEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<EventParticipant> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data: existingResponse } = await supabase
+        .from('event_participants')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (existingResponse) {
+        const { data, error } = await supabase
+          .from('event_participants')
+          .update({ status })
+          .eq('id', existingResponse.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        const participant: EventParticipant = {
+          ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
+          status: data.status as EventParticipationStatus,
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: null
+        };
+        
+        return participant;
+      } else {
+        const { data, error } = await supabase
+          .from('event_participants')
+          .insert({
+            event_id: eventId,
+            user_id: user.id,
+            status
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        const participant: EventParticipant = {
+          ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
+          status: data.status as EventParticipationStatus,
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: null
+        };
+        
+        return participant;
+      }
+    } catch (error) {
+      console.error('Error responding to event:', error);
+      throw error;
+    }
+  }, [user]);
 
   const joinEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<void> => {
     if (!user) throw new Error('User not authenticated');
@@ -488,71 +554,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   }, []);
-
-  const respondToClubEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<EventParticipant> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    try {
-      const { data: existingResponse } = await supabase
-        .from('event_participants')
-        .select('*')
-        .eq('event_id', eventId)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (existingResponse) {
-        const { data, error } = await supabase
-          .from('event_participants')
-          .update({ status })
-          .eq('id', existingResponse.id)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        
-        const participant: EventParticipant = {
-          ...data,
-          id: data.id,
-          event_id: data.event_id,
-          user_id: data.user_id,
-          status: data.status as EventParticipationStatus,
-          created_at: data.joined_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          profile: data.profile
-        };
-        
-        return participant;
-      } else {
-        const { data, error } = await supabase
-          .from('event_participants')
-          .insert({
-            event_id: eventId,
-            user_id: user.id,
-            status
-          })
-          .select()
-          .single();
-          
-        if (error) throw error;
-        
-        const participant: EventParticipant = {
-          ...data,
-          id: data.id,
-          event_id: data.event_id,
-          user_id: data.user_id,
-          status: data.status as EventParticipationStatus,
-          created_at: data.joined_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          profile: data.profile
-        };
-        
-        return participant;
-      }
-    } catch (error) {
-      console.error('Error responding to event:', error);
-      throw error;
-    }
-  }, [user]);
 
   const createNewPost = useCallback(async (postData: any): Promise<ClubPost> => {
     if (!user) throw new Error('User not authenticated');

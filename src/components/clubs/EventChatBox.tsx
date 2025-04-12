@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { SendIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { safelyGetProfile } from '@/utils/profileUtils';
 
 interface Message {
   id: string;
@@ -82,7 +83,17 @@ const EventChatBox: React.FC<EventChatBoxProps> = ({ eventId, channelId }) => {
 
       if (error) throw error;
       if (data) {
-        setMessages(prev => [...prev, data as Message]);
+        // Process message before adding it to state
+        const processedMessage: Message = {
+          id: data.id,
+          channel_id: data.channel_id,
+          user_id: data.user_id,
+          content: data.content,
+          created_at: data.created_at,
+          is_pinned: data.is_pinned,
+          profile: safelyGetProfile(data.profile, data.user_id)
+        };
+        setMessages(prev => [...prev, processedMessage]);
       }
     } catch (error) {
       console.error('Error fetching new message:', error);
@@ -102,7 +113,19 @@ const EventChatBox: React.FC<EventChatBoxProps> = ({ eventId, channelId }) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data as Message[] || []);
+      
+      // Process messages before setting state
+      const processedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        channel_id: msg.channel_id,
+        user_id: msg.user_id,
+        content: msg.content,
+        created_at: msg.created_at,
+        is_pinned: msg.is_pinned,
+        profile: safelyGetProfile(msg.profile, msg.user_id)
+      }));
+      
+      setMessages(processedMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast.error('Failed to load chat messages');
