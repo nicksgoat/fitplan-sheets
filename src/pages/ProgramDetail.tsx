@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkoutProgram } from '@/types/workout';
+import { WorkoutProgram, Workout } from '@/types/workout';
 import { parseProductUrl } from '@/utils/urlUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
@@ -75,7 +75,7 @@ const ProgramDetail = () => {
           return {
             id: week.id,
             name: week.name,
-            order: week.order_num,
+            order: week.order_num, // Changed from order_num to order
             workouts: weekWorkouts,
             savedAt: week.created_at,
             lastModified: week.updated_at
@@ -88,6 +88,7 @@ const ProgramDetail = () => {
           name: workout.name,
           day: workout.day_num,
           exercises: [],
+          circuits: [], // Add empty circuits array to match the Workout type
           weekId: workout.week_id,
           savedAt: workout.created_at,
           lastModified: workout.updated_at
@@ -104,7 +105,7 @@ const ProgramDetail = () => {
           isPublic: programData.is_public,
           isPurchasable: programData.is_purchasable,
           price: programData.price,
-          userId: programData.user_id
+          creatorId: programData.user_id // Use creatorId instead of userId
         };
         
         setProgram(mappedProgram);

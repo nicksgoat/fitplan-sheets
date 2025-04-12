@@ -48,6 +48,7 @@ export interface Workout {
   lastModified?: string; // Timestamp when the workout was last modified
   price?: number; // Price for purchasing this workout
   isPurchasable?: boolean; // Whether this workout can be purchased
+  creatorId?: string; // ID of the creator of this workout
 }
 
 export interface WorkoutWeek {
@@ -69,7 +70,7 @@ export interface WorkoutProgram {
   isPublic?: boolean; // Adding isPublic property to support public/private programs
   price?: number; // Price for purchasing this program
   isPurchasable?: boolean; // Whether this program can be purchased
-  userId?: string; // The creator of this program
+  creatorId?: string; // The creator of this program
 }
 
 // For backward compatibility

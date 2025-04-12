@@ -59,11 +59,12 @@ const WorkoutDetail = () => {
           name: data.name,
           day: data.day_num,
           exercises: data.exercises || [],
+          circuits: [], // Add empty circuits array since it's required by the Workout type
           savedAt: data.created_at,
           lastModified: data.updated_at,
           isPurchasable: data.is_purchasable || false,
           price: data.price || 0,
-          userId: data.user_id,
+          creatorId: data.user_id // Use creatorId property instead of userId
         };
         
         setWorkout(mappedWorkout);
@@ -86,7 +87,7 @@ const WorkoutDetail = () => {
       itemId: workout.id,
       itemName: workout.name,
       price: parseFloat(workout.price.toString()),
-      creatorId: workout.userId || ''
+      creatorId: workout.creatorId || '' // Changed from userId to creatorId
     });
   };
   
