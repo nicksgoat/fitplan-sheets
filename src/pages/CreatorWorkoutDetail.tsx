@@ -14,7 +14,6 @@ import WorkoutDetailSkeleton from '@/components/workout/WorkoutDetailSkeleton';
 import WorkoutDetailError from '@/components/workout/WorkoutDetailError';
 import WorkoutStats from '@/components/workout/WorkoutStats';
 import ExerciseList from '@/components/workout/ExerciseList';
-import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { ArrowLeft, Share2 } from 'lucide-react';
@@ -81,16 +80,19 @@ const CreatorWorkoutDetail = () => {
   }, [username, workoutSlug]);
   
   // Fetch workout details using the existing hook once we have the ID
-  const { workout, loading, error, creatorInfo } = useWorkoutDetail(workoutId);
+  // Fix: Break the direct reference chain between the workout detail and the components
+  const workoutDetailResult = useWorkoutDetail(workoutId);
+  const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = workoutDetailResult;
   
+  // Fix: Use the workout ID directly with useHasUserPurchased instead of using workout.id
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
     useHasUserPurchasedWorkout(user?.id || '', workoutId || '');
   
   // Combined loading state
-  const isPageLoading = isLoading || loading;
+  const isPageLoading = isLoading || workoutLoading;
   
   // Combined error state
-  const pageError = fetchError || error;
+  const pageError = fetchError || workoutError;
   
   const handleBackClick = () => {
     navigate(-1);
@@ -104,13 +106,16 @@ const CreatorWorkoutDetail = () => {
     return <WorkoutDetailError error={pageError || 'Workout not found'} />;
   }
   
+  // Calculate total sets here to avoid deep type nesting in JSX
   const totalSets = workout.exercises.reduce((acc, exercise) => {
     return acc + (exercise.sets?.length || 0);
   }, 0);
   
+  // Extract these values to simplify the JSX and avoid deep nesting
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
+  const shareUrl = buildCreatorProductUrl(username || '', workoutSlug || '');
   
   return (
     <div className="container max-w-md mx-auto p-3">
@@ -118,7 +123,7 @@ const CreatorWorkoutDetail = () => {
         title={`${workout.name} - FitBloom Workout`}
         description={workoutDescription}
         type="product"
-        url={buildCreatorProductUrl(username || '', workoutSlug || '')}
+        url={shareUrl}
         preload={[
           {
             href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
@@ -134,7 +139,7 @@ const CreatorWorkoutDetail = () => {
         availability={workout.isPurchasable ? 'InStock' : 'OutOfStock'}
         category="Workout Program"
         seller={creatorInfo ? { name: creatorInfo.name } : undefined}
-        url={`${window.location.origin}${buildCreatorProductUrl(username || '', workoutSlug || '')}`}
+        url={`${window.location.origin}${shareUrl}`}
       />
       
       <div className="flex justify-between items-center mb-4">
