@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Explore from './pages/Explore';
 import Search from './pages/Search';
@@ -34,7 +34,9 @@ function App() {
     <AppProviders>
       <Router>
         <Routes>
-          <Route path="/" element={<Index />} />
+          {/* Redirect root to explore */}
+          <Route path="/" element={<Navigate to="/explore" replace />} />
+          <Route path="/index" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<MainLayout />}>
             <Route path="explore" element={<Explore />} />
