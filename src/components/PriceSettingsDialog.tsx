@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,12 @@ export function PriceSettingsDialog({
 }: PriceSettingsDialogProps) {
   const [price, setPrice] = useState(currentPrice.toString());
   const [sellable, setSellable] = useState(isPurchasable);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setPrice(currentPrice.toString());
+    setSellable(isPurchasable);
+  }, [currentPrice, isPurchasable, open]);
   
   const handleSave = () => {
     // Convert price to number with 2 decimal places

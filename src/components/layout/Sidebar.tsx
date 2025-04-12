@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut, Calendar, Users, Award } from 'lucide-react';
+import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut, Calendar, Users, Award, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,7 +20,7 @@ const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const navItems = [
     { name: 'Home', path: '/explore', icon: <Home className="h-5 w-5" /> },
@@ -30,6 +31,12 @@ const Sidebar = ({
     { name: 'Leaderboards', path: '/leaderboards', icon: <Award className="h-5 w-5" /> },
     { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
     { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
+  ];
+  
+  // Creator tools navigation items
+  const creatorItems = [
+    { name: 'Create Exercise', path: '/exercises/create', icon: <Dumbbell className="h-5 w-5" /> },
+    { name: 'Creator Dashboard', path: '/creator', icon: <LayoutDashboard className="h-5 w-5" /> },
   ];
 
   const handleLogout = async () => {
@@ -101,6 +108,33 @@ const Sidebar = ({
             </li>
           ))}
         </ul>
+        
+        {/* Creator Tools Section */}
+        {user && (
+          <div className="mt-8 space-y-2">
+            {!collapsed && <h3 className="px-3 text-xs text-gray-400 uppercase tracking-wider">Creator Tools</h3>}
+            <ul className="space-y-2">
+              {creatorItems.map((item) => (
+                <li key={item.path}>
+                  <Link to={item.path}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start text-white hover:bg-gray-900 hover:text-white",
+                        location.pathname === item.path && "bg-gray-900 text-fitbloom-purple font-medium",
+                        collapsed && "justify-center px-2"
+                      )}
+                      title={collapsed ? item.name : undefined}
+                    >
+                      {item.icon}
+                      {!collapsed && <span className="ml-3">{item.name}</span>}
+                    </Button>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
       <div className="p-4 border-t border-gray-800 space-y-2">
         <Link to="/profile">

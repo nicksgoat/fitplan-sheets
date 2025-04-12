@@ -25,6 +25,7 @@ import ClubDetailPage from './components/clubs/ClubDetailPage';
 import Clubs from './pages/Clubs';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
+import CreatorDashboard from './pages/CreatorDashboard';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
             <Route path="purchase/success" element={<PurchaseSuccess />} />
             <Route path="purchase/cancel" element={<PurchaseCancel />} />
             <Route path="leaderboards" element={<Leaderboards />} />
+            <Route path="creator" element={<AuthenticatedRoute><CreatorDashboard /></AuthenticatedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
