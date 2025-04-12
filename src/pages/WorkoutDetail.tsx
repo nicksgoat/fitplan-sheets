@@ -16,6 +16,24 @@ import { formatCurrency } from '@/utils/workout';
 import ProductSchema from '@/components/schema/ProductSchema';
 import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 
+interface WorkoutDataFromDB {
+  id: string;
+  name: string;
+  day_num: number;
+  created_at: string;
+  updated_at: string;
+  is_purchasable: boolean;
+  price: number;
+  week_id: string;
+  user_id: string;
+  exercises: {
+    id: string;
+    name: string;
+    notes: string;
+    sets: any[];
+  }[];
+}
+
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
   const [workout, setWorkout] = useState<Workout | null>(null);
@@ -53,17 +71,19 @@ const WorkoutDetail = () => {
         
         if (error) throw error;
         
+        const workoutData = data as unknown as WorkoutDataFromDB;
+        
         const mappedWorkout: Workout = {
-          id: data.id,
-          name: data.name,
-          day: data.day_num,
-          exercises: data.exercises || [],
+          id: workoutData.id,
+          name: workoutData.name,
+          day: workoutData.day_num,
+          exercises: workoutData.exercises || [],
           circuits: [],
-          savedAt: data.created_at,
-          lastModified: data.updated_at,
-          isPurchasable: data.is_purchasable || false,
-          price: data.price || 0,
-          creatorId: data.user_id
+          savedAt: workoutData.created_at,
+          lastModified: workoutData.updated_at,
+          isPurchasable: workoutData.is_purchasable || false,
+          price: workoutData.price || 0,
+          creatorId: workoutData.user_id
         };
         
         setWorkout(mappedWorkout);

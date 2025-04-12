@@ -56,7 +56,8 @@ export function useStripeCheckout() {
       if (data && data.url) {
         // Track analytics before redirecting
         try {
-          if (window.gtag) {
+          // Check if gtag is available before using it
+          if (typeof window !== 'undefined' && window.gtag) {
             window.gtag('event', 'begin_checkout', {
               currency: 'USD',
               value: price,
