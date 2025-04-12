@@ -1,3 +1,4 @@
+
 export interface Set {
   id: string;
   reps: string;
@@ -49,6 +50,7 @@ export interface Workout {
   price?: number; // Price for purchasing this workout
   isPurchasable?: boolean; // Whether this workout can be purchased
   creatorId?: string; // ID of the creator of this workout
+  slug?: string; // Added slug for URL-friendly paths
 }
 
 export interface WorkoutWeek {
@@ -71,6 +73,7 @@ export interface WorkoutProgram {
   price?: number; // Price for purchasing this program
   isPurchasable?: boolean; // Whether this program can be purchased
   creatorId?: string; // The creator of this program
+  slug?: string; // Added slug for URL-friendly paths
 }
 
 // For backward compatibility
