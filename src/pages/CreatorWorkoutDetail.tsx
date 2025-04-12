@@ -17,6 +17,7 @@ import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
+import { toast } from 'sonner';
 
 interface WorkoutDetailState {
   id: string | null;
@@ -42,32 +43,49 @@ const CreatorWorkoutDetail = () => {
         return;
       }
       
+      console.log(`Looking for workout with username: ${username} and slug: ${workoutSlug}`);
+      
       try {
+        // First get the creator's profile by username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id')
           .eq('username', username)
           .maybeSingle();
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          throw profileError;
+        }
+        
         if (!profileData) {
+          console.error(`Creator ${username} not found`);
           setState(prev => ({ ...prev, error: `Creator ${username} not found`, isLoading: false }));
           return;
         }
         
+        console.log(`Found profile ID: ${profileData.id}`);
+        
+        // Then get the workout by slug and creator ID
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
           .select('id')
           .eq('slug', workoutSlug)
-          .eq('week_id', profileData.id)
+          .eq('user_id', profileData.id)
           .maybeSingle();
           
-        if (workoutError) throw workoutError;
+        if (workoutError) {
+          console.error("Workout error:", workoutError);
+          throw workoutError;
+        }
+        
         if (!workoutData) {
-          setState(prev => ({ ...prev, error: `Workout ${workoutSlug} not found`, isLoading: false }));
+          console.error(`Workout ${workoutSlug} not found`);
+          setState(prev => ({ ...prev, error: `Workout "${workoutSlug}" not found`, isLoading: false }));
           return;
         }
         
+        console.log(`Found workout ID: ${workoutData.id}`);
         setState({ id: workoutData.id, isLoading: false, error: null });
       } catch (error: any) {
         console.error('Error fetching workout:', error);

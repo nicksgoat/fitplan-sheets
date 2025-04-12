@@ -1,13 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { generateSlug } from "@/utils/urlUtils";
 
 export async function addWorkout(weekId: string, name: string, dayNum: number) {
+  const slug = generateSlug(name);
+  
   const { data, error } = await supabase
     .from('workouts')
     .insert({
       week_id: weekId,
       name,
-      day_num: dayNum
+      day_num: dayNum,
+      slug
     })
     .select()
     .single();
@@ -44,7 +48,10 @@ export async function addWorkout(weekId: string, name: string, dayNum: number) {
 
 export async function updateWorkout(workoutId: string, updates: { name?: string, dayNum?: number }) {
   const updateData: any = {};
-  if (updates.name) updateData.name = updates.name;
+  if (updates.name) {
+    updateData.name = updates.name;
+    updateData.slug = generateSlug(updates.name);
+  }
   if (updates.dayNum !== undefined) updateData.day_num = updates.dayNum;
   
   const { error } = await supabase
