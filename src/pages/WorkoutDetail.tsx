@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ const WorkoutDetail = () => {
   const navigate = useNavigate();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
   
-  // Extract the actual ID from the URL parameter (removes the slug part)
   const id = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
   
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ const ProgramDetail = () => {
   const navigate = useNavigate();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
   
-  // Extract the actual ID from the URL parameter (removes the slug part)
   const id = programId ? parseProductUrl(`/program/${programId}`) : null;
   
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
@@ -39,7 +37,6 @@ const ProgramDetail = () => {
     
     const fetchProgram = async () => {
       try {
-        // Fetch the program details
         const { data: programData, error: programError } = await supabase
           .from('programs')
           .select('*')
@@ -48,7 +45,6 @@ const ProgramDetail = () => {
         
         if (programError) throw programError;
         
-        // Fetch the weeks for this program
         const { data: weeksData, error: weeksError } = await supabase
           .from('weeks')
           .select('*')
@@ -57,7 +53,6 @@ const ProgramDetail = () => {
         
         if (weeksError) throw weeksError;
         
-        // Fetch the workouts for this program
         const { data: workoutsData, error: workoutsError } = await supabase
           .from('workouts')
           .select('*')
@@ -66,7 +61,6 @@ const ProgramDetail = () => {
         
         if (workoutsError) throw workoutsError;
         
-        // Map weeks to include their workouts
         const mappedWeeks = weeksData.map(week => {
           const weekWorkouts = workoutsData
             .filter(workout => workout.week_id === week.id)
@@ -75,26 +69,24 @@ const ProgramDetail = () => {
           return {
             id: week.id,
             name: week.name,
-            order: week.order_num, // Changed from order_num to order
+            order: week.order_num,
             workouts: weekWorkouts,
             savedAt: week.created_at,
             lastModified: week.updated_at
           };
         });
         
-        // Map workouts for program
         const mappedWorkouts = workoutsData.map(workout => ({
           id: workout.id,
           name: workout.name,
           day: workout.day_num,
           exercises: [],
-          circuits: [], // Add empty circuits array to match the Workout type
+          circuits: [],
           weekId: workout.week_id,
           savedAt: workout.created_at,
           lastModified: workout.updated_at
         }));
         
-        // Create the complete program
         const mappedProgram: WorkoutProgram = {
           id: programData.id,
           name: programData.name,
@@ -105,7 +97,7 @@ const ProgramDetail = () => {
           isPublic: programData.is_public,
           isPurchasable: programData.is_purchasable,
           price: programData.price,
-          creatorId: programData.user_id // Use creatorId instead of userId
+          creatorId: programData.user_id
         };
         
         setProgram(mappedProgram);
@@ -128,7 +120,7 @@ const ProgramDetail = () => {
       itemId: program.id,
       itemName: program.name,
       price: parseFloat(program.price.toString()),
-      creatorId: program.userId || ''
+      creatorId: program.creatorId || ''
     });
   };
   

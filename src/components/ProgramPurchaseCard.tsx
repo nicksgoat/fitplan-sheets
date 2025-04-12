@@ -27,7 +27,7 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
       itemId: program.id,
       itemName: program.name,
       price: parseFloat(program.price.toString()),
-      creatorId: program.userId || ''
+      creatorId: program.creatorId || ''
     });
   };
   
