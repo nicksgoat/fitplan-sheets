@@ -6,17 +6,21 @@ import { Badge } from '@/components/ui/badge';
 
 interface WorkoutStatsProps {
   workout: Workout;
-  totalSets: number;
+  totalSets?: number; // Make totalSets optional to prevent errors
 }
 
 const WorkoutStats: React.FC<WorkoutStatsProps> = ({
   workout,
-  totalSets
+  totalSets = 0 // Provide a default value
 }) => {
+  // Calculate total sets if not provided
+  const calculatedTotalSets = totalSets || workout.exercises.reduce((total, exercise) => 
+    total + (exercise.sets?.length || 0), 0);
+  
   // Determine difficulty based on intensity and number of sets
   const getDifficulty = () => {
-    if (totalSets > 25) return 'Advanced';
-    if (totalSets > 15) return 'Intermediate';
+    if (calculatedTotalSets > 25) return 'Advanced';
+    if (calculatedTotalSets > 15) return 'Intermediate';
     return 'Beginner';
   };
 
@@ -28,7 +32,7 @@ const WorkoutStats: React.FC<WorkoutStatsProps> = ({
       </div>
       <div className="flex flex-col items-center p-2 bg-dark-300 rounded-md">
         <Clock className="h-4 w-4 mb-1 text-fitbloom-purple" />
-        <span className="text-xs text-center">{totalSets} sets</span>
+        <span className="text-xs text-center">{calculatedTotalSets} sets</span>
       </div>
       <div className="flex flex-col items-center p-2 bg-dark-300 rounded-md">
         <Tag className="h-4 w-4 mb-1 text-fitbloom-purple" />

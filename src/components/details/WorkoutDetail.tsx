@@ -17,6 +17,10 @@ interface WorkoutDetailProps {
 }
 
 const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose }) => {
+  // Calculate total sets
+  const totalSets = workoutData?.exercises.reduce((total, exercise) => 
+    total + (exercise.sets?.length || 0), 0) || 0;
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown";
     try {
