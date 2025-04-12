@@ -11,6 +11,7 @@ interface CheckoutParams {
   price: number;
   creatorId: string;
   guestEmail?: string;
+  referralSource?: string; // Added for tracking referral sources
 }
 
 export function useStripeCheckout() {
@@ -23,7 +24,8 @@ export function useStripeCheckout() {
     itemName, 
     price, 
     creatorId, 
-    guestEmail 
+    guestEmail,
+    referralSource
   }: CheckoutParams) => {
     try {
       setLoading(true);
@@ -45,7 +47,8 @@ export function useStripeCheckout() {
           userId: user?.id || 'guest',
           creatorId,
           guestEmail: isGuestCheckout ? guestEmail : undefined,
-          isGuest: isGuestCheckout
+          isGuest: isGuestCheckout,
+          referralSource // Pass the referral source to the checkout session
         }
       });
 
@@ -66,11 +69,25 @@ export function useStripeCheckout() {
                 item_name: itemName,
                 item_category: itemType,
                 price: price,
+                referral_source: referralSource || 'direct'
               }]
             });
           }
         } catch (analyticsError) {
           console.error('Analytics error:', analyticsError);
+        }
+        
+        // Save last checkout to localStorage for cross-device continuity
+        try {
+          localStorage.setItem('lastCheckout', JSON.stringify({
+            itemType,
+            itemId,
+            itemName,
+            price,
+            timestamp: new Date().toISOString()
+          }));
+        } catch (storageError) {
+          console.error('Storage error:', storageError);
         }
         
         // Redirect to Stripe checkout

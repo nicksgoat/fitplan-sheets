@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import Stripe from "https://esm.sh/stripe@12.5.0?dts";
@@ -54,7 +53,7 @@ serve(async (req) => {
       const session = event.data.object;
       
       // Extract metadata
-      const { itemType, itemId, userId, platformFee, creatorEarnings } = session.metadata;
+      const { itemType, itemId, userId, platformFee, creatorEarnings, referralSource } = session.metadata;
       
       if (itemType === 'program') {
         // Record program purchase
@@ -68,7 +67,8 @@ serve(async (req) => {
             creator_earnings: parseFloat(creatorEarnings),
             stripe_session_id: session.id,
             purchase_date: new Date().toISOString(),
-            status: 'completed'
+            status: 'completed',
+            referral_source: referralSource || 'direct'
           });
           
         if (error) {
@@ -91,7 +91,8 @@ serve(async (req) => {
             creator_earnings: parseFloat(creatorEarnings),
             stripe_session_id: session.id,
             purchase_date: new Date().toISOString(),
-            status: 'completed'
+            status: 'completed',
+            referral_source: referralSource || 'direct'
           });
           
         if (error) {

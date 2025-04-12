@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/utils/workout';
 
 interface GuestCheckoutButtonProps {
   itemType: 'workout' | 'program' | 'club';
@@ -12,12 +13,32 @@ interface GuestCheckoutButtonProps {
   itemName: string;
   price: number;
   creatorId: string;
+  variant?: 'default' | 'secondary' | 'outline';
+  size?: 'default' | 'sm' | 'lg';
 }
 
-export function GuestCheckoutButton({ itemType, itemId, itemName, price, creatorId }: GuestCheckoutButtonProps) {
+export function GuestCheckoutButton({ 
+  itemType, 
+  itemId, 
+  itemName, 
+  price, 
+  creatorId,
+  variant = 'default', 
+  size = 'default'
+}: GuestCheckoutButtonProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [savedEmail, setSavedEmail] = useState<string | null>(null);
   const { initiateCheckout, loading } = useStripeCheckout();
+  
+  // Check for previously used guest email
+  useEffect(() => {
+    const previousEmail = localStorage.getItem('guestEmail');
+    setSavedEmail(previousEmail);
+    if (previousEmail) {
+      setEmail(previousEmail);
+    }
+  }, []);
   
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +51,10 @@ export function GuestCheckoutButton({ itemType, itemId, itemName, price, creator
     // Store email in localStorage for later use
     localStorage.setItem('guestEmail', email);
     
+    // Get referral source if available
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralSource = urlParams.get('ref') || urlParams.get('source') || undefined;
+    
     // Proceed with checkout
     initiateCheckout({
       itemType,
@@ -37,23 +62,27 @@ export function GuestCheckoutButton({ itemType, itemId, itemName, price, creator
       itemName,
       price,
       creatorId,
-      guestEmail: email
+      guestEmail: email,
+      referralSource
     });
     
     setOpen(false);
   };
+
+  const buttonText = loading 
+    ? 'Processing...' 
+    : `Quick Purchase (${formatCurrency(price)})`;
   
   return (
     <>
       <Button 
         onClick={() => setOpen(true)}
-        className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+        className={variant === 'default' ? "bg-fitbloom-purple hover:bg-fitbloom-purple/90" : ""}
+        variant={variant}
+        size={size}
         disabled={loading}
       >
-        {loading ? 'Processing...' : `Quick Purchase (${new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(price)})`}
+        {buttonText}
       </Button>
       
       <Dialog open={open} onOpenChange={setOpen}>
@@ -80,6 +109,12 @@ export function GuestCheckoutButton({ itemType, itemId, itemName, price, creator
                 required
               />
             </div>
+            
+            {savedEmail && email !== savedEmail && (
+              <div className="text-xs text-amber-400">
+                <p>Use a different email than your previous purchase? You may need to create separate accounts later.</p>
+              </div>
+            )}
             
             <div className="text-xs text-gray-400">
               <p>You'll receive a receipt and access instructions at this email.</p>

@@ -1,20 +1,19 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout } from '@/types/workout';
 import { parseProductUrl } from '@/utils/urlUtils';
 import { useAuth } from '@/hooks/useAuth';
-import { useStripeCheckout } from '@/hooks/useStripeCheckout';
-import { Button } from '@/components/ui/button';
 import { useHasUserPurchasedWorkout } from '@/hooks/useWorkoutData';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Clock, Tag, ArrowLeft, Share2 } from 'lucide-react';
+import { Dumbbell, Clock, Tag, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import ShareButton from '@/components/share/ShareButton';
 import MetaTags from '@/components/meta/MetaTags';
-import { formatCurrency } from '@/utils/workout';
-import ProductSchema from '@/components/schema/ProductSchema';
-import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
+import EnhancedProductSchema from '@/components/schema/EnhancedProductSchema';
+import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
+import EnhancedShareButton from '@/components/share/EnhancedShareButton';
 
 interface WorkoutDataFromDB {
   id: string;
@@ -39,14 +38,28 @@ const WorkoutDetail = () => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [creatorInfo, setCreatorInfo] = useState<{ name: string } | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
   
   const id = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
   
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
     useHasUserPurchasedWorkout(user?.id || '', id || '');
+  
+  // Preload exercise details for better performance
+  useEffect(() => {
+    const preloadImage = (url: string) => {
+      const img = new Image();
+      img.src = url;
+    };
+
+    // Preload OG image for sharing
+    if (workout?.name) {
+      const ogImageUrl = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
+      preloadImage(ogImageUrl);
+    }
+  }, [workout?.name]);
   
   useEffect(() => {
     if (!id) {
@@ -87,6 +100,22 @@ const WorkoutDetail = () => {
         };
         
         setWorkout(mappedWorkout);
+        
+        // Fetch creator info if available
+        if (workoutData.user_id) {
+          const { data: creatorData } = await supabase
+            .from('profiles')
+            .select('display_name, username')
+            .eq('id', workoutData.user_id)
+            .single();
+            
+          if (creatorData) {
+            setCreatorInfo({
+              name: creatorData.display_name || creatorData.username || 'FitBloom User'
+            });
+          }
+        }
+        
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching workout:', err);
@@ -98,40 +127,14 @@ const WorkoutDetail = () => {
     fetchWorkout();
   }, [id]);
   
-  const handlePurchase = () => {
-    if (!workout || !workout.price) return;
-    
-    initiateCheckout({
-      itemType: 'workout',
-      itemId: workout.id,
-      itemName: workout.name,
-      price: parseFloat(workout.price.toString()),
-      creatorId: workout.creatorId || ''
-    });
-  };
-  
   const handleBackClick = () => {
     navigate(-1);
   };
   
-  const generateProductSchema = () => {
-    if (!workout) return null;
-    
-    const schemaData = {
-      "@context": "https://schema.org/",
-      "@type": "Product",
-      "name": workout.name,
-      "description": `Day ${workout.day} workout with ${workout.exercises.length} exercises`,
-      "offers": {
-        "@type": "Offer",
-        "url": window.location.href,
-        "price": workout.price || 0,
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    };
-    
-    return JSON.stringify(schemaData);
+  // Formatted URL for sharing and SEO
+  const getFormattedUrl = () => {
+    if (!workout) return '';
+    return `/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`;
   };
   
   if (loading) {
@@ -200,14 +203,15 @@ const WorkoutDetail = () => {
   
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
+  const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   
   return (
     <div className="container max-w-4xl mx-auto p-4">
       <MetaTags 
         title={`${workout.name} - FitBloom Workout`}
-        description={`Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`}
+        description={workoutDescription}
         type="product"
-        url={`/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`}
+        url={getFormattedUrl()}
         preload={[
           {
             href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
@@ -216,11 +220,14 @@ const WorkoutDetail = () => {
         ]}
       />
       
-      <ProductSchema 
+      <EnhancedProductSchema 
         name={workout.name}
-        description={`Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`}
+        description={workoutDescription}
         price={workout.price || 0}
         availability={workout.isPurchasable ? 'InStock' : 'OutOfStock'}
+        category="Workout Program"
+        seller={creatorInfo ? { name: creatorInfo.name } : undefined}
+        url={`${window.location.origin}${getFormattedUrl()}`}
       />
       
       <div className="flex items-center justify-between mb-6">
@@ -229,10 +236,10 @@ const WorkoutDetail = () => {
           Back
         </Button>
         
-        <ShareButton 
-          url={`/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`}
+        <EnhancedShareButton 
+          url={getFormattedUrl()}
           title={`Check out ${workout.name} workout on FitBloom`}
-          description={`Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`}
+          description={workoutDescription}
         />
       </div>
       
@@ -245,12 +252,6 @@ const WorkoutDetail = () => {
                 Day {workout.day} workout with {workout.exercises.length} exercises
               </CardDescription>
             </div>
-            
-            {workout.isPurchasable && workout.price && workout.price > 0 && (
-              <div className="text-xl font-semibold text-green-500">
-                {formatCurrency(workout.price)}
-              </div>
-            )}
           </div>
         </CardHeader>
         
@@ -298,51 +299,16 @@ const WorkoutDetail = () => {
                 </div>
               </div>
             ) : (
-              <div className="border border-gray-700 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2 text-center">Premium Workout</h3>
-                <p className="text-gray-400 mb-6 text-center">
-                  Purchase this workout to see all exercises and start your training
-                </p>
-                
-                <div className="space-y-4">
-                  {isPurchaseLoading ? (
-                    <Button disabled className="w-full">Loading...</Button>
-                  ) : canPurchase ? (
-                    <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                      {user ? (
-                        <Button 
-                          onClick={handlePurchase}
-                          disabled={checkoutLoading}
-                          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                        >
-                          {checkoutLoading ? 'Processing...' : `Purchase (${formatCurrency(workout.price || 0)})`}
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => navigate('/auth')}
-                          className="w-full"
-                        >
-                          Sign in to Purchase
-                        </Button>
-                      )}
-                      
-                      {!user && (
-                        <GuestCheckoutButton
-                          itemType="workout"
-                          itemId={workout.id}
-                          itemName={workout.name}
-                          price={workout.price || 0}
-                          creatorId={workout.creatorId || ''}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-center text-gray-400">
-                      This workout is currently unavailable for purchase.
-                    </p>
-                  )}
-                </div>
-              </div>
+              <ProductPurchaseSection
+                itemType="workout"
+                itemId={workout.id}
+                itemName={workout.name}
+                price={workout.price || 0}
+                creatorId={workout.creatorId || ''}
+                isPurchasable={canPurchase}
+                hasPurchased={!!hasPurchased}
+                isPurchaseLoading={isPurchaseLoading}
+              />
             )}
             
             <div className="text-gray-400 text-sm">

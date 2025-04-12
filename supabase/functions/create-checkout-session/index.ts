@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     // Get request body
-    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest } = await req.json();
+    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest, referralSource } = await req.json();
 
     if (!itemType || !itemId || !price || (!userId && !guestEmail) || !creatorId) {
       return new Response(
@@ -119,7 +119,8 @@ serve(async (req) => {
         platformFee: platformFee.toFixed(2),
         creatorEarnings: creatorEarnings.toFixed(2),
         isGuest: isGuest ? 'true' : 'false',
-        guestEmail: isGuest ? guestEmail : undefined
+        guestEmail: isGuest ? guestEmail : undefined,
+        referralSource: referralSource || 'direct'
       },
     });
 
