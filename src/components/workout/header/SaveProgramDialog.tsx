@@ -9,6 +9,8 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { toast } from "sonner";
 import { PriceSettingsDialog } from "@/components/PriceSettingsDialog";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface SaveProgramDialogProps {
   open: boolean;
@@ -23,16 +25,18 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   const { program } = useWorkout();
   const { saveProgram, saveWorkout } = useLibrary();
 
+  // Check if we're saving a single workout or a full program
+  const isSingleWorkout = program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1;
+  
+  const itemTypeLabel = isSingleWorkout ? "Workout" : "Program";
+
   const handleSaveProgramToLibrary = () => {
     if (!programName) {
-      toast.error("Please enter a name for your program");
+      toast.error(`Please enter a name for your ${itemTypeLabel.toLowerCase()}`);
       return;
     }
 
     if (program) {
-      // Check if there's only one workout in one week
-      const isSingleWorkout = program.weeks.length === 1 && program.weeks[0].workouts.length === 1;
-      
       if (isSingleWorkout) {
         // Get the workout ID
         const workoutId = program.weeks[0].workouts[0];
@@ -83,46 +87,51 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-dark-200 border-dark-300 text-white">
           <DialogHeader>
-            <DialogTitle>Save Your Program to Library</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              Save Your {itemTypeLabel} to Library
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="program-name" className="text-right">
-                Program Name
+            <div className="space-y-2">
+              <Label htmlFor="program-name" className="text-sm font-medium text-gray-300">
+                {itemTypeLabel} Name
               </Label>
               <Input
                 id="program-name"
                 value={programName}
                 onChange={(e) => setProgramName(e.target.value)}
-                className="col-span-3"
+                className="bg-dark-300 border-dark-400 text-white"
                 autoFocus
-                placeholder="My Awesome Program"
+                placeholder={`My Awesome ${itemTypeLabel}`}
               />
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="text-right text-sm col-span-1">Price:</div>
-              <div className="col-span-3 flex items-center justify-between">
-                {isPurchasable ? (
-                  <span>${price.toFixed(2)}</span>
-                ) : (
-                  <span className="text-gray-500">Not for sale</span>
-                )}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-300">Pricing</Label>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleOpenPricingSettings}
+                  className="text-xs h-8 bg-dark-300 hover:bg-dark-400 border-dark-400"
                 >
                   Configure Pricing
                 </Button>
               </div>
+              <div className="px-3 py-2 rounded-md bg-dark-300 border border-dark-400 text-sm">
+                {isPurchasable ? (
+                  <span className="text-green-400">${price.toFixed(2)}</span>
+                ) : (
+                  <span className="text-gray-500">Not for sale</span>
+                )}
+              </div>
             </div>
 
-            <div className="col-span-4">
-              <p className="text-sm text-muted-foreground">
-                {program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1
+            <div className="mt-2">
+              <p className="text-sm text-gray-400">
+                {isSingleWorkout
                   ? "This will save your workout to your library. You can access it from the Library page."
                   : "This will save your entire program with all weeks and workouts to your library. You can access it from the Library page."}
               </p>
@@ -130,15 +139,19 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
           </div>
           <DialogFooter>
             <Button 
-              type="submit" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="bg-dark-300 hover:bg-dark-400 border-dark-400"
+            >
+              Cancel
+            </Button>
+            <Button 
               onClick={handleSaveProgramToLibrary}
               disabled={!programName}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             >
               <Save className="h-4 w-4 mr-2" />
-              {program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1
-                ? "Save Workout" 
-                : "Save Program"}
+              Save {itemTypeLabel}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -147,9 +160,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
       <PriceSettingsDialog
         open={isPriceDialogOpen}
         onOpenChange={setIsPriceDialogOpen}
-        title={program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1
-          ? "Workout Pricing"
-          : "Program Pricing"}
+        title={`${itemTypeLabel} Pricing`}
         currentPrice={price}
         isPurchasable={isPurchasable}
         onSave={handleSavePricing}
