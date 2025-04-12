@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { parseProductUrl } from '@/utils/urlUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasUserPurchasedWorkout } from '@/hooks/useWorkoutData';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import MetaTags from '@/components/meta/MetaTags';
 import EnhancedProductSchema from '@/components/schema/EnhancedProductSchema';
 import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
@@ -15,6 +15,8 @@ import ExerciseList from '@/components/workout/ExerciseList';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Share2 } from 'lucide-react';
 
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
@@ -79,7 +81,7 @@ const WorkoutDetail = () => {
   };
   
   return (
-    <div className="container max-w-4xl mx-auto p-4">
+    <div className="container max-w-md mx-auto p-3">
       <MetaTags 
         title={`${workout.name} - FitBloom Workout`}
         description={workoutDescription}
@@ -103,47 +105,49 @@ const WorkoutDetail = () => {
         url={`${window.location.origin}${getFormattedUrl()}`}
       />
       
-      <Card className="bg-dark-200 border-dark-300">
-        <CardHeader>
-          <WorkoutDetailHeader 
-            title={workout.name}
-            description={`Day ${workout.day} workout with ${workout.exercises.length} exercises`}
-            shareUrl={getFormattedUrl()}
-            shareTitle={`Check out ${workout.name} workout on FitBloom`}
-            shareDescription={workoutDescription}
-            onBack={handleBackClick}
-          />
-        </CardHeader>
-        
-        <CardContent>
-          <div className="space-y-6">
+      <div className="flex justify-between items-center mb-4">
+        <Button variant="ghost" size="icon" onClick={handleBackClick} className="p-1 h-8 w-8">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="p-1 h-8 w-8">
+          <Share2 className="h-5 w-5" />
+        </Button>
+      </div>
+      
+      <h1 className="text-2xl font-bold mb-1">{workout.name}</h1>
+      <p className="text-gray-400 text-sm mb-4">Day {workout.day} • {workout.exercises.length} exercises</p>
+      
+      {hasAccessToWorkout ? (
+        <Card className="bg-dark-200 border-dark-300">
+          <CardContent className="p-4">
             <WorkoutStats workout={workout} totalSets={totalSets} />
-            
-            {hasAccessToWorkout ? (
+            <div className="mt-4">
               <ExerciseList exercises={workout.exercises} />
-            ) : (
-              <div className="space-y-6">
-                <WorkoutPreview workout={workout} />
-                
-                <ProductPurchaseSection
-                  itemType="workout"
-                  itemId={workout.id}
-                  itemName={workout.name}
-                  price={workout.price || 0}
-                  creatorId={workout.creatorId || ''}
-                  isPurchasable={canPurchase}
-                  hasPurchased={!!hasPurchased}
-                  isPurchaseLoading={isPurchaseLoading}
-                />
-              </div>
-            )}
-            
-            <div className="text-gray-400 text-sm">
-              <p>Last updated: {new Date(workout.lastModified || workout.savedAt).toLocaleDateString()}</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <Button 
+              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-4"
+              onClick={() => navigate('/sheets')}
+            >
+              Start Workout
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <WorkoutPreview workout={workout} />
+          
+          <ProductPurchaseSection
+            itemType="workout"
+            itemId={workout.id}
+            itemName={workout.name}
+            price={workout.price || 0}
+            creatorId={workout.creatorId || ''}
+            isPurchasable={canPurchase}
+            hasPurchased={!!hasPurchased}
+            isPurchaseLoading={isPurchaseLoading}
+          />
+        </div>
+      )}
     </div>
   );
 };

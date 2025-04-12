@@ -54,34 +54,22 @@ export function ProductPurchaseSection({
 
   if (isPurchaseLoading) {
     return (
-      <div className={`border border-gray-700 rounded-lg p-6 ${className}`}>
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
-        </div>
-        <p className="text-center text-gray-400 mt-2">Loading...</p>
+      <div className={`flex justify-center py-4 ${className}`}>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
       </div>
     );
   }
 
   if (!isPurchasable || !price || price <= 0) {
-    return (
-      <div className={`border border-gray-700 rounded-lg p-6 text-center ${className}`}>
-        <p className="text-gray-400">
-          This {itemType} is not available for purchase at this time.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   if (hasPurchased) {
     return (
-      <div className={`border border-green-800/30 rounded-lg p-6 text-center bg-green-900/10 ${className}`}>
-        <h3 className="text-xl font-semibold mb-2 text-green-400">Purchased</h3>
-        <p className="text-gray-300 mb-4">
-          You already own this {itemType}. Enjoy your training!
-        </p>
+      <div className={`border border-green-800/30 rounded-lg p-4 text-center bg-green-900/10 ${className}`}>
+        <h3 className="text-lg font-semibold mb-1 text-green-400">Purchased ✓</h3>
         <Button 
-          className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-2"
           onClick={() => navigate('/sheets')}
         >
           Start Training
@@ -91,56 +79,41 @@ export function ProductPurchaseSection({
   }
 
   return (
-    <div className={`border border-gray-700 rounded-lg p-6 ${className}`}>
-      <h3 className="text-xl font-semibold mb-2 text-center">Premium {itemType === 'workout' ? 'Workout' : 'Training Program'}</h3>
-      <p className="text-gray-400 mb-6 text-center">
-        Unlock full access to this premium {itemType} and accelerate your fitness journey
-      </p>
-      
-      <div className="mb-6 text-center">
+    <div className={`p-4 bg-dark-200 rounded-lg ${className}`}>
+      <div className="mb-3 text-center">
         <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(price)}</span>
-        <span className="text-gray-400 ml-2">one-time purchase</span>
+        <span className="text-gray-400 text-sm ml-2">one-time</span>
       </div>
       
-      <div className="mb-6 space-y-3">
-        <div className="flex items-start">
-          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-gray-200">Complete access to all exercises, sets and reps</span>
+      <div className="mb-3">
+        <div className="flex items-start mb-1.5">
+          <Check className="h-4 w-4 text-green-500 mr-1.5 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-200">Full access to all exercises</span>
         </div>
-        <div className="flex items-start">
-          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-gray-200">Start training immediately after purchase</span>
-        </div>
-        <div className="flex items-start">
-          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-gray-200">Track your progress with our workout tracker</span>
-        </div>
-        <div className="flex items-start">
-          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-gray-200">Lifetime access to all future updates</span>
+        <div className="flex items-start mb-1.5">
+          <Check className="h-4 w-4 text-green-500 mr-1.5 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-200">Track progress in app</span>
         </div>
       </div>
       
-      <div className="space-y-4">
-        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-          {user ? (
-            <Button 
-              onClick={handlePurchase}
-              disabled={checkoutLoading}
-              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            >
-              {checkoutLoading ? 'Processing...' : `Purchase Now (${formatCurrency(price)})`}
-            </Button>
-          ) : (
+      <div className="space-y-2">
+        {user ? (
+          <Button 
+            onClick={handlePurchase}
+            disabled={checkoutLoading}
+            className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 py-6 text-lg"
+          >
+            {checkoutLoading ? 'Processing...' : `Buy Now`}
+          </Button>
+        ) : (
+          <div className="flex flex-col space-y-2">
             <Button 
               onClick={() => navigate('/auth')}
-              className="w-full"
+              className="w-full py-5"
             >
-              Sign in to Purchase
+              Sign in to Buy
             </Button>
-          )}
-          
-          {!user && (
+            
             <GuestCheckoutButton
               itemType={itemType}
               itemId={itemId}
@@ -148,12 +121,12 @@ export function ProductPurchaseSection({
               price={price}
               creatorId={creatorId}
             />
-          )}
-        </div>
+          </div>
+        )}
         
-        <div className="flex justify-center items-center text-sm text-gray-400 pt-2">
-          <Shield className="h-4 w-4 mr-1.5 text-gray-400" />
-          <p>Secure payment • Instant access • No subscription</p>
+        <div className="flex justify-center items-center text-xs text-gray-400">
+          <Shield className="h-3 w-3 mr-1 text-gray-400" />
+          <p>Secure payment • Instant access</p>
         </div>
       </div>
     </div>
