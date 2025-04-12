@@ -14,6 +14,7 @@ import MetaTags from '@/components/meta/MetaTags';
 import EnhancedProductSchema from '@/components/schema/EnhancedProductSchema';
 import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
 import EnhancedShareButton from '@/components/share/EnhancedShareButton';
+import { toast } from 'sonner';
 
 interface WorkoutDataFromDB {
   id: string;
@@ -42,7 +43,14 @@ const WorkoutDetail = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const id = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
+  // Extract the workoutId from the URL parameter
+  const extractedId = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
+  
+  // Safely check if extractedId is a valid UUID format
+  const isValidUuid = extractedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extractedId);
+  
+  // Only fetch if ID appears to be in valid format
+  const id = isValidUuid ? extractedId : null;
   
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
     useHasUserPurchasedWorkout(user?.id || '', id || '');
@@ -62,8 +70,14 @@ const WorkoutDetail = () => {
   }, [workout?.name]);
   
   useEffect(() => {
+    if (!workoutId) {
+      setError('Missing workout ID');
+      setLoading(false);
+      return;
+    }
+    
     if (!id) {
-      setError('Invalid workout ID');
+      setError(`Invalid workout ID format: ${workoutId}`);
       setLoading(false);
       return;
     }
@@ -80,9 +94,15 @@ const WorkoutDetail = () => {
             )
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid errors
         
         if (error) throw error;
+        
+        if (!data) {
+          setError(`Workout not found: ${id}`);
+          setLoading(false);
+          return;
+        }
         
         const workoutData = data as unknown as WorkoutDataFromDB;
         
@@ -107,7 +127,7 @@ const WorkoutDetail = () => {
             .from('profiles')
             .select('display_name, username')
             .eq('id', workoutData.user_id)
-            .single();
+            .maybeSingle();
             
           if (creatorData) {
             setCreatorInfo({
@@ -119,13 +139,14 @@ const WorkoutDetail = () => {
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching workout:', err);
-        setError(err.message);
+        setError(err.message || 'Failed to load workout');
+        toast.error(`Error loading workout: ${err.message || 'Unknown error'}`);
         setLoading(false);
       }
     };
     
     fetchWorkout();
-  }, [id]);
+  }, [id, workoutId]);
   
   const handleBackClick = () => {
     navigate(-1);

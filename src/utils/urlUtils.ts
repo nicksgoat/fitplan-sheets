@@ -38,9 +38,22 @@ export const parseProductUrl = (url: string): string | null => {
   const parts = url.split('/');
   if (parts.length < 3) return null;
   
-  // Extract ID from format "id-slug"
+  // Extract ID from format "id-slug" or just the ID part
   const idWithSlug = parts[2];
-  const id = idWithSlug.split('-')[0];
   
-  return id;
+  // If there's a dash in the ID, it could be part of a UUID or a separator with the slug
+  if (idWithSlug.includes('-')) {
+    // First try to extract just the UUID part (before any non-UUID character)
+    const fullUuidMatch = idWithSlug.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    if (fullUuidMatch) {
+      return fullUuidMatch[1];
+    }
+    
+    // If not a full UUID with dashes, extract the first part before a non-UUID character
+    const idPart = idWithSlug.split('-')[0];
+    return idPart;
+  }
+  
+  // If no dash, just return the whole segment as the ID
+  return idWithSlug;
 };
