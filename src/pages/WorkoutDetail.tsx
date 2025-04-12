@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,12 +58,12 @@ const WorkoutDetail = () => {
           name: data.name,
           day: data.day_num,
           exercises: data.exercises || [],
-          circuits: [], // Add empty circuits array since it's required by the Workout type
+          circuits: [], // Add empty circuits array
           savedAt: data.created_at,
           lastModified: data.updated_at,
           isPurchasable: data.is_purchasable || false,
           price: data.price || 0,
-          creatorId: data.user_id // Use creatorId property instead of userId
+          creatorId: data.user_id // Map the database user_id to creatorId
         };
         
         setWorkout(mappedWorkout);
