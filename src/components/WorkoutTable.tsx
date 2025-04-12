@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown, Copy } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -46,6 +47,15 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   } = useWorkout();
   const { focusedCell, focusCell, isCellFocused } = useCellNavigation();
   const tableRef = useRef<HTMLTableElement>(null);
+  
+  // Ensure session exists before accessing its properties
+  if (!session) {
+    return (
+      <div className="p-4 text-center">
+        <p>No workout session available</p>
+      </div>
+    );
+  }
   
   const organizedExercises = React.useMemo(() => {
     const result: Exercise[] = [];

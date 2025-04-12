@@ -51,6 +51,9 @@ const WorkoutApp: React.FC = () => {
     }
   }, [program, addWeek, addWorkout, setActiveWeekId, setActiveWorkoutId, activeWorkoutId]);
   
+  const activeWorkoutExists = program && activeWorkoutId && 
+    program.workouts.some(workout => workout.id === activeWorkoutId);
+  
   if (!program) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -143,7 +146,7 @@ const WorkoutApp: React.FC = () => {
           <TabsContent value="workout">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                {activeWorkoutId && (
+                {activeWorkoutId && activeWorkoutExists ? (
                   <motion.div
                     key={activeWorkoutId}
                     initial={{ opacity: 0, y: 10 }}
@@ -153,12 +156,35 @@ const WorkoutApp: React.FC = () => {
                   >
                     <WorkoutSession sessionId={activeWorkoutId} />
                   </motion.div>
+                ) : program.workouts.length > 0 ? (
+                  <div className="p-4 text-center border border-dashed border-gray-500 rounded-md">
+                    <p>Select or create a workout to begin editing</p>
+                  </div>
+                ) : (
+                  <div className="p-4 text-center border border-dashed border-gray-500 rounded-md">
+                    <p>Create your first workout to begin</p>
+                    <Button 
+                      className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                      size="sm"
+                      onClick={() => {
+                        if (activeWeekId) {
+                          const newWorkoutId = addWorkout(activeWeekId);
+                          if (typeof newWorkoutId === 'string') {
+                            setActiveWorkoutId(newWorkoutId);
+                          }
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Workout
+                    </Button>
+                  </div>
                 )}
               </div>
               
               <div className="hidden lg:block">
                 <div className="sticky top-24">
-                  {activeWorkoutId && (
+                  {activeWorkoutId && activeWorkoutExists && (
                     <WorkoutMobilePreview sessionId={activeWorkoutId} />
                   )}
                 </div>

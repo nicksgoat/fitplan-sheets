@@ -15,11 +15,33 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // If no program or no session, return null
-  if (!program) return null;
+  // If no program, return null
+  if (!program) {
+    return (
+      <div className="p-4 text-center border border-dashed border-gray-500 rounded-md">
+        <p>No program loaded</p>
+      </div>
+    );
+  }
 
   // Get the current workout
   const currentWorkout = program.workouts.find(w => w.id === sessionId);
+  
+  // Handle case when currentWorkout is not found
+  if (!currentWorkout) {
+    return (
+      <div className="p-4 text-center border border-dashed border-gray-500 rounded-md">
+        <p>Workout not found</p>
+        <Button 
+          className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+          size="sm"
+          onClick={() => navigate('/sheets')}
+        >
+          Return to Workouts
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -37,7 +59,7 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
           </Button>
         </div>
       </div>
-      <WorkoutTable session={program.workouts.find(w => w.id === sessionId)!} />
+      <WorkoutTable session={currentWorkout} />
     </div>
   );
 };
