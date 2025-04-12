@@ -1,126 +1,146 @@
-
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut, Calendar, Users, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Home,
-  Search,
-  Library,
-  Clock,
-  CalendarRange,
-  User,
-  Dumbbell,
-  Medal,
-  Heart,
-  Users,
-  Award,
-  LayoutDashboard
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 
-const linkClasses =
-  'flex items-center rounded-md mb-1 p-2 w-full text-foreground hover:bg-accent transition-colors duration-200';
-const activeLinkClasses = 'bg-accent/50';
+interface SidebarProps {
+  mobileFooter?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
 
-const Sidebar: React.FC = () => {
+const Sidebar = ({ 
+  mobileFooter = false, 
+  collapsed = false,
+  onToggleCollapse
+}: SidebarProps) => {
   const location = useLocation();
-  const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const navItems = [
+    { name: 'Home', path: '/explore', icon: <Home className="h-5 w-5" /> },
+    { name: 'Search', path: '/search', icon: <Search className="h-5 w-5" /> },
+    { name: 'My Library', path: '/library', icon: <Library className="h-5 w-5" /> },
+    { name: 'Schedule', path: '/schedule', icon: <Calendar className="h-5 w-5" /> },
+    { name: 'Clubs', path: '/clubs', icon: <Users className="h-5 w-5" /> },
+    { name: 'Leaderboards', path: '/leaderboards', icon: <Award className="h-5 w-5" /> },
+    { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
+    { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
+  if (mobileFooter) {
+    return (
+      <div className="flex justify-around items-center h-16 px-2">
+        {navItems.map((item) => (
+          <Link key={item.path} to={item.path} className="flex flex-col items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "rounded-full",
+                location.pathname === item.path ? "text-fitbloom-purple" : "text-gray-400"
+              )}
+            >
+              {item.icon}
+            </Button>
+            <span className="text-xs mt-1">{item.name}</span>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="py-4 h-full flex flex-col">
-      <div className="p-2">
-        <h2 className="mb-2 font-medium text-lg px-2">Navigation</h2>
-        <NavLink
-          to="/"
-          className={cn(linkClasses, isActive('/') && activeLinkClasses)}
-        >
-          <Home className="w-5 h-5 mr-3" /> Home
-        </NavLink>
-        <NavLink
-          to="/search"
-          className={cn(linkClasses, isActive('/search') && activeLinkClasses)}
-        >
-          <Search className="w-5 h-5 mr-3" /> Search
-        </NavLink>
-        <NavLink
-          to="/library"
-          className={cn(linkClasses, isActive('/library') && activeLinkClasses)}
-        >
-          <Library className="w-5 h-5 mr-3" /> Library
-        </NavLink>
-        <NavLink
-          to="/liked"
-          className={cn(linkClasses, isActive('/liked') && activeLinkClasses)}
-        >
-          <Heart className="w-5 h-5 mr-3" /> Liked
-        </NavLink>
+    <div className={cn(
+      "bg-black h-full flex flex-col transition-all duration-300",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      <div className={cn(
+        "p-6",
+        collapsed && "p-4 flex justify-center"
+      )}>
+        {!collapsed ? (
+          <h1 className="text-2xl font-bold flex items-center">
+            <span className="text-fitbloom-purple">Fit</span>
+            <span className="text-white">Bloom</span>
+          </h1>
+        ) : (
+          <span className="text-2xl font-bold text-fitbloom-purple">F</span>
+        )}
       </div>
-
-      <div className="p-2 mt-5">
-        <h2 className="mb-2 font-medium text-lg px-2">Community</h2>
-        <NavLink
-          to="/clubs"
-          className={cn(linkClasses, isActive('/clubs') && activeLinkClasses)}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <Link to={item.path}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-white hover:bg-gray-900 hover:text-white",
+                    location.pathname === item.path && "bg-gray-900 text-fitbloom-purple font-medium",
+                    collapsed && "justify-center px-2"
+                  )}
+                  title={collapsed ? item.name : undefined}
+                >
+                  {item.icon}
+                  {!collapsed && <span className="ml-3">{item.name}</span>}
+                </Button>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="p-4 border-t border-gray-800 space-y-2">
+        <Link to="/profile">
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "w-full text-white hover:bg-gray-900",
+              collapsed ? "justify-center px-2" : "justify-start"
+            )}
+            title={collapsed ? "Profile" : undefined}
+          >
+            <User className="h-5 w-5" />
+            {!collapsed && <span className="ml-3">Profile</span>}
+          </Button>
+        </Link>
+        
+        <Button 
+          variant="ghost"
+          onClick={handleLogout}
+          className={cn(
+            "w-full text-white hover:bg-gray-900 hover:text-red-400",
+            collapsed ? "justify-center px-2" : "justify-start"
+          )}
+          title={collapsed ? "Logout" : undefined}
         >
-          <Users className="w-5 h-5 mr-3" /> Clubs
-        </NavLink>
-        <NavLink
-          to="/leaderboards"
-          className={cn(linkClasses, isActive('/leaderboards') && activeLinkClasses)}
-        >
-          <Medal className="w-5 h-5 mr-3" /> Leaderboards
-        </NavLink>
+          <LogOut className="h-5 w-5" />
+          {!collapsed && <span className="ml-3">Logout</span>}
+        </Button>
       </div>
-
-      {user && (
-        <>
-          <div className="p-2 mt-5">
-            <h2 className="mb-2 font-medium text-lg px-2">Personal</h2>
-            <NavLink
-              to="/schedule"
-              className={cn(linkClasses, isActive('/schedule') && activeLinkClasses)}
-            >
-              <CalendarRange className="w-5 h-5 mr-3" /> Schedule
-            </NavLink>
-            <NavLink
-              to="/sheets"
-              className={cn(linkClasses, isActive('/sheets') && activeLinkClasses)}
-            >
-              <Clock className="w-5 h-5 mr-3" /> Sheets
-            </NavLink>
-            <NavLink
-              to="/profile"
-              className={cn(linkClasses, isActive('/profile') && activeLinkClasses)}
-            >
-              <User className="w-5 h-5 mr-3" /> Profile
-            </NavLink>
-          </div>
-
-          <div className="p-2 mt-5">
-            <h2 className="mb-2 font-medium text-lg px-2">Creator Tools</h2>
-            <NavLink
-              to="/exercises/create"
-              className={cn(linkClasses, isActive('/exercises/create') && activeLinkClasses)}
-            >
-              <Dumbbell className="w-5 h-5 mr-3" /> Create Exercise
-            </NavLink>
-            <NavLink
-              to="/creator"
-              className={cn(linkClasses, isActive('/creator') && activeLinkClasses)}
-            >
-              <LayoutDashboard className="w-5 h-5 mr-3" /> Creator Dashboard
-            </NavLink>
-          </div>
-        </>
+      {onToggleCollapse && (
+        <div className="p-4 border-t border-gray-800">
+          <Button 
+            variant="ghost" 
+            onClick={onToggleCollapse} 
+            className="w-full justify-center text-gray-400 hover:text-white"
+          >
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
+        </div>
       )}
-
-      <div className="mt-auto p-4 text-center">
-        <p className="text-xs text-muted-foreground">Version 1.0.0</p>
-      </div>
     </div>
   );
 };
