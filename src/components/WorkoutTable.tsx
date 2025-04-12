@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Trash2, ChevronRight, Plus, Minus, RotateCcw, ChevronDown, Copy } from "lucide-react";
 import { WorkoutSession, Exercise, SetCellType, ExerciseCellType, Set, RepType, IntensityType, WeightType } from "@/types/workout";
@@ -315,6 +316,17 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
   
   return (
     <div className="workout-container">
+      <div className="flex justify-end mb-4 gap-2">
+        <Button 
+          onClick={() => addExercise(session.id)} 
+          className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Exercise
+        </Button>
+      </div>
+      
       <Table className="workout-table border-collapse w-full" ref={tableRef}>
         <TableHeader>
           <TableRow className="bg-muted/40">
@@ -870,6 +882,16 @@ const WorkoutTable: React.FC<WorkoutTableProps> = ({ session }) => {
           })}
         </TableBody>
       </Table>
+      
+      <div className="flex justify-center mt-6">
+        <Button 
+          onClick={() => addExercise(session.id)} 
+          className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Exercise
+        </Button>
+      </div>
     </div>
   );
 };
