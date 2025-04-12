@@ -17,6 +17,8 @@ import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Share2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { buildCreatorProductUrl } from '@/utils/urlUtils';
 
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
@@ -37,6 +39,33 @@ const WorkoutDetail = () => {
   
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
     useHasUserPurchasedWorkout(user?.id || '', id || '');
+
+  // Check if we should redirect to the new URL format
+  useEffect(() => {
+    const checkForRedirect = async () => {
+      if (workout && workout.creatorId) {
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', workout.creatorId)
+            .maybeSingle();
+          
+          if (profileData?.username && workout.slug) {
+            const newUrl = buildCreatorProductUrl(profileData.username, workout.slug);
+            // Redirect to the new URL format
+            navigate(newUrl, { replace: true });
+          }
+        } catch (err) {
+          console.error("Error fetching creator username:", err);
+        }
+      }
+    };
+
+    if (!loading && !error && workout) {
+      checkForRedirect();
+    }
+  }, [workout, loading, error, navigate]);
   
   // Preload exercise details for better performance
   useEffect(() => {

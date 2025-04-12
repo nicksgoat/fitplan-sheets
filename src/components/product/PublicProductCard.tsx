@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ItemType } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '@/utils/workout';
+import { buildCreatorProductUrl } from '@/utils/urlUtils';
 
 interface PublicProductCardProps {
   item: ItemType;
@@ -14,11 +14,17 @@ export const PublicProductCard = ({ item }: PublicProductCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    // Navigate to the appropriate detail page based on item type
-    if (item.type === 'workout') {
-      navigate(`/workout/${item.id}`);
-    } else if (item.type === 'program') {
-      navigate(`/program/${item.id}`);
+    // If we have creator username and slug, use the new URL format
+    if (item.creatorUsername && item.slug) {
+      navigate(buildCreatorProductUrl(item.creatorUsername, item.slug));
+    }
+    // Otherwise fall back to the old URL format
+    else {
+      if (item.type === 'workout') {
+        navigate(`/workout/${item.id}`);
+      } else if (item.type === 'program') {
+        navigate(`/program/${item.id}`);
+      }
     }
   };
 

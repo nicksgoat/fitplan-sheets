@@ -15,7 +15,6 @@ export const generateSlug = (text: string): string => {
 
 /**
  * Build a product URL based on type, creator username, and product name
- * @param type Product type (workout, program, club)
  * @param creatorUsername Creator's username
  * @param slug Product slug
  * @returns Complete product URL
