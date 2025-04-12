@@ -43,7 +43,7 @@ export function useProgram(programId: string) {
       }
       
       // Fetch the weeks for this program
-      const { data: weeks, error: weeksError } = await supabase
+      const { data: weeksData, error: weeksError } = await supabase
         .from('weeks')
         .select('*')
         .eq('program_id', programId)
@@ -53,10 +53,20 @@ export function useProgram(programId: string) {
         throw weeksError;
       }
       
+      // Map the weeks data to match our WorkoutWeek type
+      const mappedWeeks = (weeksData || []).map(week => ({
+        id: week.id,
+        name: week.name,
+        order: week.order_num, // Map order_num to order as expected by WorkoutWeek
+        workouts: [], // Initialize empty array for workouts
+        savedAt: week.created_at,
+        lastModified: week.updated_at
+      }));
+      
       // Return the full program with empty workouts array for now
       return {
         ...program,
-        weeks: weeks || [],
+        weeks: mappedWeeks,
         workouts: []
       } as WorkoutProgram;
     },
