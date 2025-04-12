@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Helmet } from 'react-helmet';
 
 interface MetaTagsProps {
   title: string;
@@ -20,8 +19,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
   const fullUrl = url ? `${window.location.origin}${url}` : window.location.href;
   
   return (
-    <Helmet>
-      {/* Primary Meta Tags */}
+    <>
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
@@ -39,7 +37,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
       <meta property="twitter:title" content={title} />
       <meta property="twitter:description" content={description} />
       <meta property="twitter:image" content={imageUrl} />
-    </Helmet>
+    </>
   );
 };
 
