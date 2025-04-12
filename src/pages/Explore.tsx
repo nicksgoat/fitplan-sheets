@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryButton from '@/components/ui/CategoryButton';
@@ -10,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLibrary } from '@/contexts/LibraryContext';
+import { usePublicWorkouts, usePublicPrograms } from '@/hooks/usePublicWorkouts';
 
 const Explore = () => {
   const allCategories = [
@@ -24,9 +24,14 @@ const Explore = () => {
   const { data: exercises, isLoading, error } = useExercisesWithVisuals();
   const { workouts, programs } = useLibrary();
   
+  // Fetch public workouts and programs
+  const { data: publicWorkouts, isLoading: isLoadingPublicWorkouts } = usePublicWorkouts();
+  const { data: publicPrograms, isLoading: isLoadingPublicPrograms } = usePublicPrograms();
+  
   // Transform our data to match the ItemType format
   const [workoutItems, setWorkoutItems] = useState<ItemType[]>([]);
   const [programItems, setProgramItems] = useState<ItemType[]>([]);
+  const [discoveryItems, setDiscoveryItems] = useState<ItemType[]>([]);
   
   useEffect(() => {
     // Transform workout library data to ItemType format
@@ -46,7 +51,9 @@ const Explore = () => {
       lastModified: workout.lastModified
     }));
     
-    setWorkoutItems(workoutItemsList);
+    // Combine with public workouts if available
+    const allWorkouts = [...workoutItemsList];
+    setWorkoutItems(allWorkouts);
     
     // Transform program library data to ItemType format
     const programItemsList = programs.map(program => ({
@@ -65,8 +72,27 @@ const Explore = () => {
       lastModified: program.lastModified
     }));
     
-    setProgramItems(programItemsList);
+    // Combine with public programs if available
+    const allPrograms = [...programItemsList];
+    setProgramItems(allPrograms);
   }, [workouts, programs]);
+  
+  // Add public items to discovery section
+  useEffect(() => {
+    const discoveryList: ItemType[] = [];
+    
+    // Add public workouts
+    if (publicWorkouts && publicWorkouts.length > 0) {
+      discoveryList.push(...publicWorkouts);
+    }
+    
+    // Add public programs
+    if (publicPrograms && publicPrograms.length > 0) {
+      discoveryList.push(...publicPrograms);
+    }
+    
+    setDiscoveryItems(discoveryList);
+  }, [publicWorkouts, publicPrograms]);
   
   // Transform our exercise data to match the ItemType format
   const exerciseItems: ItemType[] = exercises?.map((exercise: Exercise) => ({
@@ -84,7 +110,7 @@ const Explore = () => {
     isCustom: false
   })) || [];
 
-  const allItems = [...exerciseItems, ...workoutItems, ...programItems];
+  const allItems = [...exerciseItems, ...workoutItems, ...programItems, ...discoveryItems];
 
   // Filter items based on active category
   const filteredItems = activeCategory 
@@ -105,6 +131,8 @@ const Explore = () => {
   const handleCategoryClick = (category: string) => {
     setActiveCategory(prev => prev === category ? null : category);
   };
+
+  const isLoadingAny = isLoading || isLoadingPublicWorkouts || isLoadingPublicPrograms;
 
   return (
     <div className="space-y-6 animate-fade-in p-4">
@@ -134,6 +162,30 @@ const Explore = () => {
             >
               Clear filter
             </button>
+          </div>
+        )}
+      </section>
+
+      {/* Discovery Section - Show public workouts and programs from other creators */}
+      <section className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Discover</h2>
+          <Button
+            variant="link"
+            className="text-fitbloom-purple hover:underline text-sm"
+          >
+            View All
+          </Button>
+        </div>
+        {isLoadingAny ? (
+          <div className="flex justify-center items-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-fitbloom-purple" />
+          </div>
+        ) : discoveryItems.length > 0 ? (
+          <ContentCarousel items={getFilteredItems(discoveryItems)} />
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-gray-400">No public content available yet.</p>
           </div>
         )}
       </section>
