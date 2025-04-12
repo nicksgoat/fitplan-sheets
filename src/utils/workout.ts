@@ -880,11 +880,12 @@ export const sampleProgram: WorkoutProgram = {
   ],
 };
 
-export const formatCurrency = (amount: number | null): string => {
-  if (amount === null) return '$0.00';
+/**
+ * Format a number as currency (USD)
+ */
+export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2
   }).format(amount);
 };

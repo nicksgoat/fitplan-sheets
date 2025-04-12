@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
@@ -59,42 +58,58 @@ export const SalesAnalytics: React.FC = () => {
         
       const programIds = userPrograms?.map(p => p.id) || [];
       
-      const { data: programSales, error: programError } = await supabase
-        .from('program_purchases')
-        .select('program_id, amount_paid, purchase_date, programs(name)')
-        .gte('purchase_date', startDate.toISOString())
-        .lte('purchase_date', endDate.toISOString())
-        .in('program_id', programIds);
-      
-      if (programError) {
-        console.error('Error fetching program sales:', programError);
+      let programSales: any[] = [];
+      if (programIds.length > 0) {
+        const { data: pSales, error: programError } = await supabase
+          .from('program_purchases')
+          .select('program_id, amount_paid, purchase_date, programs(name)')
+          .gte('purchase_date', startDate.toISOString())
+          .lte('purchase_date', endDate.toISOString())
+          .in('program_id', programIds);
+        
+        if (programError) {
+          console.error('Error fetching program sales:', programError);
+        } else {
+          programSales = pSales || [];
+        }
       }
       
       // Fetch workout sales
-      // First get all program IDs for this user
-      const { data: weeks } = await supabase
-        .from('weeks')
-        .select('id')
-        .in('program_id', programIds);
-      
-      const weekIds = weeks?.map(w => w.id) || [];
-      
-      const { data: workouts } = await supabase
-        .from('workouts')
-        .select('id')
-        .in('week_id', weekIds);
+      // First get all program IDs for this user - already have this from above
+      let weekIds: string[] = [];
+      if (programIds.length > 0) {
+        const { data: weeks } = await supabase
+          .from('weeks')
+          .select('id')
+          .in('program_id', programIds);
         
-      const workoutIds = workouts?.map(w => w.id) || [];
+        weekIds = weeks?.map(w => w.id) || [];
+      }
       
-      const { data: workoutSales, error: workoutError } = await supabase
-        .from('workout_purchases')
-        .select('workout_id, amount_paid, purchase_date, workouts(name)')
-        .gte('purchase_date', startDate.toISOString())
-        .lte('purchase_date', endDate.toISOString())
-        .in('workout_id', workoutIds);
+      let workoutIds: string[] = [];
+      if (weekIds.length > 0) {
+        const { data: workouts } = await supabase
+          .from('workouts')
+          .select('id')
+          .in('week_id', weekIds);
+          
+        workoutIds = workouts?.map(w => w.id) || [];
+      }
       
-      if (workoutError) {
-        console.error('Error fetching workout sales:', workoutError);
+      let workoutSales: any[] = [];
+      if (workoutIds.length > 0) {
+        const { data: wSales, error: workoutError } = await supabase
+          .from('workout_purchases')
+          .select('workout_id, amount_paid, purchase_date, workouts(name)')
+          .gte('purchase_date', startDate.toISOString())
+          .lte('purchase_date', endDate.toISOString())
+          .in('workout_id', workoutIds);
+        
+        if (workoutError) {
+          console.error('Error fetching workout sales:', workoutError);
+        } else {
+          workoutSales = wSales || [];
+        }
       }
       
       // Fetch club membership payments
@@ -105,15 +120,20 @@ export const SalesAnalytics: React.FC = () => {
         
       const clubIds = clubs?.map(c => c.id) || [];
       
-      const { data: clubSales, error: clubError } = await supabase
-        .from('club_subscriptions')
-        .select('club_id, plan_amount, created_at, clubs(name)')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .in('club_id', clubIds);
-      
-      if (clubError) {
-        console.error('Error fetching club sales:', clubError);
+      let clubSales: any[] = [];
+      if (clubIds.length > 0) {
+        const { data: cSales, error: clubError } = await supabase
+          .from('club_subscriptions')
+          .select('club_id, plan_amount, created_at, clubs(name)')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .in('club_id', clubIds);
+        
+        if (clubError) {
+          console.error('Error fetching club sales:', clubError);
+        } else {
+          clubSales = cSales || [];
+        }
       }
       
       // Combine and format data

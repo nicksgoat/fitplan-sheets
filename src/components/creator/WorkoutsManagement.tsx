@@ -43,23 +43,33 @@ export const WorkoutsManagement: React.FC = () => {
       
       // Then get all weeks for these programs
       const programIds = userPrograms?.map(p => p.id) || [];
-      const { data: weeks } = await supabase
-        .from('weeks')
-        .select('id')
-        .in('program_id', programIds);
       
-      // Then get workouts in these weeks
-      const weekIds = weeks?.map(w => w.id) || [];
-      const { data, error } = await supabase
-        .from('workouts')
-        .select('*')
-        .in('week_id', weekIds);
-      
-      if (error) {
-        throw error;
+      let weekIds: string[] = [];
+      if (programIds.length > 0) {
+        const { data: weeks } = await supabase
+          .from('weeks')
+          .select('id')
+          .in('program_id', programIds);
+        
+        // Then get workouts in these weeks
+        weekIds = weeks?.map(w => w.id) || [];
       }
       
-      return data as Workout[];
+      let data: Workout[] = [];
+      if (weekIds.length > 0) {
+        const { data: workoutsData, error } = await supabase
+          .from('workouts')
+          .select('*')
+          .in('week_id', weekIds);
+        
+        if (error) {
+          throw error;
+        }
+        
+        data = workoutsData as Workout[];
+      }
+      
+      return data;
     },
     enabled: !!user
   });
