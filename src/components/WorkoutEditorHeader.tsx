@@ -4,9 +4,7 @@ import { useWorkout } from '@/contexts/WorkoutContext';
 import { useWorkoutLibraryIntegration } from '@/hooks/useWorkoutLibraryIntegration';
 import { Button } from '@/components/ui/button';
 import { Edit2, Save, Plus } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { useState } from 'react';
-import { WorkoutSession } from '@/types/workout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
