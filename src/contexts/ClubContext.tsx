@@ -275,7 +275,15 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('event_id', eventId);
       
       if (error) throw error;
-      setCurrentEventParticipants(data || []);
+      
+      const typedParticipants = (data || []).map(participant => ({
+        ...participant,
+        created_at: participant.joined_at || new Date().toISOString(),
+        updated_at: participant.joined_at ? undefined : undefined,
+        status: participant.status as EventParticipationStatus
+      } as EventParticipant));
+      
+      setCurrentEventParticipants(typedParticipants);
     } catch (error) {
       console.error('Error loading event participants:', error);
       setCurrentEventParticipants([]);
@@ -510,7 +518,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: data.status as EventParticipationStatus,
           created_at: data.joined_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          profile: null
+          profile: data.profile
         };
         
         return participant;
@@ -535,7 +543,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: data.status as EventParticipationStatus,
           created_at: data.joined_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          profile: null
+          profile: data.profile
         };
         
         return participant;
