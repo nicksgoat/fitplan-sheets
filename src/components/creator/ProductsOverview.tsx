@@ -32,20 +32,25 @@ export const ProductsOverview: React.FC<ProductsOverviewProps> = ({ onNavigate }
         .eq('user_id', user.id);
       
       // Get workouts count (across all weeks)
+      // First get all program IDs for this user
+      const { data: userPrograms } = await supabase
+        .from('programs')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      // Then get all weeks for these programs
+      const programIds = userPrograms?.map(p => p.id) || [];
+      const { data: weeks } = await supabase
+        .from('weeks')
+        .select('id')
+        .in('program_id', programIds);
+      
+      // Then count workouts in these weeks
+      const weekIds = weeks?.map(w => w.id) || [];
       const { count: workoutsCount } = await supabase
         .from('workouts')
         .select('*', { count: 'exact', head: true })
-        .in('week_id', 
-          supabase
-            .from('weeks')
-            .select('id')
-            .in('program_id',
-              supabase
-                .from('programs')
-                .select('id')
-                .eq('user_id', user.id)
-            )
-        );
+        .in('week_id', weekIds);
       
       // Get clubs count
       const { count: clubsCount } = await supabase

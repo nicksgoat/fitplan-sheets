@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatCurrency } from '@/utils/workout';
 
 type SalesData = {
   title: string;
@@ -51,61 +52,65 @@ export const SalesAnalytics: React.FC = () => {
       }
       
       // Fetch program sales
+      const { data: userPrograms } = await supabase
+        .from('programs')
+        .select('id')
+        .eq('user_id', user.id);
+        
+      const programIds = userPrograms?.map(p => p.id) || [];
+      
       const { data: programSales, error: programError } = await supabase
         .from('program_purchases')
         .select('program_id, amount_paid, purchase_date, programs(name)')
         .gte('purchase_date', startDate.toISOString())
         .lte('purchase_date', endDate.toISOString())
-        .in('program_id', 
-          supabase
-            .from('programs')
-            .select('id')
-            .eq('user_id', user.id)
-        );
+        .in('program_id', programIds);
       
       if (programError) {
         console.error('Error fetching program sales:', programError);
       }
       
       // Fetch workout sales
+      // First get all program IDs for this user
+      const { data: weeks } = await supabase
+        .from('weeks')
+        .select('id')
+        .in('program_id', programIds);
+      
+      const weekIds = weeks?.map(w => w.id) || [];
+      
+      const { data: workouts } = await supabase
+        .from('workouts')
+        .select('id')
+        .in('week_id', weekIds);
+        
+      const workoutIds = workouts?.map(w => w.id) || [];
+      
       const { data: workoutSales, error: workoutError } = await supabase
         .from('workout_purchases')
         .select('workout_id, amount_paid, purchase_date, workouts(name)')
         .gte('purchase_date', startDate.toISOString())
         .lte('purchase_date', endDate.toISOString())
-        .in('workout_id', 
-          supabase
-            .from('workouts')
-            .select('id')
-            .in('week_id', 
-              supabase
-                .from('weeks')
-                .select('id')
-                .in('program_id',
-                  supabase
-                    .from('programs')
-                    .select('id')
-                    .eq('user_id', user.id)
-                )
-            )
-        );
+        .in('workout_id', workoutIds);
       
       if (workoutError) {
         console.error('Error fetching workout sales:', workoutError);
       }
       
       // Fetch club membership payments
+      const { data: clubs } = await supabase
+        .from('clubs')
+        .select('id')
+        .eq('creator_id', user.id);
+        
+      const clubIds = clubs?.map(c => c.id) || [];
+      
       const { data: clubSales, error: clubError } = await supabase
         .from('club_subscriptions')
         .select('club_id, plan_amount, created_at, clubs(name)')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .in('club_id', 
-          supabase
-            .from('clubs')
-            .select('id')
-            .eq('creator_id', user.id)
-        );
+        .in('club_id', clubIds);
       
       if (clubError) {
         console.error('Error fetching club sales:', clubError);
@@ -192,14 +197,6 @@ export const SalesAnalytics: React.FC = () => {
     },
     enabled: !!user
   });
-  
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
   
   return (
     <div className="space-y-6">

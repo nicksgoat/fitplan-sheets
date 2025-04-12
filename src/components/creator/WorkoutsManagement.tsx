@@ -35,20 +35,25 @@ export const WorkoutsManagement: React.FC = () => {
     queryFn: async () => {
       if (!user) return [];
       
+      // First get all program IDs for this user
+      const { data: userPrograms } = await supabase
+        .from('programs')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      // Then get all weeks for these programs
+      const programIds = userPrograms?.map(p => p.id) || [];
+      const { data: weeks } = await supabase
+        .from('weeks')
+        .select('id')
+        .in('program_id', programIds);
+      
+      // Then get workouts in these weeks
+      const weekIds = weeks?.map(w => w.id) || [];
       const { data, error } = await supabase
         .from('workouts')
-        .select('*, week_id')
-        .in('week_id', 
-          supabase
-            .from('weeks')
-            .select('id')
-            .in('program_id',
-              supabase
-                .from('programs')
-                .select('id')
-                .eq('user_id', user.id)
-            )
-        );
+        .select('*')
+        .in('week_id', weekIds);
       
       if (error) {
         throw error;
