@@ -21,10 +21,8 @@ import Index from './pages/Index';
 import Leaderboards from './pages/Leaderboards';
 import CreateEvent from './pages/CreateEvent';
 import EventDetailScreen from './components/clubs/EventDetailScreen';
-
-// Add our purchase result pages
-import PurchaseSuccess from './pages/PurchaseSuccess';
-import PurchaseCancel from './pages/PurchaseCancel';
+import ClubDetailPage from './components/clubs/ClubDetailPage';
+import Clubs from './pages/Clubs';
 
 function App() {
   return (
@@ -38,10 +36,15 @@ function App() {
             <Route path="search" element={<Search />} />
             <Route path="library" element={<Library />} />
             <Route path="schedule" element={<AuthenticatedRoute><Schedule /></AuthenticatedRoute>} />
-            <Route path="clubs" element={<AuthenticatedRoute><ClubsHome /></AuthenticatedRoute>} />
-            <Route path="clubs/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
-            <Route path="clubs/events/:id" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
-            <Route path="leaderboards" element={<Leaderboards />} />
+            
+            {/* Club Routes */}
+            <Route path="clubs" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>}>
+              <Route path="create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path=":clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
+              <Route path=":clubId/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path=":clubId/events/:eventId" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
+            </Route>
+
             <Route path="liked" element={<Liked />} />
             <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />
             <Route path="profile" element={<AuthenticatedRoute><Profile /></AuthenticatedRoute>} />
@@ -49,6 +52,7 @@ function App() {
             <Route path="exercises/edit/:id" element={<AuthenticatedRoute><EditExercise /></AuthenticatedRoute>} />
             <Route path="purchase/success" element={<PurchaseSuccess />} />
             <Route path="purchase/cancel" element={<PurchaseCancel />} />
+            <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
