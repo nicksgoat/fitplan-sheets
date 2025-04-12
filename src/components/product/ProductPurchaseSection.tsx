@@ -6,6 +6,7 @@ import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { Check, Shield } from 'lucide-react';
 
 interface ProductPurchaseSectionProps {
   itemType: 'workout' | 'program'; 
@@ -93,12 +94,31 @@ export function ProductPurchaseSection({
     <div className={`border border-gray-700 rounded-lg p-6 ${className}`}>
       <h3 className="text-xl font-semibold mb-2 text-center">Premium {itemType === 'workout' ? 'Workout' : 'Training Program'}</h3>
       <p className="text-gray-400 mb-6 text-center">
-        Purchase this {itemType} to see all {itemType === 'workout' ? 'exercises' : 'workouts'} and start your training
+        Unlock full access to this premium {itemType} and accelerate your fitness journey
       </p>
       
-      <div className="mb-4 text-center">
-        <span className="text-2xl font-bold text-fitbloom-purple">{formatCurrency(price)}</span>
+      <div className="mb-6 text-center">
+        <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(price)}</span>
         <span className="text-gray-400 ml-2">one-time purchase</span>
+      </div>
+      
+      <div className="mb-6 space-y-3">
+        <div className="flex items-start">
+          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+          <span className="text-gray-200">Complete access to all exercises, sets and reps</span>
+        </div>
+        <div className="flex items-start">
+          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+          <span className="text-gray-200">Start training immediately after purchase</span>
+        </div>
+        <div className="flex items-start">
+          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+          <span className="text-gray-200">Track your progress with our workout tracker</span>
+        </div>
+        <div className="flex items-start">
+          <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+          <span className="text-gray-200">Lifetime access to all future updates</span>
+        </div>
       </div>
       
       <div className="space-y-4">
@@ -109,7 +129,7 @@ export function ProductPurchaseSection({
               disabled={checkoutLoading}
               className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
             >
-              {checkoutLoading ? 'Processing...' : `Purchase (${formatCurrency(price)})`}
+              {checkoutLoading ? 'Processing...' : `Purchase Now (${formatCurrency(price)})`}
             </Button>
           ) : (
             <Button 
@@ -131,7 +151,8 @@ export function ProductPurchaseSection({
           )}
         </div>
         
-        <div className="text-sm text-gray-400 text-center">
+        <div className="flex justify-center items-center text-sm text-gray-400 pt-2">
+          <Shield className="h-4 w-4 mr-1.5 text-gray-400" />
           <p>Secure payment • Instant access • No subscription</p>
         </div>
       </div>

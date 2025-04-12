@@ -14,6 +14,7 @@ import WorkoutStats from '@/components/workout/WorkoutStats';
 import ExerciseList from '@/components/workout/ExerciseList';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
+import WorkoutPreview from '@/components/workout/WorkoutPreview';
 
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
@@ -121,16 +122,20 @@ const WorkoutDetail = () => {
             {hasAccessToWorkout ? (
               <ExerciseList exercises={workout.exercises} />
             ) : (
-              <ProductPurchaseSection
-                itemType="workout"
-                itemId={workout.id}
-                itemName={workout.name}
-                price={workout.price || 0}
-                creatorId={workout.creatorId || ''}
-                isPurchasable={canPurchase}
-                hasPurchased={!!hasPurchased}
-                isPurchaseLoading={isPurchaseLoading}
-              />
+              <div className="space-y-6">
+                <WorkoutPreview workout={workout} />
+                
+                <ProductPurchaseSection
+                  itemType="workout"
+                  itemId={workout.id}
+                  itemName={workout.name}
+                  price={workout.price || 0}
+                  creatorId={workout.creatorId || ''}
+                  isPurchasable={canPurchase}
+                  hasPurchased={!!hasPurchased}
+                  isPurchaseLoading={isPurchaseLoading}
+                />
+              </div>
             )}
             
             <div className="text-gray-400 text-sm">

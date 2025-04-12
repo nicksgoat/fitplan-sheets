@@ -30,13 +30,28 @@ const WorkoutDetailSkeleton: React.FC<WorkoutDetailSkeletonProps> = ({ onBack })
           <Skeleton className="h-4 w-1/2 mt-2 bg-dark-300" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-12 bg-dark-300" />
               ))}
             </div>
-            <Skeleton className="h-40 w-full bg-dark-300" />
+            
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-1/3 bg-dark-300" />
+              <Skeleton className="h-24 w-full bg-dark-300" />
+            </div>
+            
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-1/3 bg-dark-300" />
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-5 w-full bg-dark-300" />
+                ))}
+              </div>
+            </div>
+            
+            <Skeleton className="h-36 w-full bg-dark-300" />
           </div>
         </CardContent>
       </Card>
