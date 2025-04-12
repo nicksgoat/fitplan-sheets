@@ -13,7 +13,8 @@ import {
   ClubProduct,
   MembershipType,
   MemberStatus,
-  ProductType
+  ProductType,
+  ClubChannel
 } from '@/types/club';
 
 interface ClubContextType {
@@ -24,6 +25,7 @@ interface ClubContextType {
   members: ClubMember[];
   posts: ClubPost[];
   messages: ClubMessage[];
+  channels: ClubChannel[];
   products: ClubProduct[];
   currentClub: Club | null;
   loadingClubs: boolean;
@@ -32,6 +34,7 @@ interface ClubContextType {
   loadingMembers: boolean;
   loadingPosts: boolean;
   loadingMessages: boolean;
+  loadingChannels: boolean;
   setCurrentClub: (club: Club | null) => void;
   refreshClubs: () => Promise<void>;
   refreshMembers: () => Promise<void>;
@@ -39,6 +42,7 @@ interface ClubContextType {
   refreshPosts: () => Promise<void>;
   refreshMessages: () => Promise<void>;
   refreshEvents: () => Promise<void>;
+  refreshChannels: () => Promise<void>;
   loadClubEvents: (clubId: string) => Promise<void>;
   createClubEvent: (eventData: any) => Promise<ClubEvent | null>;
   isUserClubMember: (clubId: string) => boolean;
@@ -69,6 +73,7 @@ const ClubContext = createContext<ClubContextType>({
   members: [],
   posts: [],
   messages: [],
+  channels: [],
   products: [],
   currentClub: null,
   loadingClubs: true,
@@ -77,6 +82,7 @@ const ClubContext = createContext<ClubContextType>({
   loadingMembers: true,
   loadingPosts: true,
   loadingMessages: true,
+  loadingChannels: true,
   setCurrentClub: () => {},
   refreshClubs: async () => {},
   refreshMembers: async () => {},
@@ -84,6 +90,7 @@ const ClubContext = createContext<ClubContextType>({
   refreshPosts: async () => {},
   refreshMessages: async () => {},
   refreshEvents: async () => {},
+  refreshChannels: async () => {},
   loadClubEvents: async () => {},
   createClubEvent: async () => null,
   isUserClubMember: () => false,
@@ -116,6 +123,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [posts, setPosts] = useState<ClubPost[]>([]);
   const [messages, setMessages] = useState<ClubMessage[]>([]);
+  const [channels, setChannels] = useState<ClubChannel[]>([]);
   const [products, setProducts] = useState<ClubProduct[]>([]);
   const [currentClub, setCurrentClub] = useState<Club | null>(null);
   const [loadingClubs, setLoadingClubs] = useState(true);
@@ -124,6 +132,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingChannels, setLoadingChannels] = useState(true);
 
   const { user } = useAuth();
 
@@ -208,6 +217,27 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoadingClubEvents(false);
     }
   }, []);
+
+  const refreshChannels = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      setLoadingChannels(true);
+      
+      const { data, error } = await supabase
+        .from('club_channels')
+        .select('*')
+        .eq('club_id', currentClub.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setChannels(data || []);
+    } catch (error) {
+      console.error('Error fetching channels:', error);
+    } finally {
+      setLoadingChannels(false);
+    }
+  }, [currentClub]);
 
   const isUserClubMember = useCallback((clubId: string) => {
     if (!user) return false;
@@ -692,6 +722,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         members,
         posts,
         messages,
+        channels,
         products,
         currentClub,
         loadingClubs,
@@ -700,6 +731,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loadingMembers,
         loadingPosts,
         loadingMessages,
+        loadingChannels,
         setCurrentClub,
         refreshClubs,
         refreshMembers,
@@ -707,6 +739,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshPosts,
         refreshMessages,
         refreshEvents,
+        refreshChannels,
         loadClubEvents,
         createClubEvent,
         isUserClubMember,

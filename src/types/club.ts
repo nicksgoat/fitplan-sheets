@@ -95,6 +95,19 @@ export interface ClubMessage {
   profile?: any;
 }
 
+// Add ClubChannel interface
+export interface ClubChannel {
+  id: string;
+  club_id: string;
+  name: string;
+  description?: string;
+  type: string;
+  created_at: string;
+  created_by: string;
+  is_default?: boolean;
+  event_id?: string;
+}
+
 export interface ClubProduct {
   id: string;
   club_id: string;

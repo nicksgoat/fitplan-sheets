@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useClub } from '@/contexts/ClubContext';
 import ClubSidebar from './ClubSidebar';
@@ -22,7 +23,8 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
     refreshMembers, 
     isUserClubMember, 
     members,
-    loadingMembers
+    loadingMembers,
+    refreshChannels,
   } = useClub();
   const navigate = useNavigate();
   const [initialLoad, setInitialLoad] = useState(true);
@@ -37,7 +39,8 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
         console.log("[ClubLayout] Refreshing club data...");
         await Promise.all([
           refreshClubs(),
-          refreshMembers()
+          refreshMembers(),
+          refreshChannels()
         ]);
         
         const isMemberAfterRefresh = isUserClubMember(clubId);
