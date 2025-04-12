@@ -66,12 +66,19 @@ const CreatorWorkoutDetail = () => {
         
         console.log(`Found profile ID: ${profileData.id}`);
         
-        // Then get the workout by slug and creator ID
+        // Then get the workout by slug and creator's programs
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
-          .select('id')
+          .select(`
+            id,
+            weeks!inner(
+              programs!inner(
+                user_id
+              )
+            )
+          `)
           .eq('slug', workoutSlug)
-          .eq('user_id', profileData.id)
+          .eq('weeks.programs.user_id', profileData.id)
           .maybeSingle();
           
         if (workoutError) {
