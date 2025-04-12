@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ItemType } from '@/lib/types';
-import ProductCard from '@/components/ui/ProductCard';
+import PublicProductCard from '@/components/product/PublicProductCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         <div className="flex space-x-4 pb-4 overflow-x-auto" ref={scrollRef}>
           {items.map((item) => (
             <div key={item.id} className="min-w-[200px] max-w-[200px] md:min-w-[230px] md:max-w-[230px]">
-              <ProductCard item={item} />
+              <PublicProductCard item={item} />
             </div>
           ))}
         </div>
