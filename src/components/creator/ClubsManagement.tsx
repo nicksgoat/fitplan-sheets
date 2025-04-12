@@ -1,263 +1,162 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Club } from '@/types/club';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { 
-  CircleDollarSign, 
-  Edit, 
-  PlusCircle,
-  MoreHorizontal, 
-  Loader2, 
-  User, 
-  Calendar,
-  ArrowUpDown
-} from 'lucide-react';
-import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+import { Loader2, Settings, Users } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { PriceSettingsDialog } from '@/components/PriceSettingsDialog';
+import { Club } from '@/types/club';
 
 const ClubsManagement = () => {
   const { user } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'name' | 'members' | 'date'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [clubStats, setClubStats] = useState<{[key: string]: {members: number, events: number}}>({});
-  
+  const [loading, setLoading] = useState(true);
+  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+
   useEffect(() => {
-    if (!user) return;
-    
-    const fetchClubs = async () => {
-      setIsLoading(true);
+    const fetchCreatorClubs = async () => {
+      if (!user) return;
+      
       try {
-        // Fetch clubs created by user
         const { data, error } = await supabase
           .from('clubs')
           .select('*')
           .eq('creator_id', user.id);
           
         if (error) throw error;
-        setClubs(data || []);
         
-        // Fetch membership stats for each club
-        const stats: {[key: string]: {members: number, events: number}} = {};
+        // Adding the created_by property to match the Club type
+        const clubsWithCreatedBy = data.map(club => ({
+          ...club,
+          created_by: club.creator_id
+        })) as Club[];
         
-        for (const club of (data || [])) {
-          // Get members count
-          const { count: membersCount, error: membersError } = await supabase
-            .from('club_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('club_id', club.id);
-            
-          // Get events count  
-          const { count: eventsCount, error: eventsError } = await supabase
-            .from('club_events')
-            .select('*', { count: 'exact', head: true })
-            .eq('club_id', club.id);
-            
-          if (!membersError && !eventsError) {
-            stats[club.id] = {
-              members: membersCount || 0,
-              events: eventsCount || 0
-            };
-          }
-        }
-        
-        setClubStats(stats);
+        setClubs(clubsWithCreatedBy);
       } catch (error) {
         console.error('Error fetching clubs:', error);
         toast.error('Failed to load clubs');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    fetchClubs();
+    fetchCreatorClubs();
   }, [user]);
 
-  const handleToggleSort = (column: 'name' | 'members' | 'date') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
+  const handleUpdatePrice = async (newPrice: number) => {
+    if (!selectedClub) return;
+    
+    try {
+      const { error } = await supabase
+        .from('clubs')
+        .update({ premium_price: newPrice })
+        .eq('id', selectedClub.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setClubs(clubs.map(club => 
+        club.id === selectedClub.id 
+          ? { ...club, premium_price: newPrice } 
+          : club
+      ));
+      
+      toast.success('Club pricing updated successfully');
+      setPriceDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating club price:', error);
+      toast.error('Failed to update club pricing');
     }
   };
-  
-  // Sort clubs based on current sort settings
-  const sortedClubs = [...clubs].sort((a, b) => {
-    if (sortBy === 'name') {
-      return sortOrder === 'asc' 
-        ? a.name.localeCompare(b.name) 
-        : b.name.localeCompare(a.name);
-    } else if (sortBy === 'members') {
-      const membersA = clubStats[a.id]?.members || 0;
-      const membersB = clubStats[b.id]?.members || 0;
-      return sortOrder === 'asc' 
-        ? membersA - membersB
-        : membersB - membersA;
-    } else {
-      return sortOrder === 'asc' 
-        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() 
-        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    }
-  });
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!clubs.length) {
-    return (
-      <div className="text-center py-12">
-        <h3 className="font-medium text-lg mb-2">No clubs available</h3>
-        <p className="text-muted-foreground mb-6">
-          Create a club to start building your community and offering memberships
-        </p>
-        <Button asChild>
-          <Link to="/clubs/create">
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Create New Club
-          </Link>
-        </Button>
-      </div>
-    );
-  }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Clubs Management</h2>
-        <Button asChild className="mt-2 sm:mt-0">
-          <Link to="/clubs/create">
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Create New Club
-          </Link>
-        </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Your Clubs</h2>
+        <Button variant="outline" onClick={() => {}}>Create Club</Button>
       </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[300px]">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleToggleSort('name')}
-                  className="flex items-center gap-1 hover:bg-transparent p-0 h-auto font-medium"
-                >
-                  Club Name
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>Membership</TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleToggleSort('members')}
-                  className="flex items-center gap-1 hover:bg-transparent p-0 h-auto font-medium"
-                >
-                  Members
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>Events</TableHead>
-              <TableHead>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleToggleSort('date')}
-                  className="flex items-center gap-1 hover:bg-transparent p-0 h-auto font-medium"
-                >
-                  Created
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedClubs.map((club) => (
-              <TableRow key={club.id}>
-                <TableCell className="font-medium">{club.name}</TableCell>
-                <TableCell>
-                  {club.membership_type === 'premium' ? (
-                    <Badge className="bg-fitbloom-purple">Premium</Badge>
-                  ) : (
-                    <Badge variant="outline">Free</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                    {clubStats[club.id]?.members || 0}
+      
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : clubs.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <p className="text-muted-foreground">You haven't created any clubs yet.</p>
+            <Button className="mt-4" onClick={() => {}}>Create Your First Club</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {clubs.map((club) => (
+            <Card key={club.id} className="overflow-hidden">
+              <div 
+                className="h-32 bg-cover bg-center" 
+                style={{ backgroundImage: `url(${club.banner_url || '/placeholder.svg'})` }} 
+              />
+              <CardHeader className="relative pt-0 -mt-8">
+                <div className="flex items-center">
+                  <Avatar className="h-16 w-16 border-4 border-background">
+                    <AvatarImage src={club.logo_url || undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {club.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3">
+                    <CardTitle className="text-lg">{club.name}</CardTitle>
+                    <Badge variant={club.membership_type === 'premium' ? 'default' : 'outline'}>
+                      {club.membership_type === 'premium' ? 'Premium' : 'Free'}
+                    </Badge>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                    {clubStats[club.id]?.events || 0}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                  {club.description}
+                </p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1" />
+                    <span>• members</span>
                   </div>
-                </TableCell>
-                <TableCell>{formatDate(club.created_at)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link to={`/clubs/${club.id}`}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Manage Club
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={`/clubs/${club.id}/events/create`}>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Create Event
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={`/clubs/${club.id}`}>
-                          <CircleDollarSign className="h-4 w-4 mr-2" />
-                          Manage Memberships
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="ml-auto"
+                    onClick={() => {
+                      setSelectedClub(club);
+                      setPriceDialogOpen(true);
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {selectedClub && (
+        <PriceSettingsDialog
+          open={priceDialogOpen}
+          onOpenChange={setPriceDialogOpen}
+          currentPrice={selectedClub.premium_price}
+          isPurchasable={selectedClub.membership_type === 'premium'}
+          onSubmit={handleUpdatePrice}
+          title={`Update ${selectedClub.name} Pricing`}
+          description="Set the membership price for this club."
+        />
+      )}
     </div>
   );
 };

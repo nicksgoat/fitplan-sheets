@@ -1,186 +1,210 @@
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CircleDollarSign, Package, Users, Activity, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { ArrowRightIcon, DollarSign, Dumbbell, Heart, LucideIcon, Package, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 
-interface StatsData {
-  totalPrograms: number;
-  totalWorkouts: number;
-  totalRevenue: number;
-  activeClubs: number;
-  isLoading: boolean;
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  description: string;
+  icon: LucideIcon;
+  iconColor?: string;
 }
+
+const StatCard = ({ title, value, description, icon: Icon, iconColor = "text-primary" }: StatCardProps) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <Icon className={`h-4 w-4 ${iconColor}`} />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </CardContent>
+  </Card>
+);
 
 const ProductsOverview = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState<StatsData>({
-    totalPrograms: 0,
-    totalWorkouts: 0,
-    totalRevenue: 0,
-    activeClubs: 0,
-    isLoading: true,
+
+  // Fetch count of programs created by user
+  const { data: programsCount, isLoading: loadingPrograms } = useQuery({
+    queryKey: ['creatorProgramsCount', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from('programs')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user) return;
+  // Fetch count of workouts created by user
+  const { data: workoutsCount, isLoading: loadingWorkouts } = useQuery({
+    queryKey: ['creatorWorkoutsCount', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from('workouts')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user
+  });
 
-      try {
-        // Get programs count
-        const { count: programsCount } = await supabase
-          .from('programs')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+  // Fetch count of clubs created by user
+  const { data: clubsCount, isLoading: loadingClubs } = useQuery({
+    queryKey: ['creatorClubsCount', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from('clubs')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user
+  });
 
-        // Get workouts count (that are directly monetized, not part of programs)
-        const { count: workoutsCount } = await supabase
-          .from('workouts')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_purchasable', true);
+  // Example sales data for the chart - in a real app this would come from the database
+  const sampleSalesData = [
+    { name: 'Mon', sales: 54 },
+    { name: 'Tue', sales: 67 },
+    { name: 'Wed', sales: 41 },
+    { name: 'Thu', sales: 55 },
+    { name: 'Fri', sales: 73 },
+    { name: 'Sat', sales: 94 },
+    { name: 'Sun', sales: 60 },
+  ];
 
-        // Get clubs count
-        const { count: clubsCount } = await supabase
-          .from('clubs')
-          .select('id', { count: 'exact', head: true })
-          .eq('creator_id', user.id);
-
-        // Calculate revenue from program purchases
-        const { data: programPurchases } = await supabase
-          .from('program_purchases')
-          .select('amount_paid, creator_earnings')
-          .eq('creator_id', user.id);
-
-        // Calculate revenue from workout purchases
-        const { data: workoutPurchases } = await supabase
-          .from('workout_purchases')
-          .select('amount_paid, creator_earnings')
-          .eq('creator_id', user.id);
-
-        // Calculate combined revenue
-        const programRevenue = (programPurchases || []).reduce(
-          (total, purchase) => total + (purchase.creator_earnings || 0),
-          0
-        );
-        
-        const workoutRevenue = (workoutPurchases || []).reduce(
-          (total, purchase) => total + (purchase.creator_earnings || 0),
-          0
-        );
-
-        setStats({
-          totalPrograms: programsCount || 0,
-          totalWorkouts: workoutsCount || 0,
-          totalRevenue: programRevenue + workoutRevenue,
-          activeClubs: clubsCount || 0,
-          isLoading: false,
-        });
-
-      } catch (error) {
-        console.error('Error fetching creator stats:', error);
-        setStats(prev => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    fetchStats();
-  }, [user]);
-
-  if (stats.isLoading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const isLoading = loadingPrograms || loadingWorkouts || loadingClubs;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Products Overview</h2>
-        <div className="flex gap-2 mt-2 sm:mt-0">
-          <Button asChild variant="outline" size="sm" className="h-8">
-            <Link to="/programs/create">Create Program</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="h-8">
-            <Link to="/workouts/create">Create Workout</Link>
-          </Button>
-          <Button asChild variant="default" size="sm" className="h-8">
-            <Link to="/clubs/create">Create Club</Link>
-          </Button>
-        </div>
+      <h2 className="text-2xl font-semibold">Creator Dashboard</h2>
+      
+      {/* Stats Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          title="Total Programs" 
+          value={isLoading ? '-' : programsCount || 0} 
+          description={`${programsCount === 1 ? 'Program' : 'Programs'} created`}
+          icon={Package}
+        />
+        <StatCard 
+          title="Total Workouts" 
+          value={isLoading ? '-' : workoutsCount || 0} 
+          description={`${workoutsCount === 1 ? 'Workout' : 'Workouts'} created`}
+          icon={Dumbbell}
+        />
+        <StatCard 
+          title="Clubs" 
+          value={isLoading ? '-' : clubsCount || 0} 
+          description={`${clubsCount === 1 ? 'Club' : 'Clubs'} managed`}
+          icon={Users}
+        />
+        <StatCard 
+          title="Sales" 
+          value="$0" 
+          description="Total sales this month"
+          icon={DollarSign}
+          iconColor="text-green-500"
+        />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">After platform fees</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Programs</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPrograms}</div>
-            <p className="text-xs text-muted-foreground">Total programs created</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Workouts</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalWorkouts}</div>
-            <p className="text-xs text-muted-foreground">Monetized workouts</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clubs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeClubs}</div>
-            <p className="text-xs text-muted-foreground">Active clubs</p>
-          </CardContent>
-        </Card>
+      {/* Weekly Sales Chart */}
+      <Card className="col-span-4">
+        <CardHeader>
+          <CardTitle>Weekly Sales</CardTitle>
+          <CardDescription>
+            Your sales performance during the last 7 days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pl-2">
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sampleSalesData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="sales" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Content */}
+      <h3 className="text-xl font-semibold mt-8">Recent Content</h3>
+      <div className="grid gap-4 md:grid-cols-3">
+        {isLoading ? (
+          Array(3).fill(0).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-1/3" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+                <div className="flex justify-between mt-4">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-8 w-1/4" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : ((programsCount || 0) + (workoutsCount || 0) + (clubsCount || 0) === 0 ? (
+          <Card className="md:col-span-3">
+            <CardContent className="pt-6 text-center">
+              <p className="mb-4 text-muted-foreground">You haven't created any content yet.</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button asChild>
+                  <Link to="/exercises/create">Create Exercise</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* These would be actual content cards in a real implementation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Example Program</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">This is where your recent programs would appear.</p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Heart className="h-3 w-3 mr-1" /> 0
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to="/creator">
+                      View <ArrowRightIcon className="ml-1 h-3 w-3" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            {/* More cards would follow... */}
+          </>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
-            <CardDescription>Your latest purchases in the last 30 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-6">No recent sales data available</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Products Overview</CardTitle>
-            <CardDescription>View performance by product type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-6">No product performance data available</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

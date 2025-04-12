@@ -1,296 +1,173 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
-import { Loader2 } from 'lucide-react';
-
-interface SalesData {
-  month: string;
-  programs: number;
-  workouts: number;
-  clubs: number;
-  total: number;
-}
-
-interface ProductTypeSales {
-  name: string;
-  value: number;
-}
+import { useQuery } from '@tanstack/react-query';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { DollarSign, TrendingUp, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SalesAnalytics = () => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [monthlySales, setMonthlySales] = useState<SalesData[]>([]);
-  const [productTypeSales, setProductTypeSales] = useState<ProductTypeSales[]>([]);
-  
-  useEffect(() => {
-    if (!user) return;
-    
-    const fetchSalesData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Define date range - last 6 months
-        const endDate = new Date();
-        const startDate = subMonths(endDate, 5); // 6 months including current
-        
-        // Get all months in the interval
-        const months = eachMonthOfInterval({
-          start: startDate,
-          end: endDate
-        });
-        
-        // Initialize sales data
-        const salesByMonth: SalesData[] = months.map(month => ({
-          month: format(month, 'MMM yyyy'),
-          programs: 0,
-          workouts: 0,
-          clubs: 0,
-          total: 0
-        }));
-        
-        // Fetch program sales
-        const { data: programSales, error: programError } = await supabase
-          .from('program_purchases')
-          .select('purchase_date, creator_earnings')
-          .eq('creator_id', user.id)
-          .gte('purchase_date', startDate.toISOString())
-          .lte('purchase_date', endDate.toISOString());
-          
-        if (programError) throw programError;
-        
-        // Fetch workout sales
-        const { data: workoutSales, error: workoutError } = await supabase
-          .from('workout_purchases')
-          .select('purchase_date, creator_earnings')
-          .eq('creator_id', user.id)
-          .gte('purchase_date', startDate.toISOString())
-          .lte('purchase_date', endDate.toISOString());
-          
-        if (workoutError) throw workoutError;
-        
-        // Fetch club subscription data
-        const { data: clubSubs, error: clubError } = await supabase
-          .from('club_subscriptions')
-          .select('created_at, plan_amount')
-          .eq('owner_id', user.id)
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
-          
-        if (clubError) throw clubError;
-        
-        // Process program sales
-        (programSales || []).forEach(sale => {
-          const saleMonth = format(new Date(sale.purchase_date), 'MMM yyyy');
-          const monthData = salesByMonth.find(m => m.month === saleMonth);
-          if (monthData) {
-            monthData.programs += sale.creator_earnings || 0;
-            monthData.total += sale.creator_earnings || 0;
-          }
-        });
-        
-        // Process workout sales
-        (workoutSales || []).forEach(sale => {
-          const saleMonth = format(new Date(sale.purchase_date), 'MMM yyyy');
-          const monthData = salesByMonth.find(m => m.month === saleMonth);
-          if (monthData) {
-            monthData.workouts += sale.creator_earnings || 0;
-            monthData.total += sale.creator_earnings || 0;
-          }
-        });
-        
-        // Process club subscriptions
-        (clubSubs || []).forEach(sub => {
-          const subMonth = format(new Date(sub.created_at), 'MMM yyyy');
-          const monthData = salesByMonth.find(m => m.month === subMonth);
-          if (monthData) {
-            monthData.clubs += (sub.plan_amount * 0.9) || 0; // Apply platform fee
-            monthData.total += (sub.plan_amount * 0.9) || 0;
-          }
-        });
-        
-        setMonthlySales(salesByMonth);
-        
-        // Calculate product type breakdown
-        const programTotal = programSales?.reduce((sum, sale) => sum + (sale.creator_earnings || 0), 0) || 0;
-        const workoutTotal = workoutSales?.reduce((sum, sale) => sum + (sale.creator_earnings || 0), 0) || 0;
-        const clubTotal = clubSubs?.reduce((sum, sub) => sum + ((sub.plan_amount * 0.9) || 0), 0) || 0;
-        
-        setProductTypeSales([
-          { name: 'Programs', value: programTotal },
-          { name: 'Workouts', value: workoutTotal },
-          { name: 'Club Memberships', value: clubTotal }
-        ]);
-        
-      } catch (error) {
-        console.error('Error fetching sales data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchSalesData();
-  }, [user]);
-  
-  // Calculate total earnings
-  const totalEarnings = monthlySales.reduce((sum, month) => sum + month.total, 0);
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+
+  // Sample data for demonstration
+  // In a real app, this would come from API calls to the backend
+  const monthlySalesData = [
+    { name: 'Jan', sales: 4000 },
+    { name: 'Feb', sales: 3000 },
+    { name: 'Mar', sales: 5000 },
+    { name: 'Apr', sales: 2780 },
+    { name: 'May', sales: 1890 },
+    { name: 'Jun', sales: 2390 },
+  ];
+
+  const productSalesData = [
+    { name: 'Programs', value: 400 },
+    { name: 'Workouts', value: 300 },
+    { name: 'Club Memberships', value: 300 },
+  ];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-6">Sales Analytics</h2>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Revenue Overview */}
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <CardDescription>After platform fees</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalEarnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">$0.00</div>
+            <p className="text-xs text-muted-foreground">Lifetime earnings</p>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Best Selling Product</CardTitle>
-            <CardDescription>Based on earnings</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {productTypeSales.length > 0 
-                ? productTypeSales.sort((a, b) => b.value - a.value)[0]?.name
-                : 'No data'}
-            </div>
+            <div className="text-2xl font-bold">$0.00</div>
+            <p className="text-xs text-muted-foreground">+0% from last month</p>
           </CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Best Month</CardTitle>
-            <CardDescription>Based on earnings</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {monthlySales.length > 0 
-                ? monthlySales.sort((a, b) => b.total - a.total)[0]?.month
-                : 'No data'}
-            </div>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Across all products</p>
           </CardContent>
         </Card>
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Revenue</CardTitle>
-            <CardDescription>Last 6 months earnings breakdown</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            {monthlySales.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlySales}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
-                  />
-                  <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="programs"
-                    name="Programs"
-                    stroke="#82ca9d"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="workouts"
-                    name="Workouts"
-                    stroke="#ffc658"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No sales data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+      {/* Sales Charts */}
+      <Tabs defaultValue="monthly">
+        <TabsList>
+          <TabsTrigger value="monthly">Monthly Sales</TabsTrigger>
+          <TabsTrigger value="products">Product Breakdown</TabsTrigger>
+          <TabsTrigger value="customers">Customer Growth</TabsTrigger>
+        </TabsList>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Revenue Distribution</CardTitle>
-            <CardDescription>Earnings by product type</CardDescription>
-          </CardHeader>
-          <CardContent className="h-80">
-            {productTypeSales.some(item => item.value > 0) ? (
+        <TabsContent value="monthly" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Sales</CardTitle>
+              <CardDescription>
+                Your sales performance over the past 6 months.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={productTypeSales}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
-                  />
-                  <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
+                <BarChart data={monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
                   <Legend />
-                  <Bar dataKey="value" name="Revenue" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="sales" fill="#8884d8" name="Sales ($)" />
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No revenue data available</p>
-              </div>
-            )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="products" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales by Product Type</CardTitle>
+              <CardDescription>
+                Distribution of revenue across different products.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] flex justify-center items-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={productSalesData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {productSalesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="customers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Growth</CardTitle>
+              <CardDescription>
+                New customers acquired over time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="sales" stroke="#82ca9d" name="New Customers" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* No Sales Yet placeholder */}
+      {true && (
+        <Card className="mt-6">
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <div className="rounded-full bg-muted p-3">
+              <DollarSign className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="mt-3 text-lg font-medium">No Sales Yet</h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground max-w-md">
+              When you start making sales, detailed analytics will appear here. 
+              Try promoting your products on social media to get your first customers.
+            </p>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 };
