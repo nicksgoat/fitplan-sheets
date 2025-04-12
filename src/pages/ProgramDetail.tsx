@@ -128,6 +128,26 @@ const ProgramDetail = () => {
     navigate(-1);
   };
   
+  const generateProgramSchema = () => {
+    if (!program) return null;
+    
+    const schemaData = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": program.name,
+      "description": `Training program with ${program.weeks?.length || 0} weeks and ${program.workouts?.length || 0} workouts`,
+      "offers": {
+        "@type": "Offer",
+        "url": window.location.href,
+        "price": program.price || 0,
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    };
+    
+    return JSON.stringify(schemaData);
+  };
+  
   if (loading) {
     return (
       <div className="container max-w-4xl mx-auto p-4">
@@ -201,6 +221,17 @@ const ProgramDetail = () => {
         description={`Training program with ${weekCount} ${weekCount === 1 ? 'week' : 'weeks'} and ${workoutCount} ${workoutCount === 1 ? 'workout' : 'workouts'}`}
         type="product"
         url={`/program/${program.id}-${program.name.toLowerCase().replace(/\s+/g, '-')}`}
+        preload={[
+          {
+            href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(program.name)}`,
+            as: 'image',
+          }
+        ]}
+      />
+      
+      <script 
+        type="application/ld+json" 
+        dangerouslySetInnerHTML={{ __html: generateProgramSchema() || '' }}
       />
       
       <div className="flex items-center justify-between mb-6">

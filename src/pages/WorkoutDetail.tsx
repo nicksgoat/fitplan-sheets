@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ShareButton from '@/components/share/ShareButton';
 import MetaTags from '@/components/meta/MetaTags';
 import { formatCurrency } from '@/utils/workout';
+import ProductSchema from '@/components/schema/ProductSchema';
+import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
@@ -52,18 +53,17 @@ const WorkoutDetail = () => {
         
         if (error) throw error;
         
-        // Map to our workout type
         const mappedWorkout: Workout = {
           id: data.id,
           name: data.name,
           day: data.day_num,
           exercises: data.exercises || [],
-          circuits: [], // Add empty circuits array
+          circuits: [],
           savedAt: data.created_at,
           lastModified: data.updated_at,
           isPurchasable: data.is_purchasable || false,
           price: data.price || 0,
-          creatorId: data.user_id // Correctly map the database user_id to creatorId
+          creatorId: data.user_id
         };
         
         setWorkout(mappedWorkout);
@@ -86,12 +86,32 @@ const WorkoutDetail = () => {
       itemId: workout.id,
       itemName: workout.name,
       price: parseFloat(workout.price.toString()),
-      creatorId: workout.creatorId || '' // Use creatorId as defined in our Workout type
+      creatorId: workout.creatorId || ''
     });
   };
   
   const handleBackClick = () => {
     navigate(-1);
+  };
+  
+  const generateProductSchema = () => {
+    if (!workout) return null;
+    
+    const schemaData = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": workout.name,
+      "description": `Day ${workout.day} workout with ${workout.exercises.length} exercises`,
+      "offers": {
+        "@type": "Offer",
+        "url": window.location.href,
+        "price": workout.price || 0,
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    };
+    
+    return JSON.stringify(schemaData);
   };
   
   if (loading) {
@@ -158,7 +178,7 @@ const WorkoutDetail = () => {
     return acc + (exercise.sets?.length || 0);
   }, 0);
   
-  const canPurchase = workout.isPurchasable && workout.price && workout.price > 0 && (!hasPurchased) && user;
+  const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
   
   return (
@@ -168,6 +188,19 @@ const WorkoutDetail = () => {
         description={`Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`}
         type="product"
         url={`/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`}
+        preload={[
+          {
+            href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
+            as: 'image',
+          }
+        ]}
+      />
+      
+      <ProductSchema 
+        name={workout.name}
+        description={`Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`}
+        price={workout.price || 0}
+        availability={workout.isPurchasable ? 'InStock' : 'OutOfStock'}
       />
       
       <div className="flex items-center justify-between mb-6">
@@ -245,37 +278,50 @@ const WorkoutDetail = () => {
                 </div>
               </div>
             ) : (
-              <div className="border border-gray-700 rounded-lg p-6 text-center">
-                <h3 className="text-xl font-semibold mb-2">Premium Workout</h3>
-                <p className="text-gray-400 mb-6">
+              <div className="border border-gray-700 rounded-lg p-6">
+                <h3 className="text-xl font-semibold mb-2 text-center">Premium Workout</h3>
+                <p className="text-gray-400 mb-6 text-center">
                   Purchase this workout to see all exercises and start your training
                 </p>
                 
-                {isPurchaseLoading ? (
-                  <Button disabled>Loading...</Button>
-                ) : canPurchase ? (
-                  <Button 
-                    onClick={handlePurchase}
-                    disabled={checkoutLoading}
-                    className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                  >
-                    {checkoutLoading ? 'Processing...' : `Purchase for ${formatCurrency(workout.price || 0)}`}
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <Button 
-                      disabled={!user}
-                      onClick={!user ? () => navigate('/auth') : undefined}
-                    >
-                      {!user ? 'Sign in to purchase' : 'Already purchased'}
-                    </Button>
-                    {!user && (
-                      <p className="text-sm text-gray-400">
-                        You need an account to purchase this workout
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div className="space-y-4">
+                  {isPurchaseLoading ? (
+                    <Button disabled className="w-full">Loading...</Button>
+                  ) : canPurchase ? (
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                      {user ? (
+                        <Button 
+                          onClick={handlePurchase}
+                          disabled={checkoutLoading}
+                          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                        >
+                          {checkoutLoading ? 'Processing...' : `Purchase (${formatCurrency(workout.price || 0)})`}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => navigate('/auth')}
+                          className="w-full"
+                        >
+                          Sign in to Purchase
+                        </Button>
+                      )}
+                      
+                      {!user && (
+                        <GuestCheckoutButton
+                          itemType="workout"
+                          itemId={workout.id}
+                          itemName={workout.name}
+                          price={workout.price || 0}
+                          creatorId={workout.creatorId || ''}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-400">
+                      This workout is currently unavailable for purchase.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
             

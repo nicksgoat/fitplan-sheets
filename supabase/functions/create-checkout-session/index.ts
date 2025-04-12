@@ -16,9 +16,9 @@ serve(async (req) => {
 
   try {
     // Get request body
-    const { itemType, itemId, itemName, price, userId, creatorId } = await req.json();
+    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest } = await req.json();
 
-    if (!itemType || !itemId || !price || !userId || !creatorId) {
+    if (!itemType || !itemId || !price || (!userId && !guestEmail) || !creatorId) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { 
@@ -44,7 +44,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase client
+    // Initialize Supabase client for auth user data
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -59,22 +59,31 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Handle guest vs authenticated user
+    let customerEmail = '';
+    
+    if (isGuest && guestEmail) {
+      customerEmail = guestEmail;
+    } else {
+      // Get user email for Stripe customer creation
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
 
-    // Get user email for Stripe customer creation
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (userError) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user data' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
+      if (userError || !userData?.email) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch user data' }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+      
+      customerEmail = userData.email;
     }
 
     // Calculate platform fee (10%)
@@ -98,17 +107,19 @@ serve(async (req) => {
         },
       ],
       mode: itemType === 'club' ? 'subscription' : 'payment',
-      success_url: `${req.headers.get('origin')}/purchase-success?item=${itemType}&id=${itemId}`,
+      success_url: `${req.headers.get('origin')}/purchase-success?item=${itemType}&id=${itemId}${isGuest ? '&guest=true' : ''}`,
       cancel_url: `${req.headers.get('origin')}/purchase-cancel`,
       client_reference_id: userId,
-      customer_email: userData?.email,
+      customer_email: customerEmail,
       metadata: {
         itemType,
         itemId,
-        userId,
+        userId: isGuest ? `guest_${guestEmail}` : userId,
         creatorId,
         platformFee: platformFee.toFixed(2),
         creatorEarnings: creatorEarnings.toFixed(2),
+        isGuest: isGuest ? 'true' : 'false',
+        guestEmail: isGuest ? guestEmail : undefined
       },
     });
 
