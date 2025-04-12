@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +9,7 @@ import { Exercise } from '@/types/exercise';
 import { ItemType } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { buildProductUrl } from '@/utils/urlUtils';
+import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { formatCurrency } from '@/utils/workout';
 
 interface ContentCardProps {
@@ -20,10 +19,8 @@ interface ContentCardProps {
 }
 
 const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
-  // Determine if item is Exercise or ItemType
   const isExercise = 'primaryMuscle' in item;
   
-  // Map Exercise properties to match ItemType structure for consistency
   const normalizedItem: ItemType = isExercise 
     ? {
         id: item.id,
@@ -51,7 +48,6 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   const isPurchasable = normalizedItem.isPurchasable;
   const lastModified = normalizedItem.lastModified;
   
-  // Check if it's a Supabase Storage URL for videos
   const isStorageVideo = videoUrl && videoUrl.includes('storage.googleapis.com') && 
                          videoUrl.includes('exercise-videos');
 
@@ -70,7 +66,6 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
     }
   };
   
-  // Use different element based on if the item is purchasable
   const cardContent = (
     <div className="relative">
       {videoUrl ? (
@@ -125,10 +120,12 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
     </>
   );
   
-  // For purchasable items, use Link to go to detail page
   if ((normalizedItem.type === 'workout' || normalizedItem.type === 'program') && 
-      normalizedItem.isPurchasable) {
-    const productUrl = buildProductUrl(normalizedItem.type, normalizedItem.id, normalizedItem.title);
+      normalizedItem.isPurchasable && normalizedItem.creatorUsername) {
+    const productUrl = buildCreatorProductUrl(
+      normalizedItem.creatorUsername,
+      normalizedItem.slug || normalizedItem.id
+    );
     
     return (
       <Card className={cn("content-card h-full flex flex-col", className)}>
@@ -140,7 +137,6 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
     );
   }
   
-  // For other items, use the drawer
   return (
     <DetailDrawer item={normalizedItem}>
       <Card 
