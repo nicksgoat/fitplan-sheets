@@ -3,6 +3,9 @@ import React from 'react';
 import { useDrag } from 'react-dnd';
 import { ItemTypes } from '@/hooks/useWorkoutLibraryIntegration';
 import { WorkoutSession } from '@/types/workout';
+import { Trash2 } from 'lucide-react';
+import { useWorkout } from '@/contexts/WorkoutContext';
+import { toast } from 'sonner';
 
 interface WorkoutItemProps {
   workout: WorkoutSession; 
@@ -10,6 +13,8 @@ interface WorkoutItemProps {
 }
 
 const WorkoutItem = ({ workout, onSelect }: WorkoutItemProps) => {
+  const { deleteWorkout } = useWorkout();
+  
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.WORKOUT,
     item: { 
@@ -22,6 +27,14 @@ const WorkoutItem = ({ workout, onSelect }: WorkoutItemProps) => {
     }),
   }));
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering onSelect
+    if (workout.weekId) {
+      deleteWorkout(workout.weekId, workout.id);
+      toast.success(`"${workout.name}" has been removed`);
+    }
+  };
+
   return (
     <div
       ref={drag}
@@ -30,7 +43,15 @@ const WorkoutItem = ({ workout, onSelect }: WorkoutItemProps) => {
       }`}
       onClick={onSelect}
     >
-      <h4 className="text-sm font-medium">{workout.name}</h4>
+      <div className="flex justify-between items-center">
+        <h4 className="text-sm font-medium">{workout.name}</h4>
+        <button 
+          onClick={handleDelete} 
+          className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-gray-600"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <p className="text-xs text-gray-400 mt-1">{workout.exercises.length} exercises</p>
     </div>
   );
