@@ -1,8 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Workout } from '@/types/workout';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasUserPurchasedWorkout } from '@/hooks/useWorkoutData';
 import { Button } from '@/components/ui/button';
@@ -19,26 +17,31 @@ import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
 
+interface WorkoutDetailState {
+  id: string | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
 const CreatorWorkoutDetail = () => {
-  const { username, workoutSlug } = useParams<{ username: string, workoutSlug: string }>();
+  const { username, workoutSlug } = useParams<{ username: string; workoutSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [workoutId, setWorkoutId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [state, setState] = useState<WorkoutDetailState>({
+    id: null,
+    isLoading: true,
+    error: null
+  });
   
-  // Fetch the workout ID based on username and slug
   useEffect(() => {
     const getWorkoutBySlug = async () => {
       if (!username || !workoutSlug) {
-        setFetchError('Invalid workout URL');
-        setIsLoading(false);
+        setState(prev => ({ ...prev, error: 'Invalid workout URL', isLoading: false }));
         return;
       }
       
       try {
-        // First, get the user ID from the username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id')
@@ -47,56 +50,46 @@ const CreatorWorkoutDetail = () => {
           
         if (profileError) throw profileError;
         if (!profileData) {
-          setFetchError(`Creator ${username} not found`);
-          setIsLoading(false);
+          setState(prev => ({ ...prev, error: `Creator ${username} not found`, isLoading: false }));
           return;
         }
         
-        // Then, get the workout by slug and user ID
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
-          .select('id, name')
+          .select('id')
           .eq('slug', workoutSlug)
-          .eq('user_id', profileData.id)
+          .eq('week_id', profileData.id)
           .maybeSingle();
           
         if (workoutError) throw workoutError;
         if (!workoutData) {
-          setFetchError(`Workout ${workoutSlug} not found`);
-          setIsLoading(false);
+          setState(prev => ({ ...prev, error: `Workout ${workoutSlug} not found`, isLoading: false }));
           return;
         }
         
-        setWorkoutId(workoutData.id);
-        setIsLoading(false);
+        setState({ id: workoutData.id, isLoading: false, error: null });
       } catch (error: any) {
         console.error('Error fetching workout:', error);
-        setFetchError(error.message || 'Failed to load workout');
-        setIsLoading(false);
+        setState(prev => ({ 
+          ...prev, 
+          error: error.message || 'Failed to load workout',
+          isLoading: false 
+        }));
       }
     };
     
     getWorkoutBySlug();
   }, [username, workoutSlug]);
   
-  // Fetch workout details using the existing hook once we have the ID
-  // Fix: Break the direct reference chain between the workout detail and the components
-  const workoutDetailResult = useWorkoutDetail(workoutId);
-  const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = workoutDetailResult;
+  const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
   
-  // Fix: Use the workout ID directly with useHasUserPurchased instead of using workout.id
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
-    useHasUserPurchasedWorkout(user?.id || '', workoutId || '');
+    useHasUserPurchasedWorkout(user?.id || '', state.id || '');
   
-  // Combined loading state
-  const isPageLoading = isLoading || workoutLoading;
+  const isPageLoading = state.isLoading || workoutLoading;
+  const pageError = state.error || workoutError;
   
-  // Combined error state
-  const pageError = fetchError || workoutError;
-  
-  const handleBackClick = () => {
-    navigate(-1);
-  };
+  const handleBackClick = () => navigate(-1);
   
   if (isPageLoading) {
     return <WorkoutDetailSkeleton onBack={handleBackClick} />;
@@ -106,12 +99,10 @@ const CreatorWorkoutDetail = () => {
     return <WorkoutDetailError error={pageError || 'Workout not found'} />;
   }
   
-  // Calculate total sets here to avoid deep type nesting in JSX
   const totalSets = workout.exercises.reduce((acc, exercise) => {
     return acc + (exercise.sets?.length || 0);
   }, 0);
   
-  // Extract these values to simplify the JSX and avoid deep nesting
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
