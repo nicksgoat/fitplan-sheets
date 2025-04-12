@@ -1,51 +1,62 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { CheckCircle } from 'lucide-react';
 
-export default function PurchaseSuccess() {
+const PurchaseSuccess = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const sessionId = searchParams.get('session_id');
-  
+  const [itemType, setItemType] = useState<string>('');
+  const [itemId, setItemId] = useState<string>('');
+
   useEffect(() => {
-    if (sessionId) {
-      console.log('Purchase completed with session ID:', sessionId);
-      // You can add analytics or other tracking here if needed
-    }
-  }, [sessionId]);
-  
+    const type = searchParams.get('item');
+    const id = searchParams.get('id');
+    if (type) setItemType(type);
+    if (id) setItemId(id);
+  }, [searchParams]);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
-      <div className="bg-dark-200 border border-dark-300 rounded-lg p-8 max-w-md w-full text-center">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        
-        <h1 className="text-2xl font-bold mb-4">Purchase Successful!</h1>
-        
-        <p className="text-gray-400 mb-6">
-          Thank you for your purchase. You now have access to this content in your library.
-        </p>
-        
-        <div className="flex flex-col space-y-3">
-          <Button 
-            onClick={() => navigate('/library')}
-            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
-          >
-            Go to My Library
+    <div className="container max-w-2xl mx-auto p-4 py-12">
+      <Card className="bg-dark-200 border-dark-300 shadow-lg overflow-hidden">
+        <CardHeader className="bg-green-900/30 border-b border-green-900/20 pb-8 text-center">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-2" />
+          <CardTitle className="text-2xl md:text-3xl">Payment Successful!</CardTitle>
+          <CardDescription className="text-gray-400">
+            Thank you for your purchase
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-medium">Your {itemType} purchase was successful</h3>
+              <p className="text-gray-400 mt-2">
+                You can now access your purchased content in your library.
+              </p>
+            </div>
+            
+            <div className="bg-dark-300 rounded-md p-4 border border-dark-400">
+              <h4 className="font-medium">What's next?</h4>
+              <ul className="mt-2 space-y-2 text-gray-400">
+                <li>• Check out your purchase in your Library</li>
+                <li>• Start using your newly purchased content right away</li>
+                <li>• Need help? Contact customer support</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row gap-3 pt-0">
+          <Button asChild className="flex-1">
+            <Link to="/library">Go to Library</Link>
           </Button>
-          
-          <Button 
-            variant="outline"
-            onClick={() => navigate('/')}
-            className="w-full"
-          >
-            Return to Home
+          <Button variant="outline" asChild className="flex-1">
+            <Link to="/">Return Home</Link>
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
-}
+};
+
+export default PurchaseSuccess;

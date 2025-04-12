@@ -3,18 +3,63 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
 import { WorkoutProgram } from '@/types/workout';
+import { supabase } from '@/integrations/supabase/client';
 
 export function usePrograms() {
   return useQuery({
     queryKey: ['programs'],
-    queryFn: workoutService.getPrograms
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Convert to WorkoutProgram type with empty arrays for workouts and weeks
+      return data.map(program => ({
+        ...program,
+        workouts: [],
+        weeks: []
+      })) as WorkoutProgram[];
+    }
   });
 }
 
 export function useProgram(programId: string) {
   return useQuery({
     queryKey: ['program', programId],
-    queryFn: () => workoutService.getProgram(programId),
+    queryFn: async () => {
+      // Fetch the program details
+      const { data: program, error } = await supabase
+        .from('programs')
+        .select('*')
+        .eq('id', programId)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Fetch the weeks for this program
+      const { data: weeks, error: weeksError } = await supabase
+        .from('weeks')
+        .select('*')
+        .eq('program_id', programId)
+        .order('order_num', { ascending: true });
+      
+      if (weeksError) {
+        throw weeksError;
+      }
+      
+      // Return the full program with empty workouts array for now
+      return {
+        ...program,
+        weeks: weeks || [],
+        workouts: []
+      } as WorkoutProgram;
+    },
     enabled: !!programId // Only run if programId exists
   });
 }
@@ -23,7 +68,29 @@ export function useCreateProgram() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (name: string) => workoutService.createProgram(name),
+    mutationFn: async (name: string) => {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { data, error } = await supabase
+        .from('programs')
+        .insert({
+          name,
+          user_id: user.id
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data.id;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       toast.success('Program created successfully');
@@ -129,30 +196,6 @@ export function useUpdateProgramPrice() {
   });
 }
 
-export function useUpdateWorkoutPrice() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ 
-      workoutId, 
-      price, 
-      isPurchasable 
-    }: { 
-      workoutId: string, 
-      price: number, 
-      isPurchasable: boolean 
-    }) => workoutService.updateWorkoutPrice(workoutId, price, isPurchasable),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workouts'] });
-      toast.success('Workout price updated successfully');
-    },
-    onError: (error: any) => {
-      console.error('Error updating workout price:', error);
-      toast.error(`Error updating workout price: ${error.message}`);
-    }
-  });
-}
-
 export function useHasUserPurchasedProgram(userId: string, programId: string) {
   return useQuery({
     queryKey: ['program-purchase', programId, userId],
@@ -161,26 +204,10 @@ export function useHasUserPurchasedProgram(userId: string, programId: string) {
   });
 }
 
-export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
-  return useQuery({
-    queryKey: ['workout-purchase', workoutId, userId],
-    queryFn: () => workoutService.hasUserPurchasedWorkout(userId, workoutId),
-    enabled: !!userId && !!workoutId
-  });
-}
-
 export function useUserPurchasedPrograms(userId: string) {
   return useQuery({
     queryKey: ['user-purchased-programs', userId],
     queryFn: () => workoutService.getUserPurchasedPrograms(userId),
-    enabled: !!userId
-  });
-}
-
-export function useUserPurchasedWorkouts(userId: string) {
-  return useQuery({
-    queryKey: ['user-purchased-workouts', userId],
-    queryFn: () => workoutService.getUserPurchasedWorkouts(userId),
     enabled: !!userId
   });
 }

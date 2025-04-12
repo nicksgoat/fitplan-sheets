@@ -4,8 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import Stripe from "https://esm.sh/stripe@12.5.0?dts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
@@ -15,45 +15,73 @@ serve(async (req) => {
   }
 
   try {
-    // Extract request body
+    // Get request body
     const { itemType, itemId, itemName, price, userId, creatorId } = await req.json();
-    
-    // Validate parameters
+
     if (!itemType || !itemId || !price || !userId || !creatorId) {
-      throw new Error('Missing required parameters');
-    }
-    
-    if (itemType !== 'workout' && itemType !== 'program') {
-      throw new Error('Invalid item type. Must be "workout" or "program"');
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    // Get Stripe API key
+    // Initialize Stripe
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
-      throw new Error('Stripe secret key not configured');
+      return new Response(
+        JSON.stringify({ error: 'Stripe secret key not configured' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
-    
-    // Initialize Stripe client
+
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // Get user email
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (userError || !userData) {
-      throw new Error('User not found');
+    if (!supabaseUrl || !supabaseKey) {
+      return new Response(
+        JSON.stringify({ error: 'Supabase credentials not configured' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
-    
-    // Calculate fees (10% of the price)
-    const platformFee = Math.round(price * 0.1 * 100) / 100;
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user email for Stripe customer creation
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch user data' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Calculate platform fee (10%)
+    const platformFee = price * 0.1;
     const creatorEarnings = price - platformFee;
-    
-    // Create Stripe checkout session
+
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -62,35 +90,43 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: itemName,
-              description: `Elite Locker ${itemType} purchase`,
+              description: `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} purchase`,
             },
             unit_amount: Math.round(price * 100), // Convert to cents
           },
           quantity: 1,
         },
       ],
+      mode: itemType === 'club' ? 'subscription' : 'payment',
+      success_url: `${req.headers.get('origin')}/purchase-success?item=${itemType}&id=${itemId}`,
+      cancel_url: `${req.headers.get('origin')}/purchase-cancel`,
+      client_reference_id: userId,
+      customer_email: userData?.email,
       metadata: {
         itemType,
         itemId,
         userId,
         creatorId,
-        platformFee: platformFee.toString(),
-        creatorEarnings: creatorEarnings.toString(),
+        platformFee: platformFee.toFixed(2),
+        creatorEarnings: creatorEarnings.toFixed(2),
       },
-      mode: 'payment',
-      success_url: `${req.headers.get('origin')}/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/purchase/cancel`,
-      customer_email: userData.user.email,
     });
 
     return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      JSON.stringify({ url: session.url }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
     );
   } catch (error) {
+    console.error('Error creating checkout session:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      { 
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
     );
   }
 });

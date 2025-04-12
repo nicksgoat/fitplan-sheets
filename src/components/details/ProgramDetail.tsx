@@ -7,6 +7,7 @@ import { Calendar, Dumbbell, Clock, Tag, DollarSign, X } from 'lucide-react';
 import { WorkoutProgram } from '@/types/workout';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { formatCurrency } from '@/utils/workout';
 
 interface ProgramDetailProps {
   item: ItemType;
@@ -40,7 +41,7 @@ const ProgramDetail: React.FC<ProgramDetailProps> = ({ item, programData, onClos
         {hasPrice && (
           <div className="flex items-center mt-2 text-lg font-semibold text-green-500">
             <DollarSign className="h-5 w-5 mr-1" />
-            ${Number(programData?.price).toFixed(2)}
+            {formatCurrency(programData?.price || 0)}
           </div>
         )}
         <DrawerDescription className="mt-2">

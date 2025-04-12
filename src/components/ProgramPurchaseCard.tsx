@@ -4,8 +4,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
-import { useHasUserPurchasedProgram } from '@/hooks/workout/useProgramOperations';
+import { useHasUserPurchasedProgram } from '@/hooks/useWorkoutData';
 import { WorkoutProgram } from '@/types/workout';
+import { formatCurrency } from '@/utils/workout';
 
 interface ProgramPurchaseCardProps {
   program: WorkoutProgram;
@@ -44,7 +45,7 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
           
           {program.price && program.isPurchasable && (
             <div className="mt-2">
-              <span className="text-xl font-semibold text-fitbloom-purple">${program.price.toFixed(2)}</span>
+              <span className="text-xl font-semibold text-fitbloom-purple">{formatCurrency(program.price)}</span>
             </div>
           )}
         </div>
@@ -75,7 +76,7 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
                 disabled={loading || !user}
                 className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
               >
-                {loading ? 'Processing...' : `Buy for $${program.price.toFixed(2)}`}
+                {loading ? 'Processing...' : formatCurrency(program.price)}
               </Button>
             )}
           </>

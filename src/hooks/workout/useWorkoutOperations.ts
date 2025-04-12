@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
@@ -78,8 +77,6 @@ export function useUpdateWorkoutPrice() {
     }
   });
 }
-
-// Add the missing hooks for workout purchases
 
 export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
   return useQuery({

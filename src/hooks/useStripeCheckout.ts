@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CheckoutParams {
-  itemType: 'workout' | 'program';
+  itemType: 'workout' | 'program' | 'club';
   itemId: string;
   itemName: string;
   price: number;

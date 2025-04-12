@@ -43,6 +43,8 @@ export const WorkoutsManagement: React.FC = () => {
       
       // Then get all weeks for these programs
       const programIds = userPrograms?.map(p => p.id) || [];
+      if (programIds.length === 0) return [];
+      
       const { data: weeks } = await supabase
         .from('weeks')
         .select('id')
@@ -50,6 +52,8 @@ export const WorkoutsManagement: React.FC = () => {
       
       // Then get workouts in these weeks
       const weekIds = weeks?.map(w => w.id) || [];
+      if (weekIds.length === 0) return [];
+      
       const { data, error } = await supabase
         .from('workouts')
         .select('*')

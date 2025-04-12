@@ -102,6 +102,47 @@ serve(async (req) => {
           );
         }
       }
+      else if (itemType === 'club') {
+        // Record club subscription purchase
+        // This would be implemented based on how club memberships are structured
+        // For now, using the club_subscriptions table
+        const { error } = await supabase
+          .from('club_subscriptions')
+          .insert({
+            club_id: itemId,
+            user_id: userId,
+            plan_amount: session.amount_total / 100, // Convert from cents
+            stripe_subscription_id: session.subscription || null,
+            status: 'active',
+            plan_interval: 'month', // Default to monthly for now
+            current_period_start: new Date().toISOString(),
+            // Set current_period_end to 1 month from now
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+          
+        if (error) {
+          console.error('Error recording club subscription:', error);
+          return new Response(
+            JSON.stringify({ error: 'Failed to record club subscription' }),
+            { status: 500 }
+          );
+        }
+        
+        // Also update the club_members table to reflect premium status
+        const { error: memberError } = await supabase
+          .from('club_members')
+          .update({
+            membership_type: 'premium',
+            stripe_subscription_id: session.subscription || null,
+            premium_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .eq('club_id', itemId)
+          .eq('user_id', userId);
+          
+        if (memberError) {
+          console.error('Error updating club member:', memberError);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 });
