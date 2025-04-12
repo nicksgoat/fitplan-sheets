@@ -25,6 +25,7 @@ import ClubDetailPage from './components/clubs/ClubDetailPage';
 import Clubs from './pages/Clubs';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
+import CreatorDashboard from './pages/CreatorDashboard';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
             <Route path="liked" element={<Liked />} />
             <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />
             <Route path="profile" element={<AuthenticatedRoute><Profile /></AuthenticatedRoute>} />
+            <Route path="creator" element={<AuthenticatedRoute><CreatorDashboard /></AuthenticatedRoute>} />
             <Route path="exercises/create" element={<AuthenticatedRoute><CreateExercise /></AuthenticatedRoute>} />
             <Route path="exercises/edit/:id" element={<AuthenticatedRoute><EditExercise /></AuthenticatedRoute>} />
             <Route path="purchase/success" element={<PurchaseSuccess />} />
