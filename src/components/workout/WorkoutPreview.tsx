@@ -1,23 +1,22 @@
-
 import React from 'react';
 import { Workout } from '@/types/workout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dumbbell, Clock, Tag, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
 interface WorkoutPreviewProps {
   workout: Workout;
 }
-
-const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({ workout }) => {
+const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({
+  workout
+}) => {
   // Calculate stats
   const totalSets = workout.exercises.reduce((acc, exercise) => {
     return acc + (exercise.sets?.length || 0);
   }, 0);
-  
+
   // Get a subset of exercises to preview (first 3)
   const previewExercises = workout.exercises.slice(0, 3);
-  
+
   // Calculate equipment types
   const equipmentTypes = new Set<string>();
   workout.exercises.forEach(exercise => {
@@ -27,17 +26,15 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({ workout }) => {
     if (exercise.name.toLowerCase().includes('cable')) equipmentTypes.add('Cable');
     if (exercise.name.toLowerCase().includes('bodyweight')) equipmentTypes.add('Bodyweight');
   });
-  
+
   // Determine difficulty based on intensity and number of sets
   const getDifficulty = () => {
     if (totalSets > 25) return 'Advanced';
     if (totalSets > 15) return 'Intermediate';
     return 'Beginner';
   };
-  
-  return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold">Workout Preview</h3>
+  return <div className="space-y-4">
+      
       
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex items-center p-3 bg-dark-300 rounded-md">
@@ -65,27 +62,21 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({ workout }) => {
         <h4 className="font-medium mb-2">Sample Exercises</h4>
         <Card className="bg-dark-300 border-dark-400">
           <CardContent className="p-3 space-y-2">
-            {previewExercises.map((exercise, index) => (
-              <div key={exercise.id} className="border-b border-dark-400 pb-2 last:border-0 last:pb-0">
+            {previewExercises.map((exercise, index) => <div key={exercise.id} className="border-b border-dark-400 pb-2 last:border-0 last:pb-0">
                 <div className="flex justify-between">
                   <span className="font-medium">{index + 1}. {exercise.name}</span>
                   <span className="text-gray-400">{exercise.sets?.length || 0} sets</span>
                 </div>
                 {/* Show the first set as a preview */}
-                {exercise.sets && exercise.sets[0] && (
-                  <div className="text-sm text-gray-400 mt-1">
+                {exercise.sets && exercise.sets[0] && <div className="text-sm text-gray-400 mt-1">
                     {exercise.sets[0].reps && `Reps: ${exercise.sets[0].reps}`}
                     {exercise.sets[0].weight && ` | Weight: ${exercise.sets[0].weight}`}
-                  </div>
-                )}
-              </div>
-            ))}
+                  </div>}
+              </div>)}
             
-            {workout.exercises.length > 3 && (
-              <div className="text-center text-sm text-gray-500 pt-1">
+            {workout.exercises.length > 3 && <div className="text-center text-sm text-gray-500 pt-1">
                 + {workout.exercises.length - 3} more exercises
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -111,8 +102,6 @@ const WorkoutPreview: React.FC<WorkoutPreviewProps> = ({ workout }) => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default WorkoutPreview;
