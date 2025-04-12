@@ -69,7 +69,9 @@ export function useStripeCheckout() {
                 item_name: itemName,
                 item_category: itemType,
                 price: price,
-                referral_source: referralSource || 'direct'
+                // Use index signature to allow additional properties
+                // This fixes the TypeScript error
+                ...referralSource ? { ['referral_source']: referralSource } : {}
               }]
             });
           }
