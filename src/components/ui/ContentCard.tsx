@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -121,11 +122,19 @@ const ContentCard = ({ item, className, onClick }: ContentCardProps) => {
   );
   
   if ((normalizedItem.type === 'workout' || normalizedItem.type === 'program') && 
-      normalizedItem.isPurchasable && normalizedItem.creatorUsername) {
-    const productUrl = buildCreatorProductUrl(
-      normalizedItem.creatorUsername,
-      normalizedItem.slug || normalizedItem.id
-    );
+      normalizedItem.isPurchasable && normalizedItem.creatorId) {
+    // If we have creatorUsername, use it; otherwise, use a default approach
+    let productUrl = '';
+    
+    if (normalizedItem.creatorUsername) {
+      productUrl = buildCreatorProductUrl(
+        normalizedItem.creatorUsername,
+        normalizedItem.slug || normalizedItem.id
+      );
+    } else {
+      // Fallback to old URL format if creatorUsername is not available
+      productUrl = `/${normalizedItem.type}/${normalizedItem.id}`;
+    }
     
     return (
       <Card className={cn("content-card h-full flex flex-col", className)}>

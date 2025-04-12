@@ -1,4 +1,3 @@
-
 export interface ItemType {
   id: string;
   title: string;
@@ -16,6 +15,9 @@ export interface ItemType {
   lastModified?: string; // Added timestamp when the item was last modified
   price?: number; // Added for monetization
   isPurchasable?: boolean; // Added to indicate if the item can be purchased
+  creatorId?: string; // ID of the creator
+  creatorUsername?: string; // Username of the creator for URL building
+  slug?: string; // Slug for URL friendly paths
 }
 
 export interface CollectionType {
