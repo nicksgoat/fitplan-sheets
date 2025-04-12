@@ -1,43 +1,21 @@
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
-import { supabase } from '@/integrations/supabase/client';
 import { WorkoutProgram } from '@/types/workout';
 
 export function usePrograms() {
   return useQuery({
     queryKey: ['programs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('programs')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data as WorkoutProgram[];
-    }
+    queryFn: workoutService.getPrograms
   });
 }
 
 export function useProgram(programId: string) {
   return useQuery({
     queryKey: ['program', programId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('programs')
-        .select('*')
-        .eq('id', programId)
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data as WorkoutProgram;
-    },
-    enabled: !!programId
+    queryFn: () => workoutService.getProgram(programId),
+    enabled: !!programId // Only run if programId exists
   });
 }
 
@@ -45,19 +23,7 @@ export function useCreateProgram() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (name: string) => {
-      const { data, error } = await supabase
-        .from('programs')
-        .insert({ name })
-        .select()
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data as WorkoutProgram;
-    },
+    mutationFn: (name: string) => workoutService.createProgram(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       toast.success('Program created successfully');
@@ -73,18 +39,11 @@ export function useUpdateProgram() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ programId, name }: { programId: string, name: string }) => {
-      const { error } = await supabase
-        .from('programs')
-        .update({ name })
-        .eq('id', programId);
-      
-      if (error) {
-        throw error;
-      }
-    },
-    onSuccess: () => {
+    mutationFn: ({ programId, name }: { programId: string, name: string }) => 
+      workoutService.updateProgram(programId, name),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['program', variables.programId] });
       toast.success('Program updated successfully');
     },
     onError: (error: any) => {
@@ -98,16 +57,7 @@ export function useDeleteProgram() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (programId: string) => {
-      const { error } = await supabase
-        .from('programs')
-        .delete()
-        .eq('id', programId);
-      
-      if (error) {
-        throw error;
-      }
-    },
+    mutationFn: (programId: string) => workoutService.deleteProgram(programId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       toast.success('Program deleted successfully');
@@ -123,19 +73,12 @@ export function useUpdateProgramVisibility() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ programId, isPublic }: { programId: string, isPublic: boolean }) => {
-      const { error } = await supabase
-        .from('programs')
-        .update({ is_public: isPublic })
-        .eq('id', programId);
-      
-      if (error) {
-        throw error;
-      }
-    },
-    onSuccess: () => {
+    mutationFn: ({ programId, isPublic }: { programId: string, isPublic: boolean }) => 
+      workoutService.updateProgramVisibility(programId, isPublic),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
-      toast.success('Program visibility updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['program', variables.programId] });
+      toast.success(`Program visibility ${variables.isPublic ? 'made public' : 'made private'}`);
     },
     onError: (error: any) => {
       console.error('Error updating program visibility:', error);
@@ -148,91 +91,7 @@ export function useCloneProgram() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (programId: string) => {
-      // Fetch the program to clone
-      const { data: program, error: programError } = await supabase
-        .from('programs')
-        .select('*')
-        .eq('id', programId)
-        .single();
-      
-      if (programError) {
-        throw programError;
-      }
-      
-      // Create a new program with the same data
-      const { data: newProgram, error: newProgramError } = await supabase
-        .from('programs')
-        .insert({
-          name: `${program.name} (Clone)`,
-          description: program.description,
-          is_public: program.is_public
-        })
-        .select()
-        .single();
-      
-      if (newProgramError) {
-        throw newProgramError;
-      }
-      
-      // Fetch weeks for the original program
-      const { data: weeks, error: weeksError } = await supabase
-        .from('weeks')
-        .select('*')
-        .eq('program_id', programId);
-      
-      if (weeksError) {
-        throw weeksError;
-      }
-      
-      // Clone each week and its workouts
-      for (const week of weeks) {
-        const { data: newWeek, error: newWeekError } = await supabase
-          .from('weeks')
-          .insert({
-            program_id: newProgram.id,
-            name: week.name,
-            order_num: week.order_num
-          })
-          .select()
-          .single();
-        
-        if (newWeekError) {
-          throw newWeekError;
-        }
-        
-        // Fetch workouts for the original week
-        const { data: workouts, error: workoutsError } = await supabase
-          .from('workouts')
-          .select('*')
-          .eq('week_id', week.id);
-        
-        if (workoutsError) {
-          throw workoutsError;
-        }
-        
-        // Clone each workout
-        for (const workout of workouts) {
-          const { data: newWorkout, error: newWorkoutError } = await supabase
-            .from('workouts')
-            .insert({
-              week_id: newWeek.id,
-              name: workout.name,
-              day_num: workout.day_num
-            })
-            .select()
-            .single();
-          
-          if (newWorkoutError) {
-            throw newWorkoutError;
-          }
-          
-          // TODO: Clone exercises and sets for each workout
-        }
-      }
-      
-      return newProgram as WorkoutProgram;
-    },
+    mutationFn: (programId: string) => workoutService.cloneProgram(programId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
       toast.success('Program cloned successfully');
@@ -244,37 +103,52 @@ export function useCloneProgram() {
   });
 }
 
-// Add the functions for program purchases
+// New monetization hooks
 export function useUpdateProgramPrice() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ 
-      programId,
+    mutationFn: ({ 
+      programId, 
       price, 
-      isPurchasable
+      isPurchasable 
     }: { 
       programId: string, 
       price: number, 
       isPurchasable: boolean 
-    }) => {
-      const { error } = await supabase
-        .from('programs')
-        .update({
-          price,
-          is_purchasable: isPurchasable
-        })
-        .eq('id', programId);
-        
-      if (error) throw error;
-    },
-    onSuccess: () => {
+    }) => workoutService.updateProgramPrice(programId, price, isPurchasable),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
-      toast.success('Program pricing updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['program', variables.programId] });
+      toast.success('Program price updated successfully');
     },
     onError: (error: any) => {
-      console.error('Error updating program pricing:', error);
-      toast.error(`Error updating program pricing: ${error.message}`);
+      console.error('Error updating program price:', error);
+      toast.error(`Error updating program price: ${error.message}`);
+    }
+  });
+}
+
+export function useUpdateWorkoutPrice() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ 
+      workoutId, 
+      price, 
+      isPurchasable 
+    }: { 
+      workoutId: string, 
+      price: number, 
+      isPurchasable: boolean 
+    }) => workoutService.updateWorkoutPrice(workoutId, price, isPurchasable),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      toast.success('Workout price updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating workout price:', error);
+      toast.error(`Error updating workout price: ${error.message}`);
     }
   });
 }
@@ -282,38 +156,31 @@ export function useUpdateProgramPrice() {
 export function useHasUserPurchasedProgram(userId: string, programId: string) {
   return useQuery({
     queryKey: ['program-purchase', programId, userId],
-    queryFn: async () => {
-      if (!userId || !programId) return false;
-      
-      const { count, error } = await supabase
-        .from('program_purchases')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('program_id', programId)
-        .eq('status', 'completed');
-      
-      if (error) throw error;
-      return count > 0;
-    },
+    queryFn: () => workoutService.hasUserPurchasedProgram(userId, programId),
     enabled: !!userId && !!programId
+  });
+}
+
+export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
+  return useQuery({
+    queryKey: ['workout-purchase', workoutId, userId],
+    queryFn: () => workoutService.hasUserPurchasedWorkout(userId, workoutId),
+    enabled: !!userId && !!workoutId
   });
 }
 
 export function useUserPurchasedPrograms(userId: string) {
   return useQuery({
     queryKey: ['user-purchased-programs', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from('program_purchases')
-        .select('program_id')
-        .eq('user_id', userId)
-        .eq('status', 'completed');
-      
-      if (error) throw error;
-      return data.map(purchase => purchase.program_id);
-    },
+    queryFn: () => workoutService.getUserPurchasedPrograms(userId),
+    enabled: !!userId
+  });
+}
+
+export function useUserPurchasedWorkouts(userId: string) {
+  return useQuery({
+    queryKey: ['user-purchased-workouts', userId],
+    queryFn: () => workoutService.getUserPurchasedWorkouts(userId),
     enabled: !!userId
   });
 }
