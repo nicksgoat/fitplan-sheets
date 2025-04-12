@@ -16,7 +16,7 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">{program.name}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-end">
           <CircuitControls sessionId={sessionId} />
           <Button 
             onClick={() => addExercise(sessionId)} 
