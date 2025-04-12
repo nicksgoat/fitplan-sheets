@@ -28,6 +28,8 @@ interface ClubContextType {
   channels: ClubChannel[];
   products: ClubProduct[];
   currentClub: Club | null;
+  currentEvent: ClubEvent | null;
+  currentEventParticipants: EventParticipant[];
   loadingClubs: boolean;
   loadingClubEvents: boolean;
   loadingEvents: boolean;
@@ -44,12 +46,17 @@ interface ClubContextType {
   refreshEvents: () => Promise<void>;
   refreshChannels: () => Promise<void>;
   loadClubEvents: (clubId: string) => Promise<void>;
+  loadEvent: (eventId: string) => Promise<void>;
+  loadEventParticipants: (eventId: string) => Promise<void>;
   createClubEvent: (eventData: any) => Promise<ClubEvent | null>;
   isUserClubMember: (clubId: string) => boolean;
   isUserClubAdmin: (clubId: string) => boolean;
   isUserClubCreator: (clubId: string) => boolean;
+  isUserEventParticipant: (eventId: string) => boolean;
   joinCurrentClub: () => Promise<ClubMember>;
   leaveCurrentClub: () => Promise<void>;
+  joinEvent: (eventId: string, status: EventParticipationStatus) => Promise<void>;
+  leaveEvent: (eventId: string) => Promise<void>;
   createNewClub: (clubData: any) => Promise<Club>;
   createNewEvent: (eventData: any) => Promise<ClubEvent>;
   updateExistingEvent: (eventId: string, eventData: any) => Promise<ClubEvent>;
@@ -76,6 +83,8 @@ const ClubContext = createContext<ClubContextType>({
   channels: [],
   products: [],
   currentClub: null,
+  currentEvent: null,
+  currentEventParticipants: [],
   loadingClubs: true,
   loadingClubEvents: true,
   loadingEvents: true,
@@ -92,12 +101,17 @@ const ClubContext = createContext<ClubContextType>({
   refreshEvents: async () => {},
   refreshChannels: async () => {},
   loadClubEvents: async () => {},
+  loadEvent: async () => {},
+  loadEventParticipants: async () => {},
   createClubEvent: async () => null,
   isUserClubMember: () => false,
   isUserClubAdmin: () => false,
   isUserClubCreator: () => false,
+  isUserEventParticipant: () => false,
   joinCurrentClub: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null, membership_type: 'free' }),
   leaveCurrentClub: async () => {},
+  joinEvent: async () => {},
+  leaveEvent: async () => {},
   createNewClub: async () => ({ id: '', name: '', description: '', created_at: '', created_by: '', updated_at: '', club_type: 'fitness', membership_type: 'free' }),
   createNewEvent: async () => ({ id: '', club_id: '', name: '', description: '', start_time: '', end_time: '', created_at: '', created_by: '', attendee_count: 0, category: 'Event' }),
   updateExistingEvent: async () => ({ id: '', club_id: '', name: '', description: '', start_time: '', end_time: '', created_at: '', created_by: '', attendee_count: 0, category: 'Event' }),
@@ -126,6 +140,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [channels, setChannels] = useState<ClubChannel[]>([]);
   const [products, setProducts] = useState<ClubProduct[]>([]);
   const [currentClub, setCurrentClub] = useState<Club | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<ClubEvent | null>(null);
+  const [currentEventParticipants, setCurrentEventParticipants] = useState<EventParticipant[]>([]);
   const [loadingClubs, setLoadingClubs] = useState(true);
   const [loadingClubEvents, setLoadingClubEvents] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
@@ -217,6 +233,93 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoadingClubEvents(false);
     }
   }, []);
+
+  const loadEvent = useCallback(async (eventId: string): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('club_events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (error) throw error;
+      setCurrentEvent(data as ClubEvent);
+      
+      if (data) {
+        const { data: clubData, error: clubError } = await supabase
+          .from('clubs')
+          .select('*')
+          .eq('id', data.club_id)
+          .single();
+          
+        if (!clubError && clubData) {
+          setCurrentClub({
+            ...clubData,
+            club_type: clubData.club_type as any,
+            membership_type: clubData.membership_type as any,
+            created_by: clubData.creator_id || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading event:', error);
+      setCurrentEvent(null);
+    }
+  }, []);
+
+  const loadEventParticipants = useCallback(async (eventId: string): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select('*, profile:user_id(*)')
+        .eq('event_id', eventId);
+      
+      if (error) throw error;
+      setCurrentEventParticipants(data || []);
+    } catch (error) {
+      console.error('Error loading event participants:', error);
+      setCurrentEventParticipants([]);
+    }
+  }, []);
+
+  const isUserEventParticipant = useCallback((eventId: string): boolean => {
+    if (!user) return false;
+    return currentEventParticipants.some(
+      participant => participant.user_id === user.id && participant.event_id === eventId
+    );
+  }, [user, currentEventParticipants]);
+
+  const joinEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<void> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      await respondToClubEvent(eventId, status);
+      
+      await loadEventParticipants(eventId);
+    } catch (error) {
+      console.error('Error joining event:', error);
+      throw error;
+    }
+  }, [user, respondToClubEvent, loadEventParticipants]);
+
+  const leaveEvent = useCallback(async (eventId: string): Promise<void> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { error } = await supabase
+        .from('event_participants')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      await loadEventParticipants(eventId);
+    } catch (error) {
+      console.error('Error leaving event:', error);
+      throw error;
+    }
+  }, [user, loadEventParticipants]);
 
   const refreshChannels = useCallback(async () => {
     if (!currentClub) return;
@@ -725,6 +828,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         channels,
         products,
         currentClub,
+        currentEvent,
+        currentEventParticipants,
         loadingClubs,
         loadingClubEvents,
         loadingEvents,
@@ -741,12 +846,17 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshEvents,
         refreshChannels,
         loadClubEvents,
+        loadEvent,
+        loadEventParticipants,
         createClubEvent,
         isUserClubMember,
         isUserClubAdmin,
         isUserClubCreator,
+        isUserEventParticipant,
         joinCurrentClub,
         leaveCurrentClub,
+        joinEvent,
+        leaveEvent,
         createNewClub,
         createNewEvent,
         updateExistingEvent,
