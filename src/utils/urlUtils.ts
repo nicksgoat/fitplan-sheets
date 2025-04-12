@@ -14,7 +14,22 @@ export const generateSlug = (text: string): string => {
 };
 
 /**
- * Build a product URL based on type and data
+ * Build a product URL based on type, creator username, and product name
+ * @param type Product type (workout, program, club)
+ * @param creatorUsername Creator's username
+ * @param slug Product slug
+ * @returns Complete product URL
+ */
+export const buildCreatorProductUrl = (
+  creatorUsername: string, 
+  slug: string
+): string => {
+  return `/${creatorUsername}/${slug}`;
+};
+
+/**
+ * Legacy URL builder
+ * Build a product URL based on type and data (legacy format)
  * @param type Product type (workout, program, club)
  * @param id Product ID
  * @param name Product name for the slug
@@ -56,4 +71,32 @@ export const parseProductUrl = (url: string): string | null => {
   
   // If no dash, just return the whole segment as the ID
   return idWithSlug;
+};
+
+/**
+ * Extract username and slug from creator-style URLs
+ * @param pathname The current path
+ * @returns Object with username and slug if format matches, null otherwise
+ */
+export const parseCreatorUrl = (pathname: string): { username: string, slug: string } | null => {
+  // URL format should be /:username/:slug
+  const parts = pathname.split('/').filter(Boolean);
+  
+  if (parts.length !== 2) {
+    return null;
+  }
+  
+  return {
+    username: parts[0],
+    slug: parts[1]
+  };
+};
+
+/**
+ * Check if a URL is in the creator format
+ * @param pathname The current path
+ * @returns Boolean indicating if the URL is in creator format
+ */
+export const isCreatorUrl = (pathname: string): boolean => {
+  return !!parseCreatorUrl(pathname);
 };

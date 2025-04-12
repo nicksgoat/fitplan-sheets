@@ -1069,6 +1069,7 @@ export type Database = {
           is_purchasable: boolean | null
           name: string
           price: number | null
+          slug: string | null
           updated_at: string
           user_id: string
         }
@@ -1079,6 +1080,7 @@ export type Database = {
           is_purchasable?: boolean | null
           name: string
           price?: number | null
+          slug?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1089,6 +1091,7 @@ export type Database = {
           is_purchasable?: boolean | null
           name?: string
           price?: number | null
+          slug?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1729,6 +1732,7 @@ export type Database = {
           is_purchasable: boolean | null
           name: string
           price: number | null
+          slug: string | null
           updated_at: string
           week_id: string
         }
@@ -1739,6 +1743,7 @@ export type Database = {
           is_purchasable?: boolean | null
           name: string
           price?: number | null
+          slug?: string | null
           updated_at?: string
           week_id: string
         }
@@ -1749,6 +1754,7 @@ export type Database = {
           is_purchasable?: boolean | null
           name?: string
           price?: number | null
+          slug?: string | null
           updated_at?: string
           week_id?: string
         }
@@ -1826,6 +1832,10 @@ export type Database = {
       ensure_club_creators_are_owners: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_slug: {
+        Args: { name_text: string }
+        Returns: string
       }
       generate_user_combine_data: {
         Args: { user_id_param: string }

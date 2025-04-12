@@ -5,12 +5,21 @@ import WorkoutTable from './WorkoutTable';
 import CircuitControls from './CircuitControls';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { buildCreatorProductUrl, generateSlug } from '@/utils/urlUtils';
+import { useNavigate } from 'react-router-dom';
 
 const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
   const { program, addExercise } = useWorkout();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   // If no program or no session, return null
   if (!program) return null;
+
+  // Get the current workout
+  const currentWorkout = program.workouts.find(w => w.id === sessionId);
 
   return (
     <div className="space-y-4">

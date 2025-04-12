@@ -28,6 +28,8 @@ import PurchaseCancel from './pages/PurchaseCancel';
 import CreatorDashboard from './pages/CreatorDashboard';
 import WorkoutDetail from './pages/WorkoutDetail';
 import ProgramDetail from './pages/ProgramDetail';
+import CreatorWorkoutDetail from './pages/CreatorWorkoutDetail';
+import CreatorProgramDetail from './pages/CreatorProgramDetail';
 
 function App() {
   return (
@@ -47,6 +49,10 @@ function App() {
             {/* Product detail routes */}
             <Route path="workout/:workoutId" element={<WorkoutDetail />} />
             <Route path="program/:programId" element={<ProgramDetail />} />
+            
+            {/* New creator/slug based routes */}
+            <Route path=":username/:workoutSlug" element={<CreatorWorkoutDetail />} />
+            <Route path=":username/:programSlug" element={<CreatorProgramDetail />} />
             
             {/* Club Routes */}
             <Route path="clubs" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>}>

@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { ItemTypes } from '@/hooks/useWorkoutLibraryIntegration';
 import { WorkoutSession } from '@/types/workout';
 import { Trash2 } from 'lucide-react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { buildCreatorProductUrl } from '@/utils/urlUtils';
 
 interface WorkoutItemProps {
   workout: WorkoutSession; 
@@ -14,6 +16,30 @@ interface WorkoutItemProps {
 
 const WorkoutItem = ({ workout, onSelect }: WorkoutItemProps) => {
   const { deleteWorkout } = useWorkout();
+  const [creatorUsername, setCreatorUsername] = useState<string | null>(null);
+  
+  // Try to get creator username if this is a published workout
+  useEffect(() => {
+    const getCreatorUsername = async () => {
+      if (workout.creatorId) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', workout.creatorId)
+            .maybeSingle();
+            
+          if (!error && data?.username) {
+            setCreatorUsername(data.username);
+          }
+        } catch (err) {
+          console.error("Error getting creator username:", err);
+        }
+      }
+    };
+    
+    getCreatorUsername();
+  }, [workout.creatorId]);
   
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.WORKOUT,
