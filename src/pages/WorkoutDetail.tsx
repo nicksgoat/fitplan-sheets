@@ -63,7 +63,7 @@ const WorkoutDetail = () => {
           lastModified: data.updated_at,
           isPurchasable: data.is_purchasable || false,
           price: data.price || 0,
-          creatorId: data.user_id // Map the database user_id to creatorId
+          creatorId: data.user_id // Correctly map the database user_id to creatorId
         };
         
         setWorkout(mappedWorkout);
@@ -86,7 +86,7 @@ const WorkoutDetail = () => {
       itemId: workout.id,
       itemName: workout.name,
       price: parseFloat(workout.price.toString()),
-      creatorId: workout.creatorId || '' // Changed from userId to creatorId
+      creatorId: workout.creatorId || '' // Use creatorId as defined in our Workout type
     });
   };
   
