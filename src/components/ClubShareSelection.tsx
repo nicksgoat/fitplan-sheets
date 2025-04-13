@@ -25,7 +25,7 @@ export function ClubShareSelection({
   const [selectedClubs, setSelectedClubs] = useState<string[]>(selectedClubIds);
 
   // Fetch user's clubs where they are admin/owner
-  const { data: clubs, isLoading, refetch } = useQuery({
+  const { data: clubs = [], isLoading, refetch } = useQuery({
     queryKey: ["user-manageable-clubs"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -47,7 +47,7 @@ export function ClubShareSelection({
   });
 
   // If we have a content ID, fetch existing shares
-  const { data: existingShares, isLoading: isLoadingShares, refetch: refetchShares } = useQuery({
+  const { data: existingShares = [], isLoading: isLoadingShares, refetch: refetchShares } = useQuery({
     queryKey: ["content-shares", contentId, contentType],
     queryFn: async () => {
       if (!contentId) return [];
