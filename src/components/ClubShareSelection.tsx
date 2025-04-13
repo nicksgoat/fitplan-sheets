@@ -42,7 +42,7 @@ export function ClubShareSelection({
         return [];
       }
 
-      return data.map(item => item.club) as Club[];
+      return (data.map(item => item.club) as Club[]) || [];
     },
   });
 

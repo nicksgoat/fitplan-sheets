@@ -22,6 +22,11 @@ interface ProgramShareRecord {
   program_id: string;
 }
 
+// Type guard to check if we're dealing with workout or program shares
+function isWorkoutShare(contentType: 'workout' | 'program'): contentType is 'workout' {
+  return contentType === 'workout';
+}
+
 export function useShareWithClubs() {
   const queryClient = useQueryClient();
   
@@ -54,7 +59,7 @@ export function useShareWithClubs() {
       
       // Add new shares
       if (clubsToAdd.length > 0) {
-        if (contentType === 'workout') {
+        if (isWorkoutShare(contentType)) {
           const sharesToInsert: WorkoutShareRecord[] = clubsToAdd.map(clubId => ({
             club_id: clubId,
             shared_by: userData.user.id,
@@ -63,7 +68,7 @@ export function useShareWithClubs() {
           
           const { error: insertError } = await supabase
             .from('club_shared_workouts')
-            .insert(sharesToInsert);
+            .insert(sharesToInsert as any[]);
           
           if (insertError) {
             console.error(`Error sharing workout with clubs:`, insertError);
@@ -78,7 +83,7 @@ export function useShareWithClubs() {
           
           const { error: insertError } = await supabase
             .from('club_shared_programs')
-            .insert(sharesToInsert);
+            .insert(sharesToInsert as any[]);
           
           if (insertError) {
             console.error(`Error sharing program with clubs:`, insertError);
