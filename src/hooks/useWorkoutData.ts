@@ -1,10 +1,10 @@
+
 // Export specific hooks from their respective files to avoid naming conflicts
 import { 
   useAddWorkout, 
   useUpdateWorkout, 
   useDeleteWorkout,
   useUpdateWorkoutPrice,
-  useHasUserPurchasedWorkout,
   useUserPurchasedWorkouts
 } from './workout/useWorkoutOperations';
 
@@ -17,7 +17,6 @@ import {
   useUpdateProgramVisibility, 
   useCloneProgram,
   useUpdateProgramPrice,
-  useHasUserPurchasedProgram,
   useUserPurchasedPrograms 
 } from './workout/useProgramOperations';
 import { useAddWeek, useUpdateWeek, useDeleteWeek } from './workout/useWeekOperations';
@@ -34,6 +33,8 @@ import {
   useAddExerciseToCircuit, 
   useRemoveExerciseFromCircuit 
 } from './workout/useCircuitOperations';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Export all workout hooks - using explicit exports to avoid conflicts
 export {
@@ -46,7 +47,6 @@ export {
   useUpdateProgramVisibility, 
   useCloneProgram,
   useUpdateProgramPrice,
-  useHasUserPurchasedProgram,
   useUserPurchasedPrograms,
   
   // Week operations
@@ -59,7 +59,6 @@ export {
   useUpdateWorkout,
   useDeleteWorkout,
   useUpdateWorkoutPrice,
-  useHasUserPurchasedWorkout,
   useUserPurchasedWorkouts,
   
   // Exercise operations
@@ -80,6 +79,7 @@ export {
   useRemoveExerciseFromCircuit
 };
 
+// Define hook for checking workout purchases
 export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) => {
   const { useClubContentAccess } = require('./useClubContentAccess');
   const clubAccess = useClubContentAccess(workoutId, 'workout');
@@ -121,6 +121,7 @@ export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) =>
   });
 };
 
+// Define hook for checking program purchases
 export const useHasUserPurchasedProgram = (userId: string, programId: string) => {
   const { useClubContentAccess } = require('./useClubContentAccess');
   const clubAccess = useClubContentAccess(programId, 'program');

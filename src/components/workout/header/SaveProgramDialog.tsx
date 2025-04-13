@@ -9,8 +9,6 @@ import { useWorkout } from "@/contexts/WorkoutContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { toast } from "sonner";
 import { PriceSettingsDialog } from "@/components/PriceSettingsDialog";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ClubShareSelection } from "@/components/ClubShareSelection";
 import { useShareWithClubs } from "@/hooks/useClubSharing";
 
