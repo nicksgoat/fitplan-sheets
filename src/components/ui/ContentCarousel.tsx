@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ItemType } from '@/lib/types';
 import PublicProductCard from '@/components/product/PublicProductCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,18 +11,29 @@ interface ContentCarouselProps {
 }
 
 const ContentCarousel = ({ items }: ContentCarouselProps) => {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
-    const scrollAmount = 300;
+    const scrollAmount = 300; // Pixels to scroll each time
+    
     if (scrollRef.current) {
+      const container = scrollRef.current;
+      
       if (direction === 'left') {
-        scrollRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
       } else {
-        scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
       }
     }
   };
+
+  // Ensure the scroll functionality is working by focusing on the scrollRef's behavior
+  useEffect(() => {
+    if (scrollRef.current) {
+      // Just to make sure the scroll container is properly initialized
+      scrollRef.current.scrollLeft = 0;
+    }
+  }, [items]);
 
   return (
     <div className="relative group">
@@ -36,15 +47,19 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         <span className="sr-only">Scroll left</span>
       </Button>
       
-      <ScrollArea className="w-full">
-        <div className="flex space-x-4 pb-4 overflow-x-auto" ref={scrollRef}>
+      <div className="overflow-x-auto scrollbar-hide">
+        <div 
+          ref={scrollRef} 
+          className="flex space-x-4 pb-4"
+          style={{ scrollBehavior: 'smooth' }}
+        >
           {items.map((item) => (
-            <div key={item.id} className="min-w-[200px] max-w-[200px] md:min-w-[230px] md:max-w-[230px]">
+            <div key={item.id} className="min-w-[200px] max-w-[200px] md:min-w-[230px] md:max-w-[230px] flex-shrink-0">
               <PublicProductCard item={item} />
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
       
       <Button
         variant="outline"
