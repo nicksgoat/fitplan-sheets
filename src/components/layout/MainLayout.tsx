@@ -4,6 +4,7 @@ import { useLocation, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNavbar from './MobileNavbar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { isCreatorUrl } from '@/utils/urlUtils';
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -16,6 +17,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   
   // Check if we're in a club detail view to hide sidebar completely
   const isInClubDetailView = location.pathname.match(/^\/clubs\/[a-zA-Z0-9-]+$/);
+  
+  // Check if we're on a creator workout or program detail page
+  const isCreatorDetailPage = isCreatorUrl(location.pathname);
   
   // Set sidebar to collapsed by default on sheets page
   useEffect(() => {
@@ -46,7 +50,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           {children || <Outlet />}
         </main>
       </div>
-      {isMobile && <MobileNavbar />}
+      {isMobile && !isCreatorDetailPage && <MobileNavbar />}
     </div>
   );
 };
