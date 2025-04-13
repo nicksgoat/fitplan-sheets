@@ -19,7 +19,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SocialLinks from '@/components/profile/SocialLinks';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
-import WorkoutDetailError from '@/components/workout/WorkoutDetailError';
+import ProgramDetailError from '@/components/workout/ProgramDetailError';
 import WorkoutDetailSkeleton from '@/components/workout/WorkoutDetailSkeleton';
 
 const CreatorProgramDetail = () => {
@@ -71,7 +71,7 @@ const CreatorProgramDetail = () => {
           
         if (programError) throw programError;
         if (!programData) {
-          setFetchError(`Program ${programSlug} not found`);
+          setFetchError(`Program ${programSlug} not found for creator "@${username}"`);
           setIsLoading(false);
           return;
         }
@@ -235,7 +235,7 @@ const CreatorProgramDetail = () => {
   }
   
   if (pageError || !program) {
-    return <WorkoutDetailError error={pageError || 'Program not found'} />;
+    return <ProgramDetailError error={pageError || 'Program not found'} />;
   }
   
   const totalWorkouts = program.workouts?.length || 0;
