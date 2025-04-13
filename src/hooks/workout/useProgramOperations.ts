@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
 import { WorkoutProgram } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
+import { useClubContentAccess } from '@/hooks/useClubContentAccess';
 
 export function usePrograms() {
   return useQuery({
