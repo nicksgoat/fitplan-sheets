@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { toast } from 'sonner';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WorkoutDetailState {
   id: string | null;
@@ -28,6 +30,7 @@ const CreatorWorkoutDetail = () => {
   const { username: rawUsername, workoutSlug } = useParams<{ username: string; workoutSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
@@ -142,8 +145,11 @@ const CreatorWorkoutDetail = () => {
   const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
   const creatorName = creatorInfo?.name || username || '';
   
+  // Determine if we should show the fixed purchase bar
+  const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
+  
   return (
-    <div className="container max-w-md mx-auto p-3">
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
       <MetaTags 
         title={`${workout.name} - FitBloom Workout`}
         description={workoutDescription}
@@ -195,6 +201,25 @@ const CreatorWorkoutDetail = () => {
         <div className="space-y-4">
           <WorkoutPreview workout={workout} />
           
+          {/* Only show the non-fixed purchase section on desktop */}
+          {!isMobile && (
+            <ProductPurchaseSection
+              itemType="workout"
+              itemId={workout.id}
+              itemName={workout.name}
+              price={workout.price || 0}
+              creatorId={workout.creatorId || ''}
+              isPurchasable={canPurchase}
+              hasPurchased={!!hasPurchased}
+              isPurchaseLoading={isPurchaseLoading}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Fixed Purchase Bar on Mobile */}
+      {shouldShowFixedPurchaseBar && (
+        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3">
           <ProductPurchaseSection
             itemType="workout"
             itemId={workout.id}
@@ -204,6 +229,7 @@ const CreatorWorkoutDetail = () => {
             isPurchasable={canPurchase}
             hasPurchased={!!hasPurchased}
             isPurchaseLoading={isPurchaseLoading}
+            className="p-0 bg-transparent"
           />
         </div>
       )}
