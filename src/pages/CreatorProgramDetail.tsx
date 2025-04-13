@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ const CreatorProgramDetail = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  // Parse username to remove @ if present
   const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [programId, setProgramId] = useState<string | null>(null);
@@ -38,17 +36,15 @@ const CreatorProgramDetail = () => {
   const { user } = useAuth();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
   
-  // Fetch the program ID based on username and slug
   useEffect(() => {
+    if (!username || !programSlug) {
+      setFetchError('Invalid program URL');
+      setIsLoading(false);
+      return;
+    }
+    
     const getProgramBySlug = async () => {
-      if (!username || !programSlug) {
-        setFetchError('Invalid program URL');
-        setIsLoading(false);
-        return;
-      }
-      
       try {
-        // First, get the user ID from the username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id')
@@ -62,7 +58,6 @@ const CreatorProgramDetail = () => {
           return;
         }
         
-        // Then, get the program by slug and user ID
         const { data: programData, error: programError } = await supabase
           .from('programs')
           .select('id, name')
@@ -89,7 +84,6 @@ const CreatorProgramDetail = () => {
     getProgramBySlug();
   }, [username, programSlug]);
   
-  // Once we have the program ID, fetch the full program details
   useEffect(() => {
     if (!programId) {
       return;
@@ -172,7 +166,6 @@ const CreatorProgramDetail = () => {
     fetchProgram();
   }, [programId]);
   
-  // Get creator profile information if we have their ID
   const creatorId = program?.creatorId;
   const { profile: creatorProfile } = useProfile(creatorId);
   
@@ -215,13 +208,9 @@ const CreatorProgramDetail = () => {
     return JSON.stringify(schemaData);
   };
   
-  // Combined loading state
   const isPageLoading = isLoading || loading;
-  
-  // Combined error state
   const pageError = fetchError || error;
   
-  // Get initials for avatar fallback
   const getInitials = () => {
     const creatorName = creatorProfile?.display_name || username || '';
     if (creatorName) {
@@ -235,7 +224,6 @@ const CreatorProgramDetail = () => {
     return username ? username.substring(0, 2).toUpperCase() : 'FB';
   };
   
-  // Determine if we should show the fixed purchase bar
   const shouldShowFixedPurchaseBar = isMobile && program?.isPurchasable && program?.price && program?.price > 0 && !hasPurchased;
   
   if (isPageLoading) {
@@ -338,7 +326,6 @@ const CreatorProgramDetail = () => {
         />
       </div>
       
-      {/* Creator Info Card */}
       <Card className="bg-dark-200 border-dark-300 mb-4">
         <CardContent className="p-4 flex items-center">
           <Avatar className="h-12 w-12 mr-3">
@@ -412,7 +399,6 @@ const CreatorProgramDetail = () => {
                     </div>
                   </div>
                   
-                  {/* Creator Social Links if available */}
                   {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
                     <div className="mt-3">
                       <SocialLinks links={creatorProfile.social_links} className="justify-start" />
@@ -428,18 +414,27 @@ const CreatorProgramDetail = () => {
                 <div className="space-y-4">
                   {program.weeks?.map((week, weekIndex) => (
                     <div key={week.id} className="border border-gray-700 rounded-md overflow-hidden">
-                      <div className="bg-dark-300 p-2 px-4">
+                      <div className="bg-dark-300 p-3 px-4 flex justify-between items-center">
                         <h4 className="font-medium">Week {weekIndex + 1}: {week.name}</h4>
+                        <span className="text-sm text-gray-400">{week.workouts.length} workouts</span>
                       </div>
                       <div className="divide-y divide-gray-700">
                         {week.workouts.map((workoutId) => {
                           const workout = program.workouts.find(w => w.id === workoutId);
                           return workout ? (
-                            <div key={workout.id} className="p-3 px-4">
-                              <div className="flex justify-between">
-                                <span>{workout.name}</span>
-                                <span className="text-gray-400">Day {workout.day}</span>
+                            <div key={workout.id} className="p-3 px-4 hover:bg-dark-300/50 transition-colors">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center">
+                                  <Dumbbell className="h-4 w-4 mr-2 text-fitbloom-purple" />
+                                  <span>{workout.name}</span>
+                                </div>
+                                <span className="text-gray-400 text-sm">Day {workout.day}</span>
                               </div>
+                              {workout.exercises && workout.exercises.length > 0 && (
+                                <p className="text-xs text-gray-400 mt-1 pl-6">
+                                  {workout.exercises.length} exercises
+                                </p>
+                              )}
                             </div>
                           ) : null;
                         })}
@@ -500,7 +495,6 @@ const CreatorProgramDetail = () => {
         </CardContent>
       </Card>
       
-      {/* Fixed Purchase Bar on Mobile */}
       {shouldShowFixedPurchaseBar && (
         <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3">
           <div className="flex justify-between items-center">
