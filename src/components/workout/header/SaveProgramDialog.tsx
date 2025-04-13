@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
 
     if (program) {
       try {
-        let savedId: string | undefined;
+        let savedId = "";
         
         if (isSingleWorkout) {
           // Get the workout ID
@@ -49,20 +48,21 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
           
           if (workout) {
             // Save as a single workout
-            savedId = await saveWorkout({
+            const result = await saveWorkout({
               ...workout,
               name: programName,
               price: price,
               isPurchasable: isPurchasable
             });
             
-            if (savedId) {
+            if (result) {
+              savedId = result;
               toast.success(`Workout "${programName}" saved to library`);
             }
           }
         } else {
           // Save as a program with multiple workouts
-          savedId = await saveProgram(
+          const result = await saveProgram(
             {
               ...program,
               name: programName,
@@ -72,7 +72,8 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
             programName
           );
           
-          if (savedId) {
+          if (result) {
+            savedId = result;
             toast.success(`Program "${programName}" saved to library`);
           }
         }
