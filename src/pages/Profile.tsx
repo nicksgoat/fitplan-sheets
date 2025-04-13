@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import ProfileHeader from '@/components/profile/ProfileHeader';
 import SocialLinksDisplay from '@/components/profile/SocialLinksDisplay';
 import { profileCardStyles } from '@/styles/AssetLibrary';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define local type for mock data
 type MockItemType = Omit<ItemType, 'difficulty'> & {
