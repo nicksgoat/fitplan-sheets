@@ -56,7 +56,9 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
               isPurchasable: isPurchasable
             });
             
-            toast.success(`Workout "${programName}" saved to library`);
+            if (savedId) {
+              toast.success(`Workout "${programName}" saved to library`);
+            }
           }
         } else {
           // Save as a program with multiple workouts
@@ -70,7 +72,9 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
             programName
           );
           
-          toast.success(`Program "${programName}" saved to library`);
+          if (savedId) {
+            toast.success(`Program "${programName}" saved to library`);
+          }
         }
         
         // If content was saved successfully and clubs are selected, share with clubs

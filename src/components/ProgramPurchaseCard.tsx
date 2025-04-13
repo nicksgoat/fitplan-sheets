@@ -17,8 +17,12 @@ interface ProgramPurchaseCardProps {
 export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardProps) {
   const { user } = useAuth();
   const { initiateCheckout, loading } = useStripeCheckout();
-  const { data: hasPurchased, isLoading: isPurchaseLoading, isClubShared, sharedWithClubs } = 
-    useHasUserPurchasedProgram(user?.id || '', program.id);
+  const purchaseData = useHasUserPurchasedProgram(user?.id || '', program.id);
+  
+  const isPurchased = purchaseData.data?.isPurchased || false;
+  const isClubShared = purchaseData.data?.isClubShared || false;
+  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
+  const isPurchaseLoading = purchaseData.isLoading;
   
   const handlePurchase = () => {
     if (!program.price) return;
@@ -71,7 +75,7 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
           <>
             {isPurchaseLoading ? (
               <Button disabled className="flex-1">Loading...</Button>
-            ) : hasPurchased || isClubShared ? (
+            ) : isPurchased || isClubShared ? (
               <Button variant="outline" disabled className="flex-1 bg-green-800/20 text-green-400 border-green-800">
                 {isClubShared ? 'Via Club' : 'Purchased'}
               </Button>

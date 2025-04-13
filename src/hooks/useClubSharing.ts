@@ -9,6 +9,12 @@ export interface ShareContentOptions {
   clubIds: string[];
 }
 
+interface ClubShareRecord {
+  club_id: string;
+  shared_by: string;
+  [key: string]: any; // For workout_id or program_id
+}
+
 export function useShareWithClubs() {
   const queryClient = useQueryClient();
   
@@ -41,8 +47,8 @@ export function useShareWithClubs() {
       
       // Add new shares
       if (clubsToAdd.length > 0) {
-        const sharesToInsert = clubsToAdd.map(clubId => {
-          const shareData: Record<string, any> = {
+        const sharesToInsert: ClubShareRecord[] = clubsToAdd.map(clubId => {
+          const shareData: ClubShareRecord = {
             club_id: clubId,
             shared_by: userData.user.id
           };
