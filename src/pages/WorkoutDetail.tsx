@@ -12,7 +12,6 @@ import WorkoutDetailSkeleton from '@/components/workout/WorkoutDetailSkeleton';
 import WorkoutDetailError from '@/components/workout/WorkoutDetailError';
 import WorkoutStats from '@/components/workout/WorkoutStats';
 import ExerciseList from '@/components/workout/ExerciseList';
-import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { Button } from '@/components/ui/button';
@@ -51,7 +50,9 @@ const WorkoutDetail = () => {
             .eq('id', workout.creatorId)
             .maybeSingle();
           
+          // Only redirect if we have both a username and a slug
           if (profileData?.username && workout.slug) {
+            console.log(`Redirecting to creator URL: /${profileData.username}/${workout.slug}`);
             const newUrl = buildCreatorProductUrl(profileData.username, workout.slug);
             // Redirect to the new URL format
             navigate(newUrl, { replace: true });

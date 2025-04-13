@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +48,7 @@ const CreatorWorkoutDetail = () => {
         // First get the creator's profile by username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id')
+          .select('id, username')
           .eq('username', username)
           .maybeSingle();
           
@@ -65,6 +64,14 @@ const CreatorWorkoutDetail = () => {
         }
         
         console.log(`Found profile ID: ${profileData.id}`);
+        
+        // Check if the username in the URL matches the actual username in the database
+        // This helps redirect from email to username if necessary
+        if (profileData.username && profileData.username !== username) {
+          console.log(`Redirecting to correct username: ${profileData.username}`);
+          navigate(`/${profileData.username}/${workoutSlug}`, { replace: true });
+          return;
+        }
         
         // Then get the workout by slug and creator's user ID
         const { data: workoutData, error: workoutError } = await supabase
@@ -109,7 +116,7 @@ const CreatorWorkoutDetail = () => {
     };
     
     getWorkoutBySlug();
-  }, [username, workoutSlug]);
+  }, [username, workoutSlug, navigate]);
   
   const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
   
@@ -136,7 +143,7 @@ const CreatorWorkoutDetail = () => {
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
-  const shareUrl = buildCreatorProductUrl(username || '', workoutSlug || '');
+  const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
   
   return (
     <div className="container max-w-md mx-auto p-3">
