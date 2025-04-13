@@ -71,8 +71,8 @@ const CreatorWorkoutDetail = () => {
           .from('workouts')
           .select(`
             id,
-            weeks!inner(
-              programs!inner(
+            weeks(
+              programs(
                 user_id
               )
             )
