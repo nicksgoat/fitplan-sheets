@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdateProgramPrice } from '@/hooks/useWorkoutData';
 import { formatCurrency } from '@/utils/workout';
+import { Share2 } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ClubSharingManagement } from './ClubSharingManagement';
 
 type Program = {
   id: string;
@@ -26,6 +29,7 @@ export const ProgramsManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
+  const [isSharingDialogOpen, setIsSharingDialogOpen] = useState(false);
   
   const updateProgramPrice = useUpdateProgramPrice();
   
@@ -97,6 +101,37 @@ export const ProgramsManagement: React.FC = () => {
     }
   };
   
+  // Get the count of clubs a program is shared with
+  const { data: sharedCountsMap, isLoading: isLoadingSharedCounts } = useQuery({
+    queryKey: ['program-shared-counts', programs?.map(p => p.id).join(',')],
+    queryFn: async () => {
+      if (!programs || programs.length === 0) return {};
+      
+      const programIds = programs.map(p => p.id);
+      const { data, error } = await supabase
+        .from('club_shared_programs')
+        .select('program_id, club_id')
+        .in('program_id', programIds);
+      
+      if (error) {
+        console.error('Error fetching shared program counts:', error);
+        return {};
+      }
+      
+      // Count shares per program
+      const counts: Record<string, number> = {};
+      data.forEach(share => {
+        if (!counts[share.program_id]) {
+          counts[share.program_id] = 0;
+        }
+        counts[share.program_id]++;
+      });
+      
+      return counts;
+    },
+    enabled: !!programs && programs.length > 0
+  });
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -114,6 +149,7 @@ export const ProgramsManagement: React.FC = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Visibility</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Club Sharing</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -138,18 +174,37 @@ export const ProgramsManagement: React.FC = () => {
                       {program.is_purchasable ? 'Purchasable' : 'Not for sale'}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    {sharedCountsMap && sharedCountsMap[program.id] ? (
+                      <span className="text-green-400">{sharedCountsMap[program.id]} club{sharedCountsMap[program.id] !== 1 ? 's' : ''}</span>
+                    ) : (
+                      <span className="text-gray-400">Not shared</span>
+                    )}
+                  </TableCell>
                   <TableCell>{new Date(program.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProgram(program);
-                        setIsPriceDialogOpen(true);
-                      }}
-                    >
-                      Set Price
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProgram(program);
+                          setIsPriceDialogOpen(true);
+                        }}
+                      >
+                        Set Price
+                      </Button>
+                      <Button
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProgram(program);
+                          setIsSharingDialogOpen(true);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -166,15 +221,28 @@ export const ProgramsManagement: React.FC = () => {
       </div>
       
       {selectedProgram && (
-        <PriceSettingsDialog
-          open={isPriceDialogOpen}
-          onOpenChange={setIsPriceDialogOpen}
-          title={`Set pricing for ${selectedProgram.name}`}
-          currentPrice={selectedProgram.price || 0}
-          isPurchasable={selectedProgram.is_purchasable || false}
-          onSave={handleSavePrice}
-          isSaving={updateProgramPrice.isPending}
-        />
+        <>
+          <PriceSettingsDialog
+            open={isPriceDialogOpen}
+            onOpenChange={setIsPriceDialogOpen}
+            title={`Set pricing for ${selectedProgram.name}`}
+            currentPrice={selectedProgram.price || 0}
+            isPurchasable={selectedProgram.is_purchasable || false}
+            onSave={handleSavePrice}
+            isSaving={updateProgramPrice.isPending}
+          />
+          
+          <Dialog open={isSharingDialogOpen} onOpenChange={setIsSharingDialogOpen}>
+            <DialogContent className="sm:max-w-[500px] bg-dark-200 border-dark-300">
+              <ClubSharingManagement
+                contentId={selectedProgram.id}
+                contentType="program"
+                contentName={selectedProgram.name}
+                onClose={() => setIsSharingDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </div>
   );

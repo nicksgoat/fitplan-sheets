@@ -510,6 +510,90 @@ export type Database = {
           },
         ]
       }
+      club_shared_programs: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          program_id: string
+          shared_by: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          program_id: string
+          shared_by: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          program_id?: string
+          shared_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shared_programs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shared_programs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_shared_workouts: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          shared_by: string
+          updated_at: string
+          workout_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          shared_by: string
+          updated_at?: string
+          workout_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          shared_by?: string
+          updated_at?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_shared_workouts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_shared_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null

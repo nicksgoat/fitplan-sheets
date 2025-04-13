@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useWorkout } from "@/contexts/WorkoutContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { toast } from "sonner";
+import { ClubShareSelection } from "./ClubShareSelection";
+import { useShareWithClubs } from "@/hooks/useClubSharing";
 
 interface SaveWorkoutDialogProps {
   open: boolean;
@@ -19,11 +21,13 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const { saveWorkout } = useLibrary();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
+  const shareWithClubs = useShareWithClubs();
   
   // Get the current workout
   const workout = program?.workouts.find(w => w.id === workoutId);
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!workout) {
       toast.error("Workout not found");
       return;
@@ -44,9 +48,19 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
       };
       
       // Save to library using the context
-      saveWorkout(workoutToSave);
+      const savedId = await saveWorkout(workoutToSave);
+      
+      // If workout was saved successfully and clubs are selected, share with clubs
+      if (savedId && selectedClubs.length > 0) {
+        await shareWithClubs.mutateAsync({
+          contentId: savedId,
+          contentType: 'workout',
+          clubIds: selectedClubs
+        });
+      }
       
       onOpenChange(false);
+      toast.success("Workout saved successfully");
     } catch (error) {
       console.error("Error saving workout:", error);
       toast.error("Failed to save workout");
@@ -75,6 +89,14 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
               onChange={(e) => setName(e.target.value)}
               className="bg-dark-300 border-dark-400"
               defaultValue={workout?.name || ""}
+            />
+          </div>
+          
+          <div className="pt-2">
+            <ClubShareSelection
+              contentType="workout"
+              onSelectionChange={setSelectedClubs}
+              selectedClubIds={selectedClubs}
             />
           </div>
         </div>

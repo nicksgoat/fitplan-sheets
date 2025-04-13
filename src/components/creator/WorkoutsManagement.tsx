@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdateWorkoutPrice } from '@/hooks/useWorkoutData';
 import { formatCurrency } from '@/utils/workout';
+import { Share2 } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ClubSharingManagement } from './ClubSharingManagement';
 
 type Workout = {
   id: string;
@@ -26,6 +29,7 @@ export const WorkoutsManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
+  const [isSharingDialogOpen, setIsSharingDialogOpen] = useState(false);
   
   const updateWorkoutPrice = useUpdateWorkoutPrice();
   
@@ -89,6 +93,37 @@ export const WorkoutsManagement: React.FC = () => {
     }
   };
   
+  // Get the count of clubs a workout is shared with
+  const { data: sharedCountsMap, isLoading: isLoadingSharedCounts } = useQuery({
+    queryKey: ['workout-shared-counts', workouts?.map(w => w.id).join(',')],
+    queryFn: async () => {
+      if (!workouts || workouts.length === 0) return {};
+      
+      const workoutIds = workouts.map(w => w.id);
+      const { data, error } = await supabase
+        .from('club_shared_workouts')
+        .select('workout_id, club_id')
+        .in('workout_id', workoutIds);
+      
+      if (error) {
+        console.error('Error fetching shared workout counts:', error);
+        return {};
+      }
+      
+      // Count shares per workout
+      const counts: Record<string, number> = {};
+      data.forEach(share => {
+        if (!counts[share.workout_id]) {
+          counts[share.workout_id] = 0;
+        }
+        counts[share.workout_id]++;
+      });
+      
+      return counts;
+    },
+    enabled: !!workouts && workouts.length > 0
+  });
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -106,6 +141,7 @@ export const WorkoutsManagement: React.FC = () => {
                 <TableHead>Day</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Club Sharing</TableHead>
                 <TableHead>Last Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -121,18 +157,37 @@ export const WorkoutsManagement: React.FC = () => {
                       {workout.is_purchasable ? 'Purchasable' : 'Not for sale'}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    {sharedCountsMap && sharedCountsMap[workout.id] ? (
+                      <span className="text-green-400">{sharedCountsMap[workout.id]} club{sharedCountsMap[workout.id] !== 1 ? 's' : ''}</span>
+                    ) : (
+                      <span className="text-gray-400">Not shared</span>
+                    )}
+                  </TableCell>
                   <TableCell>{new Date(workout.updated_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedWorkout(workout);
-                        setIsPriceDialogOpen(true);
-                      }}
-                    >
-                      Set Price
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedWorkout(workout);
+                          setIsPriceDialogOpen(true);
+                        }}
+                      >
+                        Set Price
+                      </Button>
+                      <Button
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedWorkout(workout);
+                          setIsSharingDialogOpen(true);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -149,15 +204,28 @@ export const WorkoutsManagement: React.FC = () => {
       </div>
       
       {selectedWorkout && (
-        <PriceSettingsDialog
-          open={isPriceDialogOpen}
-          onOpenChange={setIsPriceDialogOpen}
-          title={`Set pricing for ${selectedWorkout.name}`}
-          currentPrice={selectedWorkout.price || 0}
-          isPurchasable={selectedWorkout.is_purchasable || false}
-          onSave={handleSavePrice}
-          isSaving={updateWorkoutPrice.isPending}
-        />
+        <>
+          <PriceSettingsDialog
+            open={isPriceDialogOpen}
+            onOpenChange={setIsPriceDialogOpen}
+            title={`Set pricing for ${selectedWorkout.name}`}
+            currentPrice={selectedWorkout.price || 0}
+            isPurchasable={selectedWorkout.is_purchasable || false}
+            onSave={handleSavePrice}
+            isSaving={updateWorkoutPrice.isPending}
+          />
+          
+          <Dialog open={isSharingDialogOpen} onOpenChange={setIsSharingDialogOpen}>
+            <DialogContent className="sm:max-w-[500px] bg-dark-200 border-dark-300">
+              <ClubSharingManagement
+                contentId={selectedWorkout.id}
+                contentType="workout"
+                contentName={selectedWorkout.name}
+                onClose={() => setIsSharingDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </div>
   );

@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { PriceSettingsDialog } from "@/components/PriceSettingsDialog";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ClubShareSelection } from "@/components/ClubShareSelection";
+import { useShareWithClubs } from "@/hooks/useClubSharing";
 
 interface SaveProgramDialogProps {
   open: boolean;
@@ -22,54 +24,71 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   const [isPriceDialogOpen, setIsPriceDialogOpen] = useState(false);
   const [price, setPrice] = useState(0);
   const [isPurchasable, setIsPurchasable] = useState(false);
+  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const { program } = useWorkout();
   const { saveProgram, saveWorkout } = useLibrary();
+  const shareWithClubs = useShareWithClubs();
 
   // Check if we're saving a single workout or a full program
   const isSingleWorkout = program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1;
   
   const itemTypeLabel = isSingleWorkout ? "Workout" : "Program";
 
-  const handleSaveProgramToLibrary = () => {
+  const handleSaveProgramToLibrary = async () => {
     if (!programName) {
       toast.error(`Please enter a name for your ${itemTypeLabel.toLowerCase()}`);
       return;
     }
 
     if (program) {
-      if (isSingleWorkout) {
-        // Get the workout ID
-        const workoutId = program.weeks[0].workouts[0];
-        const workout = program.workouts.find(w => w.id === workoutId);
+      try {
+        let savedId: string | undefined;
         
-        if (workout) {
-          // Save as a single workout
-          saveWorkout({
-            ...workout,
-            name: programName,
-            price: price,
-            isPurchasable: isPurchasable
-          });
+        if (isSingleWorkout) {
+          // Get the workout ID
+          const workoutId = program.weeks[0].workouts[0];
+          const workout = program.workouts.find(w => w.id === workoutId);
           
-          toast.success(`Workout "${programName}" saved to library`);
-          setProgramName("");
-          onOpenChange(false);
+          if (workout) {
+            // Save as a single workout
+            savedId = await saveWorkout({
+              ...workout,
+              name: programName,
+              price: price,
+              isPurchasable: isPurchasable
+            });
+            
+            toast.success(`Workout "${programName}" saved to library`);
+          }
+        } else {
+          // Save as a program with multiple workouts
+          savedId = await saveProgram(
+            {
+              ...program,
+              name: programName,
+              price: price,
+              isPurchasable: isPurchasable
+            },
+            programName
+          );
+          
+          toast.success(`Program "${programName}" saved to library`);
         }
-      } else {
-        // Save as a program with multiple workouts
-        saveProgram(
-          {
-            ...program,
-            name: programName,
-            price: price,
-            isPurchasable: isPurchasable
-          },
-          programName
-        );
+        
+        // If content was saved successfully and clubs are selected, share with clubs
+        if (savedId && selectedClubs.length > 0) {
+          await shareWithClubs.mutateAsync({
+            contentId: savedId,
+            contentType: isSingleWorkout ? 'workout' : 'program',
+            clubIds: selectedClubs
+          });
+        }
         
         setProgramName("");
         onOpenChange(false);
-        toast.success(`Program "${programName}" saved to library`);
+      } catch (error) {
+        console.error("Error saving:", error);
+        toast.error(`Failed to save ${itemTypeLabel.toLowerCase()}`);
       }
     }
   };
@@ -127,6 +146,14 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
                   <span className="text-gray-500">Not for sale</span>
                 )}
               </div>
+            </div>
+            
+            <div className="space-y-2 pt-2">
+              <ClubShareSelection
+                contentType={isSingleWorkout ? "workout" : "program"}
+                onSelectionChange={setSelectedClubs}
+                selectedClubIds={selectedClubs}
+              />
             </div>
 
             <div className="mt-2">
