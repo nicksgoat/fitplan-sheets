@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +19,6 @@ import { useProfile } from '@/hooks/useProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SocialLinks from '@/components/profile/SocialLinks';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
-import WorkoutPreview from '@/components/workout/WorkoutPreview';
-import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
 import WorkoutDetailError from '@/components/workout/WorkoutDetailError';
 import WorkoutDetailSkeleton from '@/components/workout/WorkoutDetailSkeleton';
 
@@ -346,11 +345,39 @@ const CreatorProgramDetail = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          <WorkoutPreview 
-            workout={program} 
-            title="Program Preview" 
-            description={programDescription} 
-          />
+          {/* Program Preview Card */}
+          <Card className="bg-dark-200 border-dark-300">
+            <CardContent className="p-4">
+              <h3 className="font-medium text-lg mb-3">Program Preview</h3>
+              <p className="text-gray-400 mb-4">{programDescription}</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="flex items-center p-3 bg-dark-300 rounded-md">
+                  <Calendar className="h-5 w-5 mr-3 text-fitbloom-purple" />
+                  <span>{weekCount} {weekCount === 1 ? 'Week' : 'Weeks'}</span>
+                </div>
+                <div className="flex items-center p-3 bg-dark-300 rounded-md">
+                  <Dumbbell className="h-5 w-5 mr-3 text-fitbloom-purple" />
+                  <span>{totalWorkouts} {totalWorkouts === 1 ? 'Workout' : 'Workouts'}</span>
+                </div>
+              </div>
+              
+              {/* Sample week preview */}
+              {program.weeks && program.weeks.length > 0 && (
+                <div className="border border-gray-700 rounded-md overflow-hidden">
+                  <div className="bg-dark-300 p-3 px-4">
+                    <h4 className="font-medium">Week 1: {program.weeks[0].name}</h4>
+                    <p className="text-sm text-gray-400">Preview</p>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-gray-400">
+                      Purchase this program to unlock all {totalWorkouts} workouts across {weekCount} weeks.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
           
           {/* Social Proof Section */}
           <Card className="bg-dark-200 border-dark-300">
@@ -375,16 +402,29 @@ const CreatorProgramDetail = () => {
           </Card>
           
           {!isMobile && (
-            <ProductPurchaseSection
-              itemType="program"
-              itemId={program.id}
-              itemName={program.name}
-              price={program.price || 0}
-              creatorId={program.creatorId || ''}
-              isPurchasable={canPurchase}
-              hasPurchased={!!hasPurchased}
-              isPurchaseLoading={isPurchaseLoading}
-            />
+            <Card className="bg-dark-200 border-dark-300">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-medium text-lg">
+                      {formatCurrency(program.price || 0)}
+                    </h3>
+                    <p className="text-sm text-gray-400">One-time purchase</p>
+                  </div>
+                  <Button
+                    className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                    onClick={handlePurchase}
+                    disabled={checkoutLoading || isPurchaseLoading}
+                  >
+                    {checkoutLoading ? 'Processing...' : 'Buy Now'}
+                  </Button>
+                </div>
+                <div className="flex justify-center items-center text-xs text-gray-400 mt-2">
+                  <Shield className="h-3 w-3 mr-1 text-gray-400" />
+                  <p>Secure payment • Instant access</p>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
@@ -392,17 +432,21 @@ const CreatorProgramDetail = () => {
       {/* Fixed Purchase Bar on Mobile */}
       {shouldShowFixedPurchaseBar && (
         <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3">
-          <ProductPurchaseSection
-            itemType="program"
-            itemId={program.id}
-            itemName={program.name}
-            price={program.price || 0}
-            creatorId={program.creatorId || ''}
-            isPurchasable={canPurchase}
-            hasPurchased={!!hasPurchased}
-            isPurchaseLoading={isPurchaseLoading}
-            className="p-0 bg-transparent"
-          />
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">
+                {formatCurrency(program.price || 0)}
+              </h3>
+              <p className="text-xs text-gray-400">One-time purchase</p>
+            </div>
+            <Button
+              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+              onClick={handlePurchase}
+              disabled={checkoutLoading || isPurchaseLoading}
+            >
+              {checkoutLoading ? 'Processing...' : 'Buy Now'}
+            </Button>
+          </div>
           <div className="flex justify-center items-center text-xs text-gray-400 mt-2">
             <Shield className="h-3 w-3 mr-1 text-gray-400" />
             <p>Secure payment • Instant access</p>
