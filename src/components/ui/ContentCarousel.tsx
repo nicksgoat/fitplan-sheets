@@ -27,12 +27,13 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
   return (
     <div className="relative group">
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-dark-200/90 border-gray-700 hover:bg-gray-700"
         onClick={() => scroll('left')}
       >
         <ChevronLeft className="h-5 w-5" />
+        <span className="sr-only">Scroll left</span>
       </Button>
       
       <ScrollArea className="w-full">
@@ -46,12 +47,13 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
       </ScrollArea>
       
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-dark-200/90 border-gray-700 hover:bg-gray-700"
         onClick={() => scroll('right')}
       >
         <ChevronRight className="h-5 w-5" />
+        <span className="sr-only">Scroll right</span>
       </Button>
     </div>
   );
