@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ import WorkoutPreview from '@/components/workout/WorkoutPreview';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { toast } from 'sonner';
+import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 
 interface WorkoutDetailState {
   id: string | null;
@@ -42,13 +44,11 @@ const CreatorWorkoutDetail = () => {
         return;
       }
       
-      console.log(`Looking for workout with username: ${username} and slug: ${workoutSlug}`);
-      
       try {
         // First get the creator's profile by username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, username')
+          .select('id, username, display_name')
           .eq('username', username)
           .maybeSingle();
           
@@ -58,8 +58,8 @@ const CreatorWorkoutDetail = () => {
         }
         
         if (!profileData) {
-          console.error(`Creator ${username} not found`);
-          setState(prev => ({ ...prev, error: `Creator "${username}" not found`, isLoading: false }));
+          console.error(`Creator @${username} not found`);
+          setState(prev => ({ ...prev, error: `Creator "@${username}" not found`, isLoading: false }));
           return;
         }
         
@@ -97,7 +97,7 @@ const CreatorWorkoutDetail = () => {
           console.error(`Workout ${workoutSlug} not found`);
           setState(prev => ({ 
             ...prev, 
-            error: `Workout "${workoutSlug}" not found for creator "${username}"`, 
+            error: `Workout "${workoutSlug}" not found for creator "@${username}"`, 
             isLoading: false 
           }));
           return;
@@ -144,6 +144,7 @@ const CreatorWorkoutDetail = () => {
   const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
+  const creatorName = creatorInfo?.name || username || '';
   
   return (
     <div className="container max-w-md mx-auto p-3">
@@ -170,17 +171,14 @@ const CreatorWorkoutDetail = () => {
         url={`${window.location.origin}${shareUrl}`}
       />
       
-      <div className="flex justify-between items-center mb-4">
-        <Button variant="ghost" size="icon" onClick={handleBackClick} className="p-1 h-8 w-8">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="p-1 h-8 w-8">
-          <Share2 className="h-5 w-5" />
-        </Button>
-      </div>
-      
-      <h1 className="text-2xl font-bold mb-1">{workout.name}</h1>
-      <p className="text-gray-400 text-sm mb-4">Day {workout.day} • {workout.exercises.length} exercises</p>
+      <WorkoutDetailHeader
+        title={workout.name}
+        description={`Day ${workout.day} • ${workout.exercises.length} exercises`}
+        shareUrl={shareUrl}
+        shareTitle={`${workout.name} by ${creatorName}`}
+        shareDescription={workoutDescription}
+        onBack={handleBackClick}
+      />
       
       {hasAccessToWorkout ? (
         <Card className="bg-dark-200 border-dark-300">

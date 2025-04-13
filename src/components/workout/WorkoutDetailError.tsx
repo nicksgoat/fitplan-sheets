@@ -13,6 +13,12 @@ interface WorkoutDetailErrorProps {
 const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
   const navigate = useNavigate();
   
+  // Format error message to ensure emails are shown as usernames with @ prefix
+  const formatErrorMessage = (message: string) => {
+    // Replace email patterns with @username format
+    return message.replace(/'([^']+@[^']+\.[^']+)'/g, '"@$1"');
+  };
+  
   return (
     <div className="container max-w-4xl mx-auto p-4">
       <MetaTags 
@@ -24,7 +30,7 @@ const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
         <CardContent className="flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold mb-2">Workout Not Found</h2>
           <p className="text-gray-400 mb-6 max-w-md">
-            {error || "The workout you're looking for doesn't exist or has been removed."}
+            {formatErrorMessage(error) || "The workout you're looking for doesn't exist or has been removed."}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3">
