@@ -31,16 +31,16 @@ const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
             <Button 
               className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
               onClick={() => navigate('/explore')}
-              leftIcon={<Search className="h-4 w-4 mr-2" />}
             >
+              <Search className="h-4 w-4 mr-2" />
               Browse Workouts
             </Button>
             
             <Button 
               variant="outline"
               onClick={() => navigate('/')}
-              leftIcon={<Home className="h-4 w-4 mr-2" />}
             >
+              <Home className="h-4 w-4 mr-2" />
               Go to Home
             </Button>
           </div>

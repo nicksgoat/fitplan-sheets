@@ -21,6 +21,11 @@ interface WorkoutDataFromDB {
     notes: string;
     sets: any[];
   }[];
+  weeks?: {
+    programs?: {
+      user_id: string;
+    };
+  };
 }
 
 interface CreatorInfo {
@@ -81,6 +86,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         console.log('Workout data retrieved:', data);
         
         const workoutData = data as unknown as WorkoutDataFromDB;
+        // Safely access the creator ID
         const creatorId = workoutData.weeks?.programs?.user_id || workoutData.user_id;
         
         const mappedWorkout: Workout = {
