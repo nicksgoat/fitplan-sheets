@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useHasUserPurchasedWorkout } from '@/hooks/useWorkoutData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MetaTags from '@/components/meta/MetaTags';
 import EnhancedProductSchema from '@/components/schema/EnhancedProductSchema';
 import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
@@ -19,6 +20,9 @@ import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { toast } from 'sonner';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useProfile } from '@/hooks/useProfile';
+import SocialLinks from '@/components/profile/SocialLinks';
+import { Calendar, Users } from 'lucide-react';
 
 interface WorkoutDetailState {
   id: string | null;
@@ -119,6 +123,10 @@ const CreatorWorkoutDetail = () => {
   
   const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
   
+  // Get creator profile information if we have their ID
+  const creatorId = workout?.creatorId;
+  const { profile: creatorProfile } = useProfile(creatorId);
+  
   const { data: hasPurchased, isLoading: isPurchaseLoading } = 
     useHasUserPurchasedWorkout(user?.id || '', state.id || '');
   
@@ -147,6 +155,19 @@ const CreatorWorkoutDetail = () => {
   
   // Determine if we should show the fixed purchase bar
   const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
+  
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (creatorName) {
+      return creatorName
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    return username ? username.substring(0, 2).toUpperCase() : 'FB';
+  };
   
   return (
     <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
@@ -182,6 +203,27 @@ const CreatorWorkoutDetail = () => {
         onBack={handleBackClick}
       />
       
+      {/* Creator Info Card */}
+      <Card className="bg-dark-200 border-dark-300 mb-4">
+        <CardContent className="p-4 flex items-center">
+          <Avatar className="h-12 w-12 mr-3">
+            <AvatarImage src={creatorProfile?.avatar_url || undefined} alt={creatorName} />
+            <AvatarFallback className="bg-fitbloom-purple/20 text-fitbloom-purple">
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <p className="font-medium text-white">
+              {creatorName}
+              {username && <span className="text-gray-400 ml-1">@{username}</span>}
+            </p>
+            {creatorProfile?.bio && (
+              <p className="text-gray-400 text-sm line-clamp-1 mt-1">{creatorProfile.bio}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       {hasAccessToWorkout ? (
         <Card className="bg-dark-200 border-dark-300">
           <CardContent className="p-4">
@@ -200,6 +242,29 @@ const CreatorWorkoutDetail = () => {
       ) : (
         <div className="space-y-4">
           <WorkoutPreview workout={workout} />
+          
+          {/* Social Proof Section */}
+          <Card className="bg-dark-200 border-dark-300">
+            <CardContent className="p-4">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center text-gray-300">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Created {new Date(workout.savedAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-gray-300">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Premium workout by certified trainer</span>
+                </div>
+              </div>
+              
+              {/* Creator Social Links if available */}
+              {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
+                <div className="mt-3">
+                  <SocialLinks links={creatorProfile.social_links} className="justify-start" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
           
           {/* Only show the non-fixed purchase section on desktop */}
           {!isMobile && (
