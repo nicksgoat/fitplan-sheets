@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +14,6 @@ import WorkoutStats from '@/components/workout/WorkoutStats';
 import ExerciseList from '@/components/workout/ExerciseList';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import WorkoutPreview from '@/components/workout/WorkoutPreview';
-import { ArrowLeft, Share2 } from 'lucide-react';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { toast } from 'sonner';
 import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
@@ -27,9 +25,11 @@ interface WorkoutDetailState {
 }
 
 const CreatorWorkoutDetail = () => {
-  const { username, workoutSlug } = useParams<{ username: string; workoutSlug: string }>();
+  const { username: rawUsername, workoutSlug } = useParams<{ username: string; workoutSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [state, setState] = useState<WorkoutDetailState>({
     id: null,
@@ -45,7 +45,6 @@ const CreatorWorkoutDetail = () => {
       }
       
       try {
-        // First get the creator's profile by username
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id, username, display_name')
@@ -65,15 +64,12 @@ const CreatorWorkoutDetail = () => {
         
         console.log(`Found profile ID: ${profileData.id}`);
         
-        // Check if the username in the URL matches the actual username in the database
-        // This helps redirect from email to username if necessary
         if (profileData.username && profileData.username !== username) {
           console.log(`Redirecting to correct username: ${profileData.username}`);
-          navigate(`/${profileData.username}/${workoutSlug}`, { replace: true });
+          navigate(buildCreatorProductUrl(profileData.username, workoutSlug), { replace: true });
           return;
         }
         
-        // Then get the workout by slug and creator's user ID
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
           .select(`

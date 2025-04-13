@@ -23,7 +23,7 @@ export const buildCreatorProductUrl = (
   creatorUsername: string, 
   slug: string
 ): string => {
-  return `/${creatorUsername}/${slug}`;
+  return `/@${creatorUsername}/${slug}`;
 };
 
 /**
@@ -78,17 +78,22 @@ export const parseProductUrl = (url: string): string | null => {
  * @returns Object with username and slug if format matches, null otherwise
  */
 export const parseCreatorUrl = (pathname: string): { username: string, slug: string } | null => {
-  // URL format should be /:username/:slug
+  // URL format should be /@username/:slug
   const parts = pathname.split('/').filter(Boolean);
   
   if (parts.length !== 2) {
     return null;
   }
   
-  return {
-    username: parts[0],
-    slug: parts[1]
-  };
+  // Check if the first part starts with @ and extract the username without @
+  if (parts[0].startsWith('@')) {
+    return {
+      username: parts[0].substring(1), // Remove the @ prefix
+      slug: parts[1]
+    };
+  }
+  
+  return null;
 };
 
 /**

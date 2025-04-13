@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ItemType } from "@/lib/types";
 
@@ -25,18 +24,15 @@ export async function fetchPublicWorkouts() {
       throw error;
     }
 
-    // Get all creator IDs
     const creatorIds = data
       ? [...new Set(data.map(workout => workout.weeks.programs.user_id))]
       : [];
 
-    // Fetch all user profiles in one query
     const { data: profilesData } = await supabase
       .from('profiles')
       .select('id, username, display_name')
       .in('id', creatorIds);
 
-    // Create a map of user ID to profile data for quick lookup
     const profilesMap = new Map();
     if (profilesData) {
       profilesData.forEach(profile => {
@@ -44,20 +40,18 @@ export async function fetchPublicWorkouts() {
       });
     }
 
-    // Transform the workout data into our ItemType format
     const workouts = data?.map(workout => {
-      // Get creator profile
       const creatorProfile = profilesMap.get(workout.weeks.programs.user_id);
       
       return {
         id: workout.id,
         title: workout.name,
         type: 'workout' as const,
-        creator: workout.weeks.programs.name, // The creator's name
-        imageUrl: 'https://placehold.co/600x400?text=Workout', // Placeholder, replace with actual image
+        creator: workout.weeks.programs.name,
+        imageUrl: 'https://placehold.co/600x400?text=Workout',
         tags: ['Workout', 'Premium'],
         duration: `${workout.exercises.length} exercises`,
-        difficulty: 'intermediate' as const, // Use default difficulty for now
+        difficulty: 'intermediate' as const,
         isFavorite: false,
         description: `Day ${workout.day_num} workout with ${workout.exercises.length} exercises`,
         isCustom: false,
@@ -93,16 +87,13 @@ export async function fetchPublicPrograms() {
       throw error;
     }
 
-    // Get all creator IDs
     const creatorIds = data ? [...new Set(data.map(program => program.user_id))] : [];
 
-    // Fetch all user profiles in one query
     const { data: profilesData } = await supabase
       .from('profiles')
       .select('id, username, display_name')
       .in('id', creatorIds);
 
-    // Create a map of user ID to profile data for quick lookup
     const profilesMap = new Map();
     if (profilesData) {
       profilesData.forEach(profile => {
@@ -110,9 +101,7 @@ export async function fetchPublicPrograms() {
       });
     }
 
-    // Transform the program data into our ItemType format
     const programs = data?.map(program => {
-      // Get creator profile
       const creatorProfile = profilesMap.get(program.user_id);
       const creatorName = creatorProfile?.display_name || creatorProfile?.username || 'FitBloom Creator';
       
@@ -121,7 +110,7 @@ export async function fetchPublicPrograms() {
         title: program.name,
         type: 'program' as const,
         creator: creatorName,
-        imageUrl: 'https://placehold.co/600x400?text=Program', // Placeholder, replace with actual image
+        imageUrl: 'https://placehold.co/600x400?text=Program',
         tags: ['Program', 'Premium'],
         duration: `${program.weeks?.length || 0} weeks`,
         difficulty: 'intermediate' as const,
@@ -147,7 +136,6 @@ export async function fetchPublicPrograms() {
 
 export async function fetchCreatorProfile(userId: string) {
   try {
-    // Get the creator's profile information
     const { data, error } = await supabase
       .from('profiles')
       .select(`

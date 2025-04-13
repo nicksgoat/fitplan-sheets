@@ -13,10 +13,19 @@ interface WorkoutDetailErrorProps {
 const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
   const navigate = useNavigate();
   
-  // Format error message to ensure emails are shown as usernames with @ prefix
+  // Format error message to ensure usernames are shown with @ prefix
   const formatErrorMessage = (message: string) => {
     // Replace email patterns with @username format
-    return message.replace(/'([^']+@[^']+\.[^']+)'/g, '"@$1"');
+    let formattedMessage = message.replace(/'([^']+@[^']+\.[^']+)'/g, '"@$1"');
+    
+    // Make sure all username references have @ prefix
+    formattedMessage = formattedMessage.replace(/"@([^"]+)"/g, '"@$1"');
+    
+    // If the username is missing the @ symbol, add it
+    return formattedMessage.replace(/"([^"@][^"]+)"/g, (match, p1) => {
+      if (p1.includes('@')) return match; // Don't modify if it already has @ inside
+      return `"@${p1}"`; // Otherwise add @ prefix
+    });
   };
   
   return (

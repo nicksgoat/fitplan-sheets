@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseProductUrl } from '@/utils/urlUtils';
@@ -52,7 +51,7 @@ const WorkoutDetail = () => {
           
           // Only redirect if we have both a username and a slug
           if (profileData?.username && workout.slug) {
-            console.log(`Redirecting to creator URL: /${profileData.username}/${workout.slug}`);
+            console.log(`Redirecting to creator URL: /@${profileData.username}/${workout.slug}`);
             const newUrl = buildCreatorProductUrl(profileData.username, workout.slug);
             // Redirect to the new URL format
             navigate(newUrl, { replace: true });
@@ -88,7 +87,7 @@ const WorkoutDetail = () => {
   
   // Early return for loading state
   if (loading) {
-    return <WorkoutDetailSkeleton onBack={handleBackClick} />;
+    return <WorkoutDetailSkeleton onBack={() => navigate(-1)} />;
   }
   
   // Early return for error state
