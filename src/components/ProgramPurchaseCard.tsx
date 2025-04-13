@@ -16,7 +16,7 @@ interface ProgramPurchaseCardProps {
 export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardProps) {
   const { user } = useAuth();
   const { initiateCheckout, loading } = useStripeCheckout();
-  const { data: hasPurchased, isLoading: isPurchaseLoading } = 
+  const { data: hasPurchased, isLoading: isPurchaseLoading, isClubShared } = 
     useHasUserPurchasedProgram(user?.id || '', program.id);
   
   const handlePurchase = () => {
@@ -48,6 +48,12 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
               <span className="text-xl font-semibold text-fitbloom-purple">{formatCurrency(program.price)}</span>
             </div>
           )}
+          
+          {isClubShared && (
+            <div className="mt-1">
+              <span className="text-sm text-green-400">Available via Club Membership</span>
+            </div>
+          )}
         </div>
       </CardContent>
       
@@ -66,9 +72,9 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
           <>
             {isPurchaseLoading ? (
               <Button disabled className="flex-1">Loading...</Button>
-            ) : hasPurchased ? (
+            ) : hasPurchased || isClubShared ? (
               <Button variant="outline" disabled className="flex-1 bg-green-800/20 text-green-400 border-green-800">
-                Purchased
+                {isClubShared ? 'Via Club' : 'Purchased'}
               </Button>
             ) : (
               <Button 

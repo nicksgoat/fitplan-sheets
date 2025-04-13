@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/workout';
@@ -17,6 +16,8 @@ interface ProductPurchaseSectionProps {
   isPurchasable: boolean;
   hasPurchased: boolean;
   isPurchaseLoading: boolean;
+  isClubShared?: boolean;
+  sharedWithClubs?: string[];
   className?: string;
 }
 
@@ -29,8 +30,13 @@ export function ProductPurchaseSection({
   isPurchasable,
   hasPurchased,
   isPurchaseLoading,
+  isClubShared,
+  sharedWithClubs,
   className = ''
-}: ProductPurchaseSectionProps) {
+}: ProductPurchaseSectionProps & {
+  isClubShared?: boolean;
+  sharedWithClubs?: string[];
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
@@ -56,6 +62,20 @@ export function ProductPurchaseSection({
     return (
       <div className={`flex justify-center py-4 ${className}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
+      </div>
+    );
+  }
+
+  if (isClubShared) {
+    return (
+      <div className={`border border-green-800/30 rounded-lg p-4 text-center bg-green-900/10 ${className}`}>
+        <h3 className="text-lg font-semibold mb-1 text-green-400">Available via Club Membership ✓</h3>
+        <Button 
+          className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-2"
+          onClick={() => navigate('/sheets')}
+        >
+          Start Training
+        </Button>
       </div>
     );
   }

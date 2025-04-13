@@ -17,7 +17,7 @@ interface WorkoutPurchaseCardProps {
 export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPurchaseCardProps) {
   const { user } = useAuth();
   const { initiateCheckout, loading } = useStripeCheckout();
-  const { data: hasPurchased, isLoading: isPurchaseLoading } = 
+  const { data: hasPurchased, isLoading: isPurchaseLoading, isClubShared } = 
     useHasUserPurchasedWorkout(user?.id || '', workout.id);
   
   const handlePurchase = () => {
@@ -49,6 +49,12 @@ export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPu
               <span className="text-xl font-semibold text-fitbloom-purple">{formatCurrency(workout.price)}</span>
             </div>
           )}
+          
+          {isClubShared && (
+            <div className="mt-1">
+              <span className="text-sm text-green-400">Available via Club Membership</span>
+            </div>
+          )}
         </div>
       </CardContent>
       
@@ -67,9 +73,9 @@ export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPu
           <>
             {isPurchaseLoading ? (
               <Button disabled className="flex-1">Loading...</Button>
-            ) : hasPurchased ? (
+            ) : hasPurchased || isClubShared ? (
               <Button variant="outline" disabled className="flex-1 bg-green-800/20 text-green-400 border-green-800">
-                Purchased
+                {isClubShared ? 'Via Club' : 'Purchased'}
               </Button>
             ) : (
               <Button 

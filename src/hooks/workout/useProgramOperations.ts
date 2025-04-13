@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
@@ -207,11 +206,20 @@ export function useUpdateProgramPrice() {
 }
 
 export function useHasUserPurchasedProgram(userId: string, programId: string) {
-  return useQuery({
+  const { data: clubAccess, isLoading: isClubAccessLoading } = useClubContentAccess(programId, 'program');
+  
+  const { data: purchaseData, isLoading: isPurchaseLoading } = useQuery({
     queryKey: ['program-purchase', programId, userId],
     queryFn: () => workoutService.hasUserPurchasedProgram(userId, programId),
-    enabled: !!userId && !!programId
+    enabled: !!userId && !!programId && !clubAccess?.hasAccess
   });
+  
+  return {
+    data: purchaseData || clubAccess?.hasAccess,
+    isLoading: isPurchaseLoading || isClubAccessLoading,
+    isClubShared: clubAccess?.hasAccess || false,
+    sharedWithClubs: clubAccess?.sharedWithClubs || []
+  };
 }
 
 export function useUserPurchasedPrograms(userId: string) {

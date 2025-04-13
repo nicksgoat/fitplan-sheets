@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as workoutService from '@/services/workoutService';
 import { WorkoutProgram } from '@/types/workout';
+import { useClubContentAccess } from '@/hooks/useClubContentAccess';
 
 export function useAddWorkout() {
   const queryClient = useQueryClient();
@@ -79,11 +80,20 @@ export function useUpdateWorkoutPrice() {
 }
 
 export function useHasUserPurchasedWorkout(userId: string, workoutId: string) {
-  return useQuery({
+  const { data: clubAccess, isLoading: isClubAccessLoading } = useClubContentAccess(workoutId, 'workout');
+  
+  const { data: purchaseData, isLoading: isPurchaseLoading } = useQuery({
     queryKey: ['workout-purchase', workoutId, userId],
     queryFn: () => workoutService.hasUserPurchasedWorkout(userId, workoutId),
-    enabled: !!userId && !!workoutId
+    enabled: !!userId && !!workoutId && !clubAccess?.hasAccess
   });
+  
+  return {
+    data: purchaseData || clubAccess?.hasAccess,
+    isLoading: isPurchaseLoading || isClubAccessLoading,
+    isClubShared: clubAccess?.hasAccess || false,
+    sharedWithClubs: clubAccess?.sharedWithClubs || []
+  };
 }
 
 export function useUserPurchasedWorkouts(userId: string) {
