@@ -1,4 +1,3 @@
-
 // Export specific hooks from their respective files to avoid naming conflicts
 import { 
   useAddWorkout, 
@@ -79,4 +78,86 @@ export {
   useDeleteCircuit,
   useAddExerciseToCircuit,
   useRemoveExerciseFromCircuit
+};
+
+export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) => {
+  const { useClubContentAccess } = require('./useClubContentAccess');
+  const clubAccess = useClubContentAccess(workoutId, 'workout');
+
+  return useQuery({
+    queryKey: ['workout-purchased', userId, workoutId],
+    queryFn: async () => {
+      if (!userId || !workoutId) return false;
+      
+      try {
+        const { data, error } = await supabase
+          .from('workout_purchases')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('workout_id', workoutId)
+          .eq('status', 'completed')
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error checking workout purchase:', error);
+          return false;
+        }
+
+        return !!data;
+      } catch (error) {
+        console.error('Error in useHasUserPurchasedWorkout:', error);
+        return false;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!userId && !!workoutId,
+    select: (hasPurchased) => {
+      return {
+        isPurchased: hasPurchased,
+        isClubShared: clubAccess.data?.hasAccess || false,
+        sharedWithClubs: clubAccess.data?.sharedWithClubs || []
+      };
+    }
+  });
+};
+
+export const useHasUserPurchasedProgram = (userId: string, programId: string) => {
+  const { useClubContentAccess } = require('./useClubContentAccess');
+  const clubAccess = useClubContentAccess(programId, 'program');
+  
+  return useQuery({
+    queryKey: ['program-purchased', userId, programId],
+    queryFn: async () => {
+      if (!userId || !programId) return false;
+      
+      try {
+        const { data, error } = await supabase
+          .from('program_purchases')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('program_id', programId)
+          .eq('status', 'completed')
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error checking program purchase:', error);
+          return false;
+        }
+        
+        return !!data;
+      } catch (error) {
+        console.error('Error in useHasUserPurchasedProgram:', error);
+        return false;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!userId && !!programId,
+    select: (hasPurchased) => {
+      return {
+        isPurchased: hasPurchased,
+        isClubShared: clubAccess.data?.hasAccess || false,
+        sharedWithClubs: clubAccess.data?.sharedWithClubs || []
+      };
+    }
+  });
 };

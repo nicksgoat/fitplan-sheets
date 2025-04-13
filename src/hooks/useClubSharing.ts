@@ -36,11 +36,22 @@ export function useShareWithClubs() {
       
       // Add new shares
       if (clubsToAdd.length > 0) {
-        const sharesToInsert = clubsToAdd.map(clubId => ({
-          [idField]: contentId,
-          club_id: clubId,
-          shared_by: userData.user.id
-        }));
+        const sharesToInsert = clubsToAdd.map(clubId => {
+          // Create a properly typed object based on content type
+          if (contentType === 'workout') {
+            return {
+              workout_id: contentId,
+              club_id: clubId,
+              shared_by: userData.user.id
+            };
+          } else {
+            return {
+              program_id: contentId,
+              club_id: clubId,
+              shared_by: userData.user.id
+            };
+          }
+        });
         
         const { error: insertError } = await supabase
           .from(tableName)

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClubShareSelection } from '@/components/ClubShareSelection';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,13 @@ export function ClubSharingManagement({
     }
   });
   
+  // Initialize selected clubs from existing shares when data loads
+  useEffect(() => {
+    if (existingShares && existingShares.length > 0) {
+      setSelectedClubs(existingShares.map(share => share.club_id));
+    }
+  }, [existingShares]);
+  
   const handleSaveSharing = async () => {
     try {
       await shareWithClubs.mutateAsync({
@@ -80,6 +87,7 @@ export function ClubSharingManagement({
               contentId={contentId}
               contentType={contentType}
               onSelectionChange={setSelectedClubs}
+              initialSelectedClubs={existingShares ? existingShares.map(share => share.club_id) : []}
             />
             
             <div className="flex justify-end gap-2 pt-4">

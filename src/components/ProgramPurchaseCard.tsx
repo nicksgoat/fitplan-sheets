@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useHasUserPurchasedProgram } from '@/hooks/useWorkoutData';
 import { WorkoutProgram } from '@/types/workout';
 import { formatCurrency } from '@/utils/workout';
+import { ClubAccessBadge } from './workout/ClubAccessBadge';
 
 interface ProgramPurchaseCardProps {
   program: WorkoutProgram;
@@ -16,7 +17,7 @@ interface ProgramPurchaseCardProps {
 export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardProps) {
   const { user } = useAuth();
   const { initiateCheckout, loading } = useStripeCheckout();
-  const { data: hasPurchased, isLoading: isPurchaseLoading, isClubShared } = 
+  const { data: hasPurchased, isLoading: isPurchaseLoading, isClubShared, sharedWithClubs } = 
     useHasUserPurchasedProgram(user?.id || '', program.id);
   
   const handlePurchase = () => {
@@ -50,9 +51,7 @@ export function ProgramPurchaseCard({ program, onPreview }: ProgramPurchaseCardP
           )}
           
           {isClubShared && (
-            <div className="mt-1">
-              <span className="text-sm text-green-400">Available via Club Membership</span>
-            </div>
+            <ClubAccessBadge isClubShared={isClubShared} clubs={sharedWithClubs} />
           )}
         </div>
       </CardContent>
