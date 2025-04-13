@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import MetaTags from '@/components/meta/MetaTags';
+import { Search, Home } from 'lucide-react';
 
 interface WorkoutDetailErrorProps {
   error: string;
@@ -20,17 +21,29 @@ const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
         type="website"
       />
       <Card className="bg-dark-200 border-dark-300 text-center py-8">
-        <CardContent>
-          <h2 className="text-2xl font-semibold">Workout Not Found</h2>
-          <p className="text-gray-400 mt-2">
+        <CardContent className="flex flex-col items-center justify-center">
+          <h2 className="text-2xl font-semibold mb-2">Workout Not Found</h2>
+          <p className="text-gray-400 mb-6 max-w-md">
             {error || "The workout you're looking for doesn't exist or has been removed."}
           </p>
-          <Button 
-            className="mt-6 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            onClick={() => navigate('/explore')}
-          >
-            Browse Workouts
-          </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+              onClick={() => navigate('/explore')}
+              leftIcon={<Search className="h-4 w-4 mr-2" />}
+            >
+              Browse Workouts
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/')}
+              leftIcon={<Home className="h-4 w-4 mr-2" />}
+            >
+              Go to Home
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

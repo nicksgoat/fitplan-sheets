@@ -60,13 +60,13 @@ const CreatorWorkoutDetail = () => {
         
         if (!profileData) {
           console.error(`Creator ${username} not found`);
-          setState(prev => ({ ...prev, error: `Creator ${username} not found`, isLoading: false }));
+          setState(prev => ({ ...prev, error: `Creator "${username}" not found`, isLoading: false }));
           return;
         }
         
         console.log(`Found profile ID: ${profileData.id}`);
         
-        // Then get the workout by slug and creator's programs
+        // Then get the workout by slug and creator's user ID
         const { data: workoutData, error: workoutError } = await supabase
           .from('workouts')
           .select(`
@@ -88,7 +88,7 @@ const CreatorWorkoutDetail = () => {
         
         if (!workoutData) {
           console.error(`Workout ${workoutSlug} not found`);
-          setState(prev => ({ ...prev, error: `Workout "${workoutSlug}" not found`, isLoading: false }));
+          setState(prev => ({ ...prev, error: `Workout "${workoutSlug}" not found for user "${username}"`, isLoading: false }));
           return;
         }
         

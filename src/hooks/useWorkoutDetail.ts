@@ -25,6 +25,7 @@ interface WorkoutDataFromDB {
 
 interface CreatorInfo {
   name: string;
+  username?: string;
 }
 
 interface UseWorkoutDetailReturn {
@@ -58,6 +59,11 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
             exercises:exercises(
               id, name, notes,
               sets:exercise_sets(*)
+            ),
+            weeks!inner(
+              programs!inner(
+                user_id
+              )
             )
           `)
           .eq('id', id)
@@ -75,6 +81,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         console.log('Workout data retrieved:', data);
         
         const workoutData = data as unknown as WorkoutDataFromDB;
+        const creatorId = workoutData.weeks?.programs?.user_id || workoutData.user_id;
         
         const mappedWorkout: Workout = {
           id: workoutData.id,
@@ -86,19 +93,19 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
           lastModified: workoutData.updated_at,
           isPurchasable: workoutData.is_purchasable || false,
           price: workoutData.price || 0,
-          creatorId: workoutData.user_id,
+          creatorId: creatorId,
           slug: workoutData.slug
         };
         
         setWorkout(mappedWorkout);
         
         // Fetch creator info if available
-        if (workoutData.user_id) {
-          console.log(`Fetching creator info for user ID: ${workoutData.user_id}`);
+        if (creatorId) {
+          console.log(`Fetching creator info for user ID: ${creatorId}`);
           const { data: creatorData, error: creatorError } = await supabase
             .from('profiles')
             .select('display_name, username')
-            .eq('id', workoutData.user_id)
+            .eq('id', creatorId)
             .maybeSingle();
             
           if (creatorError) {
@@ -106,7 +113,8 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
           } else if (creatorData) {
             console.log('Creator info retrieved:', creatorData);
             setCreatorInfo({
-              name: creatorData.display_name || creatorData.username || 'FitBloom User'
+              name: creatorData.display_name || creatorData.username || 'FitBloom User',
+              username: creatorData.username
             });
           }
         }
