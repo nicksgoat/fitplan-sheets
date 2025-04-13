@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Profile, SocialLink } from '@/types/profile';
-import { Json } from '@/integrations/supabase/types';
 
 export const useProfile = (profileId?: string) => {
   const { user } = useAuth();
@@ -38,7 +37,7 @@ export const useProfile = (profileId?: string) => {
           // Return a default profile to avoid UI errors
           return {
             id: targetProfileId,
-            username: user?.email || user?.phone || 'user',
+            username: null,
             display_name: null,
             bio: null,
             avatar_url: null,
@@ -91,7 +90,7 @@ export const useProfile = (profileId?: string) => {
         // Return fallback profile to prevent UI errors
         return {
           id: targetProfileId,
-          username: user?.email || user?.phone || 'user',
+          username: null,
           display_name: null,
           bio: null,
           avatar_url: null,
@@ -109,6 +108,28 @@ export const useProfile = (profileId?: string) => {
   const { mutate: updateProfile, isPending: isUpdating } = useMutation({
     mutationFn: async (updatedProfile: Partial<Profile>) => {
       if (!targetProfileId) throw new Error('No profile ID provided');
+      
+      // If username is being updated, check if it's unique
+      if (updatedProfile.username && updatedProfile.username !== profile?.username) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', updatedProfile.username)
+          .neq('id', targetProfileId)
+          .single();
+          
+        if (existingUser) {
+          toast.error(`Username @${updatedProfile.username} is already taken`);
+          throw new Error(`Username @${updatedProfile.username} is already taken`);
+        }
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 means no rows returned, which is what we want
+          console.error('Error checking username:', checkError);
+          toast.error('Error checking username availability');
+          throw checkError;
+        }
+      }
       
       // Prepare a copy of the profile for submission
       const profileData: Record<string, any> = { ...updatedProfile };

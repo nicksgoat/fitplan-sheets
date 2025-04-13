@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Profile, SocialLink } from '@/types/profile';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface EditProfileFormProps {
@@ -29,10 +29,22 @@ const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormPr
     profile?.social_links || []
   );
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Special handling for username - clear any errors and validate format
+    if (name === 'username') {
+      setUsernameError('');
+      
+      // Username validation - only allow letters, numbers, underscores, no spaces
+      if (value && !/^[a-zA-Z0-9_]+$/.test(value)) {
+        setUsernameError('Username can only contain letters, numbers, and underscores');
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -62,6 +74,12 @@ const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormPr
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate username
+    if (usernameError) {
+      return;
+    }
+    
     setLoading(true);
     
     // Prepare updates object with social links
@@ -84,6 +102,7 @@ const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormPr
     // Reset form
     setFormData(profile || {});
     setSocialLinks(profile?.social_links || []);
+    setUsernameError('');
     onClose();
   };
 
@@ -144,17 +163,35 @@ const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormPr
             
             {/* Username */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="username" className="text-right">
+              <Label htmlFor="username" className="text-right flex items-center">
                 Username
+                <span className="text-red-500 ml-1">*</span>
               </Label>
-              <Input
-                id="username"
-                name="username"
-                value={formData.username || ''}
-                onChange={handleChange}
-                className="col-span-3"
-                placeholder="username"
-              />
+              <div className="col-span-3 space-y-1">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    @
+                  </span>
+                  <Input
+                    id="username"
+                    name="username"
+                    value={formData.username || ''}
+                    onChange={handleChange}
+                    className={`pl-7 ${usernameError ? 'border-red-500' : ''}`}
+                    placeholder="username"
+                    required
+                  />
+                </div>
+                {usernameError && (
+                  <div className="text-red-500 text-sm flex items-center">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    {usernameError}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  This will be your profile URL: elitelocker.io/@{formData.username || 'username'}
+                </p>
+              </div>
             </div>
             
             {/* Bio */}
@@ -236,7 +273,7 @@ const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormPr
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!usernameError}>
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>

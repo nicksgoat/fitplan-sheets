@@ -58,16 +58,6 @@ const ProfileHeader = ({ profile, isCurrentUser, onEdit }: ProfileHeaderProps) =
       <h1 className="text-xl font-bold md:text-2xl mb-1">
         {profile.display_name || profile.username || 'User'}
       </h1>
-      
-      {profile.username && profile.display_name && (
-        <h2 className="text-sm text-muted-foreground mb-2">@{profile.username}</h2>
-      )}
-      
-      {profile.bio && (
-        <p className="text-sm md:text-base max-w-md mt-2">
-          {profile.bio}
-        </p>
-      )}
     </div>
   );
 };

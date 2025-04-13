@@ -1,10 +1,10 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, Edit2 } from 'lucide-react';
+import { ExternalLink, Edit2, AlertTriangle } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import ProfileStats from '@/components/profile/ProfileStats';
 import ContentGrid from '@/components/ui/ContentGrid';
@@ -14,6 +14,7 @@ import EditProfileForm from '@/components/profile/EditProfileForm';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import SocialLinksDisplay from '@/components/profile/SocialLinksDisplay';
 import { profileCardStyles } from '@/styles/AssetLibrary';
+import { toast } from 'sonner';
 
 // Define local type for mock data
 type MockItemType = Omit<ItemType, 'difficulty'> & {
@@ -22,6 +23,7 @@ type MockItemType = Omit<ItemType, 'difficulty'> & {
 
 const ProfilePage: React.FC = () => {
   const { profileId } = useParams<{ profileId: string }>();
+  const navigate = useNavigate();
   const { 
     profile, 
     isLoading, 
@@ -43,7 +45,29 @@ const ProfilePage: React.FC = () => {
   
   const handleProfileUpdate = async (updates) => {
     try {
+      // Special handling for username changes
+      if (updates.username && profile?.username !== updates.username) {
+        // Here we would check if the username is unique
+        const { data: existingUser, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', updates.username)
+          .neq('id', profile?.id)
+          .maybeSingle();
+        
+        if (existingUser) {
+          toast.error(`Username @${updates.username} is already taken`);
+          return { success: false };
+        }
+      }
+      
       await updateProfile(updates);
+      
+      // If username was updated and it's the user's own profile, show a success message
+      if (updates.username && profile?.username !== updates.username && isOwnProfile) {
+        toast.success(`Your profile URL is now elitelocker.io/@${updates.username}`);
+      }
+      
       return { success: true };
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -139,6 +163,15 @@ const ProfilePage: React.FC = () => {
             />
             
             <div className="md:ml-6 flex-1 text-center md:text-left">
+              {profile?.username ? (
+                <p className="text-gray-400 mb-2">@{profile.username}</p>
+              ) : isOwnProfile ? (
+                <div className="flex items-center gap-2 mb-2 text-amber-400">
+                  <AlertTriangle size={16} />
+                  <span>Set a username to create your profile URL</span>
+                </div>
+              ) : null}
+              
               {profile?.website && (
                 <a 
                   href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
@@ -235,6 +268,37 @@ const ProfilePage: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Username Settings</h3>
+                    <Separator className="mb-4" />
+                    <p className="text-muted-foreground mb-2">
+                      Your username will be used to create your profile URL: elitelocker.io/@username
+                    </p>
+                    {profile?.username ? (
+                      <div className="flex items-center gap-2">
+                        <span>Current URL: elitelocker.io/@{profile.username}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleEditStart}
+                        >
+                          Change Username
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-amber-400">
+                        <AlertTriangle size={16} />
+                        <span>Set a username to create your profile URL</span>
+                        <Button 
+                          size="sm" 
+                          onClick={handleEditStart}
+                        >
+                          Set Username
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
                   <div>
                     <h3 className="text-lg font-medium mb-2">Social Links</h3>
                     <Separator className="mb-4" />
