@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { Button } from '@/components/ui/button';
 import { useHasUserPurchasedProgram } from '@/hooks/useWorkoutData';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dumbbell, Calendar, Clock, Tag, ArrowLeft, Users, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +17,11 @@ import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { useProfile } from '@/hooks/useProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import SocialLinks from '@/components/profile/SocialLinks';
+import WorkoutDetailHeader from '@/components/workout/WorkoutDetailHeader';
+import WorkoutPreview from '@/components/workout/WorkoutPreview';
+import { ProductPurchaseSection } from '@/components/product/ProductPurchaseSection';
+import WorkoutDetailError from '@/components/workout/WorkoutDetailError';
+import WorkoutDetailSkeleton from '@/components/workout/WorkoutDetailSkeleton';
 
 const CreatorProgramDetail = () => {
   const { username: rawUsername, programSlug } = useParams<{ username: string, programSlug: string }>();
@@ -227,105 +232,41 @@ const CreatorProgramDetail = () => {
   const shouldShowFixedPurchaseBar = isMobile && program?.isPurchasable && program?.price && program?.price > 0 && !hasPurchased;
   
   if (isPageLoading) {
-    return (
-      <div className="container max-w-4xl mx-auto p-4">
-        <MetaTags 
-          title="Loading Program..." 
-          description="Loading program details"
-          type="product"
-        />
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" size="sm" onClick={handleBackClick}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div>
-        <Card className="bg-dark-200 border-dark-300">
-          <CardHeader>
-            <Skeleton className="h-8 w-2/3 bg-dark-300" />
-            <Skeleton className="h-4 w-1/2 mt-2 bg-dark-300" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-12 bg-dark-300" />
-                ))}
-              </div>
-              <Skeleton className="h-40 w-full bg-dark-300" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <WorkoutDetailSkeleton onBack={handleBackClick} />;
   }
   
   if (pageError || !program) {
-    return (
-      <div className="container max-w-4xl mx-auto p-4">
-        <MetaTags 
-          title="Program Not Found" 
-          description="The program you're looking for doesn't exist or has been removed."
-          type="website"
-        />
-        <Card className="bg-dark-200 border-dark-300 text-center py-8">
-          <CardContent>
-            <h2 className="text-2xl font-semibold">Program Not Found</h2>
-            <p className="text-gray-400 mt-2">
-              {pageError || "The program you're looking for doesn't exist or has been removed."}
-            </p>
-            <Button 
-              className="mt-6 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-              onClick={() => navigate('/explore')}
-            >
-              Browse Programs
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <WorkoutDetailError error={pageError || 'Program not found'} />;
   }
   
+  const totalWorkouts = program.workouts?.length || 0;
   const weekCount = program.weeks?.length || 0;
-  const workoutCount = program.workouts?.length || 0;
-  
-  const canPurchase = program.isPurchasable && program.price && program.price > 0 && (!hasPurchased) && user;
-  const hasAccessToProgram = !program.isPurchasable || (program.isPurchasable && hasPurchased);
+  const programDescription = `Training program with ${weekCount} ${weekCount === 1 ? 'week' : 'weeks'} and ${totalWorkouts} ${totalWorkouts === 1 ? 'workout' : 'workouts'}`;
+  const shareUrl = buildCreatorProductUrl(username || '', programSlug || '');
   const creatorName = creatorProfile?.display_name || username || '';
   
+  const canPurchase = program.isPurchasable && program.price && program.price > 0;
+  const hasAccessToProgram = !program.isPurchasable || (program.isPurchasable && hasPurchased);
+  
   return (
-    <div className={`container max-w-4xl mx-auto p-4 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
       <MetaTags 
         title={`${program.name} - FitBloom Training Program`}
-        description={`Training program with ${weekCount} ${weekCount === 1 ? 'week' : 'weeks'} and ${workoutCount} ${workoutCount === 1 ? 'workout' : 'workouts'}`}
+        description={programDescription}
         type="product"
-        url={buildCreatorProductUrl(username || '', programSlug || '')}
-        preload={[
-          {
-            href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(program.name)}`,
-            as: 'image',
-          }
-        ]}
+        url={shareUrl}
       />
       
-      <script 
-        type="application/ld+json" 
-        dangerouslySetInnerHTML={{ __html: generateProgramSchema() || '' }}
+      <WorkoutDetailHeader
+        title={program.name}
+        description={`${weekCount} weeks • ${totalWorkouts} workouts`}
+        shareUrl={shareUrl}
+        shareTitle={`${program.name} by ${creatorName}`}
+        shareDescription={programDescription}
+        onBack={handleBackClick}
       />
       
-      <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" size="sm" onClick={handleBackClick}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        
-        <ShareButton 
-          url={buildCreatorProductUrl(username || '', programSlug || '')}
-          title={`Check out ${program.name} training program on FitBloom`}
-          description={`Training program with ${weekCount} ${weekCount === 1 ? 'week' : 'weeks'} and ${workoutCount} ${workoutCount === 1 ? 'workout' : 'workouts'}`}
-        />
-      </div>
-      
+      {/* Creator Info Card */}
       <Card className="bg-dark-200 border-dark-300 mb-4">
         <CardContent className="p-4 flex items-center">
           <Avatar className="h-12 w-12 mr-3">
@@ -346,34 +287,17 @@ const CreatorProgramDetail = () => {
         </CardContent>
       </Card>
       
-      <Card className="bg-dark-200 border-dark-300">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-2xl font-bold">{program.name}</CardTitle>
-              <CardDescription className="mt-2">
-                Training program with {weekCount} {weekCount === 1 ? 'week' : 'weeks'} and {workoutCount} {workoutCount === 1 ? 'workout' : 'workouts'}
-              </CardDescription>
-            </div>
-            
-            {program.isPurchasable && program.price && program.price > 0 && (
-              <div className="text-xl font-semibold text-green-500">
-                {formatCurrency(program.price)}
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+      {hasAccessToProgram ? (
+        <Card className="bg-dark-200 border-dark-300">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="flex items-center p-3 bg-dark-300 rounded-md">
                 <Calendar className="h-5 w-5 mr-3 text-fitbloom-purple" />
                 <span>{weekCount} {weekCount === 1 ? 'Week' : 'Weeks'}</span>
               </div>
               <div className="flex items-center p-3 bg-dark-300 rounded-md">
                 <Dumbbell className="h-5 w-5 mr-3 text-fitbloom-purple" />
-                <span>{workoutCount} {workoutCount === 1 ? 'Workout' : 'Workouts'}</span>
+                <span>{totalWorkouts} {totalWorkouts === 1 ? 'Workout' : 'Workouts'}</span>
               </div>
               <div className="flex items-center p-3 bg-dark-300 rounded-md">
                 <Clock className="h-5 w-5 mr-3 text-fitbloom-purple" />
@@ -385,131 +309,100 @@ const CreatorProgramDetail = () => {
               </div>
             </div>
             
-            {!hasAccessToProgram && (
-              <Card className="bg-dark-200 border-dark-300">
-                <CardContent className="p-4">
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center text-gray-300">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span className="text-sm">Created {new Date(program.savedAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center text-gray-300">
-                      <Users className="h-4 w-4 mr-2" />
-                      <span className="text-sm">Premium program by certified trainer</span>
-                    </div>
+            <div className="space-y-4">
+              {program.weeks?.map((week, weekIndex) => (
+                <div key={week.id} className="border border-gray-700 rounded-md overflow-hidden">
+                  <div className="bg-dark-300 p-3 px-4 flex justify-between items-center">
+                    <h4 className="font-medium">Week {weekIndex + 1}: {week.name}</h4>
+                    <span className="text-sm text-gray-400">{week.workouts.length} workouts</span>
                   </div>
-                  
-                  {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
-                    <div className="mt-3">
-                      <SocialLinks links={creatorProfile.social_links} className="justify-start" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {hasAccessToProgram ? (
-              <div>
-                <h3 className="text-lg font-medium mb-3">Program Structure</h3>
-                <div className="space-y-4">
-                  {program.weeks?.map((week, weekIndex) => (
-                    <div key={week.id} className="border border-gray-700 rounded-md overflow-hidden">
-                      <div className="bg-dark-300 p-3 px-4 flex justify-between items-center">
-                        <h4 className="font-medium">Week {weekIndex + 1}: {week.name}</h4>
-                        <span className="text-sm text-gray-400">{week.workouts.length} workouts</span>
-                      </div>
-                      <div className="divide-y divide-gray-700">
-                        {week.workouts.map((workoutId) => {
-                          const workout = program.workouts.find(w => w.id === workoutId);
-                          return workout ? (
-                            <div key={workout.id} className="p-3 px-4 hover:bg-dark-300/50 transition-colors">
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center">
-                                  <Dumbbell className="h-4 w-4 mr-2 text-fitbloom-purple" />
-                                  <span>{workout.name}</span>
-                                </div>
-                                <span className="text-gray-400 text-sm">Day {workout.day}</span>
-                              </div>
-                              {workout.exercises && workout.exercises.length > 0 && (
-                                <p className="text-xs text-gray-400 mt-1 pl-6">
-                                  {workout.exercises.length} exercises
-                                </p>
-                              )}
+                  <div className="divide-y divide-gray-700">
+                    {week.workouts.map((workoutId) => {
+                      const workout = program.workouts.find(w => w.id === workoutId);
+                      return workout ? (
+                        <div key={workout.id} className="p-3 px-4 hover:bg-dark-300/50 transition-colors">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              <Dumbbell className="h-4 w-4 mr-2 text-fitbloom-purple" />
+                              <span>{workout.name}</span>
                             </div>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="mt-6">
-                  <Button 
-                    className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                    onClick={() => navigate('/sheets')}
-                  >
-                    Start Program
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="border border-gray-700 rounded-lg p-6 text-center">
-                <h3 className="text-xl font-semibold mb-2">Premium Training Program</h3>
-                <p className="text-gray-400 mb-6">
-                  Purchase this program to see all workouts and start your training
-                </p>
-                
-                {isPurchaseLoading ? (
-                  <Button disabled>Loading...</Button>
-                ) : canPurchase ? (
-                  <Button 
-                    onClick={handlePurchase}
-                    disabled={checkoutLoading}
-                    className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                  >
-                    {checkoutLoading ? 'Processing...' : `Purchase for ${formatCurrency(program.price || 0)}`}
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <Button 
-                      disabled={!user}
-                      onClick={!user ? () => navigate('/auth') : undefined}
-                    >
-                      {!user ? 'Sign in to purchase' : 'Already purchased'}
-                    </Button>
-                    {!user && (
-                      <p className="text-sm text-gray-400">
-                        You need an account to purchase this program
-                      </p>
-                    )}
+                            <span className="text-gray-400 text-sm">Day {workout.day}</span>
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
                   </div>
-                )}
-              </div>
-            )}
-            
-            <div className="text-gray-400 text-sm">
-              <p>Created: {new Date(program.savedAt).toLocaleDateString()}</p>
-              <p>Last updated: {new Date(program.lastModified || program.savedAt).toLocaleDateString()}</p>
+                </div>
+              ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <Button 
+              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-4"
+              onClick={() => navigate('/sheets')}
+            >
+              Start Program
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <WorkoutPreview 
+            workout={program} 
+            title="Program Preview" 
+            description={programDescription} 
+          />
+          
+          {/* Social Proof Section */}
+          <Card className="bg-dark-200 border-dark-300">
+            <CardContent className="p-4">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center text-gray-300">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Created {new Date(program.savedAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-gray-300">
+                  <Users className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Premium program by certified trainer</span>
+                </div>
+              </div>
+              
+              {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
+                <div className="mt-3">
+                  <SocialLinks links={creatorProfile.social_links} className="justify-start" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {!isMobile && (
+            <ProductPurchaseSection
+              itemType="program"
+              itemId={program.id}
+              itemName={program.name}
+              price={program.price || 0}
+              creatorId={program.creatorId || ''}
+              isPurchasable={canPurchase}
+              hasPurchased={!!hasPurchased}
+              isPurchaseLoading={isPurchaseLoading}
+            />
+          )}
+        </div>
+      )}
       
+      {/* Fixed Purchase Bar on Mobile */}
       {shouldShowFixedPurchaseBar && (
         <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-bold text-fitbloom-purple">{formatCurrency(program.price || 0)}</p>
-              <p className="text-xs text-gray-400">One-time purchase</p>
-            </div>
-            <Button 
-              onClick={handlePurchase}
-              disabled={checkoutLoading || !user}
-              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            >
-              {checkoutLoading ? 'Processing...' : user ? 'Buy Now' : 'Sign In to Buy'}
-            </Button>
-          </div>
+          <ProductPurchaseSection
+            itemType="program"
+            itemId={program.id}
+            itemName={program.name}
+            price={program.price || 0}
+            creatorId={program.creatorId || ''}
+            isPurchasable={canPurchase}
+            hasPurchased={!!hasPurchased}
+            isPurchaseLoading={isPurchaseLoading}
+            className="p-0 bg-transparent"
+          />
           <div className="flex justify-center items-center text-xs text-gray-400 mt-2">
             <Shield className="h-3 w-3 mr-1 text-gray-400" />
             <p>Secure payment • Instant access</p>
