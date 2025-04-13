@@ -48,7 +48,6 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
 
   useEffect(() => {
     if (!id) {
-      setError('Invalid workout ID');
       setLoading(false);
       return;
     }
@@ -65,8 +64,8 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
               id, name, notes,
               sets:exercise_sets(*)
             ),
-            weeks!inner(
-              programs!inner(
+            weeks:weeks(
+              programs:programs(
                 user_id
               )
             )
@@ -78,7 +77,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         
         if (!data) {
           console.error(`Workout not found with ID: ${id}`);
-          setError(`Invalid workout ID`);
+          setError(`Workout not found`);
           setLoading(false);
           return;
         }
@@ -86,7 +85,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         console.log('Workout data retrieved:', data);
         
         const workoutData = data as unknown as WorkoutDataFromDB;
-        // Safely access the creator ID
+        // Safely access the creator ID from nested data
         const creatorId = workoutData.weeks?.programs?.user_id || workoutData.user_id;
         
         const mappedWorkout: Workout = {
@@ -128,7 +127,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching workout:', err);
-        setError('Invalid workout ID');
+        setError('Error loading workout');
         toast.error(`Error loading workout: ${err.message || 'Unknown error'}`);
         setLoading(false);
       }

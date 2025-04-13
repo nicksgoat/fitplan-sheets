@@ -88,7 +88,11 @@ const CreatorWorkoutDetail = () => {
         
         if (!workoutData) {
           console.error(`Workout ${workoutSlug} not found`);
-          setState(prev => ({ ...prev, error: `Workout "${workoutSlug}" not found for user "${username}"`, isLoading: false }));
+          setState(prev => ({ 
+            ...prev, 
+            error: `Workout "${workoutSlug}" not found for creator "${username}"`, 
+            isLoading: false 
+          }));
           return;
         }
         
@@ -98,7 +102,7 @@ const CreatorWorkoutDetail = () => {
         console.error('Error fetching workout:', error);
         setState(prev => ({ 
           ...prev, 
-          error: error.message || 'Failed to load workout',
+          error: `Couldn't load workout: ${error.message || 'Unknown error'}`, 
           isLoading: false 
         }));
       }
