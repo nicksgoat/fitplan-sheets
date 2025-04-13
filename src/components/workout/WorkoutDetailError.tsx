@@ -24,7 +24,7 @@ const WorkoutDetailError: React.FC<WorkoutDetailErrorProps> = ({ error }) => {
         <CardContent className="flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold mb-2">Workout Not Found</h2>
           <p className="text-gray-400 mb-6 max-w-md">
-            {error || "The workout you're looking for doesn't exist or has been removed."}
+            {error || "Invalid workout ID"}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3">

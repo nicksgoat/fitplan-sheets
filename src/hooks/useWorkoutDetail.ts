@@ -78,7 +78,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         
         if (!data) {
           console.error(`Workout not found with ID: ${id}`);
-          setError(`Workout not found with ID: ${id}`);
+          setError(`Invalid workout ID`);
           setLoading(false);
           return;
         }
@@ -128,7 +128,7 @@ export const useWorkoutDetail = (id: string | null): UseWorkoutDetailReturn => {
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching workout:', err);
-        setError(err.message || 'Failed to load workout');
+        setError('Invalid workout ID');
         toast.error(`Error loading workout: ${err.message || 'Unknown error'}`);
         setLoading(false);
       }
