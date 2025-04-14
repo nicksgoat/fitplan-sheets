@@ -54,11 +54,12 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Avoid TypeScript's deep type checking by treating as simple array
-      if (data) {
-        // Using simple array iteration without complex typing
-        for (let i = 0; i < data.length; i++) {
-          const item = data[i];
+      // Explicitly cast data to avoid deep type checking
+      const responseData = data as unknown as ClubMemberResponse[];
+      
+      if (responseData) {
+        // Map the response data to Club objects
+        for (const item of responseData) {
           if (item.clubs) {
             userClubs.push({
               id: item.clubs.id,
