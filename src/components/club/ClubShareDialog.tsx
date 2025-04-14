@@ -8,12 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
-// Define a simplified interface for shared clubs
-interface SharedClub {
-  club_id: string;
-  club?: { name: string } | null;
-}
-
 // Define specific type for the club share dialog props
 interface ClubShareDialogProps {
   open: boolean;
@@ -84,8 +78,8 @@ export function ClubShareDialog({
       
       // Now insert new entries if there are any selected clubs
       if (selectedIds.length > 0) {
-        // Using explicit type declarations to avoid deep nesting issues
         if (contentType === 'workout') {
+          // Create a properly typed array of objects to insert
           const sharesToCreate = selectedIds.map(clubId => ({
             workout_id: contentId,
             club_id: clubId,
@@ -98,6 +92,7 @@ export function ClubShareDialog({
           
           if (insertError) throw insertError;
         } else {
+          // Create a properly typed array of objects to insert
           const sharesToCreate = selectedIds.map(clubId => ({
             program_id: contentId,
             club_id: clubId,

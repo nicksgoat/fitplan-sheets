@@ -978,6 +978,57 @@ export type Database = {
           },
         ]
       }
+      global_workouts: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          duration: number | null
+          id: string
+          image_url: string | null
+          is_global: boolean | null
+          original_workout_id: string | null
+          price: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration?: number | null
+          id?: string
+          image_url?: string | null
+          is_global?: boolean | null
+          original_workout_id?: string | null
+          price?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          duration?: number | null
+          id?: string
+          image_url?: string | null
+          is_global?: boolean | null
+          original_workout_id?: string | null
+          price?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       liked_items: {
         Row: {
           created_at: string
