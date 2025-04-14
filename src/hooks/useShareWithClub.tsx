@@ -11,12 +11,15 @@ type ShareInput = {
   clubIds: string[];
 };
 
+// Explicitly define the return type for the mutation to avoid infinite type instantiation
+type ShareMutationResult = string[];
+
 export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
+  return useMutation<ShareMutationResult, Error, ShareInput>({
+    mutationFn: async ({ clubIds, contentId, contentType }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // Determine which table to use based on content type

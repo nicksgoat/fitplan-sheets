@@ -9,16 +9,7 @@ import { Club } from '@/types/clubSharing';
 interface ClubMemberWithClub {
   club_id: string;
   role: string;
-  clubs: {
-    id: string;
-    name: string;
-    description?: string | null;
-    logo_url?: string | null;
-    created_at: string;
-    created_by: string;
-    club_type: 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
-    membership_type: 'free' | 'premium' | 'vip';
-  } | null;
+  clubs: Club | null;
 }
 
 export function useClubSelection(initialSelectedIds: string[] = []) {
@@ -42,7 +33,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
         .select(`
           club_id,
           role,
-          clubs:club_id(
+          clubs:clubs(
             id,
             name,
             description,
@@ -62,19 +53,21 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      if (data) {
-        // Use explicit typing and handle the data safely
-        for (const item of data as ClubMemberWithClub[]) {
-          if (item.clubs) {
+      if (data && Array.isArray(data)) {
+        // Use explicit type checking to ensure clubs property exists and is valid
+        for (const item of data) {
+          // Check that clubs is a valid object with expected properties
+          const clubData = item.clubs;
+          if (clubData && typeof clubData === 'object' && 'id' in clubData && 'name' in clubData) {
             userClubs.push({
-              id: item.clubs.id,
-              name: item.clubs.name,
-              description: item.clubs.description || undefined,
-              logo_url: item.clubs.logo_url || undefined,
-              created_at: item.clubs.created_at,
-              created_by: item.clubs.created_by,
-              club_type: item.clubs.club_type,
-              membership_type: item.clubs.membership_type
+              id: clubData.id,
+              name: clubData.name,
+              description: clubData.description || undefined,
+              logo_url: clubData.logo_url || undefined,
+              created_at: clubData.created_at,
+              created_by: clubData.created_by,
+              club_type: clubData.club_type,
+              membership_type: clubData.membership_type
             });
           }
         }

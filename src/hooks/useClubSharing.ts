@@ -35,11 +35,22 @@ export function useShareWithClubs() {
       
       // Insert new shares if any clubs are selected
       if (clubIds.length > 0) {
-        const sharingRecords = clubIds.map(clubId => ({
-          club_id: clubId,
-          [contentIdField]: contentId,
-          shared_by: user.id
-        }));
+        const sharingRecords = clubIds.map(clubId => {
+          // Create the proper record with the correct field based on content type
+          if (contentType === 'workout') {
+            return {
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            };
+          } else {
+            return {
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            };
+          }
+        });
         
         const { error: shareError } = await supabase
           .from(tableName)

@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { ClubShareDialogProps } from '@/types/clubSharing';
 import { useClubSelection } from '@/hooks/useClubSelection';
-import { useShareWithClub } from '@/hooks/useShareWithClub';
+import { useShareWithClubs } from '@/hooks/useClubSharing';
 import { ClubsList } from './ClubsList';
 
 export function ClubShareDialog({ 
@@ -35,7 +35,7 @@ export function ClubShareDialog({
     toggleClub
   } = useClubSelection(initialSelectedClubIds);
   
-  const shareWithClub = useShareWithClub(onSelectionChange);
+  const shareWithClubs = useShareWithClubs();
 
   // Load user clubs when dialog opens
   useEffect(() => {
@@ -54,7 +54,7 @@ export function ClubShareDialog({
       return;
     }
 
-    shareWithClub.mutate({
+    shareWithClubs.mutate({
       contentId,
       contentType,
       clubIds: selectedClubIds
@@ -82,8 +82,8 @@ export function ClubShareDialog({
         
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleShare} disabled={shareWithClub.isPending}>
-            {shareWithClub.isPending ? "Sharing..." : "Share"}
+          <AlertDialogAction onClick={handleShare} disabled={shareWithClubs.isPending}>
+            {shareWithClubs.isPending ? "Sharing..." : "Share"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
