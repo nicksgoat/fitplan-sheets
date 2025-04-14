@@ -16,6 +16,7 @@ interface ClubShareSelectionProps {
   selectedClubIds?: string[];
 }
 
+// Define a separate interface for the join result to prevent deep type instantiation
 interface ClubMemberWithClub {
   club_id: string;
   role: string;
@@ -48,7 +49,6 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Fixed: Explicitly type the data as ClubMemberWithClub[] and extract the club
       return (data as ClubMemberWithClub[]).map(item => item.club);
     },
   });

@@ -48,7 +48,8 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
       };
       
       // Save to library using the context and await the result
-      const savedId = await saveWorkout(workoutToSave);
+      const savedWorkout = await saveWorkout(workoutToSave);
+      const savedId = savedWorkout ?? null;
       
       // If workout was saved successfully and clubs are selected, share with clubs
       if (savedId && selectedClubs.length > 0) {

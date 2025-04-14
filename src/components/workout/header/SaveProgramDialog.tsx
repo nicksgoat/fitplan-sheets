@@ -40,7 +40,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
 
     if (program) {
       try {
-        let savedId = "";
+        let savedId: string | null = null;
         
         if (isSingleWorkout) {
           // Get the workout ID
