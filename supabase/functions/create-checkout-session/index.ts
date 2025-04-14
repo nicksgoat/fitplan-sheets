@@ -77,16 +77,16 @@ serve(async (req) => {
     if (isGuest && guestEmail) {
       customerEmail = guestEmail;
       console.log("Using guest email:", guestEmail);
-    } else {
+    } else if (userId) {
       try {
         // Get user email for Stripe customer creation
         const { data: userData, error: userError } = await supabase
           .from('profiles')
-          .select('email')
+          .select('username, display_name')
           .eq('id', userId)
           .single();
 
-        if (userError || !userData?.email) {
+        if (userError) {
           console.log("Failed to fetch user data:", userError);
           return new Response(
             JSON.stringify({ error: 'Failed to fetch user data' }),
@@ -97,7 +97,21 @@ serve(async (req) => {
           );
         }
         
-        customerEmail = userData.email;
+        // We don't have email in profiles table, so we'll get it from auth.users
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+        
+        if (authError || !authUser?.user?.email) {
+          console.log("Failed to fetch user email:", authError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to fetch user email' }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            }
+          );
+        }
+        
+        customerEmail = authUser.user.email;
         console.log("Using authenticated user email:", customerEmail);
       } catch (error) {
         console.log("Error fetching user data:", error);
@@ -109,6 +123,14 @@ serve(async (req) => {
           }
         );
       }
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'No user ID or guest email provided' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
 
     // Calculate platform fee (10%)

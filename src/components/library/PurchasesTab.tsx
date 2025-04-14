@@ -1,210 +1,325 @@
 
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Workout, WorkoutProgram } from "@/types/workout";
-import { ItemType } from "@/lib/types";
-import ContentGrid from "@/components/ui/ContentGrid";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDistanceToNow } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Workout } from '@/types/workout';
+import ContentGrid from '../ui/ContentGrid';
+import { ItemType } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
-const PurchasesTab: React.FC = () => {
+const PurchasesTab = () => {
   const { user } = useAuth();
-  const [workoutPurchases, setWorkoutPurchases] = useState<ItemType[]>([]);
-  const [programPurchases, setProgramPurchases] = useState<ItemType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('workouts');
-
+  const [workouts, setWorkouts] = useState<ItemType[]>([]);
+  const [programs, setPrograms] = useState<ItemType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('workouts');
+  
   useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
+    if (user) {
+      loadPurchases();
+    }
+  }, [user]);
+  
+  const loadPurchases = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      // Load purchased workouts
+      await loadPurchasedWorkouts();
+      
+      // Load purchased programs
+      await loadPurchasedPrograms();
+      
+      // Load items from clubs user has access to
+      await loadClubSharedContent();
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const loadPurchasedWorkouts = async () => {
+    const { data: purchasedWorkouts, error: purchasedWorkoutsError } = await supabase
+      .from('workout_purchases')
+      .select(`
+        workout_id,
+        workouts:workout_id(
+          id,
+          name,
+          price,
+          is_purchasable,
+          week_id,
+          weeks:week_id(
+            program_id,
+            programs:program_id(
+              user_id,
+              users:user_id(
+                profiles:id(
+                  display_name,
+                  username
+                )
+              )
+            )
+          )
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'completed');
+    
+    if (purchasedWorkoutsError) {
+      console.error('Error loading purchased workouts:', purchasedWorkoutsError);
       return;
     }
     
-    const fetchPurchasedItems = async () => {
-      try {
-        console.log('Fetching purchases for user:', user.id);
-        // Fetch purchased workouts
-        const { data: workoutData, error: workoutError } = await supabase
-          .from('workout_purchases')
-          .select(`
-            workout_id,
-            purchase_date,
-            workouts (
-              id,
-              name,
-              day_num,
-              price,
-              created_at,
-              updated_at
-            )
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'completed');
-          
-        if (workoutError) {
-          throw workoutError;
-        }
+    // Transform the data for the UI
+    const transformedWorkouts = purchasedWorkouts
+      .filter(pw => pw.workouts) // Filter out any null workouts
+      .map(pw => {
+        const workout = pw.workouts as any;
+        const creator = workout.weeks?.programs?.users?.profiles;
         
-        // Fetch purchased programs
-        const { data: programData, error: programError } = await supabase
-          .from('program_purchases')
-          .select(`
-            program_id,
-            purchase_date,
-            programs (
-              id,
-              name,
-              price,
-              created_at,
-              updated_at
-            )
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'completed');
-          
-        if (programError) {
-          throw programError;
-        }
-        
-        console.log('Purchased workouts:', workoutData);
-        console.log('Purchased programs:', programData);
-        
-        // Transform data to ItemType format
-        const workoutItems: ItemType[] = workoutData
-          .filter(purchase => purchase.workouts)
-          .map(purchase => ({
-            id: purchase.workouts.id,
-            title: purchase.workouts.name,
-            type: 'workout' as const,
-            creator: 'Purchased',
-            imageUrl: 'https://placehold.co/600x400?text=Workout',
-            tags: ['Purchased', 'Workout'],
-            duration: `Day ${purchase.workouts.day_num} workout`,
-            difficulty: 'intermediate' as const,
-            isFavorite: false,
-            description: `Purchased workout`,
-            isCustom: false,
-            price: purchase.workouts.price,
-            isPurchasable: false,
-            savedAt: purchase.purchase_date,
-            lastModified: purchase.workouts.updated_at
-          }));
-          
-        const programItems: ItemType[] = programData
-          .filter(purchase => purchase.programs)
-          .map(purchase => ({
-            id: purchase.programs.id,
-            title: purchase.programs.name,
-            type: 'program' as const,
-            creator: 'Purchased',
-            imageUrl: 'https://placehold.co/600x400?text=Program',
-            tags: ['Purchased', 'Program'],
-            duration: 'Full program',
-            difficulty: 'intermediate' as const,
-            isFavorite: false,
-            description: `Purchased program`,
-            isCustom: false,
-            price: purchase.programs.price,
-            isPurchasable: false,
-            savedAt: purchase.purchase_date,
-            lastModified: purchase.programs.updated_at
-          }));
-        
-        setWorkoutPurchases(workoutItems);
-        setProgramPurchases(programItems);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching purchases:", error);
-        toast.error("Failed to load purchases");
-        setIsLoading(false);
-      }
-    };
+        return {
+          id: workout.id,
+          title: workout.name,
+          type: 'workout',
+          description: `Purchased workout`,
+          creator: creator?.display_name || creator?.username || 'Unknown Creator',
+          creatorId: workout.weeks?.programs?.user_id,
+          creatorUsername: creator?.username,
+          difficulty: 'intermediate',
+          duration: '',
+          price: workout.price,
+          isPurchasable: workout.is_purchasable,
+          purchased: true,
+          tags: []
+        } as ItemType;
+      });
     
-    fetchPurchasedItems();
-  }, [user]);
-
-  const formatTimestamp = (timestamp: string) => {
-    try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch (e) {
-      return "some time ago";
+    setWorkouts(transformedWorkouts);
+  };
+  
+  const loadPurchasedPrograms = async () => {
+    const { data: purchasedPrograms, error: purchasedProgramsError } = await supabase
+      .from('program_purchases')
+      .select(`
+        program_id,
+        programs:program_id(
+          id,
+          name,
+          price,
+          is_purchasable,
+          user_id,
+          users:user_id(
+            profiles:id(
+              display_name,
+              username
+            )
+          )
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'completed');
+    
+    if (purchasedProgramsError) {
+      console.error('Error loading purchased programs:', purchasedProgramsError);
+      return;
+    }
+    
+    // Transform the data for the UI
+    const transformedPrograms = purchasedPrograms
+      .filter(pp => pp.programs) // Filter out any null programs
+      .map(pp => {
+        const program = pp.programs as any;
+        const creator = program.users?.profiles;
+        
+        return {
+          id: program.id,
+          title: program.name,
+          type: 'program',
+          description: `Purchased program`,
+          creator: creator?.display_name || creator?.username || 'Unknown Creator',
+          creatorId: program.user_id,
+          creatorUsername: creator?.username,
+          difficulty: 'intermediate',
+          duration: '',
+          price: program.price,
+          isPurchasable: program.is_purchasable,
+          purchased: true,
+          tags: []
+        } as ItemType;
+      });
+    
+    setPrograms(transformedPrograms);
+  };
+  
+  const loadClubSharedContent = async () => {
+    // Load clubs user is a member of
+    const { data: memberClubs, error: memberClubsError } = await supabase
+      .from('club_members')
+      .select('club_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active');
+      
+    if (memberClubsError || !memberClubs.length) {
+      console.log('No club memberships or error:', memberClubsError);
+      return;
+    }
+    
+    const clubIds = memberClubs.map(m => m.club_id);
+    
+    // Load shared workouts
+    const { data: sharedWorkouts, error: sharedWorkoutsError } = await supabase
+      .from('club_shared_workouts')
+      .select(`
+        workout_id,
+        workouts:workout_id(
+          id,
+          name,
+          price,
+          is_purchasable,
+          week_id,
+          weeks:week_id(
+            program_id,
+            programs:program_id(
+              user_id,
+              users:user_id(
+                profiles:id(
+                  display_name,
+                  username
+                )
+              )
+            )
+          )
+        )
+      `)
+      .in('club_id', clubIds);
+      
+    if (!sharedWorkoutsError && sharedWorkouts.length) {
+      const transformedSharedWorkouts = sharedWorkouts
+        .filter(sw => sw.workouts)
+        .map(sw => {
+          const workout = sw.workouts as any;
+          const creator = workout.weeks?.programs?.users?.profiles;
+          
+          return {
+            id: workout.id,
+            title: workout.name,
+            type: 'workout',
+            description: `From club membership`,
+            creator: creator?.display_name || creator?.username || 'Unknown Creator',
+            creatorId: workout.weeks?.programs?.user_id,
+            creatorUsername: creator?.username,
+            difficulty: 'intermediate',
+            duration: '',
+            price: workout.price,
+            isPurchasable: workout.is_purchasable,
+            viaClub: true,
+            tags: []
+          } as ItemType;
+        });
+      
+      // Add shared workouts to the existing workouts, avoiding duplicates
+      setWorkouts(prev => {
+        const existingIds = new Set(prev.map(w => w.id));
+        const newWorkouts = transformedSharedWorkouts.filter(w => !existingIds.has(w.id));
+        return [...prev, ...newWorkouts];
+      });
+    }
+    
+    // Load shared programs
+    const { data: sharedPrograms, error: sharedProgramsError } = await supabase
+      .from('club_shared_programs')
+      .select(`
+        program_id,
+        programs:program_id(
+          id,
+          name,
+          price,
+          is_purchasable,
+          user_id,
+          users:user_id(
+            profiles:id(
+              display_name,
+              username
+            )
+          )
+        )
+      `)
+      .in('club_id', clubIds);
+      
+    if (!sharedProgramsError && sharedPrograms.length) {
+      const transformedSharedPrograms = sharedPrograms
+        .filter(sp => sp.programs)
+        .map(sp => {
+          const program = sp.programs as any;
+          const creator = program.users?.profiles;
+          
+          return {
+            id: program.id,
+            title: program.name,
+            type: 'program',
+            description: `From club membership`,
+            creator: creator?.display_name || creator?.username || 'Unknown Creator',
+            creatorId: program.user_id,
+            creatorUsername: creator?.username,
+            difficulty: 'intermediate',
+            duration: '',
+            price: program.price,
+            isPurchasable: program.is_purchasable,
+            viaClub: true,
+            tags: []
+          } as ItemType;
+        });
+      
+      // Add shared programs to the existing programs, avoiding duplicates
+      setPrograms(prev => {
+        const existingIds = new Set(prev.map(p => p.id));
+        const newPrograms = transformedSharedPrograms.filter(p => !existingIds.has(p.id));
+        return [...prev, ...newPrograms];
+      });
     }
   };
-
-  if (!user) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-gray-400 mb-4">You need to be logged in to view your purchases.</p>
-        <Button 
-          className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
-          onClick={() => window.location.href = "/auth"}
-        >
-          Sign In
-        </Button>
-      </div>
-    );
-  }
   
-  if (isLoading) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-gray-400 mb-4">Loading purchases...</p>
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
-        </div>
-      </div>
-    );
-  }
-  
-  const hasWorkoutPurchases = workoutPurchases.length > 0;
-  const hasProgramPurchases = programPurchases.length > 0;
-  const hasPurchases = hasWorkoutPurchases || hasProgramPurchases;
-  
-  if (!hasPurchases) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-gray-400 mb-4">You haven't purchased any workouts or programs yet.</p>
-        <Button 
-          className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
-          onClick={() => window.location.href = "/explore"}
-        >
-          Explore Available Content
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <Tabs 
-        value={activeSubTab}
-        onValueChange={setActiveSubTab}
-      >
-        <TabsList>
-          <TabsTrigger value="workouts">Workouts</TabsTrigger>
-          <TabsTrigger value="programs">Programs</TabsTrigger>
+    <div className="w-full">
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="workouts">
+            Workouts {workouts.length > 0 && `(${workouts.length})`}
+          </TabsTrigger>
+          <TabsTrigger value="programs">
+            Programs {programs.length > 0 && `(${programs.length})`}
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="workouts" className="mt-4">
-          {!hasWorkoutPurchases ? (
-            <div className="text-center py-6">
-              <p className="text-gray-400 mb-4">You haven't purchased any workouts yet.</p>
+        <TabsContent value="workouts" className="mt-0">
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
             </div>
+          ) : workouts.length > 0 ? (
+            <ContentGrid items={workouts} />
           ) : (
-            <ContentGrid items={workoutPurchases} />
+            <div className="text-center py-10 text-muted-foreground">
+              <p>You haven't purchased any workouts yet.</p>
+            </div>
           )}
         </TabsContent>
         
-        <TabsContent value="programs" className="mt-4">
-          {!hasProgramPurchases ? (
-            <div className="text-center py-6">
-              <p className="text-gray-400 mb-4">You haven't purchased any programs yet.</p>
+        <TabsContent value="programs" className="mt-0">
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
             </div>
+          ) : programs.length > 0 ? (
+            <ContentGrid items={programs} />
           ) : (
-            <ContentGrid items={programPurchases} />
+            <div className="text-center py-10 text-muted-foreground">
+              <p>You haven't purchased any programs yet.</p>
+            </div>
           )}
         </TabsContent>
       </Tabs>
