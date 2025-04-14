@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseProductUrl } from '@/utils/urlUtils';
@@ -18,11 +17,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const WorkoutDetail = () => {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Extract the workoutId from the URL parameter
   const extractedId = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
@@ -166,8 +167,10 @@ const WorkoutDetail = () => {
     `${workout.name} by ${creatorInfo.name} - FitBloom Workout` : 
     `${workout.name} - FitBloom Workout`;
   
+  const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
+  
   return (
-    <div className="container max-w-md mx-auto p-3">
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-32' : ''}`}>
       <MetaTags 
         title={metaTitle}
         description={workoutDescription}
@@ -220,9 +223,28 @@ const WorkoutDetail = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 mb-24">
           <WorkoutPreview workout={workout} blurred={true} />
           
+          {!isMobile && (
+            <ProductPurchaseSection
+              itemType="workout"
+              itemId={workout.id}
+              itemName={workout.name}
+              price={workout.price || 0}
+              creatorId={workout.creatorId || ''}
+              isPurchasable={canPurchase}
+              hasPurchased={isPurchased}
+              isPurchaseLoading={isPurchaseLoading}
+              isClubShared={isClubShared}
+              sharedWithClubs={sharedWithClubs}
+            />
+          )}
+        </div>
+      )}
+      
+      {shouldShowFixedPurchaseBar && (
+        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 py-0 px-0 max-h-28">
           <ProductPurchaseSection
             itemType="workout"
             itemId={workout.id}
@@ -234,6 +256,7 @@ const WorkoutDetail = () => {
             isPurchaseLoading={isPurchaseLoading}
             isClubShared={isClubShared}
             sharedWithClubs={sharedWithClubs}
+            className="p-0 bg-transparent"
           />
         </div>
       )}

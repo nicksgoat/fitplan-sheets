@@ -22,11 +22,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/useProfile';
 import SocialLinks from '@/components/profile/SocialLinks';
 import { Calendar, Users } from 'lucide-react';
+
 interface WorkoutDetailState {
   id: string | null;
   isLoading: boolean;
   error: string | null;
 }
+
 const CreatorWorkoutDetail = () => {
   const {
     username: rawUsername,
@@ -47,7 +49,6 @@ const CreatorWorkoutDetail = () => {
     error: null
   });
 
-  // Always define all hooks at the top level to maintain consistent hook call order
   const {
     workout,
     loading: workoutLoading,
@@ -59,19 +60,16 @@ const CreatorWorkoutDetail = () => {
     profile: creatorProfile
   } = useProfile(creatorId);
 
-  // Always call hooks regardless of user state to maintain consistent hook call order
   const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
   const isPurchased = purchaseData.data?.isPurchased || false;
   const isClubShared = purchaseData.data?.isClubShared || false;
   const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
   const isPurchaseLoading = purchaseData.isLoading;
 
-  // Define socialImageUrl at the top level outside of conditionals
   const creatorName = creatorInfo?.name || username || '';
   const workoutName = workout?.name || '';
   const socialImageUrl = creatorProfile?.avatar_url || `${window.location.origin}/api/og-image?title=${encodeURIComponent(workoutName)}&creator=${encodeURIComponent(creatorName)}`;
 
-  // Preload image hook - always called regardless of conditions to maintain hook order
   useEffect(() => {
     if (socialImageUrl) {
       const img = new Image();
@@ -79,7 +77,6 @@ const CreatorWorkoutDetail = () => {
     }
   }, [socialImageUrl]);
 
-  // Fetch workout effect
   useEffect(() => {
     if (!username || !workoutSlug) {
       setState(prev => ({
@@ -157,6 +154,7 @@ const CreatorWorkoutDetail = () => {
     };
     getWorkoutBySlug();
   }, [username, workoutSlug, navigate]);
+
   console.log('[CreatorWorkoutDetail]', {
     username,
     workoutId: state.id,
@@ -166,18 +164,23 @@ const CreatorWorkoutDetail = () => {
     isPurchaseLoading,
     sharedWithClubs
   });
+
   const isPageLoading = state.isLoading || workoutLoading || isPurchaseLoading;
   const pageError = state.error || workoutError;
   const handleBackClick = () => navigate(-1);
+
   if (isPageLoading) {
     return <WorkoutDetailSkeleton onBack={handleBackClick} />;
   }
+
   if (pageError || !workout) {
     return <WorkoutDetailError error={pageError || 'Workout not found'} />;
   }
+
   const totalSets = workout.exercises.reduce((acc, exercise) => {
     return acc + (exercise.sets?.length || 0);
   }, 0);
+
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   const hasAccessToWorkout = !workout.isPurchasable || isPurchased || isClubShared;
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
@@ -190,19 +193,37 @@ const CreatorWorkoutDetail = () => {
     return username ? username.substring(0, 2).toUpperCase() : 'FB';
   };
 
-  // Enhanced social sharing metadata
   const socialShareTitle = `${workout.name} by ${creatorName}`;
-  return <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
-      <MetaTags title={socialShareTitle} description={workoutDescription} type="product" url={shareUrl} imageUrl={socialImageUrl} preload={[{
-      href: socialImageUrl,
-      as: 'image'
-    }]} />
+
+  return (
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-32' : ''}`}>
+      <MetaTags 
+        title={socialShareTitle} 
+        description={workoutDescription} 
+        type="product" 
+        url={shareUrl} 
+        imageUrl={socialImageUrl}
+        preload={[{ href: socialImageUrl, as: 'image' }]} 
+      />
       
-      <EnhancedProductSchema name={workout.name} description={workoutDescription} price={workout.price || 0} availability={workout.isPurchasable ? 'InStock' : 'OutOfStock'} category="Workout Program" seller={creatorInfo ? {
-      name: creatorInfo.name
-    } : undefined} url={`${window.location.origin}${shareUrl}`} />
+      <EnhancedProductSchema 
+        name={workout.name} 
+        description={workoutDescription}
+        price={workout.price || 0}
+        availability={workout.isPurchasable ? 'InStock' : 'OutOfStock'}
+        category="Workout Program"
+        seller={creatorInfo ? { name: creatorInfo.name } : undefined}
+        url={`${window.location.origin}${shareUrl}`}
+      />
       
-      <WorkoutDetailHeader title={workout.name} description={`Day ${workout.day} • ${workout.exercises.length} exercises`} shareUrl={shareUrl} shareTitle={socialShareTitle} shareDescription={workoutDescription} onBack={handleBackClick} />
+      <WorkoutDetailHeader 
+        title={workout.name}
+        description={`Day ${workout.day} • ${workout.exercises.length} exercises`}
+        shareUrl={shareUrl}
+        shareTitle={socialShareTitle}
+        shareDescription={workoutDescription}
+        onBack={handleBackClick}
+      />
       
       <Card className="bg-dark-200 border-dark-300 mb-4">
         <CardContent className="p-4 flex items-center">
@@ -222,17 +243,23 @@ const CreatorWorkoutDetail = () => {
         </CardContent>
       </Card>
       
-      {hasAccessToWorkout ? <Card className="bg-dark-200 border-dark-300">
+      {hasAccessToWorkout ? (
+        <Card className="bg-dark-200 border-dark-300">
           <CardContent className="p-4">
             <WorkoutStats workout={workout} totalSets={totalSets} />
             <div className="mt-4">
               <ExerciseList exercises={workout.exercises} />
             </div>
-            <Button className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-4" onClick={() => navigate('/sheets')}>
+            <Button 
+              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-4" 
+              onClick={() => navigate('/sheets')}
+            >
               Start Workout
             </Button>
           </CardContent>
-        </Card> : <div className="space-y-4">
+        </Card>
+      ) : (
+        <div className="space-y-4 mb-24">
           <WorkoutPreview workout={workout} blurred={true} />
           
           <Card className="bg-dark-200 border-dark-300">
@@ -248,18 +275,50 @@ const CreatorWorkoutDetail = () => {
                 </div>
               </div>
               
-              {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && <div className="mt-3">
+              {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
+                <div className="mt-3">
                   <SocialLinks links={creatorProfile.social_links} className="justify-start" />
-                </div>}
+                </div>
+              )}
             </CardContent>
           </Card>
           
-          {!isMobile && <ProductPurchaseSection itemType="workout" itemId={workout.id} itemName={workout.name} price={workout.price || 0} creatorId={workout.creatorId || ''} isPurchasable={canPurchase} hasPurchased={isPurchased} isPurchaseLoading={isPurchaseLoading} isClubShared={isClubShared} sharedWithClubs={sharedWithClubs} />}
-        </div>}
+          {!isMobile && (
+            <ProductPurchaseSection 
+              itemType="workout"
+              itemId={workout.id}
+              itemName={workout.name}
+              price={workout.price || 0}
+              creatorId={workout.creatorId || ''}
+              isPurchasable={canPurchase}
+              hasPurchased={isPurchased}
+              isPurchaseLoading={isPurchaseLoading}
+              isClubShared={isClubShared}
+              sharedWithClubs={sharedWithClubs}
+            />
+          )}
+        </div>
+      )}
       
-      {shouldShowFixedPurchaseBar && <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3 py-0 px-0">
-          <ProductPurchaseSection itemType="workout" itemId={workout.id} itemName={workout.name} price={workout.price || 0} creatorId={workout.creatorId || ''} isPurchasable={canPurchase} hasPurchased={isPurchased} isPurchaseLoading={isPurchaseLoading} isClubShared={isClubShared} sharedWithClubs={sharedWithClubs} className="p-0 bg-transparent" />
-        </div>}
-    </div>;
+      {shouldShowFixedPurchaseBar && (
+        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 py-0 px-0 max-h-28">
+          <ProductPurchaseSection 
+            itemType="workout"
+            itemId={workout.id}
+            itemName={workout.name}
+            price={workout.price || 0}
+            creatorId={workout.creatorId || ''}
+            isPurchasable={canPurchase}
+            hasPurchased={isPurchased}
+            isPurchaseLoading={isPurchaseLoading}
+            isClubShared={isClubShared}
+            sharedWithClubs={sharedWithClubs}
+            className="p-0 bg-transparent"
+          />
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default CreatorWorkoutDetail;

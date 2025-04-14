@@ -7,7 +7,7 @@ interface MobileDeviceFrameProps {
   children: ReactNode;
   title: string;
   subtitle: string;
-  className?: string; // Add className prop
+  className?: string;
 }
 
 const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({ 
@@ -21,7 +21,7 @@ const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({
       <div className="w-[300px] h-[620px] border-[10px] border-dark-100 rounded-[40px] overflow-hidden shadow-xl bg-dark-100">
         <div className="absolute top-[24px] left-1/2 transform -translate-x-1/2 w-[120px] h-[30px] bg-dark-100 rounded-b-xl z-10"></div>
         
-        <div className="w-full h-full bg-black text-white">
+        <div className="w-full h-full bg-black text-white flex flex-col">
           {/* Status bar */}
           <div className="flex justify-between items-center px-5 py-2 text-xs">
             <div>7:18</div>
@@ -43,8 +43,10 @@ const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({
             <p className="text-lg mb-3 text-gray-400 italic">{subtitle}</p>
           </div>
           
-          <ScrollArea className={`h-[500px] ${className}`}>
-            {children}
+          <ScrollArea className={`flex-1 ${className}`}>
+            <div className="pb-32"> {/* Add padding at the bottom for purchase section */}
+              {children}
+            </div>
           </ScrollArea>
         </div>
       </div>
