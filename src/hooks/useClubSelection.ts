@@ -54,12 +54,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Process the response completely avoiding type inference
+      // Avoid TypeScript's deep type checking by treating as simple array
       if (data) {
-        // Convert to any first to bypass TypeScript's deep type checking
-        const rawData: any[] = data as any[];
-        
-        rawData.forEach(item => {
+        // Using simple array iteration without complex typing
+        for (let i = 0; i < data.length; i++) {
+          const item = data[i];
           if (item.clubs) {
             userClubs.push({
               id: item.clubs.id,
@@ -68,7 +67,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
               logo_url: item.clubs.logo_url || undefined
             });
           }
-        });
+        }
       }
       
       setClubs(userClubs);
