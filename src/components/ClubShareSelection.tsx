@@ -51,7 +51,7 @@ export function ClubShareSelection({
       <ClubShareDialog
         open={isOpen}
         onOpenChange={setIsOpen}
-        contentId={contentId}
+        contentId={contentId || ''}
         contentType={contentType}
         selectedClubIds={selectedClubIds}
         onSelectionChange={handleSelectionChange}

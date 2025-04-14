@@ -23,18 +23,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 // Define the ContentType explicitly here instead of importing
 type ContentType = 'workout' | 'program';
 
-interface ClubShareRecord {
-  club_id: string;
-  content_id: string;
-  content_type: ContentType;
-  created_at: string;
-}
-
 interface ClubShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contentId: string;
   contentType: ContentType;
+  selectedClubIds?: string[];
+  onSelectionChange?: (clubIds: string[]) => void;
 }
 
 interface Club {
@@ -45,11 +40,11 @@ interface Club {
   creator_id: string;
 }
 
-export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: ClubShareDialogProps) {
+export function ClubShareDialog({ open, onOpenChange, contentId, contentType, selectedClubIds: initialSelectedClubIds = [], onSelectionChange }: ClubShareDialogProps) {
   const { toast } = useToast()
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>([]);
+  const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>(initialSelectedClubIds);
 
   const { data: clubs, isLoading, isError } = useQuery<Club[]>({
     queryKey: ['creator-clubs', user?.id],
@@ -70,26 +65,83 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
     enabled: !!user?.id
   });
 
-  const shareMutation = useMutation({
-    mutationFn: async (sharingRecords: ClubShareRecord[]) => {
-      // Use a generic RPC call to avoid the type issue with the function name
-      const { data, error } = await supabase
-        .from('club_content')
-        .insert(sharingRecords);
+  // Update local state when initialSelectedClubIds prop changes
+  React.useEffect(() => {
+    if (initialSelectedClubIds) {
+      setSelectedClubIds(initialSelectedClubIds);
+    }
+  }, [initialSelectedClubIds]);
 
-      if (error) {
-        console.error("Error sharing content:", error);
-        throw error;
+  const shareMutation = useMutation({
+    mutationFn: async (clubIds: string[]) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Determine which table to use based on content type
+      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      
+      // First, get existing shares for validation
+      const { data: existingShares, error: fetchError } = await supabase
+        .from(tableName)
+        .select('club_id')
+        .eq(contentIdField, contentId);
+        
+      if (fetchError) {
+        console.error(`Error fetching ${contentType} shares:`, fetchError);
+        throw fetchError;
       }
-      return data;
+
+      const existingClubIds = new Set((existingShares || []).map(share => share.club_id));
+      const sharesToAdd = clubIds.filter(id => !existingClubIds.has(id));
+      
+      // Insert new shares
+      if (sharesToAdd.length > 0) {
+        const sharingRecords = sharesToAdd.map(clubId => ({
+          club_id: clubId,
+          [contentIdField]: contentId,
+          shared_by: user.id
+        }));
+        
+        const { error } = await supabase
+          .from(tableName)
+          .insert(sharingRecords);
+          
+        if (error) {
+          console.error(`Error sharing ${contentType}:`, error);
+          throw error;
+        }
+      }
+      
+      // Handle removals (clubs that were previously shared but now unselected)
+      const clubsToRemove = Array.from(existingClubIds).filter(id => !clubIds.includes(id as string));
+      
+      if (clubsToRemove.length > 0) {
+        const { error } = await supabase
+          .from(tableName)
+          .delete()
+          .eq(contentIdField, contentId)
+          .in('club_id', clubsToRemove);
+          
+        if (error) {
+          console.error(`Error removing ${contentType} shares:`, error);
+          throw error;
+        }
+      }
+      
+      return clubIds;
     },
-    onSuccess: () => {
+    onSuccess: (updatedClubIds) => {
       toast({
         title: "Content Shared!",
         description: "This content has been successfully shared with the selected clubs.",
       })
+      
+      // Call the onSelectionChange callback with updated clubs if provided
+      if (onSelectionChange) {
+        onSelectionChange(updatedClubIds);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['creator-clubs', user?.id] });
-      onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
@@ -110,17 +162,8 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
     });
   };
 
-  const createSharingRecords = (selectedClubIds: string[], contentId: string, contentType: ContentType) => {
-    return selectedClubIds.map(clubId => ({
-      club_id: clubId,
-      content_id: contentId,
-      content_type: contentType,
-      created_at: new Date().toISOString()
-    }));
-  };
-
   const handleShare = async () => {
-    if (!selectedClubIds.length) {
+    if (selectedClubIds.length === 0) {
       toast({
         title: "No Clubs Selected",
         description: "Please select at least one club to share with.",
@@ -129,8 +172,7 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
       return;
     }
 
-    const sharingRecords = createSharingRecords(selectedClubIds, contentId, contentType);
-    shareMutation.mutate(sharingRecords);
+    shareMutation.mutate(selectedClubIds);
   };
 
   return (

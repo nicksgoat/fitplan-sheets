@@ -9,27 +9,7 @@ export interface ShareContentOptions {
   clubIds: string[];
 }
 
-// Define more specific types for the share records
-interface WorkoutShareRecord {
-  club_id: string;
-  shared_by: string;
-  workout_id: string;
-}
-
-interface ProgramShareRecord {
-  club_id: string;
-  shared_by: string;
-  program_id: string;
-}
-
-// Type for sharing operations
-type ShareRecord = WorkoutShareRecord | ProgramShareRecord;
-
-// Type guard to check if we're dealing with workout or program shares
-function isWorkoutShare(contentType: 'workout' | 'program'): contentType is 'workout' {
-  return contentType === 'workout';
-}
-
+// Use more specific table names instead of a generic club_content
 export function useShareWithClubs() {
   const queryClient = useQueryClient();
   
@@ -40,10 +20,11 @@ export function useShareWithClubs() {
         throw new Error('User not authenticated');
       }
       
-      // First, get existing shares for this content
+      // Use the specific table name based on content type
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
+      // First, get existing shares for this content
       const { data: existingShares, error: fetchError } = await supabase
         .from(tableName)
         .select('club_id')
@@ -62,36 +43,19 @@ export function useShareWithClubs() {
       
       // Add new shares
       if (clubsToAdd.length > 0) {
-        if (isWorkoutShare(contentType)) {
-          const sharesToInsert = clubsToAdd.map(clubId => ({
-            club_id: clubId,
-            shared_by: userData.user.id,
-            workout_id: contentId
-          }));
-          
-          const { error: insertError } = await supabase
-            .from('club_shared_workouts')
-            .insert(sharesToInsert as WorkoutShareRecord[]);
-          
-          if (insertError) {
-            console.error(`Error sharing workout with clubs:`, insertError);
-            throw new Error(`Failed to share workout with clubs`);
-          }
-        } else {
-          const sharesToInsert = clubsToAdd.map(clubId => ({
-            club_id: clubId,
-            shared_by: userData.user.id,
-            program_id: contentId
-          }));
-          
-          const { error: insertError } = await supabase
-            .from('club_shared_programs')
-            .insert(sharesToInsert as ProgramShareRecord[]);
-          
-          if (insertError) {
-            console.error(`Error sharing program with clubs:`, insertError);
-            throw new Error(`Failed to share program with clubs`);
-          }
+        const sharesToInsert = clubsToAdd.map(clubId => ({
+          club_id: clubId,
+          shared_by: userData.user.id,
+          [idField]: contentId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from(tableName)
+          .insert(sharesToInsert);
+        
+        if (insertError) {
+          console.error(`Error sharing ${contentType} with clubs:`, insertError);
+          throw new Error(`Failed to share ${contentType} with clubs`);
         }
       }
       

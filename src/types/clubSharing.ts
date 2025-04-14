@@ -7,14 +7,13 @@ export interface Club {
   logo_url?: string;
 }
 
-// Define specific type for workout shares
+// Define specific types for workout and program shares
 export interface WorkoutShareRecord {
   club_id: string;
   shared_by: string;
   workout_id: string;
 }
 
-// Define specific type for program shares
 export interface ProgramShareRecord {
   club_id: string;
   shared_by: string;
