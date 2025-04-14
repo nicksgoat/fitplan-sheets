@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Plus } from 'lucide-react';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+// Define the Club interface more explicitly to prevent circular references
 interface Club {
   id: string;
   name: string;
@@ -14,13 +16,13 @@ interface Club {
   logo_url?: string;
 }
 
-// Define specific type for club member record
+// Define specific type for club member record with explicit club data structure
 interface ClubMemberRecord {
   club_id: string;
   user_id: string;
   role: string;
   status: string;
-  clubs?: Club; // Fix: Use Club directly instead of recursive reference
+  clubs?: Club; // Use Club directly instead of a recursive reference
 }
 
 // Define specific type for workout shares
@@ -102,10 +104,23 @@ export function ClubShareSelection({
       
       if (error) throw error;
       
-      // Transform the data to get clubs
-      const userClubs = data
-        .map(item => item.clubs as Club)
-        .filter(Boolean);
+      // Explicitly type and transform the data to avoid deep type instantiation
+      const userClubs: Club[] = [];
+      
+      // Safely extract club data from the response
+      if (data && Array.isArray(data)) {
+        data.forEach(item => {
+          if (item && item.clubs && typeof item.clubs === 'object') {
+            const club: Club = {
+              id: item.clubs.id,
+              name: item.clubs.name,
+              description: item.clubs.description,
+              logo_url: item.clubs.logo_url
+            };
+            userClubs.push(club);
+          }
+        });
+      }
       
       setClubs(userClubs);
     } catch (error) {
