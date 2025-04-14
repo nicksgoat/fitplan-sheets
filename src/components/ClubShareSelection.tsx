@@ -16,17 +16,27 @@ interface Club {
 }
 
 interface ClubShareSelectionProps {
-  contentId: string;
+  contentId?: string;
   contentType: 'workout' | 'program';
   sharedClubs?: string[];
   onClubsChange?: (clubs: string[]) => void;
+  // Add new prop for consistency with other components
+  onSelectionChange?: (selectedClubs: string[]) => void;
+  selectedClubIds?: string[];
 }
 
-export function ClubShareSelection({ contentId, contentType, sharedClubs = [], onClubsChange }: ClubShareSelectionProps) {
+export function ClubShareSelection({ 
+  contentId, 
+  contentType, 
+  sharedClubs = [], 
+  onClubsChange,
+  onSelectionChange,
+  selectedClubIds: initialSelectedClubIds = []
+}: ClubShareSelectionProps) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(sharedClubs);
+  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(initialSelectedClubIds);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
   useEffect(() => {
@@ -37,8 +47,12 @@ export function ClubShareSelection({ contentId, contentType, sharedClubs = [], o
   
   // Update local state when the prop changes
   useEffect(() => {
-    setSelectedClubIds(sharedClubs);
-  }, [sharedClubs]);
+    if (sharedClubs && sharedClubs.length > 0) {
+      setSelectedClubIds(sharedClubs);
+    } else if (initialSelectedClubIds && initialSelectedClubIds.length > 0) {
+      setSelectedClubIds(initialSelectedClubIds);
+    }
+  }, [sharedClubs, initialSelectedClubIds]);
 
   const loadUserClubs = async () => {
     if (!user) return;
@@ -84,9 +98,24 @@ export function ClubShareSelection({ contentId, contentType, sharedClubs = [], o
       : [...selectedClubIds, clubId];
     
     setSelectedClubIds(newSelection);
+    
+    // Call the selection change handler if provided
+    if (onSelectionChange) {
+      onSelectionChange(newSelection);
+    }
   };
   
   const handleSave = async () => {
+    if (!contentId || !user) {
+      // If contentId is not provided, just close the dialog
+      // This allows the component to be used for selection only
+      if (onSelectionChange) {
+        onSelectionChange(selectedClubIds);
+      }
+      setIsOpen(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // First, let's delete all existing shared entries
@@ -102,11 +131,22 @@ export function ClubShareSelection({ contentId, contentType, sharedClubs = [], o
       
       // Now insert new entries if there are any selected clubs
       if (selectedClubIds.length > 0) {
-        const sharesToCreate = selectedClubIds.map(clubId => ({
-          [idField]: contentId,
-          club_id: clubId,
-          shared_by: user?.id
-        }));
+        const sharesToCreate = selectedClubIds.map(clubId => {
+          // Create properly typed objects for each type
+          if (contentType === 'workout') {
+            return {
+              workout_id: contentId,
+              club_id: clubId,
+              shared_by: user.id
+            };
+          } else {
+            return {
+              program_id: contentId,
+              club_id: clubId,
+              shared_by: user.id
+            };
+          }
+        });
         
         const { error: insertError } = await supabase
           .from(tableName)

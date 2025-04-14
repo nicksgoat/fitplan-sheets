@@ -84,17 +84,20 @@ const PurchasesTab = () => {
         return {
           id: workout.id,
           title: workout.name,
-          type: 'workout',
+          type: 'workout' as const,
           description: `Purchased workout`,
           creator: creator?.display_name || creator?.username || 'Unknown Creator',
           creatorId: workout.weeks?.programs?.user_id,
           creatorUsername: creator?.username,
-          difficulty: 'intermediate',
+          difficulty: 'intermediate' as const,
           duration: '',
           price: workout.price,
           isPurchasable: workout.is_purchasable,
           purchased: true,
-          tags: []
+          tags: [],
+          // Adding required properties for ItemType
+          imageUrl: '', // Default empty string
+          isFavorite: false // Default false
         } as ItemType;
       });
     
@@ -138,17 +141,20 @@ const PurchasesTab = () => {
         return {
           id: program.id,
           title: program.name,
-          type: 'program',
+          type: 'program' as const,
           description: `Purchased program`,
           creator: creator?.display_name || creator?.username || 'Unknown Creator',
           creatorId: program.user_id,
           creatorUsername: creator?.username,
-          difficulty: 'intermediate',
+          difficulty: 'intermediate' as const,
           duration: '',
           price: program.price,
           isPurchasable: program.is_purchasable,
           purchased: true,
-          tags: []
+          tags: [],
+          // Adding required properties for ItemType
+          imageUrl: '', // Default empty string
+          isFavorite: false // Default false
         } as ItemType;
       });
     
@@ -207,17 +213,20 @@ const PurchasesTab = () => {
           return {
             id: workout.id,
             title: workout.name,
-            type: 'workout',
+            type: 'workout' as const,
             description: `From club membership`,
             creator: creator?.display_name || creator?.username || 'Unknown Creator',
             creatorId: workout.weeks?.programs?.user_id,
             creatorUsername: creator?.username,
-            difficulty: 'intermediate',
+            difficulty: 'intermediate' as const,
             duration: '',
             price: workout.price,
             isPurchasable: workout.is_purchasable,
             viaClub: true,
-            tags: []
+            tags: [],
+            // Adding required properties for ItemType
+            imageUrl: '', // Default empty string
+            isFavorite: false // Default false
           } as ItemType;
         });
       
@@ -260,17 +269,20 @@ const PurchasesTab = () => {
           return {
             id: program.id,
             title: program.name,
-            type: 'program',
+            type: 'program' as const,
             description: `From club membership`,
             creator: creator?.display_name || creator?.username || 'Unknown Creator',
             creatorId: program.user_id,
             creatorUsername: creator?.username,
-            difficulty: 'intermediate',
+            difficulty: 'intermediate' as const,
             duration: '',
             price: program.price,
             isPurchasable: program.is_purchasable,
             viaClub: true,
-            tags: []
+            tags: [],
+            // Adding required properties for ItemType
+            imageUrl: '', // Default empty string
+            isFavorite: false // Default false
           } as ItemType;
         });
       

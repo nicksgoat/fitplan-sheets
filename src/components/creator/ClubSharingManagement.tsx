@@ -86,8 +86,8 @@ export function ClubSharingManagement({
             <ClubShareSelection
               contentId={contentId}
               contentType={contentType}
-              onSelectionChange={setSelectedClubs}
               selectedClubIds={existingShares ? existingShares.map(share => share.club_id) : []}
+              onSelectionChange={setSelectedClubs}
             />
             
             <div className="flex justify-end gap-2 pt-4">

@@ -157,8 +157,8 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
             <div className="space-y-2 pt-2">
               <ClubShareSelection
                 contentType={isSingleWorkout ? "workout" : "program"}
-                onSelectionChange={setSelectedClubs}
                 selectedClubIds={selectedClubs}
+                onSelectionChange={setSelectedClubs}
               />
             </div>
 

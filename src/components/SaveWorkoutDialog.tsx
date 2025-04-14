@@ -102,8 +102,8 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
           <div className="pt-2">
             <ClubShareSelection
               contentType="workout"
-              onSelectionChange={setSelectedClubs}
               selectedClubIds={selectedClubs}
+              onSelectionChange={setSelectedClubs}
             />
           </div>
         </div>
