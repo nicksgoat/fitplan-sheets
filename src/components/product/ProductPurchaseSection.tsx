@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,7 @@ import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Check, Shield, Tag, CreditCard } from 'lucide-react';
+import { Check, Shield, Tag, CreditCard, Lock, Globe } from 'lucide-react';
 import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
 import { toast } from 'sonner';
 
@@ -25,7 +24,6 @@ interface ProductPurchaseSectionProps {
   className?: string;
 }
 
-// Simplified version until we have the database table
 interface ReferralCodeData {
   code: string;
   discount_percent: number;
@@ -59,9 +57,7 @@ export function ProductPurchaseSection({
   const [isApplePaySupported, setIsApplePaySupported] = useState(false);
 
   useEffect(() => {
-    // Check if Apple Pay is supported
     const checkApplePaySupport = () => {
-      // Check if we're on a device and browser that supports Apple Pay
       const isAppleDevice = /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       
@@ -70,7 +66,6 @@ export function ProductPurchaseSection({
     
     checkApplePaySupport();
     
-    // Check URL for referral code
     const urlParams = new URLSearchParams(window.location.search);
     const refFromUrl = urlParams.get('ref');
     if (refFromUrl) {
@@ -89,8 +84,6 @@ export function ProductPurchaseSection({
     setIsValidatingCode(true);
     
     try {
-      // Temporary mock validation until we have the database table
-      // This will be replaced with a real database query once tables are created
       if (code === 'DEMO10') {
         const mockCode: ReferralCodeData = {
           code: 'DEMO10',
@@ -101,10 +94,8 @@ export function ProductPurchaseSection({
           usage_count: 5
         };
         
-        // Valid code
         setValidReferralCode(mockCode);
         
-        // Calculate discounted price
         if (mockCode.discount_percent > 0) {
           const discount = price * (mockCode.discount_percent / 100);
           setDiscountedPrice(price - discount);
@@ -127,7 +118,6 @@ export function ProductPurchaseSection({
   const handlePurchase = (paymentMethod: 'standard' | 'apple_pay' = 'standard') => {
     if (!price) return;
     
-    // Get referral source if available
     const urlParams = new URLSearchParams(window.location.search);
     const referralSource = urlParams.get('ref') || urlParams.get('source') || undefined;
     
@@ -310,12 +300,23 @@ export function ProductPurchaseSection({
           </div>
         )}
         
-        <div className="flex justify-center items-center text-xs text-gray-400">
-          <Shield className="h-3 w-3 mr-1 text-gray-400" />
-          <p>Secure payment • Instant access</p>
+        <div className="flex justify-center items-center text-xs text-gray-400 mt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Shield className="h-3 w-3 mr-1 text-green-500" />
+              <span>Secure payment</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Lock className="h-3 w-3 mr-1 text-blue-500" />
+              <span>Instant access</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Globe className="h-3 w-3 mr-1 text-purple-500" />
+              <span>Global support</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
