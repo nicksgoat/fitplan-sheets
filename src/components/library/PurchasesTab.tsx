@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Workout } from '@/types/workout';
 import ContentGrid from '../ui/ContentGrid';
 import { ItemType } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -98,7 +97,7 @@ const PurchasesTab = () => {
           // Add required properties for ItemType
           imageUrl: '', // Default empty string
           isFavorite: false // Default false
-        };
+        } as ItemType;
       });
     
     setWorkouts(transformedWorkouts);
@@ -155,7 +154,7 @@ const PurchasesTab = () => {
           // Add required properties for ItemType
           imageUrl: '', // Default empty string
           isFavorite: false // Default false
-        };
+        } as ItemType;
       });
     
     setPrograms(transformedPrograms);
@@ -227,7 +226,7 @@ const PurchasesTab = () => {
             // Add required properties for ItemType
             imageUrl: '', // Default empty string
             isFavorite: false // Default false
-          };
+          } as ItemType;
         });
       
       // Add shared workouts to the existing workouts, avoiding duplicates
@@ -283,7 +282,7 @@ const PurchasesTab = () => {
             // Add required properties for ItemType
             imageUrl: '', // Default empty string
             isFavorite: false // Default false
-          };
+          } as ItemType;
         });
       
       // Add shared programs to the existing programs, avoiding duplicates
