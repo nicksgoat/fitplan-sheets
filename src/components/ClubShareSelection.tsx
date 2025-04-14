@@ -16,11 +16,23 @@ interface ClubShareSelectionProps {
   selectedClubIds?: string[];
 }
 
-// Define a simple interface without recursive references to prevent deep instantiation
-interface ClubMemberWithClub {
+// Use a flat structure for the intermediate data to avoid recursive type issues
+interface ClubMemberData {
   club_id: string;
   role: string;
-  club: Club;
+  club: {
+    id: string;
+    name: string;
+    description: string;
+    created_at: string;
+    created_by: string;
+    banner_url?: string;
+    logo_url?: string;
+    club_type: string;
+    membership_type: string;
+    premium_price?: number;
+    creator_id?: string;
+  }
 }
 
 export function ClubShareSelection({
@@ -49,8 +61,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Explicitly cast the data to the interface type to avoid deep instantiation
-      return (data as unknown as ClubMemberWithClub[]).map(item => item.club);
+      // First cast to a simple intermediate type, then map to the Club type
+      return (data as unknown as ClubMemberData[]).map(item => item.club as Club);
     },
   });
 
