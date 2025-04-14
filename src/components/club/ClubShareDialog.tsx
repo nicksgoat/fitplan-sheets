@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ClubShareDialogProps } from '@/types/clubSharing';
+import { ClubShareDialogProps, WorkoutShareRecord, ProgramShareRecord } from '@/types/clubSharing';
 
 interface Club {
   id: string;
@@ -92,30 +92,36 @@ export function ClubShareDialog({
       
       // Insert new shares
       if (sharesToAdd.length > 0) {
-        const sharingRecords = sharesToAdd.map(clubId => {
-          // Create properly typed record based on content type
-          if (contentType === 'workout') {
-            return {
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            };
-          } else {
-            return {
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            };
-          }
-        });
-        
-        const { error } = await supabase
-          .from(tableName)
-          .insert(sharingRecords);
+        if (contentType === 'workout') {
+          const sharingRecords: WorkoutShareRecord[] = sharesToAdd.map(clubId => ({
+            club_id: clubId,
+            workout_id: contentId,
+            shared_by: user.id
+          }));
           
-        if (error) {
-          console.error(`Error sharing ${contentType}:`, error);
-          throw error;
+          const { error } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharingRecords);
+            
+          if (error) {
+            console.error(`Error sharing workout:`, error);
+            throw error;
+          }
+        } else {
+          const sharingRecords: ProgramShareRecord[] = sharesToAdd.map(clubId => ({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          }));
+          
+          const { error } = await supabase
+            .from('club_shared_programs')
+            .insert(sharingRecords);
+            
+          if (error) {
+            console.error(`Error sharing program:`, error);
+            throw error;
+          }
         }
       }
       

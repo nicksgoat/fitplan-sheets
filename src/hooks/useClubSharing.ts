@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { WorkoutShareRecord, ProgramShareRecord } from '@/types/clubSharing';
 
 export interface ShareContentOptions {
   contentId: string;
@@ -43,19 +44,36 @@ export function useShareWithClubs() {
       
       // Add new shares
       if (clubsToAdd.length > 0) {
-        const sharesToInsert = clubsToAdd.map(clubId => ({
-          club_id: clubId,
-          shared_by: userData.user.id,
-          [idField]: contentId
-        }));
-        
-        const { error: insertError } = await supabase
-          .from(tableName)
-          .insert(sharesToInsert);
-        
-        if (insertError) {
-          console.error(`Error sharing ${contentType} with clubs:`, insertError);
-          throw new Error(`Failed to share ${contentType} with clubs`);
+        if (contentType === 'workout') {
+          const sharesToInsert: WorkoutShareRecord[] = clubsToAdd.map(clubId => ({
+            club_id: clubId,
+            shared_by: userData.user.id,
+            workout_id: contentId
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharesToInsert);
+          
+          if (insertError) {
+            console.error(`Error sharing workout with clubs:`, insertError);
+            throw new Error(`Failed to share workout with clubs`);
+          }
+        } else {
+          const sharesToInsert: ProgramShareRecord[] = clubsToAdd.map(clubId => ({
+            club_id: clubId,
+            shared_by: userData.user.id,
+            program_id: contentId
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('club_shared_programs')
+            .insert(sharesToInsert);
+          
+          if (insertError) {
+            console.error(`Error sharing program with clubs:`, insertError);
+            throw new Error(`Failed to share program with clubs`);
+          }
         }
       }
       
