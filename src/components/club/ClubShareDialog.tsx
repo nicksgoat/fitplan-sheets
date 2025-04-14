@@ -79,12 +79,13 @@ export function ClubShareDialog({
       // Now insert new entries if there are any selected clubs
       if (selectedIds.length > 0) {
         if (contentType === 'workout') {
-          // Create a properly typed array of objects to insert
-          const sharesToCreate = selectedIds.map(clubId => ({
-            workout_id: contentId,
-            club_id: clubId,
-            shared_by: user.id
-          }));
+          // Simple array of objects with explicit type
+          const sharesToCreate: { workout_id: string; club_id: string; shared_by: string }[] = 
+            selectedIds.map(clubId => ({
+              workout_id: contentId,
+              club_id: clubId,
+              shared_by: user.id
+            }));
           
           const { error: insertError } = await supabase
             .from('club_shared_workouts')
@@ -92,12 +93,13 @@ export function ClubShareDialog({
           
           if (insertError) throw insertError;
         } else {
-          // Create a properly typed array of objects to insert
-          const sharesToCreate = selectedIds.map(clubId => ({
-            program_id: contentId,
-            club_id: clubId,
-            shared_by: user.id
-          }));
+          // Simple array of objects with explicit type
+          const sharesToCreate: { program_id: string; club_id: string; shared_by: string }[] = 
+            selectedIds.map(clubId => ({
+              program_id: contentId,
+              club_id: clubId,
+              shared_by: user.id
+            }));
           
           const { error: insertError } = await supabase
             .from('club_shared_programs')
