@@ -3,22 +3,20 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/ui/use-toast';
-import { WorkoutShareRecord, ProgramShareRecord } from '@/types/clubSharing';
+
+// Simplified share record types to avoid excessive type nesting
+type ShareInput = {
+  contentId: string;
+  contentType: 'workout' | 'program';
+  clubIds: string[];
+};
 
 export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      clubIds,
-      contentId,
-      contentType
-    }: {
-      clubIds: string[];
-      contentId: string;
-      contentType: 'workout' | 'program';
-    }) => {
+    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // Determine which table to use based on content type
@@ -42,7 +40,7 @@ export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
       // Insert new shares
       if (sharesToAdd.length > 0) {
         if (contentType === 'workout') {
-          const sharingRecords: WorkoutShareRecord[] = sharesToAdd.map(clubId => ({
+          const sharingRecords = sharesToAdd.map(clubId => ({
             club_id: clubId,
             workout_id: contentId,
             shared_by: user.id
@@ -57,7 +55,7 @@ export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
             throw error;
           }
         } else {
-          const sharingRecords: ProgramShareRecord[] = sharesToAdd.map(clubId => ({
+          const sharingRecords = sharesToAdd.map(clubId => ({
             club_id: clubId,
             program_id: contentId,
             shared_by: user.id

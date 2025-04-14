@@ -14,6 +14,10 @@ interface ClubMemberWithClub {
     name: string;
     description?: string | null;
     logo_url?: string | null;
+    created_at: string;
+    created_by: string;
+    club_type: 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
+    membership_type: 'free' | 'premium' | 'vip';
   } | null;
 }
 
@@ -42,7 +46,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
             id,
             name,
             description,
-            logo_url
+            logo_url,
+            created_at,
+            created_by,
+            club_type,
+            membership_type
           )
         `)
         .eq('user_id', user.id)
@@ -62,7 +70,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
               id: item.clubs.id,
               name: item.clubs.name,
               description: item.clubs.description || undefined,
-              logo_url: item.clubs.logo_url || undefined
+              logo_url: item.clubs.logo_url || undefined,
+              created_at: item.clubs.created_at,
+              created_by: item.clubs.created_by,
+              club_type: item.clubs.club_type,
+              membership_type: item.clubs.membership_type
             });
           }
         }

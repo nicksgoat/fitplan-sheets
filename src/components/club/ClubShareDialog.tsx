@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,14 +28,21 @@ export function ClubShareDialog({
   
   // Use our custom hooks
   const { 
-    selectedClubIds, 
     clubs, 
+    selectedClubIds, 
     isLoading, 
-    isError, 
-    handleCheckboxChange 
+    loadUserClubs, 
+    toggleClub
   } = useClubSelection(initialSelectedClubIds);
   
   const shareWithClub = useShareWithClub(onSelectionChange);
+
+  // Load user clubs when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadUserClubs();
+    }
+  }, [open, loadUserClubs]);
 
   const handleShare = async () => {
     if (selectedClubIds.length === 0) {
@@ -68,9 +75,8 @@ export function ClubShareDialog({
           <ClubsList
             clubs={clubs}
             isLoading={isLoading}
-            isError={isError}
             selectedClubIds={selectedClubIds}
-            onClubToggle={handleCheckboxChange}
+            onClubToggle={toggleClub}
           />
         </div>
         

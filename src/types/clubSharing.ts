@@ -1,10 +1,17 @@
 
-// Define shared types for club sharing functionality
+import { Club as ClubBase } from '@/types/club';
+
+// We're defining a simplified Club type that's compatible with the full Club type
 export interface Club {
   id: string;
   name: string;
   description?: string;
   logo_url?: string;
+  // Adding the required fields from ClubBase to make it compatible
+  created_at: string;
+  created_by: string;
+  club_type: 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
+  membership_type: 'free' | 'premium' | 'vip';
 }
 
 // Define specific types for workout and program shares
