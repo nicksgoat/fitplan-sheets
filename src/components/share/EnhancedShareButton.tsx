@@ -24,7 +24,8 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   
-  const fullUrl = `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`;
+  // Make sure url is properly formatted
+  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`;
   
   const shareData = {
     title,

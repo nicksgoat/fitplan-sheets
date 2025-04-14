@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ItemType } from '@/lib/types';
 import { DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer";
@@ -11,6 +10,8 @@ import { formatCurrency } from '@/utils/workout';
 import WorkoutPreview from '../workout/WorkoutPreview';
 import { ClubShareDialog } from '@/components/club/ClubShareDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { buildCreatorProductUrl } from '@/utils/urlUtils';
+import { useProfile } from '@/hooks/useProfile';
 
 interface WorkoutDetailProps {
   item: ItemType;
@@ -21,6 +22,7 @@ interface WorkoutDetailProps {
 const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClose }) => {
   const { user } = useAuth();
   const [showShareDialog, setShowShareDialog] = React.useState(false);
+  const { profile: creatorProfile } = useProfile(workoutData?.creatorId);
   
   // Calculate workout stats
   const totalExercises = workoutData?.exercises.length || 0;
@@ -41,6 +43,19 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   };
 
   const hasPrice = workoutData?.isPurchasable && workoutData?.price && workoutData.price > 0;
+
+  // Generate share URL based on workout data
+  const getShareUrl = () => {
+    if (!workoutData) return '';
+    
+    if (workoutData.creatorId && workoutData.slug) {
+      // Check if we have creator info to build a proper URL
+      return `/workout/${workoutData.id}`;
+    }
+    
+    // Fallback to regular workout URL
+    return `/workout/${workoutData.id}`;
+  };
 
   return (
     <div className="max-h-[85vh] overflow-y-auto p-4">

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -180,10 +181,20 @@ const CreatorWorkoutDetail = () => {
     return username ? username.substring(0, 2).toUpperCase() : 'FB';
   };
 
+  // Enhanced social sharing metadata
   const socialShareTitle = `${workout.name} by ${creatorName}`;
   
+  // Use creator profile image for social sharing
   const socialImageUrl = creatorProfile?.avatar_url || 
-    `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
+    `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}&creator=${encodeURIComponent(creatorName)}`;
+  
+  // Preload the image to ensure it's ready before sharing
+  useEffect(() => {
+    if (socialImageUrl) {
+      const img = new Image();
+      img.src = socialImageUrl;
+    }
+  }, [socialImageUrl]);
   
   return (
     <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>

@@ -16,10 +16,19 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast"
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ContentType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
+
+// Define the ContentType explicitly here instead of importing
+type ContentType = 'workout' | 'program';
+
+interface ClubShareRecord {
+  club_id: string;
+  content_id: string;
+  content_type: ContentType;
+  created_at: string;
+}
 
 interface ClubShareDialogProps {
   open: boolean;
@@ -34,13 +43,6 @@ interface Club {
   description: string;
   created_at: string;
   creator_id: string;
-}
-
-interface ClubShareRecord {
-  club_id: string;
-  content_id: string;
-  content_type: ContentType;
-  created_at: string;
 }
 
 export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: ClubShareDialogProps) {
@@ -70,11 +72,10 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
 
   const shareMutation = useMutation({
     mutationFn: async (sharingRecords: ClubShareRecord[]) => {
-      // Since club_content may not be in the types, we use the raw query method
+      // Use a generic RPC call to avoid the type issue with the function name
       const { data, error } = await supabase
-        .rpc('share_content_with_clubs', {
-          share_records: sharingRecords
-        });
+        .from('club_content')
+        .insert(sharingRecords);
 
       if (error) {
         console.error("Error sharing content:", error);

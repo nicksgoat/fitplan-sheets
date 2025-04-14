@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Helmet } from 'react-helmet';
 
 interface MetaTagsProps {
   title: string;
@@ -22,10 +23,17 @@ const MetaTags: React.FC<MetaTagsProps> = ({
   type = 'website',
   preload = [],
 }) => {
-  const fullUrl = url ? `${window.location.origin}${url}` : window.location.href;
+  // Use full URLs for social sharing
+  const fullUrl = url ? 
+    (url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`) : 
+    window.location.href;
+  
+  const fullImageUrl = imageUrl ? 
+    (imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`) : 
+    'https://lovable.dev/opengraph-image-p98pqg.png';
   
   return (
-    <>
+    <Helmet>
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
@@ -35,7 +43,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
       <meta property="og:url" content={fullUrl} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={imageUrl} />
+      <meta property="og:image" content={fullImageUrl} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       
@@ -44,7 +52,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
       <meta property="twitter:url" content={fullUrl} />
       <meta property="twitter:title" content={title} />
       <meta property="twitter:description" content={description} />
-      <meta property="twitter:image" content={imageUrl} />
+      <meta property="twitter:image" content={fullImageUrl} />
       
       {/* Mobile specific */}
       <meta name="mobile-web-app-capable" content="yes" />
@@ -62,7 +70,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
           type={resource.type}
         />
       ))}
-    </>
+    </Helmet>
   );
 };
 
