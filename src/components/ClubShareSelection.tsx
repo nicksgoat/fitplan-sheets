@@ -14,7 +14,8 @@ interface SimpleClub {
   name: string;
   description: string;
   created_at: string;
-  created_by: string;
+  // Make created_by optional since it might not be in the returned data
+  created_by?: string;
   banner_url?: string;
   logo_url?: string;
   club_type: string;
@@ -56,8 +57,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Use type assertion without recursive references
-      return (data as { club_id: string; role: string; club: SimpleClub }[])
+      // Use a double type assertion to avoid the recursive reference issue
+      return (data as unknown as { club_id: string; role: string; club: SimpleClub }[])
         .map(item => item.club);
     },
   });
