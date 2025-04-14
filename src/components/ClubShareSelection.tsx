@@ -42,7 +42,9 @@ export function ClubShareSelection({
         return [];
       }
 
-      return (data.map(item => item.club) as Club[]) || [];
+      // Use type assertion after mapping, not inside the generic parameter
+      const clubArray = data.map(item => item.club) as Club[];
+      return clubArray || [];
     },
   });
 

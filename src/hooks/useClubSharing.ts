@@ -22,6 +22,9 @@ interface ProgramShareRecord {
   program_id: string;
 }
 
+// Type for sharing operations
+type ShareRecord = WorkoutShareRecord | ProgramShareRecord;
+
 // Type guard to check if we're dealing with workout or program shares
 function isWorkoutShare(contentType: 'workout' | 'program'): contentType is 'workout' {
   return contentType === 'workout';
@@ -60,7 +63,7 @@ export function useShareWithClubs() {
       // Add new shares
       if (clubsToAdd.length > 0) {
         if (isWorkoutShare(contentType)) {
-          const sharesToInsert: WorkoutShareRecord[] = clubsToAdd.map(clubId => ({
+          const sharesToInsert = clubsToAdd.map(clubId => ({
             club_id: clubId,
             shared_by: userData.user.id,
             workout_id: contentId
@@ -68,14 +71,14 @@ export function useShareWithClubs() {
           
           const { error: insertError } = await supabase
             .from('club_shared_workouts')
-            .insert(sharesToInsert as any[]);
+            .insert(sharesToInsert as WorkoutShareRecord[]);
           
           if (insertError) {
             console.error(`Error sharing workout with clubs:`, insertError);
             throw new Error(`Failed to share workout with clubs`);
           }
         } else {
-          const sharesToInsert: ProgramShareRecord[] = clubsToAdd.map(clubId => ({
+          const sharesToInsert = clubsToAdd.map(clubId => ({
             club_id: clubId,
             shared_by: userData.user.id,
             program_id: contentId
@@ -83,7 +86,7 @@ export function useShareWithClubs() {
           
           const { error: insertError } = await supabase
             .from('club_shared_programs')
-            .insert(sharesToInsert as any[]);
+            .insert(sharesToInsert as ProgramShareRecord[]);
           
           if (insertError) {
             console.error(`Error sharing program with clubs:`, insertError);
