@@ -10,7 +10,8 @@ type ShareInput = {
   clubIds: string[];
 };
 
-type MutationResult = string[]; // Define a simple return type to avoid infinite type instantiation
+// Define explicit return type to avoid infinite type instantiation
+type MutationResult = string[];
 
 export function useShareWithClubs() {
   const { user } = useAuth();
@@ -38,29 +39,36 @@ export function useShareWithClubs() {
       // Insert new shares if any clubs are selected
       if (clubIds.length > 0) {
         // Create the records with proper typing based on content type
-        let sharingRecords;
-        
         if (contentType === 'workout') {
-          sharingRecords = clubIds.map(clubId => ({
+          const sharingRecords = clubIds.map(clubId => ({
             club_id: clubId,
             workout_id: contentId,
             shared_by: user.id
           }));
+          
+          const { error: shareError } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharingRecords);
+            
+          if (shareError) {
+            console.error(`Error sharing workout:`, shareError);
+            throw shareError;
+          }
         } else {
-          sharingRecords = clubIds.map(clubId => ({
+          const sharingRecords = clubIds.map(clubId => ({
             club_id: clubId,
             program_id: contentId,
             shared_by: user.id
           }));
-        }
-        
-        const { error: shareError } = await supabase
-          .from(tableName)
-          .insert(sharingRecords);
           
-        if (shareError) {
-          console.error(`Error sharing ${contentType}:`, shareError);
-          throw shareError;
+          const { error: shareError } = await supabase
+            .from('club_shared_programs')
+            .insert(sharingRecords);
+            
+          if (shareError) {
+            console.error(`Error sharing program:`, shareError);
+            throw shareError;
+          }
         }
       }
       
