@@ -54,10 +54,10 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Explicitly cast data to avoid deep type checking
+      // Explicitly type the response to avoid deep type checking
       const responseData = data as unknown as ClubMemberResponse[];
       
-      if (responseData) {
+      if (responseData?.length) {
         // Map the response data to Club objects
         for (const item of responseData) {
           if (item.clubs) {
