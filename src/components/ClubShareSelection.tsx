@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -41,8 +42,11 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Map to extract just the club data
-      return data.map(item => item.club as Club);
+      // Explicitly type the return value to avoid deep instantiation
+      return data.map(item => {
+        const club = item.club as unknown;
+        return club as Club;
+      });
     },
   });
 
