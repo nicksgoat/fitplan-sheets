@@ -12,60 +12,105 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    // Create Supabase admin client with service role key to bypass RLS
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     
-    // Execute the SQL to create the function
-    const { data, error } = await adminSupabase.rpc('run_sql_query', {
+    console.log("Creating SQL functions for mobile API...");
+    
+    // Create get_accessible_workouts function
+    const { error: workoutsFnError } = await adminSupabase.rpc('run_sql_query', {
       query: `
-        CREATE OR REPLACE FUNCTION public.run_sql_query(query text)
-        RETURNS jsonb
+        CREATE OR REPLACE FUNCTION public.get_accessible_workouts(
+          user_id uuid,
+          p_limit integer DEFAULT 10,
+          p_offset integer DEFAULT 0
+        )
+        RETURNS SETOF workouts
         LANGUAGE plpgsql
         SECURITY DEFINER
-        AS $$
+        SET search_path = public
+        AS $function$
         DECLARE
-          result JSONB;
+          workout_record workouts%rowtype;
         BEGIN
-          EXECUTE 'WITH query_result AS (' || query || ') 
-                   SELECT jsonb_agg(row_to_json(query_result)) FROM query_result' INTO result;
-          RETURN COALESCE(result, '[]'::jsonb);
-        EXCEPTION WHEN OTHERS THEN
-          RAISE EXCEPTION 'SQL Error: %', SQLERRM;
+          -- Return workouts created by the user
+          FOR workout_record IN 
+            SELECT w.* FROM workouts w
+            JOIN weeks wk ON w.week_id = wk.id
+            JOIN programs p ON wk.program_id = p.id
+            WHERE p.user_id = user_id
+            LIMIT p_limit OFFSET p_offset
+          LOOP
+            RETURN NEXT workout_record;
+          END LOOP;
+
+          -- Return workouts purchased by the user
+          FOR workout_record IN 
+            SELECT w.* FROM workouts w
+            JOIN workout_purchases wp ON w.id = wp.workout_id
+            WHERE wp.user_id = user_id
+            AND wp.status = 'completed'
+            AND NOT EXISTS ( -- Avoid duplicates from above
+              SELECT 1 FROM weeks wk
+              JOIN programs p ON wk.program_id = p.id
+              WHERE wk.id = w.week_id AND p.user_id = user_id
+            )
+            LIMIT p_limit OFFSET p_offset
+          LOOP
+            RETURN NEXT workout_record;
+          END LOOP;
+          
+          -- Return workouts shared with clubs the user is a member of
+          FOR workout_record IN 
+            SELECT w.* FROM workouts w
+            JOIN club_shared_workouts csw ON w.id = csw.workout_id
+            JOIN club_members cm ON csw.club_id = cm.club_id
+            WHERE cm.user_id = user_id
+            AND NOT EXISTS ( -- Avoid duplicates from above
+              SELECT 1 FROM weeks wk
+              JOIN programs p ON wk.program_id = p.id
+              WHERE wk.id = w.week_id AND p.user_id = user_id
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM workout_purchases wp
+              WHERE wp.workout_id = w.id AND wp.user_id = user_id AND wp.status = 'completed'
+            )
+            LIMIT p_limit OFFSET p_offset
+          LOOP
+            RETURN NEXT workout_record;
+          END LOOP;
+          
+          RETURN;
         END;
-        $$;
+        $function$;
       `
     });
     
-    if (error) {
-      console.error("Error creating SQL function:", error);
-      throw error;
+    if (workoutsFnError) {
+      console.error("Error creating get_accessible_workouts function:", workoutsFnError);
+      throw workoutsFnError;
     }
     
-    console.log("SQL function created successfully");
+    console.log("SQL functions created successfully");
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "SQL function created successfully"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      JSON.stringify({ success: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Error creating SQL function:', error);
+    console.error("Error:", error);
     
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: error.message || 'An error occurred creating SQL function'
+        error: error.message || 'Failed to create SQL functions'
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400
+        status: 500
       }
     );
   }
