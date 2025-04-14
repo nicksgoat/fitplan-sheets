@@ -1,84 +1,107 @@
 
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Club } from '@/types/club';
 
-type ShareInput = {
-  contentId: string;
+interface ShareOptions {
   contentType: 'workout' | 'program';
-  clubIds: string[];
-};
-
-// Define explicit return type to avoid infinite type instantiation
-type MutationResult = string[];
-
-export function useShareWithClubs() {
-  const { user } = useAuth();
-  
-  return useMutation<MutationResult, Error, ShareInput>({
-    mutationFn: async ({ clubIds, contentId, contentType }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      if (!contentId) throw new Error('Content ID is required');
-
-      // Determine which table to use based on content type
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
-      
-      // Clear existing shares first
-      const { error: clearError } = await supabase
-        .from(tableName)
-        .delete()
-        .eq(contentIdField, contentId);
-      
-      if (clearError) {
-        console.error(`Error clearing existing ${contentType} shares:`, clearError);
-        throw clearError;
-      }
-      
-      // Insert new shares if any clubs are selected
-      if (clubIds.length > 0) {
-        // Create the records with proper typing based on content type
-        if (contentType === 'workout') {
-          const sharingRecords = clubIds.map(clubId => ({
-            club_id: clubId,
-            workout_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error: shareError } = await supabase
-            .from('club_shared_workouts')
-            .insert(sharingRecords);
-            
-          if (shareError) {
-            console.error(`Error sharing workout:`, shareError);
-            throw shareError;
-          }
-        } else {
-          const sharingRecords = clubIds.map(clubId => ({
-            club_id: clubId,
-            program_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error: shareError } = await supabase
-            .from('club_shared_programs')
-            .insert(sharingRecords);
-            
-          if (shareError) {
-            console.error(`Error sharing program:`, shareError);
-            throw shareError;
-          }
-        }
-      }
-      
-      return clubIds;
-    },
-    onSuccess: () => {
-      toast.success("Content has been shared with your selected clubs");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to share content with clubs");
-    }
-  });
+  contentId: string;
 }
+
+export const useClubSharing = () => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
+  const [availableClubs, setAvailableClubs] = useState<Club[]>([]);
+
+  const loadAvailableClubs = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Get clubs where user is an admin or moderator
+      const { data: clubsData, error } = await supabase
+        .from('club_members')
+        .select(`
+          club_id,
+          role,
+          clubs:club_id (
+            id,
+            name,
+            logo_url,
+            description,
+            creator_id
+          )
+        `)
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'moderator', 'owner']);
+      
+      if (error) throw error;
+      
+      // Format clubs data
+      const formatted = clubsData
+        .filter(item => item.clubs) // Filter out any null clubs
+        .map(item => ({
+          id: item.clubs!.id,
+          name: item.clubs!.name,
+          logo_url: item.clubs!.logo_url,
+          description: item.clubs!.description,
+          creator_id: item.clubs!.creator_id,
+          role: item.role
+        }));
+      
+      setAvailableClubs(formatted);
+    } catch (err) {
+      console.error('Error loading clubs:', err);
+      toast.error('Failed to load clubs');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const shareWithClubs = async ({ contentType, contentId }: ShareOptions) => {
+    if (!user || selectedClubs.length === 0) return { success: false };
+    
+    setIsLoading(true);
+    try {
+      const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      
+      // Prepare inserts for all selected clubs
+      const inserts = selectedClubs.map(clubId => ({
+        club_id: clubId,
+        shared_by: user.id,
+        [idField]: contentId
+      }));
+      
+      // Insert all in one batch
+      const { data, error } = await supabase
+        .from(table)
+        .upsert(inserts, { onConflict: `club_id,${idField}` })
+        .select();
+      
+      if (error) throw error;
+      
+      toast.success(`Successfully shared with ${selectedClubs.length} club${selectedClubs.length > 1 ? 's' : ''}`);
+      
+      return { success: true, data };
+    } catch (err: any) {
+      console.error(`Error sharing ${contentType}:`, err);
+      toast.error(`Failed to share: ${err.message}`);
+      return { success: false, error: err };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return {
+    isLoading,
+    availableClubs,
+    selectedClubs,
+    setSelectedClubs,
+    loadAvailableClubs,
+    shareWithClubs,
+  };
+};

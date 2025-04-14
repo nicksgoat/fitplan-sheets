@@ -6,20 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Copy, CheckCircle, X, Tag, Percent, Calendar, Hash, Edit2 } from 'lucide-react';
+import { Loader2, Plus, Copy, CheckCircle, X, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/utils/workout';
 import { format } from 'date-fns';
 
 export const ReferralManagement: React.FC = () => {
-  const { referralCodes, referralStats, isLoading, isStatsLoading, createReferralCode } = useReferralCodes();
+  const { 
+    referralCodes, 
+    referralStats, 
+    isLoading, 
+    isStatsLoading, 
+    createReferralCode, 
+    DISCOUNT_PERCENT, 
+    COMMISSION_PERCENT 
+  } = useReferralCodes();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newCode, setNewCode] = useState('');
   const [description, setDescription] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(5);
-  const [commissionPercent, setCommissionPercent] = useState(10);
-  const [expiryDate, setExpiryDate] = useState('');
-  const [maxUses, setMaxUses] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const handleCreateCode = async () => {
@@ -31,20 +35,12 @@ export const ReferralManagement: React.FC = () => {
     try {
       await createReferralCode.mutateAsync({
         code: newCode.trim(),
-        description: description.trim() || undefined,
-        discount_percent: discountPercent,
-        commission_percent: commissionPercent,
-        expiry_date: expiryDate || undefined,
-        max_uses: maxUses ? parseInt(maxUses) : undefined
+        description: description.trim() || undefined
       });
       
       // Reset form and close dialog on success
       setNewCode('');
       setDescription('');
-      setDiscountPercent(5);
-      setCommissionPercent(10);
-      setExpiryDate('');
-      setMaxUses('');
       setIsCreateDialogOpen(false);
     } catch (error) {
       // Error is handled in the mutation
@@ -138,7 +134,7 @@ export const ReferralManagement: React.FC = () => {
             <CardHeader>
               <CardTitle>Your Referral Codes</CardTitle>
               <CardDescription className="text-gray-400">
-                Share these codes with others to earn commission on their purchases
+                Share these codes with others to earn {COMMISSION_PERCENT}% commission on their purchases
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -151,14 +147,13 @@ export const ReferralManagement: React.FC = () => {
                       <th className="px-4 py-3 text-center">Discount</th>
                       <th className="px-4 py-3 text-center">Commission</th>
                       <th className="px-4 py-3 text-center">Usage</th>
-                      <th className="px-4 py-3 text-left">Expires</th>
                       <th className="px-4 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-dark-300">
                     {referralCodes?.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                        <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                           No referral codes created yet
                         </td>
                       </tr>
@@ -181,13 +176,7 @@ export const ReferralManagement: React.FC = () => {
                             {code.commission_percent}%
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {code.usage_count}{code.max_uses ? `/${code.max_uses}` : ''}
-                          </td>
-                          <td className="px-4 py-3">
-                            {code.expiry_date ? 
-                              format(new Date(code.expiry_date), 'MMM d, yyyy') : 
-                              'Never'
-                            }
+                            {code.usage_count}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-center space-x-2">
@@ -201,13 +190,6 @@ export const ReferralManagement: React.FC = () => {
                                   <CheckCircle className="h-4 w-4 text-green-500" /> : 
                                   <Copy className="h-4 w-4" />
                                 }
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                title="Edit code"
-                              >
-                                <Edit2 className="h-4 w-4" />
                               </Button>
                               {code.is_active && (
                                 <Button 
@@ -290,13 +272,14 @@ export const ReferralManagement: React.FC = () => {
         </>
       )}
       
-      {/* Create Referral Code Dialog */}
+      {/* Create Referral Code Dialog - Simplified */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="bg-dark-100 border-dark-300 text-white">
           <DialogHeader>
             <DialogTitle>Create Referral Code</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Create a new referral code for others to use during checkout
+              Create a new referral code for others to use during checkout. 
+              Your referrals will get a {DISCOUNT_PERCENT}% discount and you'll earn {COMMISSION_PERCENT}% commission.
             </DialogDescription>
           </DialogHeader>
           
@@ -323,81 +306,6 @@ export const ReferralManagement: React.FC = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 className="bg-dark-200 border-dark-300"
               />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="discount">Customer Discount (%)</Label>
-                <div className="flex">
-                  <Input
-                    id="discount"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Number(e.target.value))}
-                    className="bg-dark-200 border-dark-300"
-                  />
-                  <div className="flex items-center justify-center bg-dark-300 px-3 rounded-r-md">
-                    <Percent className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="commission">Your Commission (%)</Label>
-                <div className="flex">
-                  <Input
-                    id="commission"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={commissionPercent}
-                    onChange={(e) => setCommissionPercent(Number(e.target.value))}
-                    className="bg-dark-200 border-dark-300"
-                  />
-                  <div className="flex items-center justify-center bg-dark-300 px-3 rounded-r-md">
-                    <Percent className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="expiry">Expiration Date (optional)</Label>
-                <div className="flex">
-                  <Input
-                    id="expiry"
-                    type="date"
-                    value={expiryDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    className="bg-dark-200 border-dark-300"
-                  />
-                  <div className="flex items-center justify-center bg-dark-300 px-3 rounded-r-md">
-                    <Calendar className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="maxUses">Max Uses (optional)</Label>
-                <div className="flex">
-                  <Input
-                    id="maxUses"
-                    type="number"
-                    min="1"
-                    placeholder="Unlimited"
-                    value={maxUses}
-                    onChange={(e) => setMaxUses(e.target.value)}
-                    className="bg-dark-200 border-dark-300"
-                  />
-                  <div className="flex items-center justify-center bg-dark-300 px-3 rounded-r-md">
-                    <Hash className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           

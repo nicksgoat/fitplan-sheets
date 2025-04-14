@@ -5,16 +5,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
+// Constants for hardcoded values
+const DISCOUNT_PERCENT = 10;  // Fixed 10% discount for customers
+const COMMISSION_PERCENT = 15; // Fixed 15% commission for creators
+
 export interface ReferralCode {
   id: string;
   code: string;
   description: string | null;
-  discount_percent: number;
-  commission_percent: number;
+  discount_percent: number; // This will always be DISCOUNT_PERCENT
+  commission_percent: number; // This will always be COMMISSION_PERCENT
   is_active: boolean;
   created_at: string;
-  expiry_date: string | null;
-  max_uses: number | null;
   usage_count: number;
 }
 
@@ -47,24 +49,20 @@ const mockReferralCodes: ReferralCode[] = [
     id: '1',
     code: 'WELCOME10',
     description: 'Welcome discount for new users',
-    discount_percent: 10,
-    commission_percent: 5,
+    discount_percent: DISCOUNT_PERCENT,
+    commission_percent: COMMISSION_PERCENT,
     is_active: true,
     created_at: new Date().toISOString(),
-    expiry_date: null,
-    max_uses: null,
     usage_count: 3
   },
   {
     id: '2',
     code: 'SUMMER20',
     description: 'Summer promotion',
-    discount_percent: 20,
-    commission_percent: 10,
+    discount_percent: DISCOUNT_PERCENT,
+    commission_percent: COMMISSION_PERCENT,
     is_active: true,
     created_at: new Date().toISOString(),
-    expiry_date: '2025-08-31T00:00:00.000Z',
-    max_uses: 50,
     usage_count: 12
   }
 ];
@@ -81,8 +79,8 @@ const mockReferralStats: ReferralStats = {
       referral_code_id: '1',
       referral_codes: { code: 'WELCOME10' },
       purchase_amount: 49.99,
-      commission_amount: 2.50,
-      discount_amount: 5.00,
+      commission_amount: 7.50, // 15% of $49.99
+      discount_amount: 5.00,   // 10% of $49.99
       created_at: new Date().toISOString(),
       product_type: 'workout',
       product_id: 'abc123'
@@ -92,8 +90,8 @@ const mockReferralStats: ReferralStats = {
       referral_code_id: '2',
       referral_codes: { code: 'SUMMER20' },
       purchase_amount: 99.99,
-      commission_amount: 10.00,
-      discount_amount: 20.00,
+      commission_amount: 15.00, // 15% of $99.99
+      discount_amount: 10.00,   // 10% of $99.99
       created_at: new Date(Date.now() - 86400000).toISOString(),  // Yesterday
       product_type: 'program',
       product_id: 'def456'
@@ -129,15 +127,11 @@ export function useReferralCodes() {
     enabled: !!user
   });
   
-  // Create new referral code
+  // Create new referral code with fixed discount and commission percentages
   const createReferralCode = useMutation({
     mutationFn: async (codeData: {
       code: string;
       description?: string;
-      discount_percent?: number;
-      commission_percent?: number;
-      expiry_date?: string;
-      max_uses?: number;
     }) => {
       if (!user) throw new Error('Not authenticated');
       
@@ -149,17 +143,15 @@ export function useReferralCodes() {
         throw new Error('Code already exists. Please choose a different code.');
       }
       
-      // Return a mocked new code
+      // Return a mocked new code with fixed discount and commission
       return {
         id: String(Date.now()),
         code: codeData.code,
         description: codeData.description || null,
-        discount_percent: codeData.discount_percent || 5,
-        commission_percent: codeData.commission_percent || 10,
+        discount_percent: DISCOUNT_PERCENT,
+        commission_percent: COMMISSION_PERCENT,
         is_active: true,
         created_at: new Date().toISOString(),
-        expiry_date: codeData.expiry_date || null,
-        max_uses: codeData.max_uses || null,
         usage_count: 0
       };
     },
@@ -179,6 +171,8 @@ export function useReferralCodes() {
     isLoading,
     isStatsLoading,
     error,
-    createReferralCode
+    createReferralCode,
+    DISCOUNT_PERCENT,
+    COMMISSION_PERCENT
   };
 }

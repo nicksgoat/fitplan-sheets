@@ -8,6 +8,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Constants for hardcoded values
+const DISCOUNT_PERCENT = 10;  // Fixed 10% discount for customers
+const COMMISSION_PERCENT = 15; // Fixed 15% commission for creators
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -144,24 +148,34 @@ serve(async (req) => {
     // Calculate platform fee (10%) and potential discount
     let finalPrice = price;
     let discountAmount = 0;
+    let commissionAmount = 0;
 
-    // Apply referral code discount (will be validated properly once DB tables exist)
+    // Apply referral code discount (fixed percentage)
     if (referralCode) {
-      // In future: look up and validate the referral code in the database
-      // For now, just apply a fixed 10% discount if a code is provided
-      const discountPercent = 10;
-      discountAmount = finalPrice * (discountPercent / 100);
+      // Apply the fixed discount percentage
+      discountAmount = finalPrice * (DISCOUNT_PERCENT / 100);
       finalPrice -= discountAmount;
-      console.log(`Applied discount for code ${referralCode}: $${discountAmount}`);
+      
+      // Calculate commission amount (on the original price)
+      commissionAmount = price * (COMMISSION_PERCENT / 100);
+      
+      console.log(`Applied discount for code ${referralCode}: $${discountAmount.toFixed(2)}`);
+      console.log(`Commission for referrer: $${commissionAmount.toFixed(2)}`);
     }
 
     const platformFee = finalPrice * 0.1;
-    const creatorEarnings = finalPrice - platformFee;
+    let creatorEarnings = finalPrice - platformFee;
+    
+    // Subtract commission amount from creator earnings if there's a referral code
+    if (commissionAmount > 0) {
+      creatorEarnings -= commissionAmount;
+    }
 
     console.log("Creating checkout session with prices:", { 
       total: finalPrice, 
       originalPrice: price,
       discount: discountAmount,
+      commission: commissionAmount,
       platformFee, 
       creatorEarnings 
     });
@@ -196,12 +210,15 @@ serve(async (req) => {
           originalPrice: price.toFixed(2),
           finalPrice: finalPrice.toFixed(2),
           discountAmount: discountAmount.toFixed(2),
+          commissionAmount: commissionAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
           creatorEarnings: creatorEarnings.toFixed(2),
           isGuest: isGuest ? 'true' : 'false',
           guestEmail: isGuest ? guestEmail : undefined,
           referralSource: referralSource || 'direct',
-          referralCode: referralCode || undefined
+          referralCode: referralCode || undefined,
+          discountPercent: DISCOUNT_PERCENT,
+          commissionPercent: COMMISSION_PERCENT
         },
       });
 

@@ -1,106 +1,177 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Club } from '@/types/clubSharing';
 
-// Define a simpler interface for the Supabase response
-interface ClubMemberWithClub {
-  club_id: string;
-  role: string;
-  clubs: Club | null;
+// Constants for hardcoded values
+const DISCOUNT_PERCENT = 10;  // Fixed 10% discount for customers
+const COMMISSION_PERCENT = 15; // Fixed 15% commission for creators
+
+export interface ReferralCode {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_percent: number; // This will always be DISCOUNT_PERCENT
+  commission_percent: number; // This will always be COMMISSION_PERCENT
+  is_active: boolean;
+  created_at: string;
+  usage_count: number;
 }
 
-export function useClubSelection(initialSelectedIds: string[] = []) {
+export interface ReferralTransaction {
+  id: string;
+  referral_code_id: string;
+  referral_codes: {
+    code: string;
+  };
+  purchase_amount: number;
+  commission_amount: number;
+  discount_amount: number;
+  created_at: string;
+  product_type: 'workout' | 'program' | 'club';
+  product_id: string;
+}
+
+export interface ReferralStats {
+  totalReferralCodes: number;
+  totalReferrals: number;
+  totalCommissionEarnings: number;
+  totalDiscountGiven: number;
+  referralSummary: ReferralCode[];
+  recentTransactions: ReferralTransaction[];
+}
+
+// Mock data until database tables exist
+const mockReferralCodes: ReferralCode[] = [
+  {
+    id: '1',
+    code: 'WELCOME10',
+    description: 'Welcome discount for new users',
+    discount_percent: DISCOUNT_PERCENT,
+    commission_percent: COMMISSION_PERCENT,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    usage_count: 3
+  },
+  {
+    id: '2',
+    code: 'SUMMER20',
+    description: 'Summer promotion',
+    discount_percent: DISCOUNT_PERCENT,
+    commission_percent: COMMISSION_PERCENT,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    usage_count: 12
+  }
+];
+
+const mockReferralStats: ReferralStats = {
+  totalReferralCodes: 2,
+  totalReferrals: 15,
+  totalCommissionEarnings: 45.75,
+  totalDiscountGiven: 95.50,
+  referralSummary: mockReferralCodes,
+  recentTransactions: [
+    {
+      id: '1',
+      referral_code_id: '1',
+      referral_codes: { code: 'WELCOME10' },
+      purchase_amount: 49.99,
+      commission_amount: 7.50, // 15% of $49.99
+      discount_amount: 5.00,   // 10% of $49.99
+      created_at: new Date().toISOString(),
+      product_type: 'workout',
+      product_id: 'abc123'
+    },
+    {
+      id: '2',
+      referral_code_id: '2',
+      referral_codes: { code: 'SUMMER20' },
+      purchase_amount: 99.99,
+      commission_amount: 15.00, // 15% of $99.99
+      discount_amount: 10.00,   // 10% of $99.99
+      created_at: new Date(Date.now() - 86400000).toISOString(),  // Yesterday
+      product_type: 'program',
+      product_id: 'def456'
+    }
+  ]
+};
+
+export function useReferralCodes() {
   const { user } = useAuth();
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(initialSelectedIds);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const queryClient = useQueryClient();
   
-  useEffect(() => {
-    setSelectedClubIds(initialSelectedIds);
-  }, [initialSelectedIds]);
+  // Get all referral codes for the current creator
+  const { data: referralCodes, isLoading, error } = useQuery({
+    queryKey: ['referral-codes', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      // Return mock data until tables exist
+      return mockReferralCodes;
+    },
+    enabled: !!user
+  });
   
-  const loadUserClubs = useCallback(async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      // Get clubs where the user is admin or owner
-      const { data, error } = await supabase
-        .from('club_members')
-        .select(`
-          club_id,
-          role,
-          clubs:clubs(
-            id,
-            name,
-            description,
-            logo_url,
-            created_at,
-            created_by,
-            club_type,
-            membership_type
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .in('role', ['owner', 'admin']);
+  // Get referral statistics
+  const { data: referralStats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['referral-stats', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
       
-      if (error) throw error;
+      // Return mock data until tables exist
+      return mockReferralStats;
+    },
+    enabled: !!user
+  });
+  
+  // Create new referral code with fixed discount and commission percentages
+  const createReferralCode = useMutation({
+    mutationFn: async (codeData: {
+      code: string;
+      description?: string;
+    }) => {
+      if (!user) throw new Error('Not authenticated');
       
-      // Transform the data into Club array
-      const userClubs: Club[] = [];
+      // Simulate a delay for the create operation
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (data && Array.isArray(data)) {
-        // Use explicit type checking to ensure clubs property exists and is valid
-        for (const item of data) {
-          // Check that clubs is a valid object with expected properties
-          const clubData = item.clubs;
-          if (clubData && 
-              typeof clubData === 'object' && 
-              'id' in clubData && 
-              'name' in clubData) {
-            
-            userClubs.push({
-              id: clubData.id,
-              name: clubData.name,
-              description: clubData.description || undefined,
-              logo_url: clubData.logo_url || undefined,
-              created_at: clubData.created_at || '',
-              created_by: clubData.created_by || '',
-              club_type: clubData.club_type || 'fitness',
-              membership_type: clubData.membership_type || 'free'
-            });
-          }
-        }
+      // Validate that code doesn't already exist
+      if (mockReferralCodes.some(code => code.code === codeData.code)) {
+        throw new Error('Code already exists. Please choose a different code.');
       }
       
-      setClubs(userClubs);
-    } catch (error) {
-      console.error("Error loading clubs:", error);
-      toast.error("Failed to load your clubs");
-    } finally {
-      setIsLoading(false);
+      // Return a mocked new code with fixed discount and commission
+      return {
+        id: String(Date.now()),
+        code: codeData.code,
+        description: codeData.description || null,
+        discount_percent: DISCOUNT_PERCENT,
+        commission_percent: COMMISSION_PERCENT,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        usage_count: 0
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['referral-codes', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['referral-stats', user?.id] });
+      toast.success('Referral code created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create referral code: ${error.message}`);
     }
-  }, [user]);
-  
-  const toggleClub = useCallback((clubId: string) => {
-    const newSelection = selectedClubIds.includes(clubId)
-      ? selectedClubIds.filter(id => id !== clubId)
-      : [...selectedClubIds, clubId];
-    
-    setSelectedClubIds(newSelection);
-    return newSelection;
-  }, [selectedClubIds]);
+  });
   
   return {
-    clubs,
-    selectedClubIds,
-    setSelectedClubIds,
+    referralCodes,
+    referralStats,
     isLoading,
-    loadUserClubs,
-    toggleClub
+    isStatsLoading,
+    error,
+    createReferralCode,
+    DISCOUNT_PERCENT,
+    COMMISSION_PERCENT
   };
 }
