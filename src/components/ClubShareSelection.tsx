@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Club } from "@/types/club";
 
 // Define a simplified type to avoid recursive references
-interface SimpleClub {
+// This type will only be used internally in this component
+type SimpleClub = {
   id: string;
   name: string;
   description: string;
@@ -22,7 +22,7 @@ interface SimpleClub {
   membership_type: string;
   premium_price?: number;
   creator_id?: string;
-}
+};
 
 interface ClubShareSelectionProps {
   contentId?: string;
@@ -57,27 +57,24 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Use a more explicit type casting approach to avoid recursive types
+      // Extract club data and manually build the SimpleClub objects
+      // to completely avoid any potential type recursion
       return (data || []).map(item => {
-        // First cast to any to break the type reference chain
-        const clubData = item.club as any;
+        const club = item.club as Record<string, any>;
         
-        // Then cast to our simplified type
-        const simpleClub: SimpleClub = {
-          id: clubData.id,
-          name: clubData.name,
-          description: clubData.description,
-          created_at: clubData.created_at,
-          created_by: clubData.created_by,
-          banner_url: clubData.banner_url,
-          logo_url: clubData.logo_url,
-          club_type: clubData.club_type,
-          membership_type: clubData.membership_type,
-          premium_price: clubData.premium_price,
-          creator_id: clubData.creator_id
-        };
-        
-        return simpleClub;
+        return {
+          id: club.id,
+          name: club.name,
+          description: club.description,
+          created_at: club.created_at,
+          created_by: club.created_by,
+          banner_url: club.banner_url,
+          logo_url: club.logo_url,
+          club_type: club.club_type,
+          membership_type: club.membership_type,
+          premium_price: club.premium_price,
+          creator_id: club.creator_id
+        } as SimpleClub;
       });
     },
   });
