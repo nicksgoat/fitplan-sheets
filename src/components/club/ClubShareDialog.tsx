@@ -8,6 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
+// Define a simplified interface for shared clubs
+interface SharedClub {
+  club_id: string;
+  club?: { name: string } | null;
+}
+
 // Define specific type for the club share dialog props
 interface ClubShareDialogProps {
   open: boolean;

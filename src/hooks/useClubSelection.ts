@@ -5,18 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Club } from '@/types/clubSharing';
 
-// Define a simpler interface for club member query result
-interface ClubMemberQueryResult {
-  club_id: string;
-  role: string;
-  clubs: {
-    id: string;
-    name: string;
-    description?: string;
-    logo_url?: string;
-  } | null;
-}
-
 export function useClubSelection(initialSelectedIds: string[] = []) {
   const { user } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -33,7 +21,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
     setIsLoading(true);
     try {
       // Get clubs where the user is admin or owner
-      const { data: rawData, error } = await supabase
+      const { data, error } = await supabase
         .from('club_members')
         .select(`
           club_id,
@@ -51,22 +39,19 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       
       if (error) throw error;
       
-      // Transform the data into Club array - use explicit typing to avoid deep instantiation
+      // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Use type assertion to explicitly type the data and avoid deep instantiation
-      const data = rawData as any[];
-      
+      // Use type assertion to avoid TypeScript's deep inferencing
       if (data && Array.isArray(data)) {
-        data.forEach(item => {
+        (data as any[]).forEach(item => {
           if (item.clubs) {
-            const club: Club = {
+            userClubs.push({
               id: item.clubs.id,
               name: item.clubs.name,
               description: item.clubs.description,
               logo_url: item.clubs.logo_url
-            };
-            userClubs.push(club);
+            });
           }
         });
       }
