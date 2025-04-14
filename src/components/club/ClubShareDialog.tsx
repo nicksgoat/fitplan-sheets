@@ -84,6 +84,7 @@ export function ClubShareDialog({
       
       // Now insert new entries if there are any selected clubs
       if (selectedIds.length > 0) {
+        // Using explicit type declarations to avoid deep nesting issues
         if (contentType === 'workout') {
           const sharesToCreate = selectedIds.map(clubId => ({
             workout_id: contentId,

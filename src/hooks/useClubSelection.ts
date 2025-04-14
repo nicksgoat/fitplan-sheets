@@ -55,7 +55,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       const userClubs: Club[] = [];
       
       // Explicitly type the response to avoid deep type checking
-      const responseData = data as unknown as ClubMemberResponse[];
+      const responseData = data as ClubMemberResponse[];
       
       if (responseData?.length) {
         // Map the response data to Club objects
