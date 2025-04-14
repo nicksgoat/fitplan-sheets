@@ -58,7 +58,13 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
         for (const item of data) {
           // Check that clubs is a valid object with expected properties
           const clubData = item.clubs;
-          if (clubData && typeof clubData === 'object' && 'id' in clubData && 'name' in clubData) {
+          if (clubData && 
+              typeof clubData === 'object' && 
+              'id' in clubData && 
+              'name' in clubData && 
+              clubData.id && 
+              clubData.name) {
+            
             userClubs.push({
               id: clubData.id,
               name: clubData.name,

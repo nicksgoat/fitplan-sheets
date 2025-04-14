@@ -10,11 +10,13 @@ type ShareInput = {
   clubIds: string[];
 };
 
+type MutationResult = string[]; // Define a simple return type to avoid infinite type instantiation
+
 export function useShareWithClubs() {
   const { user } = useAuth();
   
-  return useMutation({
-    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
+  return useMutation<MutationResult, Error, ShareInput>({
+    mutationFn: async ({ clubIds, contentId, contentType }) => {
       if (!user?.id) throw new Error('User not authenticated');
       if (!contentId) throw new Error('Content ID is required');
 
@@ -35,22 +37,22 @@ export function useShareWithClubs() {
       
       // Insert new shares if any clubs are selected
       if (clubIds.length > 0) {
-        const sharingRecords = clubIds.map(clubId => {
-          // Create the proper record with the correct field based on content type
-          if (contentType === 'workout') {
-            return {
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            };
-          } else {
-            return {
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            };
-          }
-        });
+        // Create the records with proper typing based on content type
+        let sharingRecords;
+        
+        if (contentType === 'workout') {
+          sharingRecords = clubIds.map(clubId => ({
+            club_id: clubId,
+            workout_id: contentId,
+            shared_by: user.id
+          }));
+        } else {
+          sharingRecords = clubIds.map(clubId => ({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          }));
+        }
         
         const { error: shareError } = await supabase
           .from(tableName)
@@ -67,7 +69,7 @@ export function useShareWithClubs() {
     onSuccess: () => {
       toast.success("Content has been shared with your selected clubs");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to share content with clubs");
     }
   });

@@ -11,7 +11,7 @@ type ShareInput = {
   clubIds: string[];
 };
 
-// Explicitly define the return type for the mutation to avoid infinite type instantiation
+// Explicitly define the return type to avoid infinite type instantiation
 type ShareMutationResult = string[];
 
 export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
@@ -105,7 +105,7 @@ export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
       
       queryClient.invalidateQueries({ queryKey: ['creator-clubs', user?.id] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Sharing Failed",
         description: error.message || "Failed to share content with clubs.",
