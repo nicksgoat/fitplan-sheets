@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Club } from '@/types/clubSharing';
 
-// Define type for club member query result
+// Define a simpler interface for club member query result
 interface ClubMemberQueryResult {
   club_id: string;
   role: string;
@@ -27,7 +27,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
     setSelectedClubIds(initialSelectedIds);
   }, [initialSelectedIds]);
   
-  const loadUserClubs = async () => {
+  const loadUserClubs = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -51,11 +51,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       
       if (error) throw error;
       
-      // Transform the data into Club array
+      // Transform the data into Club array - use explicit typing to avoid deep instantiation
       const userClubs: Club[] = [];
       
       if (data && Array.isArray(data)) {
-        // Type assertion to avoid deep instantiation issues
+        // Cast the data to our simplified type
         const typedData = data as ClubMemberQueryResult[];
         
         typedData.forEach(item => {
@@ -78,16 +78,16 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
   
-  const toggleClub = (clubId: string) => {
+  const toggleClub = useCallback((clubId: string) => {
     const newSelection = selectedClubIds.includes(clubId)
       ? selectedClubIds.filter(id => id !== clubId)
       : [...selectedClubIds, clubId];
     
     setSelectedClubIds(newSelection);
     return newSelection;
-  };
+  }, [selectedClubIds]);
   
   return {
     clubs,
