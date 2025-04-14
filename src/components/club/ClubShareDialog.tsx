@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { ClubShareDialogProps } from '@/types/clubSharing';
 import { useClubSelection } from '@/hooks/useClubSelection';
 import { useShareWithClubs } from '@/hooks/useClubSharing';
@@ -24,7 +24,6 @@ export function ClubShareDialog({
   selectedClubIds: initialSelectedClubIds = [], 
   onSelectionChange 
 }: ClubShareDialogProps) {
-  const { toast } = useToast();
   
   // Use our custom hooks
   const { 
@@ -35,7 +34,7 @@ export function ClubShareDialog({
     toggleClub
   } = useClubSelection(initialSelectedClubIds);
   
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
 
   // Load user clubs when dialog opens
   useEffect(() => {
@@ -46,19 +45,21 @@ export function ClubShareDialog({
 
   const handleShare = async () => {
     if (selectedClubIds.length === 0) {
-      toast({
-        title: "No Clubs Selected",
-        description: "Please select at least one club to share with.",
-        variant: "destructive",
-      });
+      toast.error("Please select at least one club to share with.");
       return;
     }
 
-    shareWithClubs.mutate({
+    shareWithClubsMutation.mutate({
       contentId,
       contentType,
       clubIds: selectedClubIds
     });
+
+    if (onSelectionChange) {
+      onSelectionChange(selectedClubIds);
+    }
+    
+    onOpenChange(false);
   };
 
   return (
@@ -82,8 +83,8 @@ export function ClubShareDialog({
         
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleShare} disabled={shareWithClubs.isPending}>
-            {shareWithClubs.isPending ? "Sharing..." : "Share"}
+          <AlertDialogAction onClick={handleShare} disabled={shareWithClubsMutation.isPending}>
+            {shareWithClubsMutation.isPending ? "Sharing..." : "Share"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

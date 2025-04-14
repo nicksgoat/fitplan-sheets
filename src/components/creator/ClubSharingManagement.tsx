@@ -23,7 +23,7 @@ export function ClubSharingManagement({
   onClose
 }: ClubSharingManagementProps) {
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
   
   // Fetch existing shares
   const { data: existingShares, isLoading } = useQuery({
@@ -55,7 +55,7 @@ export function ClubSharingManagement({
   
   const handleSaveSharing = async () => {
     try {
-      await shareWithClubs.mutateAsync({
+      await shareWithClubsMutation.mutateAsync({
         contentId,
         contentType,
         clubIds: selectedClubs
@@ -99,10 +99,10 @@ export function ClubSharingManagement({
               </Button>
               <Button
                 onClick={handleSaveSharing}
-                disabled={shareWithClubs.isPending}
+                disabled={shareWithClubsMutation.isPending}
                 className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
               >
-                {shareWithClubs.isPending ? "Saving..." : "Save Sharing Settings"}
+                {shareWithClubsMutation.isPending ? "Saving..." : "Save Sharing Settings"}
               </Button>
             </div>
           </>

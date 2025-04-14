@@ -22,7 +22,7 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
   
   // Get the current workout
   const workout = program?.workouts.find(w => w.id === workoutId);
@@ -56,7 +56,7 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
         
         // If workout was saved successfully and clubs are selected, share with clubs
         if (selectedClubs.length > 0) {
-          await shareWithClubs.mutateAsync({
+          await shareWithClubsMutation.mutateAsync({
             contentId: savedId,
             contentType: 'workout',
             clubIds: selectedClubs

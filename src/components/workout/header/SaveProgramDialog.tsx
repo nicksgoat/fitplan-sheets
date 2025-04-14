@@ -25,7 +25,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const { program } = useWorkout();
   const { saveProgram, saveWorkout } = useLibrary();
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
 
   // Check if we're saving a single workout or a full program
   const isSingleWorkout = program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1;
@@ -83,7 +83,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
         
         // If content was saved successfully and clubs are selected, share with clubs
         if (savedId && selectedClubs.length > 0) {
-          await shareWithClubs.mutateAsync({
+          await shareWithClubsMutation.mutateAsync({
             contentId: savedId,
             contentType: isSingleWorkout ? 'workout' : 'program',
             clubIds: selectedClubs
