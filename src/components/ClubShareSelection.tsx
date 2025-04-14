@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Club } from "@/types/club";
 
-// Define a simplified Club type to avoid recursive references
+// Define a simplified type to avoid recursive references
 interface SimpleClub {
   id: string;
   name: string;
   description: string;
   created_at: string;
-  // Make created_by optional since it might not be in the returned data
   created_by?: string;
   banner_url?: string;
   logo_url?: string;
@@ -57,9 +57,28 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Use a double type assertion to avoid the recursive reference issue
-      return (data as unknown as { club_id: string; role: string; club: SimpleClub }[])
-        .map(item => item.club);
+      // Use a more explicit type casting approach to avoid recursive types
+      return (data || []).map(item => {
+        // First cast to any to break the type reference chain
+        const clubData = item.club as any;
+        
+        // Then cast to our simplified type
+        const simpleClub: SimpleClub = {
+          id: clubData.id,
+          name: clubData.name,
+          description: clubData.description,
+          created_at: clubData.created_at,
+          created_by: clubData.created_by,
+          banner_url: clubData.banner_url,
+          logo_url: clubData.logo_url,
+          club_type: clubData.club_type,
+          membership_type: clubData.membership_type,
+          premium_price: clubData.premium_price,
+          creator_id: clubData.creator_id
+        };
+        
+        return simpleClub;
+      });
     },
   });
 
