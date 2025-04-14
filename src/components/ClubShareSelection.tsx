@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -42,9 +41,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Use type assertion after mapping, not inside the generic parameter
-      const clubArray = data.map(item => item.club) as Club[];
-      return clubArray || [];
+      // Map to extract just the club data
+      return data.map(item => item.club as Club);
     },
   });
 

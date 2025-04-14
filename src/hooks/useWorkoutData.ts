@@ -35,6 +35,7 @@ import {
 } from './workout/useCircuitOperations';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useClubContentAccess } from './useClubContentAccess';
 
 // Export all workout hooks - using explicit exports to avoid conflicts
 export {
@@ -81,7 +82,6 @@ export {
 
 // Define hook for checking workout purchases
 export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) => {
-  const { useClubContentAccess } = require('./useClubContentAccess');
   const clubAccess = useClubContentAccess(workoutId, 'workout');
 
   return useQuery({
@@ -123,7 +123,6 @@ export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) =>
 
 // Define hook for checking program purchases
 export const useHasUserPurchasedProgram = (userId: string, programId: string) => {
-  const { useClubContentAccess } = require('./useClubContentAccess');
   const clubAccess = useClubContentAccess(programId, 'program');
   
   return useQuery({
