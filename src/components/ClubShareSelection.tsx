@@ -16,7 +16,7 @@ interface ClubShareSelectionProps {
   selectedClubIds?: string[];
 }
 
-interface ClubMember {
+interface ClubMemberWithClub {
   club_id: string;
   role: string;
   club: Club;
@@ -48,8 +48,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Cast data to appropriate type and extract the club
-      return (data as ClubMember[]).map(item => item.club);
+      // Use a type assertion to handle the complex nested type
+      return (data as ClubMemberWithClub[]).map(item => item.club);
     },
   });
 
