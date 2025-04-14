@@ -16,6 +16,7 @@ interface ShareButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
+  image?: string;
 }
 
 const ShareButton = ({ 
@@ -24,10 +25,11 @@ const ShareButton = ({
   description = '', 
   variant = 'outline',
   size = 'sm',
-  className = ''
+  className = '',
+  image
 }: ShareButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const fullUrl = `${window.location.origin}${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
   
   const handleCopy = () => {
     navigator.clipboard.writeText(fullUrl);
@@ -57,11 +59,35 @@ const ShareButton = ({
   
   const handleNativeShare = () => {
     if (canUseNativeShare()) {
-      navigator.share({
+      const shareData: any = {
         title,
         text: description,
         url: fullUrl,
-      }).catch(err => {
+      };
+
+      // Some browsers support adding images to share data
+      if (image && 'canShare' in navigator && navigator.canShare) {
+        try {
+          // Try to include the image if possible
+          const imageShareData = { ...shareData, files: [new File([image], 'image.jpg', { type: 'image/jpeg' })] };
+          if (navigator.canShare(imageShareData)) {
+            navigator.share(imageShareData).catch(err => {
+              console.error('Error sharing with image:', err);
+              // Fall back to text-only share
+              navigator.share(shareData).catch(err => {
+                console.error('Error sharing:', err);
+                toast.error('Could not share content');
+              });
+            });
+            return;
+          }
+        } catch (err) {
+          console.warn('Image sharing not supported:', err);
+        }
+      }
+
+      // Standard text-only share
+      navigator.share(shareData).catch(err => {
         console.error('Error sharing:', err);
         toast.error('Could not share content');
       });
@@ -85,7 +111,7 @@ const ShareButton = ({
       {!canUseNativeShare() && (
         <PopoverContent className="w-56 bg-dark-200 border border-dark-300">
           <div className="grid gap-2">
-            <h3 className="font-medium mb-1">Share this {url.split('/')[1]}</h3>
+            <h3 className="font-medium mb-1">Share this {url.split('/')[1] || 'page'}</h3>
             <div className="text-xs text-gray-400 truncate mb-2">{fullUrl}</div>
             
             <div className="flex flex-col gap-2">

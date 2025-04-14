@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,12 +44,12 @@ const CreatorWorkoutDetail = () => {
   });
   
   useEffect(() => {
+    if (!username || !workoutSlug) {
+      setState(prev => ({ ...prev, error: 'Invalid workout URL', isLoading: false }));
+      return;
+    }
+    
     const getWorkoutBySlug = async () => {
-      if (!username || !workoutSlug) {
-        setState(prev => ({ ...prev, error: 'Invalid workout URL', isLoading: false }));
-        return;
-      }
-      
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -119,15 +118,13 @@ const CreatorWorkoutDetail = () => {
     };
     
     getWorkoutBySlug();
-  }, [username, workoutSlug, navigate]);
+  }, [username, workoutSlug]);
   
   const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
   
-  // Get creator profile information if we have their ID
   const creatorId = workout?.creatorId;
   const { profile: creatorProfile } = useProfile(creatorId);
   
-  // Get purchase and club access data
   const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
   const isPurchased = purchaseData.data?.isPurchased || false;
   const isClubShared = purchaseData.data?.isClubShared || false;
@@ -163,17 +160,14 @@ const CreatorWorkoutDetail = () => {
   
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   
-  // User has access if: workout is not purchasable, or user has purchased it, or user has club access
   const hasAccessToWorkout = !workout.isPurchasable || isPurchased || isClubShared;
   
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
   const creatorName = creatorInfo?.name || username || '';
   
-  // Determine if we should show the fixed purchase bar
   const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
   
-  // Get initials for avatar fallback
   const getInitials = () => {
     if (creatorName) {
       return creatorName
@@ -185,17 +179,23 @@ const CreatorWorkoutDetail = () => {
     }
     return username ? username.substring(0, 2).toUpperCase() : 'FB';
   };
+
+  const socialShareTitle = `${workout.name} by ${creatorName}`;
+  
+  const socialImageUrl = creatorProfile?.avatar_url || 
+    `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
   
   return (
     <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>
       <MetaTags 
-        title={`${workout.name} - FitBloom Workout`}
+        title={socialShareTitle}
         description={workoutDescription}
         type="product"
         url={shareUrl}
+        imageUrl={socialImageUrl}
         preload={[
           {
-            href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
+            href: socialImageUrl,
             as: 'image',
           }
         ]}
@@ -215,12 +215,11 @@ const CreatorWorkoutDetail = () => {
         title={workout.name}
         description={`Day ${workout.day} • ${workout.exercises.length} exercises`}
         shareUrl={shareUrl}
-        shareTitle={`${workout.name} by ${creatorName}`}
+        shareTitle={socialShareTitle}
         shareDescription={workoutDescription}
         onBack={handleBackClick}
       />
       
-      {/* Creator Info Card */}
       <Card className="bg-dark-200 border-dark-300 mb-4">
         <CardContent className="p-4 flex items-center">
           <Avatar className="h-12 w-12 mr-3">
@@ -260,7 +259,6 @@ const CreatorWorkoutDetail = () => {
         <div className="space-y-4">
           <WorkoutPreview workout={workout} blurred={true} />
           
-          {/* Social Proof Section */}
           <Card className="bg-dark-200 border-dark-300">
             <CardContent className="p-4">
               <div className="flex flex-col space-y-2">
@@ -274,7 +272,6 @@ const CreatorWorkoutDetail = () => {
                 </div>
               </div>
               
-              {/* Creator Social Links if available */}
               {creatorProfile?.social_links && creatorProfile.social_links.length > 0 && (
                 <div className="mt-3">
                   <SocialLinks links={creatorProfile.social_links} className="justify-start" />
@@ -283,7 +280,6 @@ const CreatorWorkoutDetail = () => {
             </CardContent>
           </Card>
           
-          {/* Only show the non-fixed purchase section on desktop */}
           {!isMobile && (
             <ProductPurchaseSection
               itemType="workout"
@@ -300,8 +296,7 @@ const CreatorWorkoutDetail = () => {
           )}
         </div>
       )}
-
-      {/* Fixed Purchase Bar on Mobile */}
+      
       {shouldShowFixedPurchaseBar && (
         <div className="fixed bottom-0 left-0 right-0 bg-dark-300/95 backdrop-blur-md border-t border-dark-300 z-50 p-3">
           <ProductPurchaseSection

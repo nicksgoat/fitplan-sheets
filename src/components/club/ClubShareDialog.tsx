@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AlertDialog,
@@ -8,7 +9,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ interface Club {
   name: string;
   description: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
 }
 
 interface ClubShareRecord {
@@ -50,28 +50,31 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
   const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>([]);
 
   const { data: clubs, isLoading, isError } = useQuery<Club[]>({
-    queryKey: ['clubs', user?.id],
+    queryKey: ['creator-clubs', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
         .from('clubs')
         .select('*')
-        .eq('owner_id', user.id);
+        .eq('creator_id', user.id);
 
       if (error) {
         console.error("Error fetching clubs:", error);
         throw error;
       }
       return data || [];
-    }
+    },
+    enabled: !!user?.id
   });
 
   const shareMutation = useMutation({
     mutationFn: async (sharingRecords: ClubShareRecord[]) => {
+      // Since club_content may not be in the types, we use the raw query method
       const { data, error } = await supabase
-        .from('club_content')
-        .insert(sharingRecords);
+        .rpc('share_content_with_clubs', {
+          share_records: sharingRecords
+        });
 
       if (error) {
         console.error("Error sharing content:", error);
@@ -84,7 +87,7 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: 
         title: "Content Shared!",
         description: "This content has been successfully shared with the selected clubs.",
       })
-      queryClient.invalidateQueries({ queryKey: ['clubs', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-clubs', user?.id] });
       onOpenChange(false);
     },
     onError: (error: any) => {

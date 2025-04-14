@@ -43,6 +43,9 @@ const WorkoutDetail = () => {
   const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
   const isPurchaseLoading = purchaseData.isLoading;
 
+  // Social meta data
+  const [ogImageUrl, setOgImageUrl] = React.useState<string | null>(null);
+
   console.log('[WorkoutDetail]', {
     userId: user?.id,
     workoutId: id,
@@ -52,6 +55,38 @@ const WorkoutDetail = () => {
     isPurchaseLoading,
     sharedWithClubs
   });
+
+  // Get creator image for social sharing
+  useEffect(() => {
+    const getCreatorProfileImage = async () => {
+      if (workout?.creatorId) {
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('avatar_url, username, display_name')
+            .eq('id', workout.creatorId)
+            .maybeSingle();
+          
+          if (profileData?.avatar_url) {
+            setOgImageUrl(profileData.avatar_url);
+          } else {
+            // Fallback to generated OG image
+            const fallbackImage = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
+            setOgImageUrl(fallbackImage);
+          }
+        } catch (err) {
+          console.error("Error fetching creator profile:", err);
+          // Fallback to generated OG image
+          const fallbackImage = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
+          setOgImageUrl(fallbackImage);
+        }
+      }
+    };
+
+    if (workout?.name && workout?.creatorId) {
+      getCreatorProfileImage();
+    }
+  }, [workout?.creatorId, workout?.name]);
 
   // Check if we should redirect to the new URL format
   useEffect(() => {
@@ -90,11 +125,10 @@ const WorkoutDetail = () => {
     };
 
     // Preload OG image for sharing
-    if (workout?.name) {
-      const ogImageUrl = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
+    if (ogImageUrl) {
       preloadImage(ogImageUrl);
     }
-  }, [workout?.name]);
+  }, [ogImageUrl]);
   
   const handleBackClick = () => {
     navigate(-1);
@@ -126,17 +160,23 @@ const WorkoutDetail = () => {
     if (!workout) return '';
     return `/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`;
   };
+
+  // Enhanced meta title with creator name
+  const metaTitle = creatorInfo ? 
+    `${workout.name} by ${creatorInfo.name} - FitBloom Workout` : 
+    `${workout.name} - FitBloom Workout`;
   
   return (
     <div className="container max-w-md mx-auto p-3">
       <MetaTags 
-        title={`${workout.name} - FitBloom Workout`}
+        title={metaTitle}
         description={workoutDescription}
         type="product"
         url={getFormattedUrl()}
+        imageUrl={ogImageUrl || undefined}
         preload={[
           {
-            href: `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
+            href: ogImageUrl || `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`,
             as: 'image',
           }
         ]}

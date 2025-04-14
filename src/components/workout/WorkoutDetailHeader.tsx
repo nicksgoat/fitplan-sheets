@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import EnhancedShareButton from '@/components/share/EnhancedShareButton';
 
 interface WorkoutDetailHeaderProps {
@@ -31,6 +31,7 @@ const WorkoutDetailHeader: React.FC<WorkoutDetailHeaderProps> = ({
           url={shareUrl}
           title={shareTitle}
           description={shareDescription}
+          size="icon"
         />
       </div>
       
