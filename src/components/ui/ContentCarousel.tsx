@@ -26,7 +26,7 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         container.scrollLeft += scrollAmount;
       }
 
-      // Update scroll buttons after a small delay to allow animation to complete
+      // Check scroll position after a small delay to allow animation to complete
       setTimeout(() => updateScrollButtons(), 100);
     }
   };
@@ -38,8 +38,8 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
     const container = scrollRef.current;
     setCanScrollLeft(container.scrollLeft > 0);
     
-    // Calculate if we can scroll right by checking if there's more content to scroll
-    // Add a small threshold (5px) to account for rounding differences
+    // Fix: Make sure we properly calculate if we can scroll right
+    // We need to account for some small rounding differences by adding a small threshold (5px)
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
     setCanScrollRight(container.scrollLeft < maxScrollLeft - 5);
   };
@@ -72,7 +72,6 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
 
   return (
     <div className="relative group">
-      {/* Left scroll button */}
       <Button
         variant="outline"
         size="icon"
@@ -85,7 +84,6 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         <span className="sr-only">Scroll left</span>
       </Button>
       
-      {/* Content container */}
       <div className="overflow-x-auto scrollbar-hide">
         <div 
           ref={scrollRef} 
@@ -100,7 +98,6 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         </div>
       </div>
       
-      {/* Right scroll button */}
       <Button
         variant="outline"
         size="icon"
