@@ -95,10 +95,10 @@ const PurchasesTab = () => {
           isPurchasable: workout.is_purchasable,
           purchased: true,
           tags: [],
-          // Adding required properties for ItemType
+          // Add required properties for ItemType
           imageUrl: '', // Default empty string
           isFavorite: false // Default false
-        } as ItemType;
+        };
       });
     
     setWorkouts(transformedWorkouts);
@@ -152,10 +152,10 @@ const PurchasesTab = () => {
           isPurchasable: program.is_purchasable,
           purchased: true,
           tags: [],
-          // Adding required properties for ItemType
+          // Add required properties for ItemType
           imageUrl: '', // Default empty string
           isFavorite: false // Default false
-        } as ItemType;
+        };
       });
     
     setPrograms(transformedPrograms);
@@ -224,10 +224,10 @@ const PurchasesTab = () => {
             isPurchasable: workout.is_purchasable,
             viaClub: true,
             tags: [],
-            // Adding required properties for ItemType
+            // Add required properties for ItemType
             imageUrl: '', // Default empty string
             isFavorite: false // Default false
-          } as ItemType;
+          };
         });
       
       // Add shared workouts to the existing workouts, avoiding duplicates
@@ -280,10 +280,10 @@ const PurchasesTab = () => {
             isPurchasable: program.is_purchasable,
             viaClub: true,
             tags: [],
-            // Adding required properties for ItemType
+            // Add required properties for ItemType
             imageUrl: '', // Default empty string
             isFavorite: false // Default false
-          } as ItemType;
+          };
         });
       
       // Add shared programs to the existing programs, avoiding duplicates

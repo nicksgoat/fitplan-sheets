@@ -15,14 +15,30 @@ interface Club {
   logo_url?: string;
 }
 
-interface ClubShareSelectionProps {
+// Define specific type for workout shares
+interface WorkoutShareRecord {
+  club_id: string;
+  shared_by: string;
+  workout_id: string;
+}
+
+// Define specific type for program shares
+interface ProgramShareRecord {
+  club_id: string;
+  shared_by: string;
+  program_id: string;
+}
+
+// Use a consistent interface for the component props
+export interface ClubShareSelectionProps {
   contentId?: string;
   contentType: 'workout' | 'program';
+  // Legacy props - support backwards compatibility
   sharedClubs?: string[];
   onClubsChange?: (clubs: string[]) => void;
-  // Add new prop for consistency with other components
-  onSelectionChange?: (selectedClubs: string[]) => void;
+  // New consistent prop names
   selectedClubIds?: string[];
+  onSelectionChange?: (selectedClubs: string[]) => void;
 }
 
 export function ClubShareSelection({ 
@@ -99,9 +115,12 @@ export function ClubShareSelection({
     
     setSelectedClubIds(newSelection);
     
-    // Call the selection change handler if provided
+    // Call appropriate callback handlers
     if (onSelectionChange) {
       onSelectionChange(newSelection);
+    }
+    if (onClubsChange) {
+      onClubsChange(newSelection);
     }
   };
   
@@ -111,6 +130,9 @@ export function ClubShareSelection({
       // This allows the component to be used for selection only
       if (onSelectionChange) {
         onSelectionChange(selectedClubIds);
+      }
+      if (onClubsChange) {
+        onClubsChange(selectedClubIds);
       }
       setIsOpen(false);
       return;
@@ -131,33 +153,40 @@ export function ClubShareSelection({
       
       // Now insert new entries if there are any selected clubs
       if (selectedClubIds.length > 0) {
-        const sharesToCreate = selectedClubIds.map(clubId => {
-          // Create properly typed objects for each type
-          if (contentType === 'workout') {
-            return {
-              workout_id: contentId,
-              club_id: clubId,
-              shared_by: user.id
-            };
-          } else {
-            return {
-              program_id: contentId,
-              club_id: clubId,
-              shared_by: user.id
-            };
-          }
-        });
-        
-        const { error: insertError } = await supabase
-          .from(tableName)
-          .insert(sharesToCreate);
-        
-        if (insertError) throw insertError;
+        // Create properly typed arrays for each content type
+        if (contentType === 'workout') {
+          const sharesToCreate: WorkoutShareRecord[] = selectedClubIds.map(clubId => ({
+            workout_id: contentId,
+            club_id: clubId,
+            shared_by: user.id
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharesToCreate);
+          
+          if (insertError) throw insertError;
+        } else {
+          const sharesToCreate: ProgramShareRecord[] = selectedClubIds.map(clubId => ({
+            program_id: contentId,
+            club_id: clubId,
+            shared_by: user.id
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('club_shared_programs')
+            .insert(sharesToCreate);
+          
+          if (insertError) throw insertError;
+        }
       }
       
       toast.success(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} sharing settings updated`);
       if (onClubsChange) {
         onClubsChange(selectedClubIds);
+      }
+      if (onSelectionChange) {
+        onSelectionChange(selectedClubIds);
       }
       setIsOpen(false);
     } catch (error: any) {
