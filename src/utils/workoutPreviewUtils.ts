@@ -1,75 +1,45 @@
 
-import { Exercise, Set } from "@/types/workout";
+import { Exercise } from "@/types/workout";
 
-export const formatRestTime = (restSeconds: string): string => {
-  if (!restSeconds) return '';
+export const formatRestTime = (rest: string): string => {
+  if (!rest) return '0s';
   
-  if (restSeconds.includes('s') || restSeconds.includes('min') || 
-      restSeconds.includes('m') || restSeconds.includes(':')) {
-    return restSeconds;
-  }
-  
-  const seconds = parseInt(restSeconds);
-  if (isNaN(seconds)) return restSeconds;
-  
-  if (seconds < 60) {
-    return `${seconds}s`;
+  if (rest.includes('m')) {
+    return rest;
+  } else if (rest.includes('s')) {
+    return rest;
   } else {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return remainingSeconds > 0 
-      ? `${minutes}m ${remainingSeconds}s` 
-      : `${minutes}m`;
+    const restNum = parseFloat(rest);
+    if (restNum >= 60) {
+      const minutes = Math.floor(restNum / 60);
+      const seconds = restNum % 60;
+      return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+    } else {
+      return `${restNum}s`;
+    }
   }
 };
 
 export const getRepRange = (exercise: Exercise): string => {
-  if (!exercise.sets || exercise.sets.length === 0) return '';
+  if (!exercise.sets || exercise.sets.length === 0) {
+    return "No sets defined";
+  }
   
-  const repsValues = exercise.sets
-    .map((set: Set) => {
-      if (typeof set.reps === 'string' && set.reps.includes('-')) {
-        return set.reps.split('-').map(Number);
-      }
-      return [Number(set.reps), Number(set.reps)];
-    })
-    .flat()
-    .filter((val: number) => !isNaN(val));
-
-  const minReps = Math.min(...repsValues);
-  const maxReps = Math.max(...repsValues);
-
-  const repRange = minReps === maxReps 
-    ? `${minReps} reps` 
-    : `${minReps}-${maxReps} reps`;
-
-  return `${exercise.sets.length} sets, ${repRange}`;
+  // Check if all sets have the same rep count
+  const firstSetReps = exercise.sets[0].reps;
+  const allSameReps = exercise.sets.every(set => set.reps === firstSetReps);
+  
+  if (allSameReps) {
+    return `${exercise.sets.length} × ${firstSetReps || '-'}`;
+  } else {
+    // Show range if different
+    return `${exercise.sets.length} sets with varied reps`;
+  }
 };
 
-export const getOrganizedExercises = (exercises: Exercise[]) => {
-  const result = [];
-  const circuitMap = new Map();
+export const formatCombinedWorkoutDetails = (workout: Exercise[]): string => {
+  const totalSets = workout.reduce((total, ex) => total + ex.sets.length, 0);
+  const uniqueExercises = new Set(workout.map(ex => ex.name)).size;
   
-  for (const exercise of exercises) {
-    if (exercise.isCircuit) {
-      result.push(exercise);
-    } else if (exercise.isInCircuit && exercise.circuitId) {
-      if (!circuitMap.has(exercise.circuitId)) {
-        circuitMap.set(exercise.circuitId, []);
-      }
-      circuitMap.get(exercise.circuitId).push(exercise);
-    } else if (exercise.isGroup) {
-      result.push(exercise);
-    } else if (!exercise.groupId && !exercise.isInCircuit) {
-      result.push(exercise);
-    }
-  }
-  
-  const finalResult = [];
-  
-  for (const exercise of result) {
-    finalResult.push(exercise);
-  }
-  
-  return { exercises: finalResult, circuitMap };
+  return `${uniqueExercises} exercises • ${totalSets} sets`;
 };

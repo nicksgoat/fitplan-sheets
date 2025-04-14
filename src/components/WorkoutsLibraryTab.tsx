@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, CalendarDays, LayoutIcon, DollarSign } from "lucide-react";
+import { Plus, Trash2, CalendarDays, LayoutIcon, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { Workout } from "@/types/workout";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,9 @@ import ContentGrid from "@/components/ui/ContentGrid";
 import { useNavigate } from "react-router-dom";
 import { useWorkoutLibraryIntegration } from "@/hooks/useWorkoutLibraryIntegration";
 import { Badge } from "@/components/ui/badge";
+import WorkoutPreview from "@/components/workout/WorkoutPreview";
+import { ClubShareDialog } from "@/components/club/ClubShareDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 // Define the draggable item types for consistency
 const ItemTypes = {
@@ -26,37 +29,93 @@ interface DraggableWorkoutItemProps {
 const DraggableWorkoutItem: React.FC<DraggableWorkoutItemProps> = ({ workout, onDelete, onDragStart }) => {
   const { useDraggableLibraryWorkout } = useWorkoutLibraryIntegration();
   const [{ isDragging }, drag] = useDraggableLibraryWorkout(workout, onDragStart);
+  const [expanded, setExpanded] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const { user } = useAuth();
+  
+  // Get exercise count by type for summary
+  const circuitCount = workout.exercises.filter(ex => ex.isCircuit).length;
+  const supersetCount = workout.exercises.filter(ex => ex.isCircuit && ex.name === "Superset").length;
+  
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent drag from starting
+    setExpanded(!expanded);
+  };
   
   return (
-    <div 
-      ref={drag}
-      className={`flex items-center p-2 border rounded-md hover:bg-dark-300 cursor-grab active:cursor-grabbing transition-opacity ${
-        isDragging ? 'opacity-50' : 'opacity-100'
-      }`}
-    >
-      <div className="flex-1">
-        <div className="flex items-center">
-          <h3 className="text-sm font-medium">{workout.name}</h3>
-          {workout.isPurchasable && workout.price && workout.price > 0 && (
-            <Badge variant="outline" className="ml-2 text-xs flex items-center text-green-500 border-green-500">
-              <DollarSign className="h-3 w-3 mr-0.5" />
-              {Number(workout.price).toFixed(2)}
-            </Badge>
-          )}
-        </div>
-        <p className="text-xs text-gray-400">
-          {workout.day > 0 ? `Day ${workout.day} • ` : ''}{workout.exercises.length} exercises
-        </p>
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => onDelete(e, workout.id)}
-        className="h-8 w-8"
-        title="Remove from library"
+    <div className="mb-4">
+      <div 
+        ref={drag}
+        className={`flex flex-col p-3 border rounded-md bg-dark-200 hover:bg-dark-300 cursor-grab active:cursor-grabbing transition-opacity ${
+          isDragging ? 'opacity-50' : 'opacity-100'
+        }`}
       >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center">
+              <h3 className="text-sm font-medium">{workout.name}</h3>
+              {workout.isPurchasable && workout.price && workout.price > 0 && (
+                <Badge variant="outline" className="ml-2 text-xs flex items-center text-green-500 border-green-500">
+                  <DollarSign className="h-3 w-3 mr-0.5" />
+                  {Number(workout.price).toFixed(2)}
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">
+              {workout.day > 0 ? `Day ${workout.day} • ` : ''}
+              {workout.exercises.length} exercises
+              {circuitCount > 0 && ` • ${circuitCount} circuit${circuitCount !== 1 ? 's' : ''}`}
+              {supersetCount > 0 && ` • ${supersetCount} superset${supersetCount !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+          <div className="flex items-center">
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowShareDialog(true)}
+                className="h-8 w-8"
+                title="Share with clubs"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleExpand}
+              className="h-8 w-8"
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => onDelete(e, workout.id)}
+              className="h-8 w-8"
+              title="Remove from library"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {expanded && (
+          <div className="mt-2 pt-2 border-t border-dark-300">
+            <WorkoutPreview workout={workout} />
+          </div>
+        )}
+      </div>
+      
+      {showShareDialog && (
+        <ClubShareDialog 
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          contentId={workout.id}
+          contentType="workout"
+        />
+      )}
     </div>
   );
 };

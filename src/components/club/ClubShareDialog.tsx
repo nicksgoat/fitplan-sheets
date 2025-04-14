@@ -79,12 +79,14 @@ export function ClubShareDialog({
       // Now insert new entries if there are any selected clubs
       if (selectedIds.length > 0) {
         if (contentType === 'workout') {
-          // Define explicit type for the array
-          const sharesToCreate: Array<{
+          // Explicitly define the array structure to avoid excessive type instantiation
+          type WorkoutShareRecord = {
             workout_id: string;
             club_id: string;
             shared_by: string;
-          }> = selectedIds.map(clubId => ({
+          };
+          
+          const sharesToCreate: WorkoutShareRecord[] = selectedIds.map(clubId => ({
             workout_id: contentId,
             club_id: clubId,
             shared_by: user.id
@@ -96,12 +98,14 @@ export function ClubShareDialog({
           
           if (insertError) throw insertError;
         } else {
-          // Define explicit type for the array
-          const sharesToCreate: Array<{
+          // Explicitly define the array structure to avoid excessive type instantiation
+          type ProgramShareRecord = {
             program_id: string;
             club_id: string;
             shared_by: string;
-          }> = selectedIds.map(clubId => ({
+          };
+          
+          const sharesToCreate: ProgramShareRecord[] = selectedIds.map(clubId => ({
             program_id: contentId,
             club_id: clubId,
             shared_by: user.id
