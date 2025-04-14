@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, Dumbbell, BookOpen, Users, BarChart4 } from 'lucide-react';
+import { LayoutDashboard, Dumbbell, BookOpen, Users, BarChart4, Tag } from 'lucide-react';
 import { ProductsOverview } from '@/components/creator/ProductsOverview';
 import { WorkoutsManagement } from '@/components/creator/WorkoutsManagement';
 import { ProgramsManagement } from '@/components/creator/ProgramsManagement';
 import { ClubsManagement } from '@/components/creator/ClubsManagement';
 import { SalesAnalytics } from '@/components/creator/SalesAnalytics';
+import { ReferralManagement } from '@/components/creator/ReferralManagement';
 
 const CreatorDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -16,7 +17,7 @@ const CreatorDashboard = () => {
       <h1 className="text-2xl font-bold mb-6">Creator Dashboard</h1>
       
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-dark-200 grid grid-cols-5 max-w-4xl">
+        <TabsList className="bg-dark-200 grid grid-cols-6 max-w-5xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span>Overview</span>
@@ -36,6 +37,10 @@ const CreatorDashboard = () => {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart4 className="h-4 w-4" />
             <span>Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="referrals" className="flex items-center gap-2">
+            <Tag className="h-4 w-4" />
+            <span>Referrals</span>
           </TabsTrigger>
         </TabsList>
         
@@ -57,6 +62,10 @@ const CreatorDashboard = () => {
         
         <TabsContent value="analytics" className="space-y-4">
           <SalesAnalytics />
+        </TabsContent>
+        
+        <TabsContent value="referrals" className="space-y-4">
+          <ReferralManagement />
         </TabsContent>
       </Tabs>
     </div>

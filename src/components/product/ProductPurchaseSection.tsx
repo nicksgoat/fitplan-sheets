@@ -1,12 +1,16 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/utils/workout';
 import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Check, Shield } from 'lucide-react';
+import { Check, Shield, Tag } from 'lucide-react';
 import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ProductPurchaseSectionProps {
   itemType: 'workout' | 'program'; 
@@ -20,6 +24,15 @@ interface ProductPurchaseSectionProps {
   isClubShared?: boolean;
   sharedWithClubs?: string[];
   className?: string;
+}
+
+interface ReferralCodeData {
+  code: string;
+  discount_percent: number;
+  is_active: boolean;
+  expiry_date: string | null;
+  max_uses: number | null;
+  usage_count: number;
 }
 
 export function ProductPurchaseSection({
@@ -38,6 +51,78 @@ export function ProductPurchaseSection({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
+  
+  const [referralCode, setReferralCode] = useState('');
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [validReferralCode, setValidReferralCode] = useState<ReferralCodeData | null>(null);
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Check URL for referral code
+    const urlParams = new URLSearchParams(window.location.search);
+    const refFromUrl = urlParams.get('ref');
+    if (refFromUrl) {
+      setReferralCode(refFromUrl);
+      validateReferralCode(refFromUrl);
+    }
+  }, []);
+  
+  const validateReferralCode = async (code: string) => {
+    if (!code.trim()) {
+      setValidReferralCode(null);
+      setDiscountedPrice(null);
+      return;
+    }
+    
+    setIsValidatingCode(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code, discount_percent, is_active, expiry_date, max_uses, usage_count')
+        .eq('code', code.trim())
+        .eq('is_active', true)
+        .single();
+      
+      if (error || !data) {
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Check if code is expired
+      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+        toast.error('This referral code has expired');
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Check if code has reached max uses
+      if (data.max_uses !== null && data.usage_count >= data.max_uses) {
+        toast.error('This referral code has reached its maximum usage limit');
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Valid code
+      setValidReferralCode(data);
+      
+      // Calculate discounted price
+      if (data.discount_percent > 0) {
+        const discount = price * (data.discount_percent / 100);
+        setDiscountedPrice(price - discount);
+        toast.success(`Referral code applied: ${data.discount_percent}% discount!`);
+      }
+    } catch (err) {
+      console.error('Error validating referral code:', err);
+      setValidReferralCode(null);
+      setDiscountedPrice(null);
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
 
   const handlePurchase = () => {
     if (!price) return;
@@ -50,9 +135,10 @@ export function ProductPurchaseSection({
       itemType,
       itemId,
       itemName,
-      price: parseFloat(price.toString()),
+      price: discountedPrice !== null ? discountedPrice : parseFloat(price.toString()),
       creatorId,
-      referralSource
+      referralSource,
+      referralCode: validReferralCode?.code
     });
   };
 
@@ -111,9 +197,59 @@ export function ProductPurchaseSection({
   return (
     <div className={`p-4 bg-dark-200 rounded-lg ${className}`}>
       <div className="mb-3 text-center">
-        <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(price)}</span>
-        <span className="text-gray-400 text-sm ml-2">one-time</span>
+        {discountedPrice !== null ? (
+          <div className="flex flex-col items-center">
+            <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(discountedPrice)}</span>
+            <span className="text-sm text-gray-400 line-through">{formatCurrency(price)}</span>
+          </div>
+        ) : (
+          <>
+            <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(price)}</span>
+            <span className="text-gray-400 text-sm ml-2">one-time</span>
+          </>
+        )}
       </div>
+      
+      {validReferralCode && (
+        <div className="mb-3 flex justify-center">
+          <div className="bg-green-900/30 border border-green-800/30 px-2 py-1 rounded flex items-center gap-1">
+            <Tag className="h-3 w-3 text-green-500" />
+            <span className="text-xs text-green-400">
+              {validReferralCode.discount_percent}% discount with code: {validReferralCode.code}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {user && (
+        <div className="mb-3">
+          <div className="space-y-2">
+            <label htmlFor="referralCode" className="block text-xs text-gray-400">
+              Have a referral code?
+            </label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="referralCode"
+                placeholder="Enter code"
+                className="bg-dark-300 border-dark-400 text-sm h-8"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                onBlur={() => referralCode && validateReferralCode(referralCode)}
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => validateReferralCode(referralCode)}
+                disabled={isValidatingCode || !referralCode}
+              >
+                {isValidatingCode ? 'Validating...' : 'Apply'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="mb-3">
         <div className="flex items-start mb-1.5">

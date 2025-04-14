@@ -61,20 +61,17 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
           if (clubData && 
               typeof clubData === 'object' && 
               'id' in clubData && 
-              'name' in clubData && 
-              clubData.id && 
-              clubData.name) {
+              'name' in clubData) {
             
-            // Use non-null assertion since we've checked these values exist
             userClubs.push({
               id: clubData.id,
               name: clubData.name,
               description: clubData.description || undefined,
               logo_url: clubData.logo_url || undefined,
-              created_at: clubData.created_at,
-              created_by: clubData.created_by,
-              club_type: clubData.club_type,
-              membership_type: clubData.membership_type
+              created_at: clubData.created_at || '',
+              created_by: clubData.created_by || '',
+              club_type: clubData.club_type || 'fitness',
+              membership_type: clubData.membership_type || 'free'
             });
           }
         }

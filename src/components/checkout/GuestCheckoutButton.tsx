@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/utils/workout';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GuestCheckoutButtonProps {
   itemType: 'workout' | 'program' | 'club';
@@ -15,6 +16,15 @@ interface GuestCheckoutButtonProps {
   creatorId: string;
   variant?: 'default' | 'secondary' | 'outline';
   size?: 'default' | 'sm' | 'lg';
+}
+
+interface ReferralCodeData {
+  code: string;
+  discount_percent: number;
+  is_active: boolean;
+  expiry_date: string | null;
+  max_uses: number | null;
+  usage_count: number;
 }
 
 export function GuestCheckoutButton({ 
@@ -29,6 +39,10 @@ export function GuestCheckoutButton({
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [savedEmail, setSavedEmail] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState('');
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [validReferralCode, setValidReferralCode] = useState<ReferralCodeData | null>(null);
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   const { initiateCheckout, loading } = useStripeCheckout();
   
   // Check for previously used guest email
@@ -38,7 +52,72 @@ export function GuestCheckoutButton({
     if (previousEmail) {
       setEmail(previousEmail);
     }
+    
+    // Check URL for referral code
+    const urlParams = new URLSearchParams(window.location.search);
+    const refFromUrl = urlParams.get('ref');
+    if (refFromUrl) {
+      setReferralCode(refFromUrl);
+      validateReferralCode(refFromUrl);
+    }
   }, []);
+  
+  const validateReferralCode = async (code: string) => {
+    if (!code.trim()) {
+      setValidReferralCode(null);
+      setDiscountedPrice(null);
+      return;
+    }
+    
+    setIsValidatingCode(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .select('code, discount_percent, is_active, expiry_date, max_uses, usage_count')
+        .eq('code', code.trim())
+        .eq('is_active', true)
+        .single();
+      
+      if (error || !data) {
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Check if code is expired
+      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+        toast.error('This referral code has expired');
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Check if code has reached max uses
+      if (data.max_uses !== null && data.usage_count >= data.max_uses) {
+        toast.error('This referral code has reached its maximum usage limit');
+        setValidReferralCode(null);
+        setDiscountedPrice(null);
+        return;
+      }
+      
+      // Valid code
+      setValidReferralCode(data);
+      
+      // Calculate discounted price
+      if (data.discount_percent > 0) {
+        const discount = price * (data.discount_percent / 100);
+        setDiscountedPrice(price - discount);
+        toast.success(`Referral code applied: ${data.discount_percent}% discount!`);
+      }
+    } catch (err) {
+      console.error('Error validating referral code:', err);
+      setValidReferralCode(null);
+      setDiscountedPrice(null);
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
   
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,10 +139,11 @@ export function GuestCheckoutButton({
       itemType,
       itemId,
       itemName,
-      price,
+      price: discountedPrice || price,
       creatorId,
       guestEmail: email,
-      referralSource
+      referralSource,
+      referralCode: validReferralCode?.code
     });
     
     setOpen(false);
@@ -71,7 +151,7 @@ export function GuestCheckoutButton({
 
   const buttonText = loading 
     ? 'Processing...' 
-    : `Quick Purchase (${formatCurrency(price)})`;
+    : `Quick Purchase (${formatCurrency(discountedPrice || price)})`;
   
   return (
     <>
@@ -108,6 +188,39 @@ export function GuestCheckoutButton({
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="referralCode" className="block text-sm font-medium">
+                Referral Code (optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="referralCode"
+                  placeholder="FRIEND20"
+                  className="bg-dark-200 border-gray-700"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  onBlur={() => validateReferralCode(referralCode)}
+                />
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => validateReferralCode(referralCode)}
+                  disabled={isValidatingCode || !referralCode}
+                >
+                  {isValidatingCode ? 'Validating...' : 'Apply'}
+                </Button>
+              </div>
+              
+              {validReferralCode && discountedPrice !== null && (
+                <div className="mt-2 text-green-400 text-xs flex items-center gap-1">
+                  <span className="bg-green-900/30 border border-green-800/30 px-2 py-1 rounded">
+                    {validReferralCode.discount_percent}% discount applied: {formatCurrency(price)} → {formatCurrency(discountedPrice)}
+                  </span>
+                </div>
+              )}
             </div>
             
             {savedEmail && email !== savedEmail && (

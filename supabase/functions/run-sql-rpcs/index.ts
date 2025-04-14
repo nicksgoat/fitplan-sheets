@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -63,6 +62,15 @@ serve(async (req) => {
         break;
       case 'check_club_member':
         ({ data: result, error } = await checkClubMember(supabase, params.club_id, authData.user.id));
+        break;
+      case 'get_creator_referral_codes':
+        ({ data: result, error } = await getCreatorReferralCodes(supabase, authData.user.id));
+        break;
+      case 'create_referral_code':
+        ({ data: result, error } = await createReferralCode(supabase, authData.user.id, params));
+        break;
+      case 'get_referral_stats':
+        ({ data: result, error } = await getReferralStats(supabase, authData.user.id));
         break;
       default:
         return new Response(
@@ -271,4 +279,121 @@ async function checkClubMember(supabase, clubId, userId) {
   if (error) throw error;
   
   return { data: { is_member: !!data } };
+}
+
+// New referral code functions
+async function getCreatorReferralCodes(supabase, userId) {
+  return await supabase
+    .from('referral_codes')
+    .select(`
+      id,
+      code,
+      description,
+      discount_percent,
+      commission_percent,
+      is_active,
+      created_at,
+      expiry_date,
+      max_uses,
+      usage_count
+    `)
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false });
+}
+
+async function createReferralCode(supabase, userId, params) {
+  const { code, description, discount_percent, commission_percent, expiry_date, max_uses } = params;
+  
+  // Check if code already exists
+  const { data: existingCode } = await supabase
+    .from('referral_codes')
+    .select('id')
+    .eq('code', code)
+    .single();
+    
+  if (existingCode) {
+    throw new Error('Code already exists. Please choose a different code.');
+  }
+  
+  return await supabase
+    .from('referral_codes')
+    .insert({
+      creator_id: userId,
+      code,
+      description,
+      discount_percent: discount_percent || 0,
+      commission_percent: commission_percent || 0,
+      expiry_date: expiry_date || null,
+      max_uses: max_uses || null,
+      is_active: true,
+      usage_count: 0
+    })
+    .select()
+    .single();
+}
+
+async function getReferralStats(supabase, userId) {
+  // Get summary of referral code usage
+  const { data: referralSummary, error: summaryError } = await supabase
+    .from('referral_codes')
+    .select(`
+      id,
+      code,
+      usage_count,
+      discount_percent,
+      commission_percent
+    `)
+    .eq('creator_id', userId);
+  
+  if (summaryError) throw summaryError;
+  
+  // Get recent referral transactions
+  const { data: recentTransactions, error: transactionsError } = await supabase
+    .from('referral_transactions')
+    .select(`
+      id,
+      referral_code_id,
+      referral_codes (code),
+      purchase_amount,
+      commission_amount,
+      discount_amount,
+      created_at,
+      product_type,
+      product_id
+    `)
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+    
+  if (transactionsError) throw transactionsError;
+  
+  // Calculate total earnings from referrals
+  let totalCommissionEarnings = 0;
+  let totalDiscountGiven = 0;
+  
+  const { data: totals, error: totalsError } = await supabase
+    .from('referral_transactions')
+    .select(`
+      commission_amount,
+      discount_amount
+    `)
+    .eq('creator_id', userId);
+    
+  if (totalsError) throw totalsError;
+  
+  if (totals) {
+    totalCommissionEarnings = totals.reduce((sum, item) => sum + (item.commission_amount || 0), 0);
+    totalDiscountGiven = totals.reduce((sum, item) => sum + (item.discount_amount || 0), 0);
+  }
+  
+  return {
+    data: {
+      totalReferralCodes: referralSummary?.length || 0,
+      totalReferrals: totals?.length || 0,
+      totalCommissionEarnings,
+      totalDiscountGiven,
+      referralSummary: referralSummary || [],
+      recentTransactions: recentTransactions || []
+    }
+  };
 }
