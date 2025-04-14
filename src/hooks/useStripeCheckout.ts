@@ -11,8 +11,8 @@ interface CheckoutParams {
   price: number;
   creatorId: string;
   guestEmail?: string;
-  referralSource?: string; // Added for tracking referral sources
-  referralCode?: string; // Added for referral code support
+  referralSource?: string;
+  referralCode?: string;
 }
 
 export function useStripeCheckout() {
@@ -50,8 +50,8 @@ export function useStripeCheckout() {
           creatorId,
           guestEmail: isGuestCheckout ? guestEmail : undefined,
           isGuest: isGuestCheckout,
-          referralSource, // Pass the referral source to the checkout session
-          referralCode // Pass the referral code to the checkout session
+          referralSource,
+          referralCode
         }
       });
 
@@ -73,9 +73,8 @@ export function useStripeCheckout() {
                 item_category: itemType,
                 price: price,
                 // Use index signature to allow additional properties
-                // This fixes the TypeScript error
-                ...referralSource ? { ['referral_source']: referralSource } : {},
-                ...referralCode ? { ['referral_code']: referralCode } : {}
+                referral_source: referralSource || undefined,
+                referral_code: referralCode || undefined
               }]
             });
           }

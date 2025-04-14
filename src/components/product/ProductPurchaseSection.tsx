@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Check, Shield, Tag } from 'lucide-react';
 import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProductPurchaseSectionProps {
@@ -26,6 +25,7 @@ interface ProductPurchaseSectionProps {
   className?: string;
 }
 
+// Simplified version until we have the database table
 interface ReferralCodeData {
   code: string;
   discount_percent: number;
@@ -77,43 +77,31 @@ export function ProductPurchaseSection({
     setIsValidatingCode(true);
     
     try {
-      const { data, error } = await supabase
-        .from('referral_codes')
-        .select('code, discount_percent, is_active, expiry_date, max_uses, usage_count')
-        .eq('code', code.trim())
-        .eq('is_active', true)
-        .single();
-      
-      if (error || !data) {
+      // Temporary mock validation until we have the database table
+      // This will be replaced with a real database query once tables are created
+      if (code === 'DEMO10') {
+        const mockCode: ReferralCodeData = {
+          code: 'DEMO10',
+          discount_percent: 10,
+          is_active: true,
+          expiry_date: null,
+          max_uses: null,
+          usage_count: 5
+        };
+        
+        // Valid code
+        setValidReferralCode(mockCode);
+        
+        // Calculate discounted price
+        if (mockCode.discount_percent > 0) {
+          const discount = price * (mockCode.discount_percent / 100);
+          setDiscountedPrice(price - discount);
+          toast.success(`Referral code applied: ${mockCode.discount_percent}% discount!`);
+        }
+      } else {
+        toast.error('Invalid referral code');
         setValidReferralCode(null);
         setDiscountedPrice(null);
-        return;
-      }
-      
-      // Check if code is expired
-      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
-        toast.error('This referral code has expired');
-        setValidReferralCode(null);
-        setDiscountedPrice(null);
-        return;
-      }
-      
-      // Check if code has reached max uses
-      if (data.max_uses !== null && data.usage_count >= data.max_uses) {
-        toast.error('This referral code has reached its maximum usage limit');
-        setValidReferralCode(null);
-        setDiscountedPrice(null);
-        return;
-      }
-      
-      // Valid code
-      setValidReferralCode(data);
-      
-      // Calculate discounted price
-      if (data.discount_percent > 0) {
-        const discount = price * (data.discount_percent / 100);
-        setDiscountedPrice(price - discount);
-        toast.success(`Referral code applied: ${data.discount_percent}% discount!`);
       }
     } catch (err) {
       console.error('Error validating referral code:', err);

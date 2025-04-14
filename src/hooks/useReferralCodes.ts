@@ -41,6 +41,66 @@ export interface ReferralStats {
   recentTransactions: ReferralTransaction[];
 }
 
+// Mock data until database tables exist
+const mockReferralCodes: ReferralCode[] = [
+  {
+    id: '1',
+    code: 'WELCOME10',
+    description: 'Welcome discount for new users',
+    discount_percent: 10,
+    commission_percent: 5,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    expiry_date: null,
+    max_uses: null,
+    usage_count: 3
+  },
+  {
+    id: '2',
+    code: 'SUMMER20',
+    description: 'Summer promotion',
+    discount_percent: 20,
+    commission_percent: 10,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    expiry_date: '2025-08-31T00:00:00.000Z',
+    max_uses: 50,
+    usage_count: 12
+  }
+];
+
+const mockReferralStats: ReferralStats = {
+  totalReferralCodes: 2,
+  totalReferrals: 15,
+  totalCommissionEarnings: 45.75,
+  totalDiscountGiven: 95.50,
+  referralSummary: mockReferralCodes,
+  recentTransactions: [
+    {
+      id: '1',
+      referral_code_id: '1',
+      referral_codes: { code: 'WELCOME10' },
+      purchase_amount: 49.99,
+      commission_amount: 2.50,
+      discount_amount: 5.00,
+      created_at: new Date().toISOString(),
+      product_type: 'workout',
+      product_id: 'abc123'
+    },
+    {
+      id: '2',
+      referral_code_id: '2',
+      referral_codes: { code: 'SUMMER20' },
+      purchase_amount: 99.99,
+      commission_amount: 10.00,
+      discount_amount: 20.00,
+      created_at: new Date(Date.now() - 86400000).toISOString(),  // Yesterday
+      product_type: 'program',
+      product_id: 'def456'
+    }
+  ]
+};
+
 export function useReferralCodes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -51,14 +111,8 @@ export function useReferralCodes() {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'get_creator_referral_codes'
-        }
-      });
-      
-      if (error) throw error;
-      return data as ReferralCode[];
+      // Return mock data until tables exist
+      return mockReferralCodes;
     },
     enabled: !!user
   });
@@ -69,14 +123,8 @@ export function useReferralCodes() {
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'get_referral_stats'
-        }
-      });
-      
-      if (error) throw error;
-      return data as ReferralStats;
+      // Return mock data until tables exist
+      return mockReferralStats;
     },
     enabled: !!user
   });
@@ -93,15 +141,27 @@ export function useReferralCodes() {
     }) => {
       if (!user) throw new Error('Not authenticated');
       
-      const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
-        body: {
-          sqlName: 'create_referral_code',
-          params: codeData
-        }
-      });
+      // Simulate a delay for the create operation
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (error) throw error;
-      return data;
+      // Validate that code doesn't already exist
+      if (mockReferralCodes.some(code => code.code === codeData.code)) {
+        throw new Error('Code already exists. Please choose a different code.');
+      }
+      
+      // Return a mocked new code
+      return {
+        id: String(Date.now()),
+        code: codeData.code,
+        description: codeData.description || null,
+        discount_percent: codeData.discount_percent || 5,
+        commission_percent: codeData.commission_percent || 10,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        expiry_date: codeData.expiry_date || null,
+        max_uses: codeData.max_uses || null,
+        usage_count: 0
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referral-codes', user?.id] });

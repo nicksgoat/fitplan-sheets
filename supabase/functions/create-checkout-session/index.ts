@@ -19,9 +19,17 @@ serve(async (req) => {
     
     // Get request body
     const body = await req.json();
-    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest, referralSource } = body;
+    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest, referralSource, referralCode } = body;
     
-    console.log("Request params:", { itemType, itemId, itemName, price, userId });
+    console.log("Request params:", { 
+      itemType, 
+      itemId, 
+      itemName, 
+      price, 
+      userId,
+      referralSource,
+      referralCode 
+    });
 
     if (!itemType || !itemId || !price || (!userId && !guestEmail) || !creatorId) {
       console.log("Missing parameters:", { itemType, itemId, price, userId, creatorId, guestEmail });
@@ -77,7 +85,7 @@ serve(async (req) => {
     if (isGuest && guestEmail) {
       customerEmail = guestEmail;
       console.log("Using guest email:", guestEmail);
-    } else if (userId) {
+    } else if (userId && userId !== 'guest') {
       try {
         // Get user email for Stripe customer creation
         const { data: userData, error: userError } = await supabase
@@ -133,12 +141,27 @@ serve(async (req) => {
       );
     }
 
-    // Calculate platform fee (10%)
-    const platformFee = price * 0.1;
-    const creatorEarnings = price - platformFee;
+    // Calculate platform fee (10%) and potential discount
+    let finalPrice = price;
+    let discountAmount = 0;
+
+    // Apply referral code discount (will be validated properly once DB tables exist)
+    if (referralCode) {
+      // In future: look up and validate the referral code in the database
+      // For now, just apply a fixed 10% discount if a code is provided
+      const discountPercent = 10;
+      discountAmount = finalPrice * (discountPercent / 100);
+      finalPrice -= discountAmount;
+      console.log(`Applied discount for code ${referralCode}: $${discountAmount}`);
+    }
+
+    const platformFee = finalPrice * 0.1;
+    const creatorEarnings = finalPrice - platformFee;
 
     console.log("Creating checkout session with prices:", { 
-      total: price, 
+      total: finalPrice, 
+      originalPrice: price,
+      discount: discountAmount,
       platformFee, 
       creatorEarnings 
     });
@@ -155,7 +178,7 @@ serve(async (req) => {
                 name: itemName,
                 description: `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} purchase`,
               },
-              unit_amount: Math.round(price * 100), // Convert to cents
+              unit_amount: Math.round(finalPrice * 100), // Convert to cents
             },
             quantity: 1,
           },
@@ -170,11 +193,15 @@ serve(async (req) => {
           itemId,
           userId: isGuest ? `guest_${guestEmail}` : userId,
           creatorId,
+          originalPrice: price.toFixed(2),
+          finalPrice: finalPrice.toFixed(2),
+          discountAmount: discountAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
           creatorEarnings: creatorEarnings.toFixed(2),
           isGuest: isGuest ? 'true' : 'false',
           guestEmail: isGuest ? guestEmail : undefined,
-          referralSource: referralSource || 'direct'
+          referralSource: referralSource || 'direct',
+          referralCode: referralCode || undefined
         },
       });
 
