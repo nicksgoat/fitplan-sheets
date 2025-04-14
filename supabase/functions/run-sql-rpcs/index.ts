@@ -12,11 +12,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-  
-  let authUser = null;
-  
+
   try {
-    // Extract user token from request
+    // Extract authentication from request
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
@@ -24,7 +22,7 @@ serve(async (req) => {
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Create Supabase client with user's JWT token
+    // Create Supabase client with the user's token
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -37,379 +35,240 @@ serve(async (req) => {
       }
     );
     
-    // Get the current user's ID
+    // Get user data
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    
     if (authError || !authData.user) {
-      console.error("Auth error:", authError);
-      throw new Error('Unauthorized or invalid token');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
-    
-    authUser = authData.user;
-    console.log("Authorized user ID:", authUser.id);
     
     // Parse the request body
     const { sqlName, params } = await req.json();
-    console.log(`Processing RPC: ${sqlName}, params:`, params);
     
-    // Always create a separate admin client with service role key
-    // This bypasses RLS policies and avoids infinite recursion
-    const adminSupabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Execute the named SQL function based on the sqlName
+    let result;
+    let error;
     
-    // Execute the appropriate SQL RPC based on the sqlName parameter
     switch (sqlName) {
-      case 'fix_club_members_rls':
-        // Fix RLS policies for club_members table
-        console.log("[FIX_CLUB_MEMBERS_RLS] Fixing RLS policies for club_members table");
-        
-        try {
-          // Execute the SQL to fix the RLS policies
-          const { data: rlsFixData, error: rlsFixError } = await adminSupabase.rpc('run_sql_query', {
-            query: `
-              -- First, drop the problematic RLS policies
-              DROP POLICY IF EXISTS "Club admins can manage members" ON public.club_members;
-              DROP POLICY IF EXISTS "Club members are viewable by club members" ON public.club_members;
-              
-              -- Create security definer functions if they don't exist
-              CREATE OR REPLACE FUNCTION public.is_club_admin(club_id_param uuid, user_id_param uuid)
-              RETURNS boolean
-              LANGUAGE sql
-              STABLE SECURITY DEFINER
-              AS $$
-                SELECT EXISTS (
-                  SELECT 1 FROM public.club_members
-                  WHERE club_id = club_id_param 
-                  AND user_id = user_id_param
-                  AND (role = 'admin' OR role = 'moderator')
-                );
-              $$;
-              
-              CREATE OR REPLACE FUNCTION public.is_club_member_safe(club_id_param uuid, user_id_param uuid)
-              RETURNS boolean
-              LANGUAGE sql
-              STABLE SECURITY DEFINER
-              AS $$
-                SELECT EXISTS (
-                  SELECT 1 
-                  FROM public.club_members 
-                  WHERE club_id = club_id_param 
-                  AND user_id = user_id_param
-                );
-              $$;
-              
-              -- Recreate policies using security definer functions
-              CREATE POLICY "Club admins can manage members safely"
-              ON public.club_members
-              FOR ALL
-              USING (
-                public.is_club_admin(club_id, auth.uid())
-              );
-              
-              CREATE POLICY "Club members are viewable by club members safely"
-              ON public.club_members
-              FOR SELECT
-              USING (
-                public.is_club_member_safe(club_id, auth.uid())
-              );
-              
-              -- Add policies for user's own records
-              CREATE POLICY "Users can view their own club memberships"
-              ON public.club_members
-              FOR SELECT
-              USING (
-                user_id = auth.uid()
-              );
-              
-              CREATE POLICY "Users can insert their own club memberships"
-              ON public.club_members
-              FOR INSERT
-              WITH CHECK (
-                user_id = auth.uid()
-              );
-            `
-          });
-          
-          if (rlsFixError) {
-            console.error("[FIX_CLUB_MEMBERS_RLS] Error fixing RLS policies:", rlsFixError);
-            throw rlsFixError;
-          }
-          
-          console.log("[FIX_CLUB_MEMBERS_RLS] RLS policies fixed successfully");
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: "RLS policies fixed successfully" 
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[FIX_CLUB_MEMBERS_RLS] Error:", error);
-          throw new Error(`Failed to fix RLS policies: ${error.message}`);
-        }
-      
-      case 'join_club':
-        // Handle joining a club
-        console.log(`[JOIN_CLUB] User ${authUser.id} joining club ${params.club_id}`);
-        
-        try {
-          // Check if user is already a member - use admin client to avoid RLS issues
-          const { data: existingMember, error: memberCheckError } = await adminSupabase
-            .from('club_members')
-            .select('*')
-            .eq('club_id', params.club_id)
-            .eq('user_id', authUser.id)
-            .maybeSingle();
-            
-          console.log("[JOIN_CLUB] Existing member check:", existingMember, memberCheckError);
-          
-          if (existingMember) {
-            console.log("[JOIN_CLUB] User already a member, returning existing membership");
-            return new Response(
-              JSON.stringify(existingMember),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-            );
-          }
-            
-          // Insert new membership record with admin client to bypass RLS
-          const { data: newMembership, error: insertError } = await adminSupabase
-            .from('club_members')
-            .insert({
-              club_id: params.club_id,
-              user_id: authUser.id,
-              role: params.role || 'member',
-              status: params.status || 'active',
-              membership_type: params.membership_type || 'free'
-            })
-            .select()
-            .single();
-            
-          console.log("[JOIN_CLUB] Insert result:", newMembership, insertError);
-            
-          if (insertError) {
-            console.error("[JOIN_CLUB] Error inserting membership:", insertError);
-            throw insertError;
-          }
-          
-          console.log("[JOIN_CLUB] Successfully joined club");
-          return new Response(
-            JSON.stringify(newMembership),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[JOIN_CLUB] Error:", error);
-          throw new Error(`Failed to join club: ${error.message}`);
-        }
-        
-      case 'check_club_member':
-        // RPC to check if a user is a member without triggering the infinite recursion
-        console.log(`[CHECK_CLUB_MEMBER] Checking if user ${params.user_id || authUser.id} is member of club ${params.club_id}`);
-        
-        try {
-          // Use admin client to bypass RLS policies completely
-          const { data: memberData, error: checkError } = await adminSupabase
-            .from('club_members')
-            .select('*')
-            .eq('club_id', params.club_id)
-            .eq('user_id', params.user_id || authUser.id)
-            .maybeSingle();
-            
-          console.log("[CHECK_CLUB_MEMBER] Check result:", memberData, checkError);
-          
-          return new Response(
-            JSON.stringify({ 
-              is_member: !!memberData, 
-              member_data: memberData 
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[CHECK_CLUB_MEMBER] Error:", error);
-          throw new Error(`Failed to check club membership: ${error.message}`);
-        }
-      
-      case 'update_member_role':
-        // Handle updating member role
-        console.log(`[UPDATE_MEMBER_ROLE] Updating role to ${params.role} for member ${params.member_id}`);
-        
-        try {
-          // Update the member role using admin client to bypass RLS
-          const { data: updatedMember, error: updateError } = await adminSupabase
-            .from('club_members')
-            .update({ role: params.role })
-            .eq('id', params.member_id)
-            .select()
-            .single();
-            
-          console.log("[UPDATE_MEMBER_ROLE] Update result:", updatedMember, updateError);
-            
-          if (updateError) {
-            console.error("[UPDATE_MEMBER_ROLE] Error updating role:", updateError);
-            throw updateError;
-          }
-          
-          return new Response(
-            JSON.stringify(updatedMember),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[UPDATE_MEMBER_ROLE] Error:", error);
-          throw new Error(`Failed to update member role: ${error.message}`);
-        }
-      
-      case 'leave_club':
-        // Handle leaving a club
-        console.log(`[LEAVE_CLUB] User ${authUser.id} leaving club ${params.club_id}`);
-        
-        try {
-          // Delete the membership record using admin client to bypass RLS
-          const { error: deleteError } = await adminSupabase
-            .from('club_members')
-            .delete()
-            .eq('club_id', params.club_id)
-            .eq('user_id', authUser.id);
-            
-          if (deleteError) {
-            console.error("[LEAVE_CLUB] Error leaving club:", deleteError);
-            throw deleteError;
-          }
-          
-          console.log("[LEAVE_CLUB] Successfully left club");
-          return new Response(
-            JSON.stringify({ success: true }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[LEAVE_CLUB] Error:", error);
-          throw new Error(`Failed to leave club: ${error.message}`);
-        }
-      
-      case 'get_club_members':
-        // Get all members of a club
-        console.log(`[GET_CLUB_MEMBERS] Getting members for club ${params.club_id}`);
-        
-        try {
-          // First get the raw members data
-          const { data: membersData, error: membersError } = await adminSupabase
-            .from('club_members')
-            .select('*')
-            .eq('club_id', params.club_id);
-            
-          if (membersError) {
-            console.error("[GET_CLUB_MEMBERS] Error fetching members:", membersError);
-            throw membersError;
-          }
-          
-          // Now fetch the profiles for each member in a separate query
-          if (membersData && membersData.length > 0) {
-            const userIds = membersData.map(member => member.user_id);
-            
-            const { data: profilesData, error: profilesError } = await adminSupabase
-              .from('profiles')
-              .select('*')
-              .in('id', userIds);
-            
-            if (profilesError) {
-              console.error("[GET_CLUB_MEMBERS] Error fetching profiles:", profilesError);
-            }
-            
-            // Join the profiles with the members
-            const membersWithProfiles = membersData.map(member => {
-              const profile = profilesData?.find(p => p.id === member.user_id);
-              return { ...member, profile };
-            });
-            
-            console.log(`[GET_CLUB_MEMBERS] Found ${membersWithProfiles.length} members with profiles`);
-            
-            return new Response(
-              JSON.stringify(membersWithProfiles),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-            );
-          }
-          
-          console.log(`[GET_CLUB_MEMBERS] Found ${membersData?.length || 0} members`);
-          
-          return new Response(
-            JSON.stringify(membersData || []),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[GET_CLUB_MEMBERS] Error:", error);
-          throw new Error(`Failed to get club members: ${error.message}`);
-        }
-      
       case 'get_user_clubs':
-        // Get all clubs that a user is a member of
-        console.log(`[GET_USER_CLUBS] Getting clubs for user ${authUser.id}`);
-        
-        try {
-          // First get the club memberships using admin client
-          const { data: memberships, error: membershipError } = await adminSupabase
-            .from('club_members')
-            .select('*')
-            .eq('user_id', authUser.id);
-          
-          if (membershipError) {
-            console.error("[GET_USER_CLUBS] Error fetching memberships:", membershipError);
-            throw membershipError;
-          }
-          
-          if (!memberships || memberships.length === 0) {
-            console.log("[GET_USER_CLUBS] No memberships found");
-            return new Response(
-              JSON.stringify([]),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-            );
-          }
-          
-          // Get club details for each membership
-          const clubIds = memberships.map(m => m.club_id);
-          const { data: clubs, error: clubsError } = await adminSupabase
-            .from('clubs')
-            .select('*')
-            .in('id', clubIds);
-          
-          if (clubsError) {
-            console.error("[GET_USER_CLUBS] Error fetching clubs:", clubsError);
-            throw clubsError;
-          }
-          
-          // Join memberships with clubs
-          const userClubs = memberships.map(membership => {
-            const club = clubs?.find(c => c.id === membership.club_id);
-            return club ? { membership, club } : null;
-          }).filter(Boolean);
-          
-          console.log(`[GET_USER_CLUBS] Found ${userClubs.length} user clubs`);
-          
-          return new Response(
-            JSON.stringify(userClubs),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        } catch (error) {
-          console.error("[GET_USER_CLUBS] Error:", error);
-          throw new Error(`Failed to get user clubs: ${error.message}`);
-        }
-      
-      // Add other SQL RPCs here as needed
-      
+        ({ data: result, error } = await getUserClubs(supabase, authData.user.id));
+        break;
+      case 'get_accessible_workouts':
+        ({ data: result, error } = await getAccessibleWorkouts(supabase, authData.user.id, params));
+        break;
+      case 'check_club_member':
+        ({ data: result, error } = await checkClubMember(supabase, params.club_id, authData.user.id));
+        break;
       default:
-        throw new Error(`Unknown SQL RPC: ${sqlName}`);
+        return new Response(
+          JSON.stringify({ error: `Unknown SQL function: ${sqlName}` }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
     }
-  } catch (error) {
-    console.error('Error in SQL RPC:', error);
+    
+    if (error) {
+      throw new Error(`Database error: ${error.message}`);
+    }
     
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'An error occurred processing your request',
-        user_id: authUser?.id || null
-      }),
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error('API error:', error.message);
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
   }
 });
+
+// SQL function implementations
+async function getUserClubs(supabase, userId) {
+  return await supabase
+    .from('club_members')
+    .select(`
+      club_id,
+      role,
+      membership_type,
+      clubs:club_id (
+        id,
+        name,
+        description,
+        logo_url,
+        banner_url,
+        club_type,
+        membership_type,
+        creator_id
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('status', 'active');
+}
+
+async function getAccessibleWorkouts(supabase, userId, params = {}) {
+  const limit = params?.limit || 10;
+  const offset = params?.offset || 0;
+  
+  // First get workouts the user has created (via programs)
+  const { data: createdWorkouts, error: createdError } = await supabase
+    .from('workouts')
+    .select(`
+      id,
+      name,
+      day_num,
+      created_at,
+      updated_at,
+      price,
+      is_purchasable,
+      slug,
+      weeks!inner (
+        programs!inner (
+          user_id
+        )
+      )
+    `)
+    .eq('weeks.programs.user_id', userId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+    
+  if (createdError) throw createdError;
+  
+  // Then get workouts the user has purchased
+  const { data: purchasedWorkouts, error: purchasedError } = await supabase
+    .from('workout_purchases')
+    .select(`
+      workouts:workout_id (
+        id,
+        name,
+        day_num,
+        created_at,
+        updated_at,
+        price,
+        is_purchasable,
+        slug,
+        weeks (
+          programs (
+            user_id
+          )
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false });
+    
+  if (purchasedError) throw purchasedError;
+  
+  // Then get workouts shared with clubs the user is a member of
+  const { data: clubMemberships, error: clubError } = await supabase
+    .from('club_members')
+    .select('club_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
+    
+  if (clubError) throw clubError;
+  
+  let sharedWorkouts = [];
+  
+  if (clubMemberships && clubMemberships.length > 0) {
+    const clubIds = clubMemberships.map(membership => membership.club_id);
+    
+    const { data: sharedData, error: sharedError } = await supabase
+      .from('club_shared_workouts')
+      .select(`
+        workouts:workout_id (
+          id,
+          name,
+          day_num,
+          created_at,
+          updated_at,
+          price,
+          is_purchasable,
+          slug,
+          weeks (
+            programs (
+              user_id
+            )
+          )
+        )
+      `)
+      .in('club_id', clubIds)
+      .order('created_at', { ascending: false });
+      
+    if (sharedError) throw sharedError;
+    
+    if (sharedData) {
+      sharedWorkouts = sharedData.map(item => item.workouts);
+    }
+  }
+  
+  // Combine all workouts, remove duplicates, and sort
+  const purchasedWorkoutsData = purchasedWorkouts
+    ? purchasedWorkouts
+        .filter(item => item.workouts)
+        .map(item => ({
+          ...item.workouts,
+          accessType: 'purchased'
+        }))
+    : [];
+    
+  const sharedWorkoutsData = sharedWorkouts
+    .filter(Boolean)
+    .map(workout => ({
+      ...workout,
+      accessType: 'shared'
+    }));
+    
+  const createdWorkoutsData = createdWorkouts
+    ? createdWorkouts.map(workout => ({
+        ...workout,
+        accessType: 'created'
+      }))
+    : [];
+    
+  // Combine all workouts
+  const allWorkouts = [
+    ...createdWorkoutsData,
+    ...purchasedWorkoutsData,
+    ...sharedWorkoutsData
+  ];
+  
+  // Remove duplicates by workout ID
+  const uniqueWorkouts = allWorkouts.filter(
+    (workout, index, self) =>
+      index === self.findIndex((w) => w.id === workout.id)
+  );
+  
+  // Sort by created date (newest first)
+  uniqueWorkouts.sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+  
+  return { data: uniqueWorkouts };
+}
+
+async function checkClubMember(supabase, clubId, userId) {
+  const { data, error } = await supabase
+    .from('club_members')
+    .select('id')
+    .eq('club_id', clubId)
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle();
+    
+  if (error) throw error;
+  
+  return { data: { is_member: !!data } };
+}

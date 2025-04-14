@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -159,17 +158,32 @@ async function getWorkoutById(context) {
   const { supabase, user, params } = context;
   const workoutId = params.id;
   
-  // Get detailed workout data
+  // Get detailed workout data with all related exercise data and circuits
   const { data, error } = await supabase
     .from('workouts')
     .select(`
       *,
       exercises:exercises(
-        id, name, notes,
-        sets:exercise_sets(*)
+        id, name, notes, is_circuit, is_in_circuit, circuit_id, circuit_order, 
+        is_group, group_id, rep_type, intensity_type, weight_type, library_exercise_id,
+        sets:exercise_sets(
+          id, reps, weight, intensity, intensity_type, weight_type, rest
+        )
+      ),
+      circuits:circuits(
+        id, name, rounds, rest_between_exercises, rest_between_rounds,
+        circuit_exercises:circuit_exercises(
+          id, exercise_id, exercise_order
+        )
       ),
       weeks:weeks(
-        programs:programs(user_id)
+        id, name, order_num,
+        programs:programs(
+          id, name, user_id, is_public, price, is_purchasable, slug,
+          creator:profiles(
+            id, display_name, username, avatar_url
+          )
+        )
       )
     `)
     .eq('id', workoutId)
@@ -179,7 +193,7 @@ async function getWorkoutById(context) {
   
   // Check if user has access to this workout
   const hasAccess = await checkWorkoutAccess(supabase, user.id, workoutId);
-  if (!hasAccess) {
+  if (!hasAccess && data.weeks?.programs?.user_id !== user.id) {
     return new Response(
       JSON.stringify({ error: 'Access denied' }),
       { 
@@ -188,9 +202,67 @@ async function getWorkoutById(context) {
       }
     );
   }
+
+  // Process the data to create a proper structure for mobile
+  // Add is_creator flag to make it easier for mobile client
+  const isCreator = data.weeks?.programs?.user_id === user.id;
+  
+  // Get shared clubs information to show on mobile
+  const { data: sharedWithClubs, error: sharedError } = await supabase
+    .from('club_shared_workouts')
+    .select(`
+      id, 
+      clubs:club_id(
+        id, name, logo_url
+      )
+    `)
+    .eq('workout_id', workoutId);
+  
+  if (sharedError) {
+    console.error("Error fetching shared clubs:", sharedError);
+  }
+  
+  // Organize the circuits and their exercises
+  const circuitMap = new Map();
+  
+  if (data.circuits && data.circuits.length > 0) {
+    for (const circuit of data.circuits) {
+      circuitMap.set(circuit.id, {
+        ...circuit,
+        exercises: [] // Will be populated with the actual exercise objects
+      });
+    }
+    
+    // For each exercise that belongs to a circuit, add it to the appropriate circuit
+    if (data.exercises) {
+      for (const exercise of data.exercises) {
+        if (exercise.is_in_circuit && exercise.circuit_id && circuitMap.has(exercise.circuit_id)) {
+          const circuitObj = circuitMap.get(exercise.circuit_id);
+          circuitObj.exercises.push(exercise);
+        }
+      }
+      
+      // Sort the exercises in each circuit by their order
+      for (const circuit of circuitMap.values()) {
+        circuit.exercises.sort((a, b) => (a.circuit_order || 0) - (b.circuit_order || 0));
+      }
+    }
+  }
+  
+  // Convert the Map to an array for the response
+  const circuits = Array.from(circuitMap.values());
+  
+  // Format the response to include all the details
+  const enhancedData = {
+    ...data,
+    circuits: circuits,
+    isCreator,
+    sharedWithClubs: sharedWithClubs || [],
+    hasAccess: true
+  };
   
   return new Response(
-    JSON.stringify({ data }),
+    JSON.stringify({ data: enhancedData }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
