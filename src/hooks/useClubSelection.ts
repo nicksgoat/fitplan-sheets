@@ -54,10 +54,12 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Process the response with explicit casting to avoid deep type instantiation
+      // Process the response completely avoiding type inference
       if (data) {
-        const typedData = data as unknown as ClubMemberResponse[];
-        typedData.forEach(item => {
+        // Convert to any first to bypass TypeScript's deep type checking
+        const rawData: any[] = data as any[];
+        
+        rawData.forEach(item => {
           if (item.clubs) {
             userClubs.push({
               id: item.clubs.id,
