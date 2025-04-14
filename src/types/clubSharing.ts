@@ -9,7 +9,7 @@ export interface Club {
   logo_url?: string;
   // Adding the required fields from ClubBase to make it compatible
   created_at: string;
-  created_by: string;
+  created_by?: string; // Making this optional as it might not be in the DB schema
   club_type: 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
   membership_type: 'free' | 'premium' | 'vip';
 }

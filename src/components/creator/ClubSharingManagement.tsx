@@ -16,7 +16,7 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
-// Define a simple type for shares to avoid deep instantiation issues
+// Define a simpler interface for ContentShare to avoid deep instantiation issues
 interface ContentShare {
   club_id: string;
   club?: {
@@ -94,7 +94,7 @@ export function ClubSharingManagement({
             <ClubShareSelection
               contentId={contentId}
               contentType={contentType}
-              selectedClubIds={existingShares ? existingShares.map(share => share.club_id) : []}
+              selectedClubIds={selectedClubs}
               onSelectionChange={setSelectedClubs}
             />
             

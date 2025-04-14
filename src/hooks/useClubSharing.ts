@@ -23,7 +23,7 @@ export const useClubSharing = () => {
     
     setIsLoading(true);
     try {
-      // Get clubs where user is an admin or moderator
+      // Get clubs where user is the creator
       const { data, error } = await supabase
         .from('clubs')
         .select(`
@@ -33,7 +33,6 @@ export const useClubSharing = () => {
           description,
           creator_id,
           created_at,
-          created_by,
           club_type,
           membership_type
         `)
@@ -41,7 +40,7 @@ export const useClubSharing = () => {
       
       if (error) throw error;
       
-      // Set the available clubs directly from the query
+      // Safely cast the data to the Club type
       setAvailableClubs(data as Club[]);
       
     } catch (err) {
