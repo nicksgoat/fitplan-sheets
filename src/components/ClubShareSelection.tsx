@@ -16,15 +16,6 @@ interface Club {
   logo_url?: string;
 }
 
-// Define specific type for club member record with explicit club data structure
-interface ClubMemberRecord {
-  club_id: string;
-  user_id: string;
-  role: string;
-  status: string;
-  clubs?: Club; // Use Club directly instead of a recursive reference
-}
-
 // Define specific type for workout shares
 interface WorkoutShareRecord {
   club_id: string;
@@ -86,6 +77,18 @@ export function ClubShareSelection({
     setIsLoading(true);
     try {
       // Get clubs where the user is admin or owner
+      // Define the response type more explicitly to avoid deep instantiation
+      type ClubMemberQueryResult = {
+        club_id: string;
+        role: string;
+        clubs: {
+          id: string;
+          name: string;
+          description?: string;
+          logo_url?: string;
+        } | null;
+      };
+      
       const { data, error } = await supabase
         .from('club_members')
         .select(`
@@ -107,10 +110,10 @@ export function ClubShareSelection({
       // Explicitly type and transform the data to avoid deep type instantiation
       const userClubs: Club[] = [];
       
-      // Safely extract club data from the response
+      // Safely extract club data from the response using type assertion
       if (data && Array.isArray(data)) {
-        data.forEach(item => {
-          if (item && item.clubs && typeof item.clubs === 'object') {
+        (data as ClubMemberQueryResult[]).forEach(item => {
+          if (item.clubs) {
             const club: Club = {
               id: item.clubs.id,
               name: item.clubs.name,
