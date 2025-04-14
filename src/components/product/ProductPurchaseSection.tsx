@@ -265,11 +265,11 @@ export function ProductPurchaseSection({
       
       <div className="space-y-2">
         {user ? (
-          <div className="flex flex-col space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button 
               onClick={() => handlePurchase('standard')}
               disabled={checkoutLoading}
-              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 py-6 text-lg"
+              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 py-6 text-lg flex items-center justify-center"
             >
               {checkoutLoading ? 'Processing...' : `Buy Now`}
             </Button>
@@ -278,7 +278,7 @@ export function ProductPurchaseSection({
               <Button
                 onClick={() => handlePurchase('apple_pay')}
                 disabled={checkoutLoading}
-                className="w-full bg-black hover:bg-gray-900 text-white py-5 flex items-center justify-center gap-2"
+                className="w-full bg-black hover:bg-gray-900 text-white py-6 flex items-center justify-center gap-2"
               >
                 <svg 
                   viewBox="0 0 24 24" 
@@ -318,3 +318,4 @@ export function ProductPurchaseSection({
     </div>
   );
 }
+
