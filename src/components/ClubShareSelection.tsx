@@ -48,7 +48,7 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Use a type assertion to handle the complex nested type
+      // Fixed: Explicitly type the data as ClubMemberWithClub[] and extract the club
       return (data as ClubMemberWithClub[]).map(item => item.club);
     },
   });
