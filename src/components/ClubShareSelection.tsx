@@ -8,7 +8,7 @@ import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define a simplified type to avoid recursive references
+// Define a type for club data that avoids recursive references
 type SimpleClub = {
   id: string;
   name: string;
@@ -47,7 +47,7 @@ export function ClubShareSelection({
 
       const { data, error } = await supabase
         .from("club_members")
-        .select("club_id, role, club:clubs(*)")
+        .select("club_id, role, clubs(id, name, description, created_at, created_by, banner_url, logo_url, club_type, membership_type, premium_price, creator_id)")
         .eq("user_id", userData.user.id)
         .in("role", ["admin", "owner", "moderator"]);
 
@@ -56,10 +56,9 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Extract club data and manually build the SimpleClub objects
-      // to completely avoid any potential type recursion
-      return data?.filter(item => item.club).map(item => {
-        const club = item.club as Record<string, any>;
+      // Extract club data and build SimpleClub objects
+      return data?.filter(item => item.clubs).map(item => {
+        const club = item.clubs as any;
         
         return {
           id: club.id,

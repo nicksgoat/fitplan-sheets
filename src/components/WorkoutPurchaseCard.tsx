@@ -8,6 +8,7 @@ import { useHasUserPurchasedWorkout } from '@/hooks/useWorkoutData';
 import { Workout } from '@/types/workout';
 import { formatCurrency } from '@/utils/workout';
 import { ClubAccessBadge } from './workout/ClubAccessBadge';
+import { useNavigate } from 'react-router-dom';
 
 interface WorkoutPurchaseCardProps {
   workout: Workout;
@@ -17,13 +18,23 @@ interface WorkoutPurchaseCardProps {
 
 export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPurchaseCardProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { initiateCheckout, loading } = useStripeCheckout();
-  const purchaseData = useHasUserPurchasedWorkout(user?.id || '', workout.id);
+  const { data, isLoading: isPurchaseLoading } = useHasUserPurchasedWorkout(user?.id || '', workout.id);
   
-  const isPurchased = purchaseData.data?.isPurchased || false;
-  const isClubShared = purchaseData.data?.isClubShared || false;
-  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
-  const isPurchaseLoading = purchaseData.isLoading;
+  const isPurchased = data?.isPurchased || false;
+  const isClubShared = data?.isClubShared || false;
+  const sharedWithClubs = data?.sharedWithClubs || [];
+  
+  console.log('[WorkoutPurchaseCard]', {
+    workoutId: workout.id,
+    isPurchasable: workout.isPurchasable,
+    price: workout.price,
+    isPurchased,
+    isClubShared,
+    isPurchaseLoading,
+    userId: user?.id,
+  });
   
   const handlePurchase = () => {
     if (!workout.price) return;
@@ -36,15 +47,6 @@ export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPu
       creatorId: creatorId
     });
   };
-  
-  console.log('[WorkoutPurchaseCard]', {
-    workoutId: workout.id,
-    isPurchasable: workout.isPurchasable,
-    price: workout.price,
-    isPurchased,
-    isClubShared,
-    isPurchaseLoading
-  });
   
   return (
     <Card className="w-full bg-dark-100 border border-dark-300 overflow-hidden">
@@ -86,8 +88,11 @@ export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPu
             {isPurchaseLoading ? (
               <Button disabled className="flex-1">Loading...</Button>
             ) : isPurchased || isClubShared ? (
-              <Button variant="outline" disabled className="flex-1 bg-green-800/20 text-green-400 border-green-800">
-                {isClubShared ? 'Via Club' : 'Purchased'}
+              <Button 
+                className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                onClick={() => navigate('/sheets')}
+              >
+                Start Training
               </Button>
             ) : (
               <Button 

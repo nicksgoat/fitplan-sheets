@@ -8,6 +8,7 @@ import ContentGrid from "@/components/ui/ContentGrid";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDistanceToNow } from 'date-fns';
 
 const PurchasesTab: React.FC = () => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const PurchasesTab: React.FC = () => {
     
     const fetchPurchasedItems = async () => {
       try {
+        console.log('Fetching purchases for user:', user.id);
         // Fetch purchased workouts
         const { data: workoutData, error: workoutError } = await supabase
           .from('workout_purchases')
@@ -66,6 +68,9 @@ const PurchasesTab: React.FC = () => {
         if (programError) {
           throw programError;
         }
+        
+        console.log('Purchased workouts:', workoutData);
+        console.log('Purchased programs:', programData);
         
         // Transform data to ItemType format
         const workoutItems: ItemType[] = workoutData
@@ -121,10 +126,24 @@ const PurchasesTab: React.FC = () => {
     fetchPurchasedItems();
   }, [user]);
 
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch (e) {
+      return "some time ago";
+    }
+  };
+
   if (!user) {
     return (
       <div className="text-center py-10">
         <p className="text-gray-400 mb-4">You need to be logged in to view your purchases.</p>
+        <Button 
+          className="mt-4 bg-fitbloom-purple hover:bg-fitbloom-purple/90 text-sm"
+          onClick={() => window.location.href = "/auth"}
+        >
+          Sign In
+        </Button>
       </div>
     );
   }
@@ -133,6 +152,9 @@ const PurchasesTab: React.FC = () => {
     return (
       <div className="text-center py-10">
         <p className="text-gray-400 mb-4">Loading purchases...</p>
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
+        </div>
       </div>
     );
   }

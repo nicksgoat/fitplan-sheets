@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -12,6 +12,7 @@ import ExercisesTab from './ExercisesTab';
 import CreatedContentTab from './CreatedContentTab';
 import PurchasesTab from './PurchasesTab';
 import { CollectionType, ItemType } from '@/lib/types';
+import { useSearchParams } from 'react-router-dom';
 
 interface LibraryTabsProps {
   collections: CollectionType[];
@@ -34,12 +35,23 @@ const LibraryTabs = ({
   activeCategory,
   onTabChange
 }: LibraryTabsProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  
+  // Set default tab value based on URL parameter or default to 'exercises'
+  const defaultTab = tabParam || 'exercises';
+
   const handleValueChange = (value: string) => {
+    // Update URL parameter
+    setSearchParams(params => {
+      params.set('tab', value);
+      return params;
+    });
     onTabChange(value);
   };
 
   return (
-    <Tabs defaultValue="exercises" className="w-full" onValueChange={handleValueChange}>
+    <Tabs defaultValue={defaultTab} className="w-full" onValueChange={handleValueChange}>
       <TabsList className="mb-6 w-full overflow-x-auto scrollbar-hide flex">
         <TabsTrigger value="collections">Collections</TabsTrigger>
         <TabsTrigger value="exercises">Exercises</TabsTrigger>

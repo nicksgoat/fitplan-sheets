@@ -93,11 +93,11 @@ const PurchaseSuccess = () => {
             <div className="bg-dark-300 rounded-md p-4 border border-dark-400">
               <h4 className="font-medium">What's next?</h4>
               <ul className="mt-2 space-y-2 text-gray-400">
-                <li>• Check out your purchase in your Library</li>
+                <li>• Check out your purchase in your <Link to="/library" className="text-fitbloom-purple hover:underline">Library's Purchases tab</Link></li>
                 <li>• Start using your newly purchased content right away</li>
                 {isGuest && !user && (
                   <li className="text-amber-400">
-                    • Consider creating an account to access your purchases across devices
+                    • Creating an account will allow you to access your purchases across devices
                   </li>
                 )}
                 <li>• Need help? Contact customer support</li>
@@ -115,8 +115,8 @@ const PurchaseSuccess = () => {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-3 pt-0">
-          <Button asChild className="flex-1">
-            <Link to="/library">Go to Library</Link>
+          <Button asChild className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90">
+            <Link to="/library?tab=purchases">Go to Purchased Items</Link>
           </Button>
           {isGuest && !user ? (
             <Button variant="outline" asChild className="flex-1 border-amber-700 text-amber-400 hover:bg-amber-950/30">

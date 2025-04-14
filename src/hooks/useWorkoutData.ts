@@ -1,4 +1,3 @@
-
 // Export specific hooks from their respective files to avoid naming conflicts
 import { 
   useAddWorkout, 
@@ -87,9 +86,13 @@ export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) =>
   return useQuery({
     queryKey: ['workout-purchased', userId, workoutId],
     queryFn: async () => {
-      if (!userId || !workoutId) return false;
+      if (!userId || !workoutId) {
+        console.log('[useHasUserPurchasedWorkout] Missing userId or workoutId', { userId, workoutId });
+        return { isPurchased: false };
+      }
       
       try {
+        console.log('[useHasUserPurchasedWorkout] Checking purchase for', { userId, workoutId });
         const { data, error } = await supabase
           .from('workout_purchases')
           .select('id')
@@ -99,24 +102,28 @@ export const useHasUserPurchasedWorkout = (userId: string, workoutId: string) =>
           .maybeSingle();
         
         if (error) {
-          console.error('Error checking workout purchase:', error);
-          return false;
+          console.error('[useHasUserPurchasedWorkout] Error checking workout purchase:', error);
+          return { isPurchased: false };
         }
 
-        return !!data;
+        const isPurchased = !!data;
+        console.log('[useHasUserPurchasedWorkout] Purchase check result:', { isPurchased, userId, workoutId });
+        return { isPurchased };
       } catch (error) {
-        console.error('Error in useHasUserPurchasedWorkout:', error);
-        return false;
+        console.error('[useHasUserPurchasedWorkout] Exception in purchase check:', error);
+        return { isPurchased: false };
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!userId && !!workoutId,
-    select: (hasPurchased) => {
-      return {
-        isPurchased: hasPurchased,
+    select: (data) => {
+      const result = {
+        isPurchased: data.isPurchased,
         isClubShared: clubAccess.data?.hasAccess || false,
         sharedWithClubs: clubAccess.data?.sharedWithClubs || []
       };
+      console.log('[useHasUserPurchasedWorkout] Final result:', result);
+      return result;
     }
   });
 };

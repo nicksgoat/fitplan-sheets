@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 
 export function useClubContentAccess(contentId: string, contentType: 'workout' | 'program') {
   const { user } = useAuth();
@@ -35,7 +34,7 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
           
         if (sharedError) {
           console.error(`[useClubContentAccess] Error checking shared ${contentType}:`, sharedError);
-          throw sharedError;
+          return { hasAccess: false, sharedWithClubs: [] };
         }
         
         if (!sharedData || sharedData.length === 0) {
@@ -57,7 +56,7 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
           
         if (memberError) {
           console.error("[useClubContentAccess] Error checking club membership:", memberError);
-          throw memberError;
+          return { hasAccess: false, sharedWithClubs: [] };
         }
         
         // Determine if the user has access through club membership

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/workout';
@@ -64,7 +63,8 @@ export function ProductPurchaseSection({
     hasPurchased,
     isClubShared,
     sharedWithClubs,
-    isPurchaseLoading
+    isPurchaseLoading,
+    userId: user?.id
   });
 
   if (isPurchaseLoading) {
