@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
-// Define specific type for the club member query result
+// Define specific type for the club share dialog props
 interface ClubShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -64,7 +64,6 @@ export function ClubShareDialog({
       return;
     }
     
-    // Use isLoading from the hook instead
     try {
       // First, let's delete all existing shared entries
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
