@@ -51,11 +51,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       
       if (error) throw error;
       
-      // Explicitly type and transform the data
+      // Transform the data into Club array
       const userClubs: Club[] = [];
       
       if (data && Array.isArray(data)) {
-        // Use type assertion to avoid deep instantiation issues
+        // Type assertion to avoid deep instantiation issues
         const typedData = data as ClubMemberQueryResult[];
         
         typedData.forEach(item => {

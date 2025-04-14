@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
+// Define specific type for the club member query result
 interface ClubShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,11 +40,11 @@ export function ClubShareDialog({
     if (user && open) {
       loadUserClubs();
     }
-  }, [user, open]);
+  }, [user, open, loadUserClubs]);
   
   useEffect(() => {
     setSelectedClubIds(selectedClubIds);
-  }, [selectedClubIds]);
+  }, [selectedClubIds, setSelectedClubIds]);
 
   const handleToggleClub = (clubId: string) => {
     const newSelection = toggleClub(clubId);
@@ -63,7 +64,7 @@ export function ClubShareDialog({
       return;
     }
     
-    setIsLoading(true);
+    // Use isLoading from the hook instead
     try {
       // First, let's delete all existing shared entries
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
@@ -113,8 +114,6 @@ export function ClubShareDialog({
     } catch (error: any) {
       console.error("Error saving club sharing settings:", error);
       toast.error(`Failed to update sharing settings: ${error.message}`);
-    } finally {
-      setIsLoading(false);
     }
   };
 
