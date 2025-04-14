@@ -2,7 +2,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ItemType } from '@/lib/types';
 import PublicProductCard from '@/components/product/PublicProductCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -38,12 +37,17 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
     
     const container = scrollRef.current;
     setCanScrollLeft(container.scrollLeft > 0);
-    setCanScrollRight(container.scrollLeft < (container.scrollWidth - container.clientWidth - 5));
+    
+    // Fix: Make sure we properly calculate if we can scroll right
+    // We need to account for some small rounding differences by adding a small threshold (5px)
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setCanScrollRight(container.scrollLeft < maxScrollLeft - 5);
   };
 
   // Update button states when items change or on resize
   useEffect(() => {
     if (scrollRef.current) {
+      // Initial check for scroll buttons
       updateScrollButtons();
       
       // Reset scroll position when items change
