@@ -25,26 +25,18 @@ const WorkoutDetail = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   
-  // Extract the workoutId from the URL parameter
   const extractedId = workoutId ? parseProductUrl(`/workout/${workoutId}`) : null;
-  
-  // Safely check if extractedId is a valid UUID format
   const isValidUuid = extractedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extractedId);
-  
-  // Only fetch if ID appears to be in valid format
   const id = isValidUuid ? extractedId : null;
   
-  // Fetch workout data using custom hook
   const { workout, loading, error, creatorInfo } = useWorkoutDetail(id);
   
-  // Get purchase data
   const purchaseData = useHasUserPurchasedWorkout(user?.id || '', id || '');
   const isPurchased = purchaseData.data?.isPurchased || false;
   const isClubShared = purchaseData.data?.isClubShared || false;
   const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
   const isPurchaseLoading = purchaseData.isLoading;
 
-  // Social meta data
   const [ogImageUrl, setOgImageUrl] = React.useState<string | null>(null);
 
   console.log('[WorkoutDetail]', {
@@ -57,7 +49,6 @@ const WorkoutDetail = () => {
     sharedWithClubs
   });
 
-  // Get creator image for social sharing
   useEffect(() => {
     const getCreatorProfileImage = async () => {
       if (workout?.creatorId) {
@@ -71,13 +62,11 @@ const WorkoutDetail = () => {
           if (profileData?.avatar_url) {
             setOgImageUrl(profileData.avatar_url);
           } else {
-            // Fallback to generated OG image
             const fallbackImage = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
             setOgImageUrl(fallbackImage);
           }
         } catch (err) {
           console.error("Error fetching creator profile:", err);
-          // Fallback to generated OG image
           const fallbackImage = `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}`;
           setOgImageUrl(fallbackImage);
         }
@@ -89,7 +78,6 @@ const WorkoutDetail = () => {
     }
   }, [workout?.creatorId, workout?.name]);
 
-  // Check if we should redirect to the new URL format
   useEffect(() => {
     const checkForRedirect = async () => {
       if (workout && workout.creatorId) {
@@ -100,11 +88,9 @@ const WorkoutDetail = () => {
             .eq('id', workout.creatorId)
             .maybeSingle();
           
-          // Only redirect if we have both a username and a slug
           if (profileData?.username && workout.slug) {
             console.log(`Redirecting to creator URL: /@${profileData.username}/${workout.slug}`);
             const newUrl = buildCreatorProductUrl(profileData.username, workout.slug);
-            // Redirect to the new URL format
             navigate(newUrl, { replace: true });
           }
         } catch (err) {
@@ -118,14 +104,12 @@ const WorkoutDetail = () => {
     }
   }, [workout, loading, error, navigate]);
   
-  // Preload exercise details for better performance
   useEffect(() => {
     const preloadImage = (url: string) => {
       const img = new Image();
       img.src = url;
     };
 
-    // Preload OG image for sharing
     if (ogImageUrl) {
       preloadImage(ogImageUrl);
     }
@@ -135,12 +119,10 @@ const WorkoutDetail = () => {
     navigate(-1);
   };
   
-  // Early return for loading state
   if (loading || isPurchaseLoading) {
     return <WorkoutDetailSkeleton onBack={() => navigate(-1)} />;
   }
   
-  // Early return for error state
   if (error || !workout) {
     return <WorkoutDetailError error={error || 'Workout not found'} />;
   }
@@ -151,18 +133,15 @@ const WorkoutDetail = () => {
   
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
   
-  // Calculate access status - has purchased OR has club access
   const hasAccessToWorkout = !workout.isPurchasable || isPurchased || isClubShared;
   
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   
-  // Formatted URL for sharing and SEO
   const getFormattedUrl = () => {
     if (!workout) return '';
     return `/workout/${workout.id}-${workout.name.toLowerCase().replace(/\s+/g, '-')}`;
   };
 
-  // Enhanced meta title with creator name
   const metaTitle = creatorInfo ? 
     `${workout.name} by ${creatorInfo.name} - FitBloom Workout` : 
     `${workout.name} - FitBloom Workout`;
@@ -170,7 +149,7 @@ const WorkoutDetail = () => {
   const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
   
   return (
-    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-32' : ''}`}>
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-44' : 'pb-6'}`}>
       <MetaTags 
         title={metaTitle}
         description={workoutDescription}
@@ -223,7 +202,7 @@ const WorkoutDetail = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4 mb-24">
+        <div className="space-y-4 mb-32">
           <WorkoutPreview workout={workout} blurred={true} />
           
           {!isMobile && (
@@ -244,7 +223,7 @@ const WorkoutDetail = () => {
       )}
       
       {shouldShowFixedPurchaseBar && (
-        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 py-0 px-0 max-h-28">
+        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 max-h-32">
           <ProductPurchaseSection
             itemType="workout"
             itemId={workout.id}

@@ -196,7 +196,7 @@ const CreatorWorkoutDetail = () => {
   const socialShareTitle = `${workout.name} by ${creatorName}`;
 
   return (
-    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-32' : ''}`}>
+    <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-44' : 'pb-6'}`}>
       <MetaTags 
         title={socialShareTitle} 
         description={workoutDescription} 
@@ -259,7 +259,7 @@ const CreatorWorkoutDetail = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4 mb-24">
+        <div className="space-y-4 mb-32">
           <WorkoutPreview workout={workout} blurred={true} />
           
           <Card className="bg-dark-200 border-dark-300">
@@ -301,7 +301,7 @@ const CreatorWorkoutDetail = () => {
       )}
       
       {shouldShowFixedPurchaseBar && (
-        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 py-0 px-0 max-h-28">
+        <div className="fixed bottom-0 left-0 right-0 bg-dark-300/90 backdrop-blur-md border-t border-dark-300 z-50 p-3 max-h-32">
           <ProductPurchaseSection 
             itemType="workout"
             itemId={workout.id}

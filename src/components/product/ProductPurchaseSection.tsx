@@ -168,7 +168,7 @@ export function ProductPurchaseSection({
       </div>;
   }
 
-  return <div className={`p-4 bg-dark-200/60 backdrop-blur-lg border border-dark-300/50 rounded-lg shadow-lg ${className}`}>
+  return <div className={`p-4 bg-dark-200/60 backdrop-blur-lg border border-dark-300/50 rounded-lg shadow-lg mb-4 ${className}`}>
       <div className="mb-3 text-center">
         {discountedPrice !== null ? <div className="flex flex-col items-center">
             <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(discountedPrice)}</span>

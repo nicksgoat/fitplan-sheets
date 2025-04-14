@@ -43,8 +43,8 @@ const MobileDeviceFrame: React.FC<MobileDeviceFrameProps> = ({
             <p className="text-lg mb-3 text-gray-400 italic">{subtitle}</p>
           </div>
           
-          <ScrollArea className={`flex-1 ${className}`}>
-            <div className="pb-32"> {/* Add padding at the bottom for purchase section */}
+          <ScrollArea className={`flex-1 overflow-y-auto ${className}`}>
+            <div className="pb-36"> {/* Increased padding at the bottom to ensure content isn't cut off */}
               {children}
             </div>
           </ScrollArea>
