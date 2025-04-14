@@ -5,6 +5,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Club } from '@/types/clubSharing';
 
+// Simple interface to properly type the Supabase response
+interface ClubMemberResponse {
+  club_id: string;
+  role: string;
+  clubs: {
+    id: string;
+    name: string;
+    description?: string | null;
+    logo_url?: string | null;
+  } | null;
+}
+
 export function useClubSelection(initialSelectedIds: string[] = []) {
   const { user } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -42,15 +54,16 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array
       const userClubs: Club[] = [];
       
-      // Use type assertion to avoid TypeScript's deep inferencing
-      if (data && Array.isArray(data)) {
-        (data as any[]).forEach(item => {
+      // Process the response with explicit casting to avoid deep type instantiation
+      if (data) {
+        const typedData = data as unknown as ClubMemberResponse[];
+        typedData.forEach(item => {
           if (item.clubs) {
             userClubs.push({
               id: item.clubs.id,
               name: item.clubs.name,
-              description: item.clubs.description,
-              logo_url: item.clubs.logo_url
+              description: item.clubs.description || undefined,
+              logo_url: item.clubs.logo_url || undefined
             });
           }
         });
