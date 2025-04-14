@@ -43,3 +43,29 @@ export const formatCombinedWorkoutDetails = (workout: Exercise[]): string => {
   
   return `${uniqueExercises} exercises • ${totalSets} sets`;
 };
+
+// Function to organize exercises and create a circuit map for workout preview
+export const getOrganizedExercises = (exercises: Exercise[]) => {
+  // Create a map of circuit IDs to circuit exercises for efficient lookup
+  const circuitMap = new Map<string, Exercise[]>();
+  
+  // Populate the circuit map with exercises that belong to circuits
+  exercises.forEach(exercise => {
+    if (exercise.isInCircuit && exercise.circuitId) {
+      if (!circuitMap.has(exercise.circuitId)) {
+        circuitMap.set(exercise.circuitId, []);
+      }
+      circuitMap.get(exercise.circuitId)!.push(exercise);
+    }
+  });
+  
+  // Get top-level exercises (not in groups, not in circuits)
+  const topLevelExercises = exercises.filter(ex => 
+    !ex.isInCircuit || (ex.isCircuit && ex.circuitId)
+  );
+
+  return {
+    exercises: topLevelExercises,
+    circuitMap
+  };
+};
