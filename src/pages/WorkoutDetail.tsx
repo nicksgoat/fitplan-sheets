@@ -181,7 +181,7 @@ const WorkoutDetail = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          <WorkoutPreview workout={workout} />
+          <WorkoutPreview workout={workout} blurred={true} />
           
           <ProductPurchaseSection
             itemType="workout"

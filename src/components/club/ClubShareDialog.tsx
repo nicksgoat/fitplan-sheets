@@ -1,163 +1,174 @@
-
-import React, { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ClubList } from './ClubList';
-import { useClubSelection } from '@/hooks/useClubSelection';
+import React from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { ContentType } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
-// Define specific type for the club share dialog props
 interface ClubShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  contentId?: string;
-  contentType: 'workout' | 'program';
-  selectedClubIds?: string[];
-  onSelectionChange?: (selectedClubs: string[]) => void;
+  contentId: string;
+  contentType: ContentType;
 }
 
-export function ClubShareDialog({
-  open,
-  onOpenChange,
-  contentId,
-  contentType,
-  selectedClubIds = [],
-  onSelectionChange
-}: ClubShareDialogProps) {
+interface Club {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  owner_id: string;
+}
+
+interface ClubShareRecord {
+  club_id: string;
+  content_id: string;
+  content_type: ContentType;
+  created_at: string;
+}
+
+export function ClubShareDialog({ open, onOpenChange, contentId, contentType }: ClubShareDialogProps) {
+  const { toast } = useToast()
   const { user } = useAuth();
-  const {
-    clubs,
-    selectedClubIds: selectedIds,
-    setSelectedClubIds,
-    isLoading,
-    loadUserClubs,
-    toggleClub
-  } = useClubSelection(selectedClubIds);
+  const queryClient = useQueryClient();
+  const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>([]);
 
-  useEffect(() => {
-    if (user && open) {
-      loadUserClubs();
-    }
-  }, [user, open, loadUserClubs]);
-  
-  useEffect(() => {
-    setSelectedClubIds(selectedClubIds);
-  }, [selectedClubIds, setSelectedClubIds]);
+  const { data: clubs, isLoading, isError } = useQuery<Club[]>({
+    queryKey: ['clubs', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
 
-  const handleToggleClub = (clubId: string) => {
-    const newSelection = toggleClub(clubId);
-    if (onSelectionChange) {
-      onSelectionChange(newSelection);
+      const { data, error } = await supabase
+        .from('clubs')
+        .select('*')
+        .eq('owner_id', user.id);
+
+      if (error) {
+        console.error("Error fetching clubs:", error);
+        throw error;
+      }
+      return data || [];
     }
+  });
+
+  const shareMutation = useMutation({
+    mutationFn: async (sharingRecords: ClubShareRecord[]) => {
+      const { data, error } = await supabase
+        .from('club_content')
+        .insert(sharingRecords);
+
+      if (error) {
+        console.error("Error sharing content:", error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Content Shared!",
+        description: "This content has been successfully shared with the selected clubs.",
+      })
+      queryClient.invalidateQueries({ queryKey: ['clubs', user?.id] });
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sharing Failed",
+        description: error.message || "Failed to share content with clubs.",
+        variant: "destructive",
+      })
+    },
+  });
+
+  const handleCheckboxChange = (clubId: string) => {
+    setSelectedClubIds(prev => {
+      if (prev.includes(clubId)) {
+        return prev.filter(id => id !== clubId);
+      } else {
+        return [...prev, clubId];
+      }
+    });
   };
 
-  const handleSave = async () => {
-    if (!contentId || !user) {
-      // If contentId is not provided, just close the dialog
-      // This allows the component to be used for selection only
-      if (onSelectionChange) {
-        onSelectionChange(selectedIds);
-      }
-      onOpenChange(false);
+  const createSharingRecords = (selectedClubIds: string[], contentId: string, contentType: ContentType) => {
+    return selectedClubIds.map(clubId => ({
+      club_id: clubId,
+      content_id: contentId,
+      content_type: contentType,
+      created_at: new Date().toISOString()
+    }));
+  };
+
+  const handleShare = async () => {
+    if (!selectedClubIds.length) {
+      toast({
+        title: "No Clubs Selected",
+        description: "Please select at least one club to share with.",
+        variant: "destructive",
+      });
       return;
     }
-    
-    try {
-      // First, let's delete all existing shared entries
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
-      
-      const { error: deleteError } = await supabase
-        .from(tableName)
-        .delete()
-        .eq(idField, contentId);
-      
-      if (deleteError) throw deleteError;
-      
-      // Now insert new entries if there are any selected clubs
-      if (selectedIds.length > 0) {
-        if (contentType === 'workout') {
-          // Explicitly define the array structure to avoid excessive type instantiation
-          type WorkoutShareRecord = {
-            workout_id: string;
-            club_id: string;
-            shared_by: string;
-          };
-          
-          const sharesToCreate: WorkoutShareRecord[] = selectedIds.map(clubId => ({
-            workout_id: contentId,
-            club_id: clubId,
-            shared_by: user.id
-          }));
-          
-          const { error: insertError } = await supabase
-            .from('club_shared_workouts')
-            .insert(sharesToCreate);
-          
-          if (insertError) throw insertError;
-        } else {
-          // Explicitly define the array structure to avoid excessive type instantiation
-          type ProgramShareRecord = {
-            program_id: string;
-            club_id: string;
-            shared_by: string;
-          };
-          
-          const sharesToCreate: ProgramShareRecord[] = selectedIds.map(clubId => ({
-            program_id: contentId,
-            club_id: clubId,
-            shared_by: user.id
-          }));
-          
-          const { error: insertError } = await supabase
-            .from('club_shared_programs')
-            .insert(sharesToCreate);
-          
-          if (insertError) throw insertError;
-        }
-      }
-      
-      toast.success(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} sharing settings updated`);
-      if (onSelectionChange) {
-        onSelectionChange(selectedIds);
-      }
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error("Error saving club sharing settings:", error);
-      toast.error(`Failed to update sharing settings: ${error.message}`);
-    }
+
+    const sharingRecords = createSharingRecords(selectedClubIds, contentId, contentType);
+    shareMutation.mutate(sharingRecords);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Share with Clubs</DialogTitle>
-          <DialogDescription>
-            Select which clubs should have access to this {contentType}.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-2 my-4">
-          <ClubList
-            clubs={clubs}
-            selectedIds={selectedIds}
-            onToggle={handleToggleClub}
-            isLoading={isLoading}
-          />
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Share to Clubs</AlertDialogTitle>
+          <AlertDialogDescription>
+            Select the clubs you want to share this content with.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="grid gap-4 py-4">
+          {isLoading ? (
+            <div>Loading clubs...</div>
+          ) : isError ? (
+            <div>Error loading clubs.</div>
+          ) : clubs && clubs.length > 0 ? (
+            <ScrollArea className="h-[200px] w-full rounded-md border">
+              <div className="p-4">
+                {clubs.map((club) => (
+                  <div key={club.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`club-${club.id}`}
+                      checked={selectedClubIds.includes(club.id)}
+                      onCheckedChange={() => handleCheckboxChange(club.id)}
+                    />
+                    <Label htmlFor={`club-${club.id}`}>{club.name}</Label>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div>No clubs found. Create a club to start sharing content.</div>
+          )}
         </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleShare} disabled={shareMutation.isPending}>
+            {shareMutation.isPending ? "Sharing..." : "Share"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }

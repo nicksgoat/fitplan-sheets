@@ -258,7 +258,7 @@ const CreatorWorkoutDetail = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          <WorkoutPreview workout={workout} />
+          <WorkoutPreview workout={workout} blurred={true} />
           
           {/* Social Proof Section */}
           <Card className="bg-dark-200 border-dark-300">
