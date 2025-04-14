@@ -31,3 +31,13 @@ export interface ClubShareSelectionProps {
   selectedClubIds?: string[];
   onSelectionChange?: (selectedClubs: string[]) => void;
 }
+
+// Define the props interface for the ClubShareDialog component
+export interface ClubShareDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  contentId: string;
+  contentType: 'workout' | 'program';
+  selectedClubIds?: string[];
+  onSelectionChange?: (clubIds: string[]) => void;
+}

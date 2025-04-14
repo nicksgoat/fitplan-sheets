@@ -19,18 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-// Define the ContentType explicitly here instead of importing
-type ContentType = 'workout' | 'program';
-
-interface ClubShareDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  contentId: string;
-  contentType: ContentType;
-  selectedClubIds?: string[];
-  onSelectionChange?: (clubIds: string[]) => void;
-}
+import { ClubShareDialogProps } from '@/types/clubSharing';
 
 interface Club {
   id: string;
@@ -40,7 +29,14 @@ interface Club {
   creator_id: string;
 }
 
-export function ClubShareDialog({ open, onOpenChange, contentId, contentType, selectedClubIds: initialSelectedClubIds = [], onSelectionChange }: ClubShareDialogProps) {
+export function ClubShareDialog({ 
+  open, 
+  onOpenChange, 
+  contentId, 
+  contentType, 
+  selectedClubIds: initialSelectedClubIds = [], 
+  onSelectionChange 
+}: ClubShareDialogProps) {
   const { toast } = useToast()
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -96,11 +92,22 @@ export function ClubShareDialog({ open, onOpenChange, contentId, contentType, se
       
       // Insert new shares
       if (sharesToAdd.length > 0) {
-        const sharingRecords = sharesToAdd.map(clubId => ({
-          club_id: clubId,
-          [contentIdField]: contentId,
-          shared_by: user.id
-        }));
+        const sharingRecords = sharesToAdd.map(clubId => {
+          // Create properly typed record based on content type
+          if (contentType === 'workout') {
+            return {
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            };
+          } else {
+            return {
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            };
+          }
+        });
         
         const { error } = await supabase
           .from(tableName)
