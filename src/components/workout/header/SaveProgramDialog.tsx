@@ -48,7 +48,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
           const workout = program.workouts.find(w => w.id === workoutId);
           
           if (workout) {
-            // Save as a single workout
+            // Save as a single workout and ensure we get a string result
             const result = await saveWorkout({
               ...workout,
               name: programName,
@@ -56,7 +56,8 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
               isPurchasable: isPurchasable
             });
             
-            if (result) {
+            // Check if we have a valid string ID back
+            if (typeof result === 'string' && result) {
               savedId = result;
               toast.success(`Workout "${programName}" saved to library`);
             }
@@ -73,7 +74,8 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
             programName
           );
           
-          if (result) {
+          // Check if we have a valid string ID back
+          if (typeof result === 'string' && result) {
             savedId = result;
             toast.success(`Program "${programName}" saved to library`);
           }

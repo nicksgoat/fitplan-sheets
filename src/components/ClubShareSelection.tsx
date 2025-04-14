@@ -16,7 +16,7 @@ interface ClubShareSelectionProps {
   selectedClubIds?: string[];
 }
 
-// Define a separate interface for the join result to prevent deep type instantiation
+// Define a simple interface without recursive references to prevent deep instantiation
 interface ClubMemberWithClub {
   club_id: string;
   role: string;
@@ -49,7 +49,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      return (data as ClubMemberWithClub[]).map(item => item.club);
+      // Explicitly cast the data to the interface type to avoid deep instantiation
+      return (data as unknown as ClubMemberWithClub[]).map(item => item.club);
     },
   });
 

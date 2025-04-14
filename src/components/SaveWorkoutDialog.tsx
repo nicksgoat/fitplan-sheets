@@ -47,21 +47,27 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
         name: name.trim()
       };
       
-      // Save to library using the context and await the result
-      const savedWorkout = await saveWorkout(workoutToSave);
-      const savedId = savedWorkout ?? null;
+      // Save to library using the context
+      const result = await saveWorkout(workoutToSave);
       
-      // If workout was saved successfully and clubs are selected, share with clubs
-      if (savedId && selectedClubs.length > 0) {
-        await shareWithClubs.mutateAsync({
-          contentId: savedId,
-          contentType: 'workout',
-          clubIds: selectedClubs
-        });
+      // Check if we got a valid result (string ID)
+      if (typeof result === 'string' && result) {
+        const savedId = result;
+        
+        // If workout was saved successfully and clubs are selected, share with clubs
+        if (selectedClubs.length > 0) {
+          await shareWithClubs.mutateAsync({
+            contentId: savedId,
+            contentType: 'workout',
+            clubIds: selectedClubs
+          });
+        }
+        
+        onOpenChange(false);
+        toast.success("Workout saved successfully");
+      } else {
+        toast.error("Failed to save workout");
       }
-      
-      onOpenChange(false);
-      toast.success("Workout saved successfully");
     } catch (error) {
       console.error("Error saving workout:", error);
       toast.error("Failed to save workout");
