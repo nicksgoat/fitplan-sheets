@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Define a simplified type to avoid recursive references
-// This type will only be used internally in this component
 type SimpleClub = {
   id: string;
   name: string;
@@ -59,9 +58,7 @@ export function ClubShareSelection({
 
       // Extract club data and manually build the SimpleClub objects
       // to completely avoid any potential type recursion
-      return (data || []).map(item => {
-        if (!item.club) return null;
-        
+      return data?.filter(item => item.club).map(item => {
         const club = item.club as Record<string, any>;
         
         return {
@@ -77,7 +74,7 @@ export function ClubShareSelection({
           premium_price: club.premium_price,
           creator_id: club.creator_id
         } as SimpleClub;
-      }).filter(Boolean) as SimpleClub[];
+      }) || [];
     },
   });
 
@@ -161,7 +158,7 @@ export function ClubShareSelection({
       <ScrollArea className="h-[180px] rounded-md border border-dark-400 p-2 bg-dark-300">
         <div className="space-y-2 pr-4">
           {clubs.map((club) => (
-            <div key={club.id} className="flex items-center space-x-2 py-1.5">
+            <div key={club.id} className="flex items-start space-x-2 py-1.5">
               <Checkbox
                 id={`club-${club.id}`}
                 checked={selectedClubs.includes(club.id)}

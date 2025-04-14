@@ -11,8 +11,13 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
   return useQuery({
     queryKey: ['club-content-access', contentId, contentType, userId],
     queryFn: async () => {
-      if (!contentId || !userId) {
-        console.log(`[useClubContentAccess] No contentId or userId provided`, { contentId, userId });
+      if (!contentId) {
+        console.log(`[useClubContentAccess] No contentId provided`, { contentId });
+        return { hasAccess: false, sharedWithClubs: [] };
+      }
+      
+      if (!userId) {
+        console.log(`[useClubContentAccess] User not authenticated`, { userId });
         return { hasAccess: false, sharedWithClubs: [] };
       }
       
@@ -58,8 +63,9 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
         // Determine if the user has access through club membership
         const hasAccess = memberData && memberData.length > 0;
         
-        console.log(`[useClubContentAccess] User ${userId} has access: ${hasAccess}`, { 
-          memberClubs: memberData?.map(m => m.club_id) || [] 
+        console.log(`[useClubContentAccess] User ${userId} has club access: ${hasAccess}`, { 
+          memberClubs: memberData?.map(m => m.club_id) || [],
+          sharedWithClubs: sharedClubIds
         });
         
         return { 

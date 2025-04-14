@@ -36,7 +36,7 @@ const WorkoutDetail = () => {
   // Fetch workout data using custom hook
   const { workout, loading, error, creatorInfo } = useWorkoutDetail(id);
   
-  // Important - here we explicitly call the hook with exact params and handle the response
+  // Get purchase data
   const purchaseData = useHasUserPurchasedWorkout(user?.id || '', id || '');
   const isPurchased = purchaseData.data?.isPurchased || false;
   const isClubShared = purchaseData.data?.isClubShared || false;

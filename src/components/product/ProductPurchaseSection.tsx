@@ -7,6 +7,7 @@ import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Check, Shield } from 'lucide-react';
+import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
 
 interface ProductPurchaseSectionProps {
   itemType: 'workout' | 'program'; 
@@ -31,8 +32,8 @@ export function ProductPurchaseSection({
   isPurchasable,
   hasPurchased,
   isPurchaseLoading,
-  isClubShared,
-  sharedWithClubs,
+  isClubShared = false,
+  sharedWithClubs = [],
   className = ''
 }: ProductPurchaseSectionProps) {
   const { user } = useAuth();
@@ -62,6 +63,7 @@ export function ProductPurchaseSection({
     price,
     hasPurchased,
     isClubShared,
+    sharedWithClubs,
     isPurchaseLoading
   });
 
@@ -77,6 +79,7 @@ export function ProductPurchaseSection({
     return (
       <div className={`border border-green-800/30 rounded-lg p-4 text-center bg-green-900/10 ${className}`}>
         <h3 className="text-lg font-semibold mb-1 text-green-400">Available via Club Membership ✓</h3>
+        <ClubAccessBadge isClubShared={true} clubs={sharedWithClubs} className="mx-auto mb-2" />
         <Button 
           className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 mt-2"
           onClick={() => navigate('/sheets')}

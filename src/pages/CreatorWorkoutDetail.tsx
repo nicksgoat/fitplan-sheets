@@ -127,10 +127,24 @@ const CreatorWorkoutDetail = () => {
   const creatorId = workout?.creatorId;
   const { profile: creatorProfile } = useProfile(creatorId);
   
-  const { data: hasPurchased, isLoading: isPurchaseLoading } = 
-    useHasUserPurchasedWorkout(user?.id || '', state.id || '');
+  // Get purchase and club access data
+  const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
+  const isPurchased = purchaseData.data?.isPurchased || false;
+  const isClubShared = purchaseData.data?.isClubShared || false;
+  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
+  const isPurchaseLoading = purchaseData.isLoading;
   
-  const isPageLoading = state.isLoading || workoutLoading;
+  console.log('[CreatorWorkoutDetail]', {
+    username,
+    workoutId: state.id,
+    userId: user?.id,
+    isPurchased,
+    isClubShared,
+    isPurchaseLoading,
+    sharedWithClubs
+  });
+  
+  const isPageLoading = state.isLoading || workoutLoading || isPurchaseLoading;
   const pageError = state.error || workoutError;
   
   const handleBackClick = () => navigate(-1);
@@ -148,7 +162,10 @@ const CreatorWorkoutDetail = () => {
   }, 0);
   
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
-  const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
+  
+  // User has access if: workout is not purchasable, or user has purchased it, or user has club access
+  const hasAccessToWorkout = !workout.isPurchasable || isPurchased || isClubShared;
+  
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
   const creatorName = creatorInfo?.name || username || '';
@@ -275,8 +292,10 @@ const CreatorWorkoutDetail = () => {
               price={workout.price || 0}
               creatorId={workout.creatorId || ''}
               isPurchasable={canPurchase}
-              hasPurchased={!!hasPurchased}
+              hasPurchased={isPurchased}
               isPurchaseLoading={isPurchaseLoading}
+              isClubShared={isClubShared}
+              sharedWithClubs={sharedWithClubs}
             />
           )}
         </div>
@@ -292,8 +311,10 @@ const CreatorWorkoutDetail = () => {
             price={workout.price || 0}
             creatorId={workout.creatorId || ''}
             isPurchasable={canPurchase}
-            hasPurchased={!!hasPurchased}
+            hasPurchased={isPurchased}
             isPurchaseLoading={isPurchaseLoading}
+            isClubShared={isClubShared}
+            sharedWithClubs={sharedWithClubs}
             className="p-0 bg-transparent"
           />
         </div>
