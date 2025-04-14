@@ -44,18 +44,33 @@ const CreatorWorkoutDetail = () => {
     error: null
   });
   
-  // Always define these variables outside of conditionals to maintain hook call order
+  // Always define all hooks at the top level to maintain consistent hook call order
   const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
   const creatorId = workout?.creatorId;
   const { profile: creatorProfile } = useProfile(creatorId);
   
-  // Always call this hook regardless of user state
+  // Always call hooks regardless of user state to maintain consistent hook call order
   const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
   const isPurchased = purchaseData.data?.isPurchased || false;
   const isClubShared = purchaseData.data?.isClubShared || false;
   const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
   const isPurchaseLoading = purchaseData.isLoading;
   
+  // Define socialImageUrl at the top level outside of conditionals
+  const creatorName = creatorInfo?.name || username || '';
+  const workoutName = workout?.name || '';
+  const socialImageUrl = creatorProfile?.avatar_url || 
+    `${window.location.origin}/api/og-image?title=${encodeURIComponent(workoutName)}&creator=${encodeURIComponent(creatorName)}`;
+  
+  // Preload image hook - always called regardless of conditions to maintain hook order
+  useEffect(() => {
+    if (socialImageUrl) {
+      const img = new Image();
+      img.src = socialImageUrl;
+    }
+  }, [socialImageUrl]);
+  
+  // Fetch workout effect
   useEffect(() => {
     if (!username || !workoutSlug) {
       setState(prev => ({ ...prev, error: 'Invalid workout URL', isLoading: false }));
@@ -166,7 +181,6 @@ const CreatorWorkoutDetail = () => {
   
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   const shareUrl = buildCreatorProductUrl(creatorInfo?.username || username || '', workoutSlug || '');
-  const creatorName = creatorInfo?.name || username || '';
   
   const shouldShowFixedPurchaseBar = isMobile && canPurchase && !hasAccessToWorkout;
   
@@ -184,18 +198,6 @@ const CreatorWorkoutDetail = () => {
 
   // Enhanced social sharing metadata
   const socialShareTitle = `${workout.name} by ${creatorName}`;
-  
-  // Use creator profile image for social sharing
-  const socialImageUrl = creatorProfile?.avatar_url || 
-    `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}&creator=${encodeURIComponent(creatorName)}`;
-  
-  // Preload the image to ensure it's ready before sharing - moved outside conditional rendering
-  useEffect(() => {
-    if (socialImageUrl) {
-      const img = new Image();
-      img.src = socialImageUrl;
-    }
-  }, [socialImageUrl]);
   
   return (
     <div className={`container max-w-md mx-auto p-3 ${shouldShowFixedPurchaseBar ? 'pb-24' : ''}`}>

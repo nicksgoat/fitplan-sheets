@@ -42,10 +42,11 @@ export function ClubShareDialog({
   const queryClient = useQueryClient();
   const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>(initialSelectedClubIds);
 
-  const { data: clubs, isLoading, isError } = useQuery({
+  // Fixed the type instantiation issue by explicitly defining the return type
+  const { data: clubs, isLoading, isError } = useQuery<Club[]>({
     queryKey: ['creator-clubs', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return [] as Club[];
 
       const { data, error } = await supabase
         .from('clubs')
@@ -56,7 +57,7 @@ export function ClubShareDialog({
         console.error("Error fetching clubs:", error);
         throw error;
       }
-      return data || [];
+      return (data || []) as Club[];
     },
     enabled: !!user?.id
   });
