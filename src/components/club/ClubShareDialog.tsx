@@ -42,7 +42,7 @@ export function ClubShareDialog({
   const queryClient = useQueryClient();
   const [selectedClubIds, setSelectedClubIds] = React.useState<string[]>(initialSelectedClubIds);
 
-  const { data: clubs, isLoading, isError } = useQuery<Club[]>({
+  const { data: clubs, isLoading, isError } = useQuery({
     queryKey: ['creator-clubs', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];

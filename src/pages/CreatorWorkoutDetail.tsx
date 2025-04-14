@@ -44,6 +44,18 @@ const CreatorWorkoutDetail = () => {
     error: null
   });
   
+  // Always define these variables outside of conditionals to maintain hook call order
+  const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
+  const creatorId = workout?.creatorId;
+  const { profile: creatorProfile } = useProfile(creatorId);
+  
+  // Always call this hook regardless of user state
+  const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
+  const isPurchased = purchaseData.data?.isPurchased || false;
+  const isClubShared = purchaseData.data?.isClubShared || false;
+  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
+  const isPurchaseLoading = purchaseData.isLoading;
+  
   useEffect(() => {
     if (!username || !workoutSlug) {
       setState(prev => ({ ...prev, error: 'Invalid workout URL', isLoading: false }));
@@ -119,18 +131,7 @@ const CreatorWorkoutDetail = () => {
     };
     
     getWorkoutBySlug();
-  }, [username, workoutSlug]);
-  
-  const { workout, loading: workoutLoading, error: workoutError, creatorInfo } = useWorkoutDetail(state.id);
-  
-  const creatorId = workout?.creatorId;
-  const { profile: creatorProfile } = useProfile(creatorId);
-  
-  const purchaseData = useHasUserPurchasedWorkout(user?.id || '', state.id || '');
-  const isPurchased = purchaseData.data?.isPurchased || false;
-  const isClubShared = purchaseData.data?.isClubShared || false;
-  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
-  const isPurchaseLoading = purchaseData.isLoading;
+  }, [username, workoutSlug, navigate]);
   
   console.log('[CreatorWorkoutDetail]', {
     username,
@@ -188,7 +189,7 @@ const CreatorWorkoutDetail = () => {
   const socialImageUrl = creatorProfile?.avatar_url || 
     `${window.location.origin}/api/og-image?title=${encodeURIComponent(workout.name)}&creator=${encodeURIComponent(creatorName)}`;
   
-  // Preload the image to ensure it's ready before sharing
+  // Preload the image to ensure it's ready before sharing - moved outside conditional rendering
   useEffect(() => {
     if (socialImageUrl) {
       const img = new Image();
