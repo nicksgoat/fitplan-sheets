@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Plus } from 'lucide-react';
@@ -7,14 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Club } from '@/types/club';
 
-// Define specific type for club member record from query
+interface Club {
+  id: string;
+  name: string;
+  description?: string;
+  logo_url?: string;
+}
+
+// Define specific type for club member record
 interface ClubMemberRecord {
   club_id: string;
+  user_id: string;
   role: string;
   status: string;
-  clubs?: Club; // This breaks the circular reference that was causing the error
+  clubs?: Club; // Fix: Use Club directly instead of recursive reference
 }
 
 // Define specific type for workout shares
@@ -97,7 +103,7 @@ export function ClubShareSelection({
       if (error) throw error;
       
       // Transform the data to get clubs
-      const userClubs = (data as ClubMemberRecord[])
+      const userClubs = data
         .map(item => item.clubs as Club)
         .filter(Boolean);
       
