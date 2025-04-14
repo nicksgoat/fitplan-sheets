@@ -33,7 +33,7 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
     setIsLoading(true);
     try {
       // Get clubs where the user is admin or owner
-      const { data, error } = await supabase
+      const { data: rawData, error } = await supabase
         .from('club_members')
         .select(`
           club_id,
@@ -54,11 +54,11 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       // Transform the data into Club array - use explicit typing to avoid deep instantiation
       const userClubs: Club[] = [];
       
+      // Use type assertion to explicitly type the data and avoid deep instantiation
+      const data = rawData as any[];
+      
       if (data && Array.isArray(data)) {
-        // Cast the data to our simplified type
-        const typedData = data as ClubMemberQueryResult[];
-        
-        typedData.forEach(item => {
+        data.forEach(item => {
           if (item.clubs) {
             const club: Club = {
               id: item.clubs.id,
