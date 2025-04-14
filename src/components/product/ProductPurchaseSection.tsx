@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Shield, Tag, CreditCard, Lock, Globe } from 'lucide-react';
 import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
 import { toast } from 'sonner';
+
 interface ProductPurchaseSectionProps {
   itemType: 'workout' | 'program';
   itemId: string;
@@ -22,6 +23,7 @@ interface ProductPurchaseSectionProps {
   sharedWithClubs?: string[];
   className?: string;
 }
+
 interface ReferralCodeData {
   code: string;
   discount_percent: number;
@@ -30,6 +32,7 @@ interface ReferralCodeData {
   max_uses: number | null;
   usage_count: number;
 }
+
 export function ProductPurchaseSection({
   itemType,
   itemId,
@@ -56,6 +59,7 @@ export function ProductPurchaseSection({
   const [validReferralCode, setValidReferralCode] = useState<ReferralCodeData | null>(null);
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   const [isApplePaySupported, setIsApplePaySupported] = useState(false);
+
   useEffect(() => {
     const checkApplePaySupport = () => {
       const isAppleDevice = /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
@@ -70,6 +74,7 @@ export function ProductPurchaseSection({
       validateReferralCode(refFromUrl);
     }
   }, []);
+
   const validateReferralCode = async (code: string) => {
     if (!code.trim()) {
       setValidReferralCode(null);
@@ -106,6 +111,7 @@ export function ProductPurchaseSection({
       setIsValidatingCode(false);
     }
   };
+
   const handlePurchase = (paymentMethod: 'standard' | 'apple_pay' = 'standard') => {
     if (!price) return;
     const urlParams = new URLSearchParams(window.location.search);
@@ -121,6 +127,7 @@ export function ProductPurchaseSection({
       paymentMethod
     });
   };
+
   console.log('[ProductPurchaseSection]', {
     itemId,
     isPurchasable,
@@ -131,11 +138,13 @@ export function ProductPurchaseSection({
     isPurchaseLoading,
     userId: user?.id
   });
+
   if (isPurchaseLoading) {
     return <div className={`flex justify-center py-4 ${className}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-fitbloom-purple"></div>
       </div>;
   }
+
   if (isClubShared) {
     return <div className={`border border-green-800/30 rounded-lg p-4 text-center bg-green-900/10 ${className}`}>
         <h3 className="text-lg font-semibold mb-1 text-green-400">Available via Club Membership ✓</h3>
@@ -145,9 +154,11 @@ export function ProductPurchaseSection({
         </Button>
       </div>;
   }
+
   if (!isPurchasable || !price || price <= 0) {
     return null;
   }
+
   if (hasPurchased) {
     return <div className={`border border-green-800/30 rounded-lg p-4 text-center bg-green-900/10 ${className}`}>
         <h3 className="text-lg font-semibold mb-1 text-green-400">Purchased ✓</h3>
@@ -156,7 +167,8 @@ export function ProductPurchaseSection({
         </Button>
       </div>;
   }
-  return <div className={`p-4 bg-dark-200 rounded-lg ${className}`}>
+
+  return <div className={`p-4 bg-dark-200/60 backdrop-blur-lg border border-dark-300/50 rounded-lg shadow-lg ${className}`}>
       <div className="mb-3 text-center">
         {discountedPrice !== null ? <div className="flex flex-col items-center">
             <span className="text-3xl font-bold text-fitbloom-purple">{formatCurrency(discountedPrice)}</span>
@@ -182,15 +194,13 @@ export function ProductPurchaseSection({
               Have a referral code?
             </label>
             <div className="flex items-center gap-2">
-              <Input id="referralCode" placeholder="Enter code" className="bg-dark-300 border-dark-400 text-sm h-8" value={referralCode} onChange={e => setReferralCode(e.target.value)} onBlur={() => referralCode && validateReferralCode(referralCode)} />
+              <Input id="referralCode" placeholder="Enter code" className="bg-dark-300/80 border-dark-400/50 text-sm h-8" value={referralCode} onChange={e => setReferralCode(e.target.value)} onBlur={() => referralCode && validateReferralCode(referralCode)} />
               <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => validateReferralCode(referralCode)} disabled={isValidatingCode || !referralCode}>
                 {isValidatingCode ? 'Validating...' : 'Apply'}
               </Button>
             </div>
           </div>
         </div>}
-      
-      
       
       <div className="space-y-2">
         {user ? <div className="grid grid-cols-2 gap-2">
