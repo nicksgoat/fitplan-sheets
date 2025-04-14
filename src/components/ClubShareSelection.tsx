@@ -7,32 +7,27 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Club } from "@/types/club";
+
+// Define a simplified Club type to avoid recursive references
+interface SimpleClub {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  created_by: string;
+  banner_url?: string;
+  logo_url?: string;
+  club_type: string;
+  membership_type: string;
+  premium_price?: number;
+  creator_id?: string;
+}
 
 interface ClubShareSelectionProps {
   contentId?: string;
   contentType: "workout" | "program";
   onSelectionChange: (selectedClubs: string[]) => void;
   selectedClubIds?: string[];
-}
-
-// Use a flat structure for the intermediate data to avoid recursive type issues
-interface ClubMemberData {
-  club_id: string;
-  role: string;
-  club: {
-    id: string;
-    name: string;
-    description: string;
-    created_at: string;
-    created_by: string;
-    banner_url?: string;
-    logo_url?: string;
-    club_type: string;
-    membership_type: string;
-    premium_price?: number;
-    creator_id?: string;
-  }
 }
 
 export function ClubShareSelection({
@@ -61,8 +56,9 @@ export function ClubShareSelection({
         return [];
       }
 
-      // First cast to a simple intermediate type, then map to the Club type
-      return (data as unknown as ClubMemberData[]).map(item => item.club as Club);
+      // Use type assertion without recursive references
+      return (data as { club_id: string; role: string; club: SimpleClub }[])
+        .map(item => item.club);
     },
   });
 
