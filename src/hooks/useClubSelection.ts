@@ -5,8 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Club } from '@/types/clubSharing';
 
-// Simple interface to properly type the Supabase response
-interface ClubMemberResponse {
+// Define a simpler interface for the Supabase response
+interface ClubMemberWithClub {
   club_id: string;
   role: string;
   clubs: {
@@ -55,11 +55,8 @@ export function useClubSelection(initialSelectedIds: string[] = []) {
       const userClubs: Club[] = [];
       
       if (data) {
-        // Explicitly cast the data to our simple response type
-        const responseData = data as ClubMemberResponse[];
-        
-        // Process each item in a for loop for more control
-        for (const item of responseData) {
+        // Use explicit typing and handle the data safely
+        for (const item of data as ClubMemberWithClub[]) {
           if (item.clubs) {
             userClubs.push({
               id: item.clubs.id,
