@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/utils/workout';
@@ -33,10 +34,7 @@ export function ProductPurchaseSection({
   isClubShared,
   sharedWithClubs,
   className = ''
-}: ProductPurchaseSectionProps & {
-  isClubShared?: boolean;
-  sharedWithClubs?: string[];
-}) {
+}: ProductPurchaseSectionProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { initiateCheckout, loading: checkoutLoading } = useStripeCheckout();
@@ -57,6 +55,15 @@ export function ProductPurchaseSection({
       referralSource
     });
   };
+
+  console.log('[ProductPurchaseSection]', {
+    itemId,
+    isPurchasable,
+    price,
+    hasPurchased,
+    isClubShared,
+    isPurchaseLoading
+  });
 
   if (isPurchaseLoading) {
     return (

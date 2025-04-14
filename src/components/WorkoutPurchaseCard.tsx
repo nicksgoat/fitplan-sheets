@@ -37,6 +37,15 @@ export function WorkoutPurchaseCard({ workout, creatorId, onPreview }: WorkoutPu
     });
   };
   
+  console.log('[WorkoutPurchaseCard]', {
+    workoutId: workout.id,
+    isPurchasable: workout.isPurchasable,
+    price: workout.price,
+    isPurchased,
+    isClubShared,
+    isPurchaseLoading
+  });
+  
   return (
     <Card className="w-full bg-dark-100 border border-dark-300 overflow-hidden">
       <CardHeader className="pb-2">

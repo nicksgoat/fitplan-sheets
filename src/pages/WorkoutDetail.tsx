@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseProductUrl } from '@/utils/urlUtils';
@@ -35,8 +36,22 @@ const WorkoutDetail = () => {
   // Fetch workout data using custom hook
   const { workout, loading, error, creatorInfo } = useWorkoutDetail(id);
   
-  const { data: hasPurchased, isLoading: isPurchaseLoading } = 
-    useHasUserPurchasedWorkout(user?.id || '', id || '');
+  // Important - here we explicitly call the hook with exact params and handle the response
+  const purchaseData = useHasUserPurchasedWorkout(user?.id || '', id || '');
+  const isPurchased = purchaseData.data?.isPurchased || false;
+  const isClubShared = purchaseData.data?.isClubShared || false;
+  const sharedWithClubs = purchaseData.data?.sharedWithClubs || [];
+  const isPurchaseLoading = purchaseData.isLoading;
+
+  console.log('[WorkoutDetail]', {
+    userId: user?.id,
+    workoutId: id,
+    workout: workout?.name,
+    isPurchased,
+    isClubShared,
+    isPurchaseLoading,
+    sharedWithClubs
+  });
 
   // Check if we should redirect to the new URL format
   useEffect(() => {
@@ -86,7 +101,7 @@ const WorkoutDetail = () => {
   };
   
   // Early return for loading state
-  if (loading) {
+  if (loading || isPurchaseLoading) {
     return <WorkoutDetailSkeleton onBack={() => navigate(-1)} />;
   }
   
@@ -100,7 +115,10 @@ const WorkoutDetail = () => {
   }, 0);
   
   const canPurchase = workout.isPurchasable && workout.price && workout.price > 0;
-  const hasAccessToWorkout = !workout.isPurchasable || (workout.isPurchasable && hasPurchased);
+  
+  // Calculate access status - has purchased OR has club access
+  const hasAccessToWorkout = !workout.isPurchasable || isPurchased || isClubShared;
+  
   const workoutDescription = `Day ${workout.day} workout with ${workout.exercises.length} exercises and ${totalSets} total sets`;
   
   // Formatted URL for sharing and SEO
@@ -172,8 +190,10 @@ const WorkoutDetail = () => {
             price={workout.price || 0}
             creatorId={workout.creatorId || ''}
             isPurchasable={canPurchase}
-            hasPurchased={!!hasPurchased}
+            hasPurchased={isPurchased}
             isPurchaseLoading={isPurchaseLoading}
+            isClubShared={isClubShared}
+            sharedWithClubs={sharedWithClubs}
           />
         </div>
       )}

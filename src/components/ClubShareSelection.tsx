@@ -60,6 +60,8 @@ export function ClubShareSelection({
       // Extract club data and manually build the SimpleClub objects
       // to completely avoid any potential type recursion
       return (data || []).map(item => {
+        if (!item.club) return null;
+        
         const club = item.club as Record<string, any>;
         
         return {
@@ -75,7 +77,7 @@ export function ClubShareSelection({
           premium_price: club.premium_price,
           creator_id: club.creator_id
         } as SimpleClub;
-      });
+      }).filter(Boolean) as SimpleClub[];
     },
   });
 
