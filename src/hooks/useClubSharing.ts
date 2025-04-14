@@ -24,44 +24,26 @@ export const useClubSharing = () => {
     setIsLoading(true);
     try {
       // Get clubs where user is an admin or moderator
-      const { data: clubsData, error } = await supabase
-        .from('club_members')
+      const { data, error } = await supabase
+        .from('clubs')
         .select(`
-          club_id,
-          role,
-          clubs:club_id (
-            id,
-            name,
-            logo_url,
-            description,
-            creator_id,
-            created_at,
-            created_by,
-            club_type,
-            membership_type
-          )
+          id,
+          name,
+          logo_url,
+          description,
+          creator_id,
+          created_at,
+          created_by,
+          club_type,
+          membership_type
         `)
-        .eq('user_id', user.id)
-        .in('role', ['admin', 'moderator', 'owner']);
+        .eq('creator_id', user.id);
       
       if (error) throw error;
       
-      // Format clubs data
-      const formatted = clubsData
-        .filter(item => item.clubs) // Filter out any null clubs
-        .map(item => ({
-          id: item.clubs!.id,
-          name: item.clubs!.name,
-          logo_url: item.clubs!.logo_url,
-          description: item.clubs!.description,
-          creator_id: item.clubs!.creator_id,
-          created_at: item.clubs!.created_at,
-          created_by: item.clubs!.created_by,
-          club_type: item.clubs!.club_type,
-          membership_type: item.clubs!.membership_type
-        }));
+      // Set the available clubs directly from the query
+      setAvailableClubs(data as Club[]);
       
-      setAvailableClubs(formatted as Club[]);
     } catch (err) {
       console.error('Error loading clubs:', err);
       toast.error('Failed to load clubs');
@@ -80,19 +62,19 @@ export const useClubSharing = () => {
       
       // Prepare inserts for all selected clubs
       const inserts = clubIds.map(clubId => {
+        const record: any = {
+          club_id: clubId,
+          shared_by: user.id
+        };
+        
+        // Add the correct ID field based on content type
         if (contentType === 'workout') {
-          return {
-            club_id: clubId,
-            shared_by: user.id,
-            workout_id: contentId
-          };
+          record.workout_id = contentId;
         } else {
-          return {
-            club_id: clubId,
-            shared_by: user.id,
-            program_id: contentId
-          };
+          record.program_id = contentId;
         }
+        
+        return record;
       });
       
       // Insert all in one batch

@@ -16,6 +16,14 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
+// Define a simple type for shares to avoid deep instantiation issues
+interface ContentShare {
+  club_id: string;
+  club?: {
+    name?: string;
+  };
+}
+
 export function ClubSharingManagement({
   contentId,
   contentType,
@@ -39,10 +47,10 @@ export function ClubSharingManagement({
       
       if (error) {
         console.error(`Error fetching ${contentType} shares:`, error);
-        return [];
+        return [] as ContentShare[];
       }
       
-      return data;
+      return data as ContentShare[];
     }
   });
   
