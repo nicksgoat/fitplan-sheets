@@ -16,6 +16,12 @@ interface ClubShareSelectionProps {
   selectedClubIds?: string[];
 }
 
+interface ClubMember {
+  club_id: string;
+  role: string;
+  club: Club;
+}
+
 export function ClubShareSelection({
   contentId,
   contentType,
@@ -42,11 +48,8 @@ export function ClubShareSelection({
         return [];
       }
 
-      // Explicitly type the return value to avoid deep instantiation
-      return data.map(item => {
-        const club = item.club as unknown;
-        return club as Club;
-      });
+      // Cast data to appropriate type and extract the club
+      return (data as ClubMember[]).map(item => item.club);
     },
   });
 

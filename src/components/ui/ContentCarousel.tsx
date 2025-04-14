@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ItemType } from '@/lib/types';
 import PublicProductCard from '@/components/product/PublicProductCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +12,8 @@ interface ContentCarouselProps {
 
 const ContentCarousel = ({ items }: ContentCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const scroll = (direction: 'left' | 'right') => {
     const scrollAmount = 300; // Pixels to scroll each time
@@ -20,20 +22,49 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
       const container = scrollRef.current;
       
       if (direction === 'left') {
-        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        container.scrollLeft -= scrollAmount;
       } else {
-        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        container.scrollLeft += scrollAmount;
       }
+
+      // Check scroll position after a small delay to allow animation to complete
+      setTimeout(() => updateScrollButtons(), 100);
     }
   };
 
-  // Ensure the scroll functionality is working by focusing on the scrollRef's behavior
+  // Update button states based on scroll position
+  const updateScrollButtons = () => {
+    if (!scrollRef.current) return;
+    
+    const container = scrollRef.current;
+    setCanScrollLeft(container.scrollLeft > 0);
+    setCanScrollRight(container.scrollLeft < (container.scrollWidth - container.clientWidth - 5));
+  };
+
+  // Update button states when items change or on resize
   useEffect(() => {
     if (scrollRef.current) {
-      // Just to make sure the scroll container is properly initialized
+      updateScrollButtons();
+      
+      // Reset scroll position when items change
       scrollRef.current.scrollLeft = 0;
+      
+      // Add resize listener to update button states
+      const handleResize = () => updateScrollButtons();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
   }, [items]);
+
+  // Add scroll event listener to update button states during scrolling
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (container) {
+      const handleScroll = () => updateScrollButtons();
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   return (
     <div className="relative group">
@@ -42,6 +73,8 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         size="icon"
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-dark-200/90 border-gray-700 hover:bg-gray-700"
         onClick={() => scroll('left')}
+        disabled={!canScrollLeft}
+        aria-label="Scroll left"
       >
         <ChevronLeft className="h-5 w-5" />
         <span className="sr-only">Scroll left</span>
@@ -66,6 +99,8 @@ const ContentCarousel = ({ items }: ContentCarouselProps) => {
         size="icon"
         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-dark-200/90 border-gray-700 hover:bg-gray-700"
         onClick={() => scroll('right')}
+        disabled={!canScrollRight}
+        aria-label="Scroll right"
       >
         <ChevronRight className="h-5 w-5" />
         <span className="sr-only">Scroll right</span>
