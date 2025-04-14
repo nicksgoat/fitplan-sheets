@@ -7,7 +7,7 @@ import { GuestCheckoutButton } from '@/components/checkout/GuestCheckoutButton';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Check, Shield, Tag } from 'lucide-react';
+import { Check, Shield, Tag, CreditCard } from 'lucide-react';
 import { ClubAccessBadge } from '@/components/workout/ClubAccessBadge';
 import { toast } from 'sonner';
 
@@ -56,8 +56,20 @@ export function ProductPurchaseSection({
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [validReferralCode, setValidReferralCode] = useState<ReferralCodeData | null>(null);
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [isApplePaySupported, setIsApplePaySupported] = useState(false);
 
   useEffect(() => {
+    // Check if Apple Pay is supported
+    const checkApplePaySupport = () => {
+      // Check if we're on a device and browser that supports Apple Pay
+      const isAppleDevice = /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      setIsApplePaySupported(isAppleDevice && isSafari);
+    };
+    
+    checkApplePaySupport();
+    
     // Check URL for referral code
     const urlParams = new URLSearchParams(window.location.search);
     const refFromUrl = urlParams.get('ref');
@@ -112,7 +124,7 @@ export function ProductPurchaseSection({
     }
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = (paymentMethod: 'standard' | 'apple_pay' = 'standard') => {
     if (!price) return;
     
     // Get referral source if available
@@ -126,7 +138,8 @@ export function ProductPurchaseSection({
       price: discountedPrice !== null ? discountedPrice : parseFloat(price.toString()),
       creatorId,
       referralSource,
-      referralCode: validReferralCode?.code
+      referralCode: validReferralCode?.code,
+      paymentMethod
     });
   };
 
@@ -252,13 +265,32 @@ export function ProductPurchaseSection({
       
       <div className="space-y-2">
         {user ? (
-          <Button 
-            onClick={handlePurchase}
-            disabled={checkoutLoading}
-            className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 py-6 text-lg"
-          >
-            {checkoutLoading ? 'Processing...' : `Buy Now`}
-          </Button>
+          <div className="flex flex-col space-y-2">
+            <Button 
+              onClick={() => handlePurchase('standard')}
+              disabled={checkoutLoading}
+              className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90 py-6 text-lg"
+            >
+              {checkoutLoading ? 'Processing...' : `Buy Now`}
+            </Button>
+            
+            {isApplePaySupported && (
+              <Button
+                onClick={() => handlePurchase('apple_pay')}
+                disabled={checkoutLoading}
+                className="w-full bg-black hover:bg-gray-900 text-white py-5 flex items-center justify-center gap-2"
+              >
+                <svg 
+                  viewBox="0 0 24 24" 
+                  className="h-5 w-5 text-white"
+                  fill="currentColor"
+                >
+                  <path d="M18.96 5.73c-1.36.06-3 .8-3.96 1.8-.87.95-1.62 2.43-1.33 3.87 1.45.11 2.94-.73 3.93-1.66.97-.96 1.63-2.4 1.36-3.99zM19.32 12.3c-.99-.11-1.82.53-2.42.53s-1.34-.52-2.26-.52c-1.89.05-3.84 1.58-3.84 4.76 0 3.05 2.7 4.93 2.7 4.93-.05.08-.62 2.15-2.07 2.15-1.24 0-1.7-.74-2.64-.74-.9 0-1.73.77-2.63.77-1.42.03-2.5-1.95-3.43-3.93-1-2.02-1.73-4.77-1.73-7.5 0-4.36 2.84-6.67 5.63-6.67 1.48-.03 2.87.99 3.77.99.87 0 2.5-1.09 4.22-1.09.67 0 3.06.27 4.5 3.1-3.91 2.08-3.3 6.89.2 8.22z"/>
+                </svg>
+                <span>Apple Pay</span>
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="flex flex-col space-y-2">
             <Button 

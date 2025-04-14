@@ -13,6 +13,7 @@ interface CheckoutParams {
   guestEmail?: string;
   referralSource?: string;
   referralCode?: string;
+  paymentMethod?: 'standard' | 'apple_pay';
 }
 
 export function useStripeCheckout() {
@@ -27,7 +28,8 @@ export function useStripeCheckout() {
     creatorId, 
     guestEmail,
     referralSource,
-    referralCode
+    referralCode,
+    paymentMethod = 'standard'
   }: CheckoutParams) => {
     try {
       setLoading(true);
@@ -51,7 +53,8 @@ export function useStripeCheckout() {
           guestEmail: isGuestCheckout ? guestEmail : undefined,
           isGuest: isGuestCheckout,
           referralSource,
-          referralCode
+          referralCode,
+          paymentMethod
         }
       });
 

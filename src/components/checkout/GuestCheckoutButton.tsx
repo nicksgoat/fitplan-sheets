@@ -43,9 +43,10 @@ export function GuestCheckoutButton({
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [validReferralCode, setValidReferralCode] = useState<ReferralCodeData | null>(null);
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [isApplePaySupported, setIsApplePaySupported] = useState(false);
   const { initiateCheckout, loading } = useStripeCheckout();
   
-  // Check for previously used guest email
+  // Check for previously used guest email and Apple Pay support
   useEffect(() => {
     const previousEmail = localStorage.getItem('guestEmail');
     setSavedEmail(previousEmail);
@@ -60,6 +61,17 @@ export function GuestCheckoutButton({
       setReferralCode(refFromUrl);
       validateReferralCode(refFromUrl);
     }
+    
+    // Check if Apple Pay is supported
+    const checkApplePaySupport = () => {
+      // Check if we're on a device and browser that supports Apple Pay
+      const isAppleDevice = /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      setIsApplePaySupported(isAppleDevice && isSafari);
+    };
+    
+    checkApplePaySupport();
   }, []);
   
   const validateReferralCode = async (code: string) => {
@@ -107,7 +119,7 @@ export function GuestCheckoutButton({
     }
   };
   
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent, paymentMethod: 'standard' | 'apple_pay' = 'standard') => {
     e.preventDefault();
     
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -131,7 +143,8 @@ export function GuestCheckoutButton({
       creatorId,
       guestEmail: email,
       referralSource,
-      referralCode: validReferralCode?.code
+      referralCode: validReferralCode?.code,
+      paymentMethod
     });
     
     setOpen(false);
@@ -162,7 +175,7 @@ export function GuestCheckoutButton({
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <form onSubmit={(e) => handleEmailSubmit(e)} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium">
                 Email Address
@@ -221,16 +234,37 @@ export function GuestCheckoutButton({
               <p>You'll receive a receipt and access instructions at this email.</p>
             </div>
             
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+            <div className="flex flex-col space-y-2">
               <Button 
                 type="submit" 
-                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
                 disabled={loading}
               >
                 {loading ? 'Processing...' : 'Continue to Payment'}
+              </Button>
+              
+              {isApplePaySupported && (
+                <Button 
+                  type="button" 
+                  className="w-full bg-black hover:bg-gray-900 text-white flex items-center justify-center gap-2"
+                  disabled={loading}
+                  onClick={(e) => handleEmailSubmit(e, 'apple_pay')}
+                >
+                  <svg 
+                    viewBox="0 0 24 24" 
+                    className="h-5 w-5 text-white"
+                    fill="currentColor"
+                  >
+                    <path d="M18.96 5.73c-1.36.06-3 .8-3.96 1.8-.87.95-1.62 2.43-1.33 3.87 1.45.11 2.94-.73 3.93-1.66.97-.96 1.63-2.4 1.36-3.99zM19.32 12.3c-.99-.11-1.82.53-2.42.53s-1.34-.52-2.26-.52c-1.89.05-3.84 1.58-3.84 4.76 0 3.05 2.7 4.93 2.7 4.93-.05.08-.62 2.15-2.07 2.15-1.24 0-1.7-.74-2.64-.74-.9 0-1.73.77-2.63.77-1.42.03-2.5-1.95-3.43-3.93-1-2.02-1.73-4.77-1.73-7.5 0-4.36 2.84-6.67 5.63-6.67 1.48-.03 2.87.99 3.77.99.87 0 2.5-1.09 4.22-1.09.67 0 3.06.27 4.5 3.1-3.91 2.08-3.3 6.89.2 8.22z"/>
+                  </svg>
+                  <span>Apple Pay</span>
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
               </Button>
             </div>
           </form>

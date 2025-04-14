@@ -23,7 +23,19 @@ serve(async (req) => {
     
     // Get request body
     const body = await req.json();
-    const { itemType, itemId, itemName, price, userId, creatorId, guestEmail, isGuest, referralSource, referralCode } = body;
+    const { 
+      itemType, 
+      itemId, 
+      itemName, 
+      price, 
+      userId, 
+      creatorId, 
+      guestEmail, 
+      isGuest, 
+      referralSource, 
+      referralCode,
+      paymentMethod = 'standard'
+    } = body;
     
     console.log("Request params:", { 
       itemType, 
@@ -32,7 +44,8 @@ serve(async (req) => {
       price, 
       userId,
       referralSource,
-      referralCode 
+      referralCode,
+      paymentMethod
     });
 
     if (!itemType || !itemId || !price || (!userId && !guestEmail) || !creatorId) {
@@ -180,10 +193,15 @@ serve(async (req) => {
       creatorEarnings 
     });
 
+    // Determine payment methods based on request
+    const paymentMethodTypes = paymentMethod === 'apple_pay' 
+      ? ['card', 'apple_pay']
+      : ['card'];
+
     // Create checkout session
     try {
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
+        payment_method_types: paymentMethodTypes,
         line_items: [
           {
             price_data: {
@@ -218,7 +236,8 @@ serve(async (req) => {
           referralSource: referralSource || 'direct',
           referralCode: referralCode || undefined,
           discountPercent: DISCOUNT_PERCENT,
-          commissionPercent: COMMISSION_PERCENT
+          commissionPercent: COMMISSION_PERCENT,
+          paymentMethod: paymentMethod
         },
       });
 
