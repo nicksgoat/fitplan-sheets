@@ -3,13 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+// Define a simple return type to avoid circular references
+interface ClubContentAccessResult {
+  hasAccess: boolean;
+  sharedWithClubs: string[];
+}
+
 export function useClubContentAccess(contentId: string, contentType: 'workout' | 'program') {
   const { user } = useAuth();
   const userId = user?.id;
   
   return useQuery({
     queryKey: ['club-content-access', contentId, contentType, userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClubContentAccessResult> => {
       if (!contentId) {
         console.log(`[useClubContentAccess] No contentId provided`, { contentId });
         return { hasAccess: false, sharedWithClubs: [] };

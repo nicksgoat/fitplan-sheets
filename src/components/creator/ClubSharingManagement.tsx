@@ -16,7 +16,7 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
-// Define a simpler interface for ContentShare to avoid deep instantiation issues
+// Define a simplified interface for content shares
 interface ContentShare {
   club_id: string;
   club?: {
@@ -50,7 +50,7 @@ export function ClubSharingManagement({
         return [] as ContentShare[];
       }
       
-      return data as ContentShare[];
+      return (data || []) as ContentShare[];
     }
   });
   
