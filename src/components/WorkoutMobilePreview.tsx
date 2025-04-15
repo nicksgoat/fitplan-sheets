@@ -9,17 +9,21 @@ import { Button } from "@/components/ui/button";
 import { BookmarkPlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useProfile } from "@/hooks/useProfile";
 
 interface WorkoutMobilePreviewProps {
   sessionId: string;
+  creatorId?: string;
 }
 
 const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({
-  sessionId
+  sessionId,
+  creatorId
 }) => {
   const {
     program
   } = useWorkout();
+  const { profile: creatorProfile } = useProfile(creatorId);
 
   // Guard clauses to prevent accessing properties of undefined objects
   if (!program) return null;
@@ -40,7 +44,14 @@ const WorkoutMobilePreview: React.FC<WorkoutMobilePreviewProps> = ({
         <h2 className="text-lg font-semibold">Preview</h2>
       </div>
       
-      <MobileDeviceFrame title={`${weekNumber}`} subtitle={session.name} className="py-[14px] px-[23px]">
+      <MobileDeviceFrame 
+        title={`${weekNumber}`} 
+        subtitle={session.name}
+        className="py-[14px] px-[23px]"
+        creatorName={creatorProfile?.display_name}
+        creatorUsername={creatorProfile?.username}
+        creatorAvatar={creatorProfile?.avatar_url}
+      >
         <div className="p-4">
           <div className="text-lg font-semibold mb-3">Exercises</div>
           

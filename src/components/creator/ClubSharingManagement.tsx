@@ -16,7 +16,7 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
-// Define a simpler interface for ContentShare to avoid deep instantiation issues
+// Simple interface for content shares to avoid deep type instantiation
 interface ContentShare {
   club_id: string;
   club?: {
@@ -40,17 +40,22 @@ export function ClubSharingManagement({
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('club_id, club:clubs(name)')
-        .eq(idField, contentId);
-      
-      if (error) {
-        console.error(`Error fetching ${contentType} shares:`, error);
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('club_id, club:clubs(name)')
+          .eq(idField, contentId);
+        
+        if (error) {
+          console.error(`Error fetching ${contentType} shares:`, error);
+          return [] as ContentShare[];
+        }
+        
+        return (data || []) as ContentShare[];
+      } catch (e) {
+        console.error(`Error in query for ${contentType} shares:`, e);
         return [] as ContentShare[];
       }
-      
-      return data as ContentShare[];
     }
   });
   
