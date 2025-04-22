@@ -70,7 +70,7 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
         
         console.log(`[useClubContentAccess] User ${userId} has club access: ${hasAccess}`, { 
           memberClubs: memberData?.map(m => m.club_id) || [],
-          sharedWithClubs: sharedClubIds
+          sharedWithClubs: sharedClubIds 
         });
         
         return { 

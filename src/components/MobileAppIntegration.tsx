@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,23 @@ const API_DEMOS = [
   { id: 'upload-media', name: 'Upload Media', action: 'upload' }
 ];
 
+interface Program {
+  id: string;
+  name: string;
+  weeks?: Week[];
+}
+
+interface Week {
+  id: string;
+  name: string;
+  workouts?: Workout[];
+}
+
+interface Workout {
+  id: string;
+  name: string;
+}
+
 export default function MobileAppIntegration() {
   const { user } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -26,8 +42,8 @@ export default function MobileAppIntegration() {
   const [activeDemo, setActiveDemo] = useState<string>('create-program');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [result, setResult] = useState<any>(null);
-  const [programs, setPrograms] = useState<any[]>([]);
-  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [file, setFile] = useState<File | null>(null);
   
   useEffect(() => {
@@ -52,18 +68,18 @@ export default function MobileAppIntegration() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const programsData = await mobileApi.getPrograms();
+      const programsResponse = await mobileApi.getPrograms();
+      const programsData = programsResponse as { data: Program[] };
       setPrograms(programsData.data || []);
       
-      // Load first program's workouts if available
       if (programsData.data && programsData.data.length > 0) {
         const firstProgram = programsData.data[0];
-        const programDetails = await mobileApi.getProgram(firstProgram.id);
+        const programDetailsResponse = await mobileApi.getProgram(firstProgram.id);
+        const programDetails = programDetailsResponse as { data: Program };
         
-        // Extract workouts from all weeks
-        const allWorkouts: any[] = [];
+        const allWorkouts: Workout[] = [];
         if (programDetails.data && programDetails.data.weeks) {
-          programDetails.data.weeks.forEach((week: any) => {
+          programDetails.data.weeks.forEach((week: Week) => {
             if (week.workouts) {
               allWorkouts.push(...week.workouts);
             }
@@ -175,7 +191,6 @@ export default function MobileAppIntegration() {
       setResult(response);
       toast.success('Action completed successfully');
       
-      // Reload data to show changes
       loadData();
       
     } catch (error: any) {
@@ -270,7 +285,7 @@ export default function MobileAppIntegration() {
               >
                 <option value="">Select a week...</option>
                 {programs.flatMap(program => 
-                  (program.weeks || []).map((week: any) => (
+                  (program.weeks || []).map((week: Week) => (
                     <option key={week.id} value={week.id}>{program.name} - {week.name}</option>
                   ))
                 )}

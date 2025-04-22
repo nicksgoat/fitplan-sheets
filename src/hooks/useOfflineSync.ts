@@ -102,21 +102,21 @@ export function useOfflineSync<T extends SyncableEntity>(
           switch (change.type) {
             case 'create':
               await supabase
-                .from(tableName)
+                .from(tableName as any) // Cast to any to bypass type checking
                 .insert(change.entity);
               break;
               
             case 'update':
               const { id, ...updateData } = change.entity;
               await supabase
-                .from(tableName)
+                .from(tableName as any) // Cast to any to bypass type checking
                 .update(updateData)
                 .eq('id', id);
               break;
               
             case 'delete':
               await supabase
-                .from(tableName)
+                .from(tableName as any) // Cast to any to bypass type checking
                 .delete()
                 .eq('id', change.id);
               break;
