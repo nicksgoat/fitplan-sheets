@@ -6,7 +6,6 @@ import { Exercise } from '@/types/exercise';
 import { ItemType, CollectionType } from '@/lib/types';
 import LibraryHeader from '@/components/library/LibraryHeader';
 import LibraryTabs from '@/components/library/LibraryTabs';
-import MobileAppIntegration from '@/components/MobileAppIntegration';
 
 const Library = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -97,12 +96,6 @@ const Library = () => {
   return (
     <div className="space-y-6 animate-fade-in p-4">
       <LibraryHeader handleCreateButtonClick={handleCreateButtonClick} />
-      
-      {/* Mobile API Integration */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">Mobile App Integration</h2>
-        <MobileAppIntegration />
-      </div>
       
       <LibraryTabs 
         collections={mockCollections}
