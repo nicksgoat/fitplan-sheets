@@ -1,8 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Base URL for the API
-const API_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://cmzhdyiadvuuwypocxjv.supabase.co'}/functions/v1/api`;
+// Base URL for the API - using a direct URL instead of process.env
+// The Supabase URL is hardcoded here since we can't use process.env in the browser
+const API_URL = 'https://cmzhdyiadvuuwypocxjv.supabase.co/functions/v1/api';
 
 // Define return types for API responses
 export interface ApiResponse<T> {

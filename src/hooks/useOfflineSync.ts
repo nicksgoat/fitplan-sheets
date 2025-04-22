@@ -16,11 +16,19 @@ type PendingChange<T extends SyncableEntity> = {
   timestamp: number;
 };
 
+// Define allowed table names to ensure type safety with Supabase
+type AllowedTableName = 
+  | 'workouts'
+  | 'programs'
+  | 'exercises'
+  | 'workout_logs'
+  | 'profiles';
+
 /**
  * A hook that provides offline sync capabilities for mobile apps
  */
 export function useOfflineSync<T extends SyncableEntity>(
-  tableName: string,
+  tableName: AllowedTableName,
   localStorageKey: string
 ) {
   const { user } = useAuth();
@@ -102,21 +110,21 @@ export function useOfflineSync<T extends SyncableEntity>(
           switch (change.type) {
             case 'create':
               await supabase
-                .from(tableName as any) // Cast to any to bypass type checking
+                .from(tableName)
                 .insert(change.entity);
               break;
               
             case 'update':
               const { id, ...updateData } = change.entity;
               await supabase
-                .from(tableName as any) // Cast to any to bypass type checking
+                .from(tableName)
                 .update(updateData)
                 .eq('id', id);
               break;
               
             case 'delete':
               await supabase
-                .from(tableName as any) // Cast to any to bypass type checking
+                .from(tableName)
                 .delete()
                 .eq('id', change.id);
               break;
