@@ -59,6 +59,39 @@ export class MobileApiClient {
     return data;
   }
 
+  /**
+   * Upload a file to the API
+   */
+  async uploadFile(file: File, type: 'workout' | 'profile' | 'exercise', relatedId?: string) {
+    if (!this.token) {
+      throw new Error('Not authenticated. Call initialize() first.');
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    if (relatedId) formData.append('relatedId', relatedId);
+    
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${this.token}`,
+    };
+
+    const options: RequestInit = {
+      method: 'POST',
+      headers,
+      body: formData
+    };
+
+    const response = await fetch(`${API_URL}/media/upload`, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Unknown error occurred');
+    }
+
+    return data;
+  }
+
   // Workout Methods
   async getWorkouts(limit = 10, offset = 0) {
     return this.request('GET', `/workouts?limit=${limit}&offset=${offset}`);
@@ -66,6 +99,18 @@ export class MobileApiClient {
 
   async getWorkout(id: string) {
     return this.request('GET', `/workouts/${id}`);
+  }
+  
+  async createWorkout(data: { name: string, week_id: string, day_num?: number }) {
+    return this.request('POST', '/workouts', data);
+  }
+  
+  async updateWorkout(id: string, data: { name?: string, day_num?: number }) {
+    return this.request('PUT', `/workouts/${id}`, data);
+  }
+  
+  async deleteWorkout(id: string) {
+    return this.request('DELETE', `/workouts/${id}`);
   }
 
   // Program Methods
@@ -75,6 +120,18 @@ export class MobileApiClient {
 
   async getProgram(id: string) {
     return this.request('GET', `/programs/${id}`);
+  }
+  
+  async createProgram(data: { name: string, is_public?: boolean }) {
+    return this.request('POST', '/programs', data);
+  }
+  
+  async updateProgram(id: string, data: { name?: string, is_public?: boolean }) {
+    return this.request('PUT', `/programs/${id}`, data);
+  }
+  
+  async deleteProgram(id: string) {
+    return this.request('DELETE', `/programs/${id}`);
   }
 
   // User Profile Methods

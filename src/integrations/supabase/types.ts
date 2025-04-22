@@ -772,6 +772,7 @@ export type Database = {
           description: string | null
           difficulty: Database["public"]["Enums"]["difficulty_level"] | null
           duration: string | null
+          equipment: string[] | null
           id: string
           image_url: string | null
           instructions: string | null
@@ -793,6 +794,7 @@ export type Database = {
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
           duration?: string | null
+          equipment?: string[] | null
           id?: string
           image_url?: string | null
           instructions?: string | null
@@ -814,6 +816,7 @@ export type Database = {
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
           duration?: string | null
+          equipment?: string[] | null
           id?: string
           image_url?: string | null
           instructions?: string | null
@@ -872,39 +875,60 @@ export type Database = {
       exercise_sets: {
         Row: {
           created_at: string
+          distance: number | null
+          duration: number | null
           exercise_id: string
           id: string
           intensity: string | null
           intensity_type: Database["public"]["Enums"]["intensity_type"] | null
+          is_completed: boolean | null
+          notes: string | null
           reps: string | null
           rest: string | null
+          rest_after: number | null
+          set_number: number | null
           updated_at: string
           weight: string | null
           weight_type: Database["public"]["Enums"]["weight_type"] | null
+          workout_exercise_id: string | null
         }
         Insert: {
           created_at?: string
+          distance?: number | null
+          duration?: number | null
           exercise_id: string
           id?: string
           intensity?: string | null
           intensity_type?: Database["public"]["Enums"]["intensity_type"] | null
+          is_completed?: boolean | null
+          notes?: string | null
           reps?: string | null
           rest?: string | null
+          rest_after?: number | null
+          set_number?: number | null
           updated_at?: string
           weight?: string | null
           weight_type?: Database["public"]["Enums"]["weight_type"] | null
+          workout_exercise_id?: string | null
         }
         Update: {
           created_at?: string
+          distance?: number | null
+          duration?: number | null
           exercise_id?: string
           id?: string
           intensity?: string | null
           intensity_type?: Database["public"]["Enums"]["intensity_type"] | null
+          is_completed?: boolean | null
+          notes?: string | null
           reps?: string | null
           rest?: string | null
+          rest_after?: number | null
+          set_number?: number | null
           updated_at?: string
           weight?: string | null
           weight_type?: Database["public"]["Enums"]["weight_type"] | null
+          workout_exercise_id?: string | null
         }
         Relationships: [
           {
@@ -1370,8 +1394,14 @@ export type Database = {
       standalone_exercise_sets: {
         Row: {
           created_at: string | null
+          distance: number | null
+          duration: number | null
           id: string
+          intensity: number | null
+          is_completed: boolean | null
+          notes: string | null
           reps: string
+          rest_after: number | null
           rest_time: number | null
           set_number: number
           updated_at: string | null
@@ -1380,8 +1410,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          distance?: number | null
+          duration?: number | null
           id?: string
+          intensity?: number | null
+          is_completed?: boolean | null
+          notes?: string | null
           reps: string
+          rest_after?: number | null
           rest_time?: number | null
           set_number: number
           updated_at?: string | null
@@ -1390,8 +1426,14 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          distance?: number | null
+          duration?: number | null
           id?: string
+          intensity?: number | null
+          is_completed?: boolean | null
+          notes?: string | null
           reps?: string
+          rest_after?: number | null
           rest_time?: number | null
           set_number?: number
           updated_at?: string | null
@@ -1415,6 +1457,7 @@ export type Database = {
           exercise_order: number
           id: string
           notes: string | null
+          rest_between_sets: number | null
           updated_at: string | null
           workout_id: string
         }
@@ -1424,6 +1467,7 @@ export type Database = {
           exercise_order: number
           id?: string
           notes?: string | null
+          rest_between_sets?: number | null
           updated_at?: string | null
           workout_id: string
         }
@@ -1433,6 +1477,7 @@ export type Database = {
           exercise_order?: number
           id?: string
           notes?: string | null
+          rest_between_sets?: number | null
           updated_at?: string | null
           workout_id?: string
         }
@@ -1588,6 +1633,7 @@ export type Database = {
           exercise_order: number
           id: string
           notes: string | null
+          rest_between_sets: number | null
           updated_at: string | null
           workout_id: string
         }
@@ -1597,6 +1643,7 @@ export type Database = {
           exercise_order: number
           id?: string
           notes?: string | null
+          rest_between_sets?: number | null
           updated_at?: string | null
           workout_id: string
         }
@@ -1606,6 +1653,7 @@ export type Database = {
           exercise_order?: number
           id?: string
           notes?: string | null
+          rest_between_sets?: number | null
           updated_at?: string | null
           workout_id?: string
         }
@@ -1908,6 +1956,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_column_if_not_exists: {
+        Args: {
+          p_table_name: string
+          p_column_name: string
+          p_column_type: string
+          p_column_default?: string
+        }
+        Returns: undefined
+      }
       calculate_combine_percentiles: {
         Args: {
           user_score: string
@@ -1924,6 +1981,14 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      column_exists: {
+        Args: { p_table_name: string; p_column_name: string }
+        Returns: boolean
+      }
+      create_add_column_function: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_club_event: {
         Args: {
           p_club_id: string
@@ -1934,6 +1999,10 @@ export type Database = {
           p_created_by: string
         }
         Returns: string
+      }
+      create_column_exists_function: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_event: {
         Args: {
@@ -1966,6 +2035,10 @@ export type Database = {
       }
       ensure_club_creators_are_owners: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      execute_sql: {
+        Args: { p_sql: string }
         Returns: undefined
       }
       generate_slug: {

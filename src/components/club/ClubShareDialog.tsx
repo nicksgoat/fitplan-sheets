@@ -15,6 +15,8 @@ import { ClubShareDialogProps } from '@/types/clubSharing';
 import { useClubSelection } from '@/hooks/useClubSelection';
 import { useShareWithClubs } from '@/hooks/useClubSharing';
 import { ClubsList } from './ClubsList';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export function ClubShareDialog({ 
   open, 
@@ -35,6 +37,9 @@ export function ClubShareDialog({
   } = useClubSelection(initialSelectedClubIds);
   
   const shareWithClubsMutation = useShareWithClubs();
+  
+  // State for mobile sharing switch
+  const [shareWithMobileUsers, setShareWithMobileUsers] = React.useState(true);
 
   // Load user clubs when dialog opens
   useEffect(() => {
@@ -59,6 +64,10 @@ export function ClubShareDialog({
       onSelectionChange(selectedClubIds);
     }
     
+    if (shareWithMobileUsers) {
+      toast.success("Content will be available to mobile app users in the selected clubs");
+    }
+    
     onOpenChange(false);
   };
 
@@ -79,6 +88,15 @@ export function ClubShareDialog({
             selectedClubIds={selectedClubIds}
             onClubToggle={toggleClub}
           />
+          
+          <div className="flex items-center space-x-2 pt-4">
+            <Switch
+              id="mobile-share"
+              checked={shareWithMobileUsers}
+              onCheckedChange={setShareWithMobileUsers}
+            />
+            <Label htmlFor="mobile-share">Make available to mobile app users</Label>
+          </div>
         </div>
         
         <AlertDialogFooter>
