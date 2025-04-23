@@ -7,12 +7,11 @@ export interface Club {
   name: string;
   description?: string;
   logo_url?: string;
-  // Adding the required fields to make it compatible
+  // Making these fields match the main Club type
   created_at: string;
   club_type: ClubType;
   membership_type: MembershipType;
-  // Making creator_id optional to avoid circular references
-  creator_id?: string;
+  creator_id: string;
   updated_at: string;
   banner_url?: string;
   premium_price?: number;

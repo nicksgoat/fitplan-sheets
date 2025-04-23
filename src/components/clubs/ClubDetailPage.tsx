@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchClubChannels, uploadPostImage } from './ClubDetailPageUtils';
 import ClubChat from './ClubChat';
+import { Club } from '@/types/club';
 
 interface ClubDetailPageProps {
   clubId: string;
@@ -87,7 +88,13 @@ const ClubDetailPage: React.FC<ClubDetailPageProps> = ({ clubId, onBack }) => {
             
             if (clubData) {
               console.log("Fetched club data:", clubData.name);
-              setCurrentClub(clubData);
+              const typedClub: Club = {
+                ...clubData,
+                club_type: clubData.club_type,
+                membership_type: clubData.membership_type,
+                creator_id: clubData.creator_id
+              };
+              setCurrentClub(typedClub);
               refreshClubs();
             } else {
               console.error("No club found with ID:", clubId);

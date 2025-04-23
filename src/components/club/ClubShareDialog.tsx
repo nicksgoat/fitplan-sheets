@@ -15,6 +15,7 @@ import { ClubShareDialogProps } from '@/types/clubSharing';
 import { useClubSelection } from '@/hooks/useClubSelection';
 import { useShareWithClubs } from '@/hooks/useClubSharing';
 import { ClubsList } from './ClubsList';
+import type { Club } from '@/types/club';
 
 export function ClubShareDialog({ 
   open, 
@@ -82,7 +83,7 @@ export function ClubShareDialog({
         
         <div className="grid gap-4 py-4">
           <ClubsList
-            clubs={clubs}
+            clubs={clubs as Club[]}
             isLoading={isLoading}
             selectedClubIds={selectedClubIds}
             onClubToggle={toggleClub}

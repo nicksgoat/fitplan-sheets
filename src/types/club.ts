@@ -1,20 +1,5 @@
 
 // Club types
-export interface Club {
-  id: string;
-  name: string;
-  description?: string;
-  logo_url?: string;
-  banner_url?: string;
-  creator_id: string;
-  club_type: ClubType;
-  membership_type: MembershipType;
-  premium_price?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// Club type enum
 export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'outdoor' | 'other';
 
 // Membership type enum
@@ -122,7 +107,6 @@ export interface ClubEvent {
   created_by: string;
   attendee_count?: number;
   category?: string;
-  participants?: EventParticipant[];
 }
 
 export interface EventParticipant {
@@ -209,4 +193,19 @@ export interface SharedWorkout {
     name: string;
     description?: string;
   } | null;
+}
+
+// Add Club interface definition here to match the database exactly
+export interface Club {
+  id: string;
+  name: string;
+  description?: string;
+  logo_url?: string;
+  banner_url?: string;
+  creator_id: string;
+  club_type: ClubType;
+  membership_type: MembershipType;
+  premium_price?: number;
+  created_at: string;
+  updated_at: string;
 }

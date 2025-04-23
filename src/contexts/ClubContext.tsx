@@ -16,6 +16,7 @@ import {
   ProductType,
   ClubChannel
 } from '@/types/club';
+import { safelyGetProfile } from '@/utils/profileUtils';
 
 interface ClubContextType {
   clubs: Club[];
@@ -444,19 +445,22 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
           user_id: user.id,
           role: 'member',
           status: 'active',
-          membership_type: 'free' as MembershipType
+          membership_type: currentClub.membership_type === 'invite_only' ? 'free' : currentClub.membership_type
         })
         .select('*')
         .single();
         
       if (error) throw error;
       
-      return {
+      const typedMember: ClubMember = {
         ...data,
         role: data.role as MemberRole,
         status: data.status as MemberStatus,
-        membership_type: data.membership_type as MembershipType
-      } as ClubMember;
+        membership_type: data.membership_type as MembershipType,
+        profile: undefined
+      };
+      
+      return typedMember;
     } catch (error) {
       console.error('Error joining club:', error);
       throw error;
@@ -678,12 +682,23 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      const typedMembers = (data || []).map(member => ({
-        ...member,
-        role: member.role as MemberRole,
-        status: member.status as MemberStatus,
-        membership_type: member.membership_type as MembershipType
-      }));
+      const typedMembers: ClubMember[] = (data || []).map(member => {
+        const safeProfile = member.profile && typeof member.profile === 'object' && !('error' in member.profile)
+          ? {
+            display_name: member.profile.display_name,
+            username: member.profile.username,
+            avatar_url: member.profile.avatar_url
+          }
+          : undefined;
+        
+        return {
+          ...member,
+          role: member.role as MemberRole,
+          status: member.status as MemberStatus,
+          membership_type: member.membership_type as MembershipType,
+          profile: safeProfile
+        };
+      });
       
       setMembers(typedMembers);
     } catch (error) {
@@ -706,7 +721,24 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setPosts(data || []);
+      
+      const typedPosts: ClubPost[] = (data || []).map(post => {
+        const safeProfile = post.profile && typeof post.profile === 'object' && !('error' in post.profile)
+          ? {
+            display_name: post.profile.display_name,
+            username: post.profile.username,
+            avatar_url: post.profile.avatar_url
+          }
+          : undefined;
+        
+        return {
+          ...post,
+          profile: safeProfile,
+          comments: []
+        };
+      });
+      
+      setPosts(typedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -727,14 +759,30 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .order('created_at', { ascending: true });
       
       if (error) throw error;
-      setMessages(data || []);
+      
+      const typedMessages: ClubMessage[] = (data || []).map(message => {
+        const safeProfile = message.profile && typeof message.profile === 'object' && !('error' in message.profile)
+          ? {
+            display_name: message.profile.display_name,
+            username: message.profile.username,
+            avatar_url: message.profile.avatar_url
+          }
+          : undefined;
+        
+        return {
+          ...message,
+          profile: safeProfile
+        };
+      });
+      
+      setMessages(typedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
       setLoadingMessages(false);
     }
   }, [currentClub]);
-
+  
   const refreshEvents = useCallback(async () => {
     if (!currentClub) return;
     
@@ -814,6 +862,10 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
+  const setCurrentClubFixed = (club: Club | null) => {
+    setCurrentClub(club);
+  };
+
   useEffect(() => {
     if (user) {
       refreshClubs();
@@ -846,7 +898,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loadingPosts,
         loadingMessages,
         loadingChannels,
-        setCurrentClub,
+        setCurrentClub: setCurrentClubFixed,
         refreshClubs,
         refreshMembers,
         refreshProducts,
