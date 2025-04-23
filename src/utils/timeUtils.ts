@@ -51,9 +51,23 @@ export const formatDate = (date: string | Date | null): string => {
 /**
  * Formats a time in a standardized format (e.g., "2:30 PM")
  */
-export const formatTime = (date: string | Date | null): string => {
-  if (!date) return 'Unknown time';
+export const formatTime = (date: string | Date | number | null): string => {
+  if (date === null || date === undefined) return 'Unknown time';
   
+  // If it's a number (seconds), convert to string representation
+  if (typeof date === 'number') {
+    const hours = Math.floor(date / 3600);
+    const minutes = Math.floor((date % 3600) / 60);
+    const seconds = Math.floor(date % 60);
+    
+    const formattedHours = hours > 0 ? `${hours}:` : '';
+    const formattedMinutes = minutes < 10 && hours > 0 ? `0${minutes}:` : `${minutes}:`;
+    const formattedSeconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
+    
+    return `${formattedHours}${formattedMinutes}${formattedSeconds}`;
+  }
+  
+  // Handle string or Date objects
   const options: Intl.DateTimeFormatOptions = { 
     hour: 'numeric', 
     minute: 'numeric',

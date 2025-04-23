@@ -131,7 +131,7 @@ const ClubMemberItem: React.FC<ClubMemberItemProps> = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {member.role !== 'admin' && (
+                {member.role !== 'admin' && member.role !== 'owner' && (
                   <DropdownMenuItem onClick={() => handleUpdateMemberRole('admin')}>
                     Make Admin
                   </DropdownMenuItem>
