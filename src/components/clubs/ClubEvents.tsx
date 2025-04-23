@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -134,6 +135,22 @@ const ClubEvents: React.FC<ClubEventsProps> = ({ clubId }) => {
     console.log(`Updating participant ${participantId} status to ${status} for event ${eventId}`);
   };
 
+  // Add the missing handleParticipantStatusChange function
+  const handleParticipantStatusChange = (participant: EventParticipant, newStatus: EventParticipationStatus) => {
+    // Here you would typically update the participant status in the database
+    console.log(`Changing ${participant.profile?.display_name}'s status to ${newStatus}`);
+    
+    // For this example, let's just update the status locally
+    setParticipants(prevParticipants => 
+      prevParticipants.map(p => 
+        p.id === participant.id ? { ...p, status: newStatus } : p
+      )
+    );
+    
+    // Call the API function to update the status
+    updateParticipantStatus(participant.id, participant.event_id, newStatus);
+  };
+
   if (isLoading) {
     return <div>Loading events...</div>;
   }
@@ -231,10 +248,10 @@ const ClubEvents: React.FC<ClubEventsProps> = ({ clubId }) => {
             ) : (
               <div className="divide-y divide-gray-200">
                 {participants.map((participant) => (
-                  <div className="px-4 py-2 flex items-center justify-between">
+                  <div key={participant.id} className="px-4 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={participant.profile?.avatar_url} />
+                        <AvatarImage src={participant.profile?.avatar_url || undefined} />
                         <AvatarFallback>{participant.profile?.display_name?.[0] || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm font-medium">{participant.profile?.display_name || 'User'}</span>

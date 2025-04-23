@@ -5,16 +5,17 @@ import { ClubType, MembershipType } from './club';
 export interface Club {
   id: string;
   name: string;
-  description?: string;
-  logo_url?: string;
+  description?: string | null;
+  logo_url?: string | null;
   // Making these fields match the main Club type
   created_at: string;
   club_type: ClubType;
   membership_type: MembershipType;
   creator_id: string;
   updated_at: string;
-  banner_url?: string;
-  premium_price?: number;
+  banner_url?: string | null;
+  premium_price?: number | null;
+  created_by?: string; // For compatibility with API
 }
 
 // Define specific types for workout and program shares

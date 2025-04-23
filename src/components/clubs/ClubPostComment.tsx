@@ -12,10 +12,10 @@ const ClubPostComment: React.FC<ClubPostCommentProps> = ({ comment }) => {
   return (
     <div className="flex gap-2">
       <Avatar className="h-8 w-8">
-        <AvatarImage src={comment.profile?.avatar_url} />
+        <AvatarImage src={comment.profile?.avatar_url || undefined} />
         <AvatarFallback>
           {comment.profile?.display_name?.charAt(0) || 
-           (comment.profile?.username ? comment.profile.username.charAt(0) : 'U')}
+           comment.profile?.username?.charAt(0) || 'U'}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 bg-muted p-2 rounded-md">
