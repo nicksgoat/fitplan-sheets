@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,7 +41,6 @@ export default function WorkoutCompleteScreen({
   };
 
   const handleInstagramShare = () => {
-    // Instagram story sharing logic
     if (navigator.share) {
       navigator.share({
         url: window.location.href,
@@ -52,7 +51,6 @@ export default function WorkoutCompleteScreen({
   };
 
   const handleMessageShare = () => {
-    // Message sharing logic
     if (navigator.share) {
       navigator.share({
         url: window.location.href,
@@ -64,28 +62,31 @@ export default function WorkoutCompleteScreen({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-[#1A1F2C] text-white border-none">
+      <DialogContent className="sm:max-w-[425px] bg-black text-white border border-gray-800">
         <div className="flex flex-col items-center gap-6 p-4">
-          {/* Success Icon */}
-          <div className="w-16 h-16 rounded-full bg-fitbloom-purple/20 flex items-center justify-center">
-            <Check className="w-8 h-8 text-fitbloom-purple" />
+          {/* Success Icon with Chrome Effect */}
+          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 flex items-center justify-center border border-gray-700 shadow-lg">
+            <Check className="w-8 h-8 text-gray-300" />
           </div>
           
           {/* Workout Card Preview */}
-          <Card className="w-full bg-dark-200 p-4 rounded-lg">
+          <Card className="w-full bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-gray-700 shadow-xl">
             <div className="flex items-start gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="bg-fitbloom-purple/20 text-fitbloom-purple">
-                  {profile?.display_name?.[0] || user?.email?.[0]}
-                </AvatarFallback>
-              </Avatar>
+              {/* Chrome Logo */}
+              <img 
+                src="/lovable-uploads/776879d2-1d7f-499e-a729-2d4fb447485d.png"
+                alt="Logo"
+                className="w-12 h-12 object-contain"
+              />
+              
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{profile?.display_name || 'Athlete'}</span>
-                  <span className="text-gray-400 text-sm">@{profile?.username || 'user'}</span>
+                  <span className="font-medium text-gray-300">{profile?.display_name || 'Athlete'}</span>
+                  <span className="text-gray-500 text-sm">@{profile?.username || 'user'}</span>
                 </div>
-                <h3 className="text-lg font-bold mt-1">{workoutName}</h3>
+                <h3 className="text-lg font-bold mt-1 text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-400">
+                  {workoutName}
+                </h3>
                 <div className="flex gap-4 mt-2 text-sm text-gray-400">
                   <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
                   <span>{exerciseCount} exercises</span>
@@ -95,12 +96,12 @@ export default function WorkoutCompleteScreen({
             </div>
           </Card>
           
-          {/* Share Buttons */}
+          {/* Share Buttons with Chrome Effect */}
           <div className="flex gap-3 w-full">
             <Button
               onClick={handleInstagramShare}
               variant="outline"
-              className="flex-1 bg-dark-200 border-gray-700 hover:bg-dark-300"
+              className="flex-1 bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700 hover:bg-gray-800 text-gray-300"
             >
               <Instagram className="mr-2 h-4 w-4" />
               Share to Story
@@ -108,28 +109,28 @@ export default function WorkoutCompleteScreen({
             <Button
               onClick={handleMessageShare}
               variant="outline"
-              className="flex-1 bg-dark-200 border-gray-700 hover:bg-dark-300"
+              className="flex-1 bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700 hover:bg-gray-800 text-gray-300"
             >
               <MessageSquare className="mr-2 h-4 w-4" />
               Message
             </Button>
           </div>
           
-          {/* Notes Input */}
+          {/* Notes Input with Chrome Effect */}
           <div className="w-full space-y-2">
             <label className="text-sm text-gray-400">Add a caption (optional)</label>
             <Textarea
               placeholder="How was your workout?"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="bg-dark-200 border-gray-700 resize-none h-24"
+              className="bg-gradient-to-b from-gray-900 to-gray-800 border-gray-700 resize-none h-24 text-gray-300 placeholder:text-gray-600"
             />
           </div>
           
-          {/* Done Button */}
+          {/* Done Button with Chrome Effect */}
           <Button
             onClick={handleSave}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-900"
+            className="w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 hover:from-gray-300 hover:to-gray-200 text-gray-900 font-medium"
           >
             Done
           </Button>
