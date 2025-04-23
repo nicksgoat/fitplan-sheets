@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Calendar, MessageSquare, Users, Dumbbell, ArrowLeft } from 'lucide-react';
+import { FileText, Calendar, MessageSquare, Users, Dumbbell, ArrowLeft, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
@@ -12,6 +13,9 @@ import ClubDetailHeader from './ClubDetailHeader';
 import ClubFeedTab from './ClubFeedTab';
 import ClubEventsTab from './ClubEventsTab';
 import ClubSharedContent from './ClubSharedContent';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import ClubChannel from './ClubChannel';
 
 const ClubDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('feed');
@@ -19,6 +23,9 @@ const ClubDetailPage: React.FC = () => {
   const [newPostContent, setNewPostContent] = useState('');
   const [postingStatus, setPostingStatus] = useState(false);
   const [joiningClub, setJoiningClub] = useState(false);
+  // Add missing state variables
+  const [channels, setChannels] = useState([]);
+  const [activeChannel, setActiveChannel] = useState(null);
   
   const navigate = useNavigate();
   const { user } = useAuth();

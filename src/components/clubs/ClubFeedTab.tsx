@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { FileText, Heart, MessageCircle, Share2, PlusCircle } from 'lucide-react';
-import { formatRelativeTime } from '@/utils/timeUtils';
+import { format, formatDistanceToNow } from 'date-fns';
 
 interface ClubFeedTabProps {
   posts: any[];
@@ -26,6 +26,15 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
       </div>
     );
   }
+
+  // Helper function to format relative time (replacing the import)
+  const formatRelativeTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return "Unknown time";
+    }
+  };
 
   return (
     <div>
