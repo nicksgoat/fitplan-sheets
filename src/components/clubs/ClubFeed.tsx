@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ClubPost as ClubPostType } from '@/types/club';
+import { ClubPost } from '@/types/club';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -239,32 +239,6 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowWorkoutPicker(false)}>
               Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation dialog */}
-      <Dialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
-        <DialogContent>
-          <DialogTitle>Delete Post</DialogTitle>
-          <p className="text-muted-foreground">
-            Are you sure you want to delete this post? This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletePostId(null)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={async () => {
-                if (deletePostId) {
-                  await removePost(deletePostId);
-                  setDeletePostId(null);
-                }
-              }}
-            >
-              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
