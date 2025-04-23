@@ -35,7 +35,7 @@ import AIWorkoutGenerator from './components/workout/AIWorkoutGenerator';
 import EnhancedDashboard from './components/analytics/EnhancedDashboard';
 import OptimizedProfileView from './components/profile/OptimizedProfileView';
 import WorkoutLogger from './pages/WorkoutLogger';
-import Clubs from './pages/Clubs';
+import CreateClub from './pages/CreateClub';
 
 function App() {
   return (
@@ -62,14 +62,16 @@ function App() {
               <Route path=":username/:workoutSlug" element={<CreatorWorkoutDetail />} />
               <Route path=":username/:programSlug" element={<CreatorProgramDetail />} />
               
-              {/* Simplified club routes for better navigation */}
+              {/* Club routes - improved organization */}
               <Route path="clubs" element={<AuthenticatedRoute><ClubsHome /></AuthenticatedRoute>} />
-              <Route path="clubs/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path="clubs/create" element={<AuthenticatedRoute><CreateClub /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId/events/:eventId" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId/channels/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId/channels/:channelId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/settings" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/shared" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
 
               <Route path="liked" element={<Liked />} />
               <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />

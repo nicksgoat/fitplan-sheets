@@ -1,11 +1,16 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { ChevronLeft, Menu } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Club } from '@/types/club';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, Home, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface ClubMobileNavProps {
   club: Club;
@@ -14,9 +19,9 @@ interface ClubMobileNavProps {
 }
 
 const ClubMobileNav: React.FC<ClubMobileNavProps> = ({ 
-  club,
-  activeTab,
-  onChangeTab
+  club, 
+  activeTab, 
+  onChangeTab 
 }) => {
   const navigate = useNavigate();
   
@@ -25,29 +30,21 @@ const ClubMobileNav: React.FC<ClubMobileNavProps> = ({
     { id: 'events', label: 'Events' },
     { id: 'channels', label: 'Channels' },
     { id: 'members', label: 'Members' },
-    { id: 'shared', label: 'Shared' },
-    { id: 'settings', label: 'Settings' }
+    { id: 'shared', label: 'Shared Content' },
   ];
 
   return (
-    <div className="md:hidden flex items-center justify-between p-4 border-b">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="mr-2"
-        onClick={() => navigate('/clubs')}
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
-      
-      <div className="flex items-center flex-1">
-        <Avatar className="h-8 w-8 mr-2">
-          <AvatarImage src={club?.logo_url} />
-          <AvatarFallback>
-            {club?.name?.charAt(0) || 'C'}
-          </AvatarFallback>
-        </Avatar>
-        <h1 className="font-medium truncate">{club?.name}</h1>
+    <div className="md:hidden flex items-center justify-between p-4 bg-dark-200 sticky top-0 z-10 border-b border-dark-300">
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/clubs')}
+          className="mr-2"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="font-bold truncate max-w-[200px]">{club.name}</h1>
       </div>
       
       <Sheet>
@@ -56,14 +53,25 @@ const ClubMobileNav: React.FC<ClubMobileNavProps> = ({
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right">
-          <div className="py-4">
-            <h2 className="font-semibold text-lg mb-4">{club?.name}</h2>
-            <nav className="space-y-1">
+        <SheetContent side="right" className="bg-dark-200 border-dark-300 p-0">
+          <SheetHeader className="p-4 border-b border-dark-300">
+            <SheetTitle className="text-left">{club.name}</SheetTitle>
+          </SheetHeader>
+          <div className="p-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/clubs')}
+              className="w-full justify-start mb-4"
+            >
+              <Home className="mr-2 h-4 w-4" /> 
+              All Clubs
+            </Button>
+            
+            <div className="space-y-1">
               {navItems.map(item => (
                 <Button
                   key={item.id}
-                  variant={activeTab === item.id ? "secondary" : "ghost"}
+                  variant={activeTab === item.id ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => {
                     onChangeTab(item.id);
@@ -72,15 +80,7 @@ const ClubMobileNav: React.FC<ClubMobileNavProps> = ({
                   {item.label}
                 </Button>
               ))}
-              
-              <Button
-                variant="outline"
-                className="w-full justify-start mt-4"
-                onClick={() => navigate('/clubs')}
-              >
-                All Clubs
-              </Button>
-            </nav>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

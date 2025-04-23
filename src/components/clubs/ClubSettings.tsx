@@ -1,20 +1,42 @@
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { useClub } from '@/contexts/ClubContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Form, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormDescription,
+  FormMessage
+} from '@/components/ui/form';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useClub } from '@/contexts/ClubContext';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Club, ClubType, MembershipType } from '@/types/club';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const formSchema = z.object({
+  name: z.string().min(3, 'Club name must be at least 3 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  club_type: z.enum(['fitness', 'sports', 'wellness', 'nutrition', 'other']),
+  membership_type: z.enum(['free', 'premium', 'vip']),
+  premium_price: z.number().optional(),
+  banner_url: z.string().url().optional().or(z.string().length(0)),
+  logo_url: z.string().url().optional().or(z.string().length(0)),
+});
 
 interface ClubSettingsProps {
   clubId: string;
@@ -22,44 +44,48 @@ interface ClubSettingsProps {
 
 const ClubSettings: React.FC<ClubSettingsProps> = ({ clubId }) => {
   const { currentClub, refreshClubs } = useClub();
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-  const [isPremium, setIsPremium] = useState(
-    currentClub?.membership_type === 'premium' || currentClub?.membership_type === 'vip'
-  );
-
-  const form = useForm({
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: currentClub?.name || '',
       description: currentClub?.description || '',
-      club_type: currentClub?.club_type || 'fitness',
-      membership_type: currentClub?.membership_type || 'free',
-      premium_price: currentClub?.premium_price || 4.99,
+      club_type: (currentClub?.club_type as any) || 'fitness',
+      membership_type: (currentClub?.membership_type as any) || 'free',
+      premium_price: currentClub?.premium_price || undefined,
+      banner_url: currentClub?.banner_url || '',
+      logo_url: currentClub?.logo_url || '',
     }
   });
-
-  const handleUpdateSettings = async (data: any) => {
+  
+  // Update form when club data changes
+  useEffect(() => {
+    if (currentClub) {
+      form.reset({
+        name: currentClub.name,
+        description: currentClub.description || '',
+        club_type: (currentClub.club_type as any) || 'fitness',
+        membership_type: (currentClub.membership_type as any) || 'free',
+        premium_price: currentClub.premium_price || undefined,
+        banner_url: currentClub.banner_url || '',
+        logo_url: currentClub.logo_url || '',
+      });
+    }
+  }, [currentClub]);
+  
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!clubId) return;
+    
     try {
-      setSaving(true);
-      
-      // If premium is toggled off, force membership type to free
-      if (!isPremium) {
-        data.membership_type = 'free';
-        data.premium_price = null;
-      }
+      setIsLoading(true);
       
       const { error } = await supabase
         .from('clubs')
-        .update({
-          name: data.name,
-          description: data.description,
-          club_type: data.club_type,
-          membership_type: data.membership_type,
-          premium_price: isPremium ? data.premium_price : null
-        })
+        .update(values)
         .eq('id', clubId);
-
+      
       if (error) throw error;
       
       toast.success('Club settings updated successfully');
@@ -68,17 +94,23 @@ const ClubSettings: React.FC<ClubSettingsProps> = ({ clubId }) => {
       console.error('Error updating club settings:', error);
       toast.error('Failed to update club settings');
     } finally {
-      setSaving(false);
+      setIsLoading(false);
     }
   };
-
+  
   const handleDeleteClub = async () => {
+    if (!window.confirm('Are you sure you want to delete this club? This action cannot be undone.')) {
+      return;
+    }
+    
     try {
+      setIsLoading(true);
+      
       const { error } = await supabase
         .from('clubs')
         .delete()
         .eq('id', clubId);
-
+      
       if (error) throw error;
       
       toast.success('Club deleted successfully');
@@ -86,261 +118,280 @@ const ClubSettings: React.FC<ClubSettingsProps> = ({ clubId }) => {
     } catch (error) {
       console.error('Error deleting club:', error);
       toast.error('Failed to delete club');
-    }
-  };
-
-  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
-    try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      setUploading(true);
-      
-      // Upload to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${clubId}_${type}_${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('club_images')
-        .upload(fileName, file);
-        
-      if (uploadError) throw uploadError;
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('club_images')
-        .getPublicUrl(fileName);
-      
-      // Update club record with new image URL
-      const updateData = type === 'logo' 
-        ? { logo_url: publicUrl }
-        : { banner_url: publicUrl };
-        
-      const { error: updateError } = await supabase
-        .from('clubs')
-        .update(updateData)
-        .eq('id', clubId);
-        
-      if (updateError) throw updateError;
-      
-      toast.success(`Club ${type} updated successfully`);
-      refreshClubs();
-    } catch (error) {
-      console.error(`Error uploading ${type}:`, error);
-      toast.error(`Failed to upload ${type}`);
     } finally {
-      setUploading(false);
+      setIsLoading(false);
     }
   };
-
-  if (!currentClub) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Club Settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="membership">Membership</TabsTrigger>
-            <TabsTrigger value="danger">Danger Zone</TabsTrigger>
-          </TabsList>
-          
-          {/* General Settings */}
-          <TabsContent value="general">
-            <form onSubmit={form.handleSubmit(handleUpdateSettings)} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Club Name</Label>
-                <Input
-                  id="name"
-                  {...form.register('name', { required: true })}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  {...form.register('description')}
-                  rows={4}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="club_type">Club Type</Label>
-                <Select 
-                  onValueChange={(value) => form.setValue('club_type', value as ClubType)}
-                  defaultValue={form.watch('club_type')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select club type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fitness">Fitness</SelectItem>
-                    <SelectItem value="sports">Sports</SelectItem>
-                    <SelectItem value="wellness">Wellness</SelectItem>
-                    <SelectItem value="nutrition">Nutrition</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button type="submit" disabled={saving} className="w-full">
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </form>
-          </TabsContent>
-          
-          {/* Appearance Settings */}
-          <TabsContent value="appearance">
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-medium mb-2">Club Logo</h3>
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={currentClub.logo_url || 'https://via.placeholder.com/100'} 
-                    alt="Club logo" 
-                    className="h-20 w-20 object-cover rounded-full"
+    <div className="space-y-6">
+      <Tabs 
+        defaultValue="general" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="mb-6">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="membership">Membership</TabsTrigger>
+          <TabsTrigger value="danger">Danger Zone</TabsTrigger>
+        </TabsList>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <TabsContent value="general">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Club Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Club Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Input
-                    type="file"
-                    onChange={(e) => handleUploadImage(e, 'logo')}
-                    accept="image/*"
-                    disabled={uploading}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">Club Banner</h3>
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={currentClub.banner_url || 'https://via.placeholder.com/300x100'} 
-                    alt="Club banner" 
-                    className="h-24 w-full object-cover rounded-md"
-                  />
-                  <Input
-                    type="file"
-                    onChange={(e) => handleUploadImage(e, 'banner')}
-                    accept="image/*"
-                    disabled={uploading}
-                  />
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          
-          {/* Membership Settings */}
-          <TabsContent value="membership">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Premium Membership</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enable paid memberships for your club
-                  </p>
-                </div>
-                <Switch
-                  checked={isPremium}
-                  onCheckedChange={setIsPremium}
-                />
-              </div>
-              
-              {isPremium && (
-                <form onSubmit={form.handleSubmit(handleUpdateSettings)} className="space-y-4">
-                  <div>
-                    <Label htmlFor="membership_type">Membership Tier</Label>
-                    <Select 
-                      onValueChange={(value) => form.setValue('membership_type', value as MembershipType)}
-                      defaultValue={form.watch('membership_type')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select membership type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="premium">Premium</SelectItem>
-                        <SelectItem value="vip">VIP</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   
-                  <div>
-                    <Label htmlFor="premium_price">Monthly Price ($)</Label>
-                    <Input
-                      id="premium_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      {...form.register('premium_price', { 
-                        valueAsNumber: true,
-                        min: 0
-                      })}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={5} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="club_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Club Type</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select club type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="fitness">Fitness</SelectItem>
+                            <SelectItem value="sports">Sports</SelectItem>
+                            <SelectItem value="wellness">Wellness</SelectItem>
+                            <SelectItem value="nutrition">Nutrition</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          What type of activities does your club focus on?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="appearance">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Club Appearance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="logo_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Logo URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          URL to your club's logo (recommended: square image)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="banner_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banner URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          URL to your club's banner image (recommended: 3:1 ratio)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Preview section */}
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium mb-2">Preview</h4>
+                    <div className="border border-dark-300 rounded-md p-4 bg-dark-300">
+                      {form.watch('banner_url') && (
+                        <div className="h-24 mb-4 rounded-md overflow-hidden">
+                          <img 
+                            src={form.watch('banner_url')} 
+                            alt="Banner preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x200?text=Invalid+Image+URL';
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center">
+                        {form.watch('logo_url') ? (
+                          <div className="h-12 w-12 rounded-full overflow-hidden mr-3">
+                            <img 
+                              src={form.watch('logo_url')} 
+                              alt="Logo preview" 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Invalid';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-fitbloom-purple flex items-center justify-center mr-3">
+                            <span className="text-white font-bold">
+                              {form.watch('name')?.charAt(0) || 'C'}
+                            </span>
+                          </div>
+                        )}
+                        <h3 className="text-lg font-bold">{form.watch('name') || 'Club Name'}</h3>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="membership">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Membership Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="membership_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Membership Type</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select membership type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="free">Free</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                            <SelectItem value="vip">VIP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Free clubs are open to everyone. Premium and VIP clubs can charge for membership.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch('membership_type') !== 'free' && (
+                    <FormField
+                      control={form.control}
+                      name="premium_price"
+                      render={({ field: { onChange, value, ...rest } }) => (
+                        <FormItem>
+                          <FormLabel>Premium Membership Price</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              onChange={(e) => onChange(parseFloat(e.target.value))}
+                              value={value || ''}
+                              {...rest}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Monthly price in USD for premium membership
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="danger">
+              <Card className="border-red-900">
+                <CardHeader>
+                  <CardTitle className="text-red-500">Danger Zone</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Delete Club</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Permanently delete this club and all its data. This action cannot be undone.
+                      </p>
+                      <Button 
+                        type="button"
+                        variant="destructive" 
+                        onClick={handleDeleteClub}
+                        disabled={isLoading}
+                      >
+                        Delete Club
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <Button type="submit" disabled={saving} className="w-full">
-                    {saving ? 'Saving...' : 'Save Membership Settings'}
-                  </Button>
-                </form>
-              )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <div className="flex justify-end pt-4">
+              <Button 
+                type="submit" 
+                disabled={isLoading || !form.formState.isDirty}
+                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+              >
+                {isLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
             </div>
-          </TabsContent>
-          
-          {/* Danger Zone */}
-          <TabsContent value="danger">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-red-500 mb-2">Danger Zone</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  These actions are irreversible. Please be certain.
-                </p>
-                
-                <Separator className="my-4" />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Delete this club</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Once deleted, there is no going back.
-                    </p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive">Delete Club</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete
-                          the club and all associated data.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteClub} className="bg-red-600">
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </form>
+        </Form>
+      </Tabs>
+    </div>
   );
 };
 

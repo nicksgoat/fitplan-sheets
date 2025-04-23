@@ -1,131 +1,109 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 interface SharedWorkout {
   id: string;
+  club_id: string;
   workout_id: string;
   shared_by: string;
   created_at: string;
-  profiles?: {
-    username?: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
   workouts?: {
-    id: string;
     name: string;
-    slug: string;
-    created_at: string;
-    price?: number;
     is_purchasable?: boolean;
+    price?: number;
+  };
+  profiles?: {
+    display_name?: string;
+    username?: string;
+    avatar_url?: string;
   };
 }
 
 interface SharedProgram {
   id: string;
+  club_id: string;
   program_id: string;
   shared_by: string;
   created_at: string;
-  profiles?: {
-    username?: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
   programs?: {
-    id: string;
     name: string;
-    slug: string;
-    created_at: string;
-    price?: number;
     is_purchasable?: boolean;
+    price?: number;
+  };
+  profiles?: {
+    display_name?: string;
+    username?: string;
+    avatar_url?: string;
   };
 }
 
-export function useClubSharedContent(clubId: string | undefined) {
-  const { user } = useAuth();
+export function useClubSharedContent(clubId: string) {
+  const [sharedWorkouts, setSharedWorkouts] = useState<SharedWorkout[]>([]);
+  const [sharedPrograms, setSharedPrograms] = useState<SharedProgram[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(true);
+  const [programsLoading, setProgramsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Query for shared workouts
-  const {
-    data: sharedWorkouts,
-    isLoading: workoutsLoading,
-    refetch: refetchWorkouts
-  } = useQuery({
-    queryKey: ['club-shared-workouts', clubId],
-    queryFn: async () => {
-      if (!clubId) return [];
-      
-      const { data, error } = await supabase
-        .from('club_shared_workouts')
-        .select(`
-          id,
-          workout_id,
-          shared_by,
-          created_at,
-          profiles:shared_by (username, display_name, avatar_url),
-          workouts:workout_id (
-            id,
-            name,
-            slug,
-            created_at,
-            price,
-            is_purchasable
-          )
-        `)
-        .eq('club_id', clubId);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clubId && !!user
-  });
+  useEffect(() => {
+    const fetchSharedWorkouts = async () => {
+      try {
+        setWorkoutsLoading(true);
+        const { data, error } = await supabase
+          .from('club_shared_workouts')
+          .select(`
+            id, club_id, workout_id, shared_by, created_at,
+            workouts:workout_id ( name, is_purchasable, price ),
+            profiles:shared_by ( display_name, username, avatar_url )
+          `)
+          .eq('club_id', clubId)
+          .order('created_at', { ascending: false });
 
-  // Query for shared programs
-  const {
-    data: sharedPrograms,
-    isLoading: programsLoading,
-    refetch: refetchPrograms
-  } = useQuery({
-    queryKey: ['club-shared-programs', clubId],
-    queryFn: async () => {
-      if (!clubId) return [];
-      
-      const { data, error } = await supabase
-        .from('club_shared_programs')
-        .select(`
-          id,
-          program_id,
-          shared_by,
-          created_at,
-          profiles:shared_by (username, display_name, avatar_url),
-          programs:program_id (
-            id,
-            name,
-            slug,
-            created_at,
-            price,
-            is_purchasable
-          )
-        `)
-        .eq('club_id', clubId);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clubId && !!user
-  });
+        if (error) throw error;
+        setSharedWorkouts(data || []);
+      } catch (err) {
+        console.error('Error fetching shared workouts:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setWorkoutsLoading(false);
+      }
+    };
 
-  const refreshSharedContent = () => {
-    refetchWorkouts();
-    refetchPrograms();
-  };
+    const fetchSharedPrograms = async () => {
+      try {
+        setProgramsLoading(true);
+        const { data, error } = await supabase
+          .from('club_shared_programs')
+          .select(`
+            id, club_id, program_id, shared_by, created_at,
+            programs:program_id ( name, is_purchasable, price ),
+            profiles:shared_by ( display_name, username, avatar_url )
+          `)
+          .eq('club_id', clubId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setSharedPrograms(data || []);
+      } catch (err) {
+        console.error('Error fetching shared programs:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setProgramsLoading(false);
+      }
+    };
+
+    if (clubId) {
+      fetchSharedWorkouts();
+      fetchSharedPrograms();
+    }
+  }, [clubId]);
 
   return {
-    sharedWorkouts: sharedWorkouts as SharedWorkout[],
-    sharedPrograms: sharedPrograms as SharedProgram[],
+    sharedWorkouts,
+    sharedPrograms,
     workoutsLoading,
     programsLoading,
-    refreshSharedContent
+    error,
+    isLoading: workoutsLoading || programsLoading
   };
 }

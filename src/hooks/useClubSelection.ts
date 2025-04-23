@@ -1,58 +1,110 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 import { Club } from '@/types/club';
+import { useAuth } from '@/hooks/useAuth';
 
-export function useClubSelection(initialSelectedClubIds: string[] = [], contentId?: string, contentType?: 'workout' | 'program') {
+export function useClubSelection(
+  initialSelectedClubIds: string[] = [],
+  contentId?: string,
+  contentType?: 'workout' | 'program'
+) {
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [selectedClubIds, setSelectedClubIds] = useState<string[]>(initialSelectedClubIds);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const { user } = useAuth();
 
-  // Update local state when initialSelectedClubIds prop changes
-  useEffect(() => {
-    if (initialSelectedClubIds && initialSelectedClubIds.length > 0) {
-      setSelectedClubIds(initialSelectedClubIds);
+  // Load user clubs
+  const loadUserClubs = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return [];
     }
-  }, [initialSelectedClubIds]);
 
-  // Fetch clubs where user is creator
-  const { data: clubs, isLoading, isError } = useQuery({
-    queryKey: ['creator-clubs', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [] as Club[];
-
-      const { data, error } = await supabase
+    try {
+      setIsLoading(true);
+      
+      // Get clubs where the user is an admin/owner/moderator
+      const { data: userClubs, error } = await supabase
         .from('clubs')
-        .select('*')
+        .select(`
+          id, name, description, created_at, created_by, updated_at,
+          banner_url, logo_url, club_type, membership_type, premium_price, creator_id
+        `)
         .eq('creator_id', user.id);
+      
+      if (error) throw error;
+      
+      // Also get clubs where user is admin or moderator
+      const { data: memberClubs, error: memberError } = await supabase
+        .from('club_members')
+        .select(`
+          clubs (
+            id, name, description, created_at, created_by, updated_at,
+            banner_url, logo_url, club_type, membership_type, premium_price, creator_id
+          )
+        `)
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'moderator', 'owner'])
+        .not('clubs', 'is', null);
+      
+      if (memberError) throw memberError;
+      
+      // Combine and deduplicate clubs
+      const memberClubsList = memberClubs
+        .map(item => item.clubs)
+        .filter(Boolean) as Club[];
+      
+      const allClubs = [...(userClubs || []), ...memberClubsList];
+      
+      // Remove duplicates
+      const uniqueClubsMap = new Map();
+      allClubs.forEach(club => {
+        if (!uniqueClubsMap.has(club.id)) {
+          uniqueClubsMap.set(club.id, club);
+        }
+      });
+      
+      const uniqueClubs = Array.from(uniqueClubsMap.values());
+      setClubs(uniqueClubs);
+      return uniqueClubs;
+    } catch (error) {
+      console.error('Error loading clubs:', error);
+      setIsError(true);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (error) {
-        console.error("Error fetching clubs:", error);
-        throw error;
-      }
-      return (data || []) as Club[];
-    },
-    enabled: !!user?.id
-  });
-
+  // Toggle club selection
   const toggleClub = (clubId: string) => {
-    setSelectedClubIds(prev => {
-      if (prev.includes(clubId)) {
-        return prev.filter(id => id !== clubId);
+    setSelectedClubIds(prevSelected => {
+      if (prevSelected.includes(clubId)) {
+        return prevSelected.filter(id => id !== clubId);
       } else {
-        return [...prev, clubId];
+        return [...prevSelected, clubId];
       }
     });
-    return selectedClubIds; // Return current state after update
+    
+    // Return the updated selection for convenience
+    return selectedClubIds.includes(clubId)
+      ? selectedClubIds.filter(id => id !== clubId)
+      : [...selectedClubIds, clubId];
   };
 
-  const loadUserClubs = async () => {
-    // This function is kept for compatibility purposes
-    // The data loading is now handled by the React Query hook
-    console.log("Clubs loading handled by React Query");
-  };
+  useEffect(() => {
+    loadUserClubs();
+  }, [user?.id]);
+
+  // If initial selection changes externally, update state
+  useEffect(() => {
+    if (initialSelectedClubIds.length > 0 && 
+        JSON.stringify(initialSelectedClubIds) !== JSON.stringify(selectedClubIds)) {
+      setSelectedClubIds(initialSelectedClubIds);
+    }
+  }, [JSON.stringify(initialSelectedClubIds)]);
 
   return {
     clubs,

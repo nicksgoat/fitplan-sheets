@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { ClubList } from '@/components/club/ClubList';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ClubSharingManagementProps {
   contentId: string;
   contentType: 'workout' | 'program';
   initialSharedClubs?: string[];
-  contentName?: string; // Add this prop to fix the errors
+  contentName?: string;
   onSave?: (selectedClubIds: string[]) => void;
-  onClose?: () => void; // Add this prop to fix the errors
+  onClose?: () => void;
 }
 
 export function ClubSharingManagement({
@@ -29,10 +30,11 @@ export function ClubSharingManagement({
     selectedClubIds,
     setSelectedClubIds,
     isLoading,
-    handleCheckboxChange: toggleClub
+    toggleClub
   } = useClubSelection(initialSharedClubs, contentId, contentType);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   // Load existing shares
   useEffect(() => {
@@ -60,17 +62,13 @@ export function ClubSharingManagement({
   }, [contentId, contentType, setSelectedClubIds]);
 
   const handleSaveSharing = async () => {
-    if (!contentId) return;
+    if (!contentId || !user) return;
     
     setIsSubmitting(true);
     
     try {
       const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
-      
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
       
       // Delete existing shares
       const { error: deleteError } = await supabase
@@ -101,13 +99,13 @@ export function ClubSharingManagement({
         if (contentType === 'workout') {
           const { error: insertError } = await supabase
             .from('club_shared_workouts')
-            .insert(sharesToInsert as any[]);
+            .insert(sharesToInsert);
             
           if (insertError) throw insertError;
         } else {
           const { error: insertError } = await supabase
             .from('club_shared_programs')
-            .insert(sharesToInsert as any[]);
+            .insert(sharesToInsert);
             
           if (insertError) throw insertError;
         }
