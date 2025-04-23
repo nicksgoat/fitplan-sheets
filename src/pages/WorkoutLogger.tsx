@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { 
@@ -220,16 +219,20 @@ export default function WorkoutLogger() {
         exercises,
         circuits: []
       };
+
+      const now = new Date().toISOString();
       
       // Save to Supabase
       const { error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
-          workout_data: completedWorkout,
-          duration_seconds: elapsedTime,
+          workout_id: completedWorkout.id,
+          duration: elapsedTime,
           notes: workoutNotes,
-          completed_at: new Date().toISOString()
+          start_time: new Date(Date.now() - elapsedTime * 1000).toISOString(),
+          end_time: now,
+          // Store exercises and sets as JSON in separate tables or columns if needed
         });
       
       if (error) throw error;
