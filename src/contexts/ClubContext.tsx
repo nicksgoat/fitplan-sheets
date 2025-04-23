@@ -27,29 +27,53 @@ interface ClubContextType {
   loadingEvents: boolean;
   loadingPosts: boolean;
   loadingChannels: boolean;
+  loadingMessages: boolean;
   members: ClubMember[];
   events: ClubEvent[];
   posts: ClubPost[];
   messages: ClubMessage[];
   channels: ClubChannel[];
+  products: ClubProduct[];
+  userClubs: Club[];
+  currentEvent: ClubEvent | null;
+  currentEventParticipants: EventParticipant[];
+  clubEvents: ClubEvent[];
+  loadingClubEvents: boolean;
+  
+  // Methods
   setCurrentClub: (club: Club) => void;
   createClub: (name: string, description: string, type: string) => Promise<Club>;
+  createNewClub: (clubData: Partial<Club>) => Promise<Club>;
   updateClub: (clubId: string, data: Partial<Club>) => Promise<Club>;
   joinCurrentClub: () => Promise<void>;
   leaveCurrentClub: () => Promise<void>;
   updateMember: (memberId: string, data: Partial<ClubMember>) => Promise<void>;
+  updateMemberRole: (memberId: string, newRole: MemberRole) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
   createEvent: (eventData: Partial<ClubEvent>) => Promise<ClubEvent>;
   updateEvent: (eventId: string, eventData: Partial<ClubEvent>) => Promise<void>;
   joinEvent: (eventId: string, status: EventParticipationStatus) => Promise<void>;
+  leaveEvent: (eventId: string) => Promise<void>;
   createNewPost: (postData: { club_id: string; content: string; workout_id?: string | null; image_url?: string | null }) => Promise<void>;
   removePost: (postId: string) => Promise<void>;
+  sendNewMessage: (messageData: { club_id: string; channel_id: string; content: string }) => Promise<void>;
   refreshClubs: () => Promise<void>;
   refreshMembers: () => Promise<void>;
   refreshEvents: () => Promise<void>;
   refreshPosts: () => Promise<void>;
+  refreshMessages: () => Promise<void>;
+  refreshChannels: () => Promise<void>;
+  refreshProducts: () => Promise<void>;
   getUserClubRole: (clubId: string) => MemberRole | null;
   isUserClubMember: (clubId: string) => boolean;
+  isUserClubAdmin: (clubId: string) => boolean;
+  isUserClubCreator: (clubId: string) => boolean;
+  isUserEventParticipant: (eventId: string) => boolean;
+  loadEvent: (eventId: string) => Promise<void>;
+  loadEventParticipants: (eventId: string) => Promise<void>;
+  loadClubEvents: (clubId: string) => Promise<void>;
+  upgradeToMembership: (membershipType: MembershipType) => Promise<void>;
+  purchaseProduct: (productId: string) => Promise<void>;
 }
 
 interface ClubProviderProps {
@@ -66,12 +90,19 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
   const [posts, setPosts] = useState<ClubPost[]>([]);
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [channels, setChannels] = useState<ClubChannel[]>([]);
+  const [products, setProducts] = useState<ClubProduct[]>([]);
+  const [userClubs, setUserClubs] = useState<Club[]>([]);
+  const [currentEvent, setCurrentEvent] = useState<ClubEvent | null>(null);
+  const [currentEventParticipants, setCurrentEventParticipants] = useState<EventParticipant[]>([]);
+  const [clubEvents, setClubEvents] = useState<ClubEvent[]>([]);
   
   const [loadingClubs, setLoadingClubs] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingChannels, setLoadingChannels] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingClubEvents, setLoadingClubEvents] = useState(true);
   
   const { user } = useAuth();
   
@@ -103,15 +134,19 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
         if (clubsError) throw clubsError;
         
         if (clubsData) {
-          setClubs(clubsData.map(club => ({
+          const typedClubs = clubsData.map(club => ({
             ...club,
             creator_id: club.creator_id,
-            club_type: club.club_type as any,
-            membership_type: club.membership_type as any
-          })));
+            club_type: club.club_type as ClubType,
+            membership_type: club.membership_type as MembershipType
+          }));
+          
+          setClubs(typedClubs);
+          setUserClubs(typedClubs);
         }
       } else {
         setClubs([]);
+        setUserClubs([]);
       }
     } catch (error) {
       console.error('Error fetching user clubs:', error);
@@ -145,6 +180,24 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     }
   };
   
+  const refreshMessages = async (): Promise<void> => {
+    if (currentClub?.id) {
+      await fetchClubMessages(currentClub.id);
+    }
+  };
+  
+  const refreshChannels = async (): Promise<void> => {
+    if (currentClub?.id) {
+      await fetchClubChannels(currentClub.id);
+    }
+  };
+  
+  const refreshProducts = async (): Promise<void> => {
+    if (currentClub?.id) {
+      await fetchClubProducts(currentClub.id);
+    }
+  };
+  
   const createClub = async (name: string, description: string, type: string): Promise<Club> => {
     try {
       if (!user) throw new Error('User not authenticated');
@@ -152,14 +205,40 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
       const newClub = {
         name,
         description,
-        club_type: type as any,
+        club_type: type as ClubType,
         membership_type: 'free' as MembershipType,
         creator_id: user.id
       };
       
       const { data, error } = await supabase
         .from('clubs')
-        .insert(newClub)
+        .insert(newClub as any)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create club');
+      
+      // Refresh the clubs list
+      await refreshClubs();
+      
+      return data as Club;
+    } catch (error) {
+      console.error('Error creating club:', error);
+      throw error;
+    }
+  };
+  
+  const createNewClub = async (clubData: Partial<Club>): Promise<Club> => {
+    try {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('clubs')
+        .insert({
+          ...clubData,
+          creator_id: user.id
+        } as any)
         .select()
         .single();
       
@@ -180,7 +259,7 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     try {
       const { data: updatedClub, error } = await supabase
         .from('clubs')
-        .update(data)
+        .update(data as any)
         .eq('id', clubId)
         .select()
         .single();
@@ -227,9 +306,9 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
           
           if (member.profile && typeof member.profile === 'object' && !('error' in member.profile)) {
             formattedProfile = {
-              display_name: member.profile.display_name || null,
-              username: member.profile.username || null,
-              avatar_url: member.profile.avatar_url || null
+              display_name: member.profile?.display_name || null,
+              username: member.profile?.username || null,
+              avatar_url: member.profile?.avatar_url || null
             };
           }
           
@@ -299,9 +378,9 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
           
           if (post.profile && typeof post.profile === 'object' && !('error' in post.profile)) {
             formattedProfile = {
-              display_name: post.profile.display_name || null,
-              username: post.profile.username || null,
-              avatar_url: post.profile.avatar_url || null
+              display_name: post.profile?.display_name || null,
+              username: post.profile?.username || null,
+              avatar_url: post.profile?.avatar_url || null
             };
           }
           
@@ -325,6 +404,8 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
   
   const fetchClubMessages = async (clubId: string) => {
     try {
+      setLoadingMessages(true);
+      
       const { data: messagesData, error: messagesError } = await supabase
         .from('club_messages')
         .select(`
@@ -344,9 +425,9 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
           
           if (message.profile && typeof message.profile === 'object' && !('error' in message.profile)) {
             formattedProfile = {
-              display_name: message.profile.display_name || null,
-              username: message.profile.username || null,
-              avatar_url: message.profile.avatar_url || null
+              display_name: message.profile?.display_name || null,
+              username: message.profile?.username || null,
+              avatar_url: message.profile?.avatar_url || null
             };
           }
           
@@ -363,6 +444,55 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error fetching club messages:', error);
       toast.error('Failed to load messages');
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+  
+  const fetchClubChannels = async (clubId: string) => {
+    try {
+      setLoadingChannels(true);
+      
+      const { data: channelsData, error: channelsError } = await supabase
+        .from('club_channels')
+        .select('*')
+        .eq('club_id', clubId)
+        .order('created_at', { ascending: true });
+      
+      if (channelsError) throw channelsError;
+      
+      if (channelsData) {
+        setChannels(channelsData as ClubChannel[]);
+      } else {
+        setChannels([]);
+      }
+    } catch (error) {
+      console.error('Error fetching club channels:', error);
+      toast.error('Failed to load channels');
+    } finally {
+      setLoadingChannels(false);
+    }
+  };
+  
+  const fetchClubProducts = async (clubId: string) => {
+    try {
+      const { data: productsData, error: productsError } = await supabase
+        .from('club_products')
+        .select('*')
+        .eq('club_id', clubId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
+      if (productsError) throw productsError;
+      
+      if (productsData) {
+        setProducts(productsData as ClubProduct[]);
+      } else {
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching club products:', error);
+      toast.error('Failed to load products');
     }
   };
   
@@ -383,7 +513,7 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
       
       const { error } = await supabase
         .from('club_members')
-        .insert(newMember);
+        .insert(newMember as any);
       
       if (error) throw error;
       
@@ -426,7 +556,7 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase
         .from('club_members')
-        .update(data)
+        .update(data as any)
         .eq('id', memberId);
       
       if (error) throw error;
@@ -435,6 +565,23 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('Error updating member:', error);
       toast.error(error.message || 'Failed to update member');
+    }
+  };
+  
+  const updateMemberRole = async (memberId: string, newRole: MemberRole) => {
+    try {
+      const { error } = await supabase
+        .from('club_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+      
+      if (error) throw error;
+      
+      await refreshMembers();
+      toast.success(`Member role updated to ${newRole}`);
+    } catch (error: any) {
+      console.error('Error updating member role:', error);
+      toast.error(error.message || 'Failed to update member role');
     }
   };
   
@@ -540,9 +687,118 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
       
       // Refresh events list
       await refreshEvents();
+      
+      if (currentEvent && currentEvent.id === eventId) {
+        await loadEventParticipants(eventId);
+      }
     } catch (error) {
       console.error('Error joining event:', error);
       throw error;
+    }
+  };
+  
+  const leaveEvent = async (eventId: string): Promise<void> => {
+    try {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { error } = await supabase
+        .from('event_participants')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Refresh events list
+      await refreshEvents();
+      
+      if (currentEvent && currentEvent.id === eventId) {
+        await loadEventParticipants(eventId);
+      }
+      
+      toast.success('You have left the event');
+    } catch (error) {
+      console.error('Error leaving event:', error);
+      throw error;
+    }
+  };
+  
+  const loadEvent = async (eventId: string): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('club_events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (error) throw error;
+      
+      setCurrentEvent(data as ClubEvent);
+      await loadEventParticipants(eventId);
+    } catch (error) {
+      console.error('Error loading event:', error);
+      toast.error('Failed to load event details');
+    }
+  };
+  
+  const loadEventParticipants = async (eventId: string): Promise<void> => {
+    try {
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select(`
+          *,
+          profile:profiles(*)
+        `)
+        .eq('event_id', eventId);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const formattedParticipants = data.map(participant => {
+          let formattedProfile = null;
+          
+          if (participant.profile && typeof participant.profile === 'object' && !('error' in participant.profile)) {
+            formattedProfile = {
+              display_name: participant.profile?.display_name || null,
+              username: participant.profile?.username || null,
+              avatar_url: participant.profile?.avatar_url || null
+            };
+          }
+          
+          return {
+            ...participant,
+            profile: formattedProfile
+          } as EventParticipant;
+        });
+        
+        setCurrentEventParticipants(formattedParticipants);
+      } else {
+        setCurrentEventParticipants([]);
+      }
+    } catch (error) {
+      console.error('Error loading event participants:', error);
+      toast.error('Failed to load event participants');
+    }
+  };
+  
+  const loadClubEvents = async (clubId: string): Promise<void> => {
+    try {
+      setLoadingClubEvents(true);
+      
+      const { data, error } = await supabase
+        .from('club_events')
+        .select('*')
+        .eq('club_id', clubId)
+        .order('start_time', { ascending: true });
+      
+      if (error) throw error;
+      
+      setClubEvents(data as ClubEvent[]);
+    } catch (error) {
+      console.error('Error loading club events:', error);
+      toast.error('Failed to load events');
+    } finally {
+      setLoadingClubEvents(false);
     }
   };
   
@@ -568,6 +824,28 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     }
   };
   
+  const sendNewMessage = async (messageData: { club_id: string; channel_id: string; content: string }) => {
+    try {
+      if (!user) throw new Error('User not authenticated');
+      
+      const newMessage = {
+        ...messageData,
+        user_id: user.id,
+      };
+      
+      const { error } = await supabase
+        .from('club_channel_messages')
+        .insert(newMessage);
+      
+      if (error) throw error;
+      
+      await refreshMessages();
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  };
+  
   const removePost = async (postId: string) => {
     try {
       const { error } = await supabase
@@ -586,12 +864,93 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     }
   };
   
+  const upgradeToMembership = async (membershipType: MembershipType) => {
+    try {
+      if (!user || !currentClub) {
+        toast.error('User not authenticated or no club selected');
+        return;
+      }
+      
+      // Find current membership
+      const { data: memberData, error: memberError } = await supabase
+        .from('club_members')
+        .select('*')
+        .eq('club_id', currentClub.id)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (memberError) throw memberError;
+      
+      if (!memberData) {
+        toast.error('You are not a member of this club');
+        return;
+      }
+      
+      // Update membership type
+      const { error: updateError } = await supabase
+        .from('club_members')
+        .update({ membership_type: membershipType })
+        .eq('id', memberData.id);
+      
+      if (updateError) throw updateError;
+      
+      await refreshMembers();
+      toast.success(`Membership upgraded to ${membershipType}`);
+    } catch (error: any) {
+      console.error('Error upgrading membership:', error);
+      toast.error(error.message || 'Failed to upgrade membership');
+    }
+  };
+  
+  const purchaseProduct = async (productId: string) => {
+    try {
+      if (!user) {
+        toast.error('User not authenticated');
+        return;
+      }
+      
+      // Find the product
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        toast.error('Product not found');
+        return;
+      }
+      
+      // Create purchase record
+      const { error: purchaseError } = await supabase
+        .from('club_product_purchases')
+        .insert({
+          product_id: productId,
+          user_id: user.id,
+          amount_paid: product.price_amount,
+          currency: product.price_currency,
+          purchase_date: new Date().toISOString(),
+          status: 'completed'
+        });
+      
+      if (purchaseError) throw purchaseError;
+      
+      toast.success('Product purchased successfully');
+      
+      // If it's a membership product, update the user's membership
+      if (product.product_type === 'membership' && currentClub) {
+        await upgradeToMembership('premium');
+      }
+    } catch (error: any) {
+      console.error('Error purchasing product:', error);
+      toast.error(error.message || 'Failed to purchase product');
+    }
+  };
+  
   useEffect(() => {
     if (currentClub?.id) {
       fetchClubMembers(currentClub.id);
       fetchClubEvents(currentClub.id);
       fetchClubPosts(currentClub.id);
       fetchClubMessages(currentClub.id);
+      fetchClubChannels(currentClub.id);
+      fetchClubProducts(currentClub.id);
     }
   }, [currentClub]);
   
@@ -607,6 +966,28 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     return members.some(member => member.club_id === clubId && member.user_id === user.id);
   };
   
+  const isUserClubAdmin = (clubId: string): boolean => {
+    if (!user) return false;
+    
+    const role = getUserClubRole(clubId);
+    return role === 'admin' || role === 'owner' || role === 'moderator';
+  };
+  
+  const isUserClubCreator = (clubId: string): boolean => {
+    if (!user) return false;
+    
+    const club = clubs.find(c => c.id === clubId);
+    return club ? club.creator_id === user.id : false;
+  };
+  
+  const isUserEventParticipant = (eventId: string): boolean => {
+    if (!user) return false;
+    
+    return currentEventParticipants.some(
+      participant => participant.event_id === eventId && participant.user_id === user.id
+    );
+  };
+  
   const contextValue: ClubContextType = {
     clubs,
     currentClub,
@@ -615,29 +996,51 @@ export const ClubProvider: React.FC<ClubProviderProps> = ({ children }) => {
     loadingEvents,
     loadingPosts,
     loadingChannels,
+    loadingMessages,
     members,
     events,
     posts,
     messages,
     channels,
+    products,
+    userClubs,
+    currentEvent,
+    currentEventParticipants,
+    clubEvents,
+    loadingClubEvents,
     setCurrentClub,
     createClub,
+    createNewClub,
     updateClub,
     joinCurrentClub,
     leaveCurrentClub,
     updateMember,
+    updateMemberRole,
     removeMember,
     createEvent,
     updateEvent,
     joinEvent,
+    leaveEvent,
     createNewPost,
+    sendNewMessage,
     removePost,
     refreshClubs,
     refreshMembers,
     refreshEvents,
     refreshPosts,
+    refreshMessages,
+    refreshChannels,
+    refreshProducts,
     getUserClubRole,
-    isUserClubMember
+    isUserClubMember,
+    isUserClubAdmin,
+    isUserClubCreator,
+    loadEvent,
+    loadEventParticipants,
+    isUserEventParticipant,
+    loadClubEvents,
+    upgradeToMembership,
+    purchaseProduct
   };
   
   return (

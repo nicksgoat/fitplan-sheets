@@ -107,6 +107,7 @@ export interface ClubEvent {
   created_by: string;
   attendee_count?: number;
   category?: string;
+  participants?: EventParticipant[];
 }
 
 export interface EventParticipant {
