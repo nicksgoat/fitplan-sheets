@@ -1,17 +1,16 @@
-
 export interface Club {
   id: string;
   name: string;
   description: string;
   created_at: string;
-  created_by: string;
+  created_by?: string;
   updated_at?: string;
   banner_url?: string;
   logo_url?: string;
   club_type: ClubType;
   membership_type: MembershipType;
   premium_price?: number;
-  creator_id?: string; // Added for compatibility
+  creator_id?: string;
 }
 
 export interface ClubEvent {
@@ -51,8 +50,8 @@ export interface EventParticipant {
   status: EventParticipationStatus;
   created_at: string;
   updated_at?: string;
-  profile?: any | null; // Make sure profile is optional
-  joined_at?: string; // Added for compatibility
+  profile?: any | null;
+  joined_at?: string;
 }
 
 export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
@@ -95,7 +94,6 @@ export interface ClubMessage {
   profile?: any;
 }
 
-// Add ClubChannel interface
 export interface ClubChannel {
   id: string;
   club_id: string;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,6 @@ export const ProgramsManagement: React.FC = () => {
   
   const updateProgramPrice = useUpdateProgramPrice();
   
-  // Fetch user's programs
   const { data: programs, isLoading } = useQuery({
     queryKey: ['creator-programs', user?.id],
     queryFn: async () => {
@@ -53,7 +51,6 @@ export const ProgramsManagement: React.FC = () => {
     enabled: !!user
   });
   
-  // Update program visibility mutation
   const updateVisibility = useMutation({
     mutationFn: async ({ programId, isPublic }: { programId: string, isPublic: boolean }) => {
       const { error } = await supabase
@@ -93,7 +90,6 @@ export const ProgramsManagement: React.FC = () => {
       toast.success("Program pricing updated successfully");
       setIsPriceDialogOpen(false);
       
-      // Update local state
       queryClient.invalidateQueries({ queryKey: ['creator-programs', user?.id] });
     } catch (error) {
       console.error("Error updating program price:", error);
@@ -101,7 +97,6 @@ export const ProgramsManagement: React.FC = () => {
     }
   };
   
-  // Get the count of clubs a program is shared with
   const { data: sharedCountsMap, isLoading: isLoadingSharedCounts } = useQuery({
     queryKey: ['program-shared-counts', programs?.map(p => p.id).join(',')],
     queryFn: async () => {
@@ -118,7 +113,6 @@ export const ProgramsManagement: React.FC = () => {
         return {};
       }
       
-      // Count shares per program
       const counts: Record<string, number> = {};
       data.forEach(share => {
         if (!counts[share.program_id]) {

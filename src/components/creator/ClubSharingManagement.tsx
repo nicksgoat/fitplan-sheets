@@ -11,21 +11,25 @@ interface ClubSharingManagementProps {
   contentId: string;
   contentType: 'workout' | 'program';
   initialSharedClubs?: string[];
+  contentName?: string; // Add this prop to fix the errors
   onSave?: (selectedClubIds: string[]) => void;
+  onClose?: () => void; // Add this prop to fix the errors
 }
 
 export function ClubSharingManagement({
   contentId,
   contentType,
   initialSharedClubs = [],
-  onSave
+  contentName,
+  onSave,
+  onClose
 }: ClubSharingManagementProps) {
   const {
     clubs,
     selectedClubIds,
     setSelectedClubIds,
     isLoading,
-    toggleClub
+    handleCheckboxChange: toggleClub
   } = useClubSelection(initialSharedClubs, contentId, contentType);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,10 +59,6 @@ export function ClubSharingManagement({
     loadShares();
   }, [contentId, contentType, setSelectedClubIds]);
 
-  const handleToggleClub = (clubId: string) => {
-    toggleClub(clubId);
-  };
-
   const handleSaveSharing = async () => {
     if (!contentId) return;
     
@@ -67,6 +67,10 @@ export function ClubSharingManagement({
     try {
       const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
       
       // Delete existing shares
       const { error: deleteError } = await supabase
@@ -78,23 +82,45 @@ export function ClubSharingManagement({
       
       // Add new shares
       if (selectedClubIds.length > 0) {
-        const sharesToInsert = selectedClubIds.map(clubId => ({
-          club_id: clubId,
-          [idField]: contentId,
-          shared_by: (supabase.auth.getUser())?.data?.user?.id
-        }));
+        const sharesToInsert = selectedClubIds.map(clubId => {
+          if (contentType === 'workout') {
+            return {
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            };
+          } else {
+            return {
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            };
+          }
+        });
         
-        const { error: insertError } = await supabase
-          .from(table)
-          .insert(sharesToInsert);
-          
-        if (insertError) throw insertError;
+        if (contentType === 'workout') {
+          const { error: insertError } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharesToInsert as any[]);
+            
+          if (insertError) throw insertError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('club_shared_programs')
+            .insert(sharesToInsert as any[]);
+            
+          if (insertError) throw insertError;
+        }
       }
       
       toast.success(`${contentType === 'workout' ? 'Workout' : 'Program'} sharing updated successfully`);
       
       if (onSave) {
         onSave(selectedClubIds);
+      }
+      
+      if (onClose) {
+        onClose();
       }
     } catch (error) {
       console.error(`Error updating ${contentType} sharing:`, error);
@@ -104,10 +130,14 @@ export function ClubSharingManagement({
     }
   };
 
+  const title = contentName 
+    ? `Share ${contentName} with Your Clubs`
+    : `Share with Your Clubs`;
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Share with Your Clubs</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>
           Select clubs where you want to share this {contentType}
         </CardDescription>
@@ -116,7 +146,7 @@ export function ClubSharingManagement({
         <ClubList 
           clubs={clubs || []} 
           selectedIds={selectedClubIds}
-          onToggle={handleToggleClub}
+          onToggle={toggleClub}
           isLoading={isLoading}
         />
         

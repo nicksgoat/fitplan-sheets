@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,19 +32,16 @@ export const WorkoutsManagement: React.FC = () => {
   
   const updateWorkoutPrice = useUpdateWorkoutPrice();
   
-  // Fetch user's workouts
   const { data: workouts, isLoading } = useQuery({
     queryKey: ['creator-workouts', user?.id],
     queryFn: async () => {
       if (!user) return [];
       
-      // First get all program IDs for this user
       const { data: userPrograms } = await supabase
         .from('programs')
         .select('id')
         .eq('user_id', user.id);
       
-      // Then get all weeks for these programs
       const programIds = userPrograms?.map(p => p.id) || [];
       if (programIds.length === 0) return [];
       
@@ -54,7 +50,6 @@ export const WorkoutsManagement: React.FC = () => {
         .select('id')
         .in('program_id', programIds);
       
-      // Then get workouts in these weeks
       const weekIds = weeks?.map(w => w.id) || [];
       if (weekIds.length === 0) return [];
       
@@ -85,7 +80,6 @@ export const WorkoutsManagement: React.FC = () => {
       toast.success("Workout pricing updated successfully");
       setIsPriceDialogOpen(false);
       
-      // Update local state
       queryClient.invalidateQueries({ queryKey: ['creator-workouts', user?.id] });
     } catch (error) {
       console.error("Error updating workout price:", error);
@@ -93,7 +87,6 @@ export const WorkoutsManagement: React.FC = () => {
     }
   };
   
-  // Get the count of clubs a workout is shared with
   const { data: sharedCountsMap, isLoading: isLoadingSharedCounts } = useQuery({
     queryKey: ['workout-shared-counts', workouts?.map(w => w.id).join(',')],
     queryFn: async () => {
@@ -110,7 +103,6 @@ export const WorkoutsManagement: React.FC = () => {
         return {};
       }
       
-      // Count shares per workout
       const counts: Record<string, number> = {};
       data.forEach(share => {
         if (!counts[share.workout_id]) {
