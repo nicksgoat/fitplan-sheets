@@ -214,9 +214,9 @@ export default function WorkoutLogger() {
           activeSessionId={null}
         />
         
-        <div className="flex-1 p-4">
-          <h2 className="text-xl font-semibold mb-4">Available Workouts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex-1 px-3 py-4 md:p-4">
+          <h2 className="text-xl font-semibold mb-3">Available Workouts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {libraryWorkouts.map((workout) => (
               <WorkoutCard
                 key={workout.id}
@@ -256,19 +256,19 @@ export default function WorkoutLogger() {
         activeSessionId={activeSessionId}
       />
       
-      <div className="flex-1 flex flex-col px-4 py-3">
+      <div className="flex-1 flex flex-col px-3 py-3 md:px-4 md:py-3">
         {activeSessionId && (
           <Textarea 
             placeholder="Workout notes (optional)"
             value={workoutNotes}
             onChange={(e) => setWorkoutNotes(e.target.value)}
             rows={2}
-            className="mb-4 resize-none bg-dark-200 border-dark-300"
+            className="mb-3 resize-none bg-dark-200 border-dark-300 rounded-lg"
           />
         )}
         
-        <ScrollArea className="flex-1 -mx-4 px-4">
-          <div className="space-y-4 pb-4">
+        <ScrollArea className="flex-1 -mx-3 px-3 md:-mx-4 md:px-4">
+          <div className="space-y-3 pb-4">
             {organizedExercises.map((exercise) => {
               if (exercise.isCircuit && exercise.circuitId) {
                 const circuitExercises = circuitMap.get(exercise.circuitId) || [];

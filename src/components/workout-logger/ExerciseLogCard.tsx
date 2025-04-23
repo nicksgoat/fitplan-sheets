@@ -78,17 +78,17 @@ export default function ExerciseLogCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "mb-4 overflow-hidden",
+        "mb-3 overflow-hidden",
         exercise.isGroup && "bg-dark-200 rounded-lg",
         exercise.isCircuit && "bg-dark-200 rounded-lg",
         !exercise.isGroup && !exercise.isCircuit && "bg-dark-300 border border-dark-border rounded-lg"
       )}
     >
       <div className="p-3">
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-start">
+          <div className="flex-1 min-w-0">
             <h3 className={cn(
-              "font-medium text-white",
+              "font-medium text-white truncate",
               exercise.isCircuit && "text-blue-400",
               exercise.name === "Superset" && "text-indigo-400",
               exercise.name.includes("EMOM") && "text-green-400",
@@ -97,25 +97,25 @@ export default function ExerciseLogCard({
               {exercise.name}
             </h3>
             {exercise.notes && (
-              <p className="text-sm text-gray-400 mt-1 italic">{exercise.notes}</p>
+              <p className="text-sm text-gray-400 mt-1 italic line-clamp-2">{exercise.notes}</p>
             )}
           </div>
           
           {isRestTimerActive && restTimeRemaining !== null && (
-            <div className="text-sm font-mono bg-dark-200 px-3 py-1 rounded-full">
+            <div className="text-sm font-mono bg-dark-200 px-2.5 py-1 rounded-full ml-2 whitespace-nowrap">
               Rest: {formatTime(restTimeRemaining)}
             </div>
           )}
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-gray-400">
-                <th className="pb-2 w-1/12">Set</th>
-                <th className="pb-2 w-3/12">Weight</th>
-                <th className="pb-2 w-3/12">Reps</th>
-                <th className="pb-2 w-1/12 text-center">Done</th>
+                <th className="pb-2 w-12 pl-1">Set</th>
+                <th className="pb-2 w-20 px-2">Weight</th>
+                <th className="pb-2 w-16 px-2">Reps</th>
+                <th className="pb-2 w-12 text-center pr-1">Done</th>
               </tr>
             </thead>
             <tbody>
@@ -127,10 +127,10 @@ export default function ExerciseLogCard({
                     completedSets.includes(index) ? "opacity-50" : ""
                   )}
                 >
-                  <td className="py-2 pr-2 text-amber-400">{index + 1}</td>
+                  <td className="py-2 pl-1 text-amber-400">{index + 1}</td>
                   <td className="py-2 px-2 text-white">{set.weight}</td>
                   <td className="py-2 px-2 text-white">{set.reps}</td>
-                  <td className="py-2 px-2 text-center">
+                  <td className="py-2 pr-1 text-center">
                     <button 
                       onClick={() => handleSetComplete(index)}
                       disabled={isDisabled || completedSets.includes(index)}
