@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
@@ -100,13 +99,16 @@ export const createClub = async (userId: string, params: CreateClubParams): Prom
       premiumPrice,
     } = params;
 
+    const clubTypeStr = String(clubType);
+    const membershipTypeStr = String(membershipType);
+
     const { data, error } = await supabase
       .from('clubs')
       .insert({
         name,
         description,
-        club_type: clubType,
-        membership_type: membershipType,
+        club_type: clubTypeStr,
+        membership_type: membershipTypeStr,
         logo_url: logoUrl,
         banner_url: bannerUrl,
         premium_price: premiumPrice,
@@ -181,12 +183,14 @@ export const getUserClubs = async (userId: string): Promise<Club[]> => {
  */
 export const joinClub = async (userId: string, clubId: string, membershipType: MembershipType = 'free'): Promise<void> => {
   try {
+    const membershipTypeStr = String(membershipType);
+    
     const { error } = await supabase.from('club_members').insert({
       club_id: clubId,
       user_id: userId,
       role: 'member',
       status: 'active',
-      membership_type: membershipType,
+      membership_type: membershipTypeStr,
       joined_at: new Date().toISOString(),
     });
 
@@ -518,7 +522,7 @@ export const mapDbRecordToClub = (record: any): Club => {
     description: record.description || null,
     logo_url: record.logo_url || null,
     banner_url: record.banner_url || null,
-    creator_id: record.creator_id,
+    creator_id: record.creator_id || record.created_by,
     club_type: record.club_type,
     membership_type: record.membership_type,
     premium_price: record.premium_price || null,
