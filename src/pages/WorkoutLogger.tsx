@@ -21,8 +21,8 @@ export default function WorkoutLogger() {
   const source = searchParams.get('source');
   const { program, setActiveWorkoutId } = useWorkout();
   
-  // Add workoutDetail hook to fix missing workoutDetails
-  const { workout: workoutDetails } = useWorkoutDetail(workoutId || null);
+  // Get workout details
+  const { workout: workoutDetail } = useWorkoutDetail(workoutId || null);
   
   const { 
     activeWorkout,
@@ -70,8 +70,8 @@ export default function WorkoutLogger() {
       
       if (activeWorkout) {
         setWorkoutName(activeWorkout.name);
-      } else if (workoutDetails) {
-        setWorkoutName(workoutDetails.name);
+      } else if (workoutDetail) {
+        setWorkoutName(workoutDetail.name);
       }
     }
   };
@@ -81,7 +81,7 @@ export default function WorkoutLogger() {
   };
   
   const handleCompleteWorkout = async () => {
-    const workoutToLog = activeWorkout || workoutDetails;
+    const workoutToLog = activeWorkout || workoutDetail;
     
     if (!workoutToLog || !activeSessionId) {
       toast.error('Cannot complete workout: missing required information');
@@ -111,6 +111,7 @@ export default function WorkoutLogger() {
           name: ex.name,
           notes: ex.notes,
           isCircuit: true,
+          circuitId: ex.circuitId,
           sets: ex.sets.map(set => ({
             id: set.id,
             reps: set.reps,
@@ -168,7 +169,7 @@ export default function WorkoutLogger() {
     });
   };
 
-  if (!activeWorkout && !workoutDetails) {
+  if (!activeWorkout && !workoutDetail) {
     return (
       <div className="h-full flex flex-col">
         <WorkoutLoggerHeader
@@ -197,7 +198,7 @@ export default function WorkoutLogger() {
     );
   }
 
-  const displayWorkout = activeWorkout || workoutDetails;
+  const displayWorkout = activeWorkout || workoutDetail;
   const { exercises: organizedExercises, circuitMap } = displayWorkout 
     ? getOrganizedExercises(displayWorkout.exercises) 
     : { exercises: [], circuitMap: new Map() };

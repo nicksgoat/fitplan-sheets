@@ -14,7 +14,7 @@ interface ShareInput {
 type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
 type ShareContentType = 'workout_id' | 'program_id';
 
-// Base record type to avoid excessive nesting
+// Base record type for sharing
 interface ShareRecord {
   club_id: string;
   shared_by: string;
@@ -57,9 +57,8 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
       
       // Add new shares
       if (sharesToAdd.length > 0) {
-        // Use type assertion to ensure proper typing
         if (contentType === 'workout') {
-          const sharingRecords = sharesToAdd.map(clubId => ({
+          const sharingRecords: WorkoutShareRecord[] = sharesToAdd.map(clubId => ({
             club_id: clubId,
             workout_id: contentId,
             shared_by: user.id
@@ -71,7 +70,7 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
             
           if (error) throw error;
         } else {
-          const sharingRecords = sharesToAdd.map(clubId => ({
+          const sharingRecords: ProgramShareRecord[] = sharesToAdd.map(clubId => ({
             club_id: clubId,
             program_id: contentId,
             shared_by: user.id
