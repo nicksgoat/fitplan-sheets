@@ -2,24 +2,21 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
-// Simplified share record types to avoid excessive type nesting
+// Define simpler, non-recursive types to prevent infinite type instantiation
 type ShareInput = {
   contentId: string;
   contentType: 'workout' | 'program';
   clubIds: string[];
 };
 
-// Explicitly define the return type to avoid infinite type instantiation
-type ShareMutationResult = string[];
-
-export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
+export function useShareWithClubs() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  return useMutation<ShareMutationResult, Error, ShareInput>({
-    mutationFn: async ({ clubIds, contentId, contentType }) => {
+  return useMutation({
+    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // Determine which table to use based on content type
@@ -94,23 +91,12 @@ export function useShareWithClub(onSuccess?: (clubIds: string[]) => void) {
       return clubIds;
     },
     onSuccess: (clubIds) => {
-      toast({
-        title: "Content Shared!",
-        description: "This content has been successfully shared with the selected clubs.",
-      });
-      
-      if (onSuccess) {
-        onSuccess(clubIds);
-      }
+      toast.success("Content shared successfully with selected clubs");
       
       queryClient.invalidateQueries({ queryKey: ['creator-clubs', user?.id] });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Sharing Failed",
-        description: error.message || "Failed to share content with clubs.",
-        variant: "destructive",
-      });
+      toast.error(`Failed to share: ${error.message || "An unknown error occurred"}`);
     }
   });
 }
