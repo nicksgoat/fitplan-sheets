@@ -29,6 +29,9 @@ interface ProgramShareRecord extends BaseShareRecord {
   program_id: string;
 }
 
+type ShareRecord<T extends 'workout' | 'program'> = 
+  T extends 'workout' ? WorkoutShareRecord : ProgramShareRecord;
+
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -53,21 +56,16 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
       
       // Add new shares
       if (sharesToAdd.length > 0) {
-        // Create properly typed sharing records
         const sharingRecords = sharesToAdd.map(clubId => {
-          // Using a type-safe approach to create the sharing records
+          const record: Partial<BaseShareRecord> = {
+            club_id: clubId,
+            shared_by: user.id
+          };
+          
           if (contentType === 'workout') {
-            return {
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            } as WorkoutShareRecord;
+            return { ...record, workout_id: contentId } as WorkoutShareRecord;
           } else {
-            return {
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            } as ProgramShareRecord;
+            return { ...record, program_id: contentId } as ProgramShareRecord;
           }
         });
         

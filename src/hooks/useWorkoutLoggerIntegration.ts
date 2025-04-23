@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { Exercise, Set } from '@/types/workout';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
-import { useProgram } from '@/hooks/useWorkoutData';
 import { useWorkout } from '@/contexts/WorkoutContext';
+import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
 
 export interface WorkoutLogData {
   id: string;
@@ -108,7 +108,7 @@ export function useWorkoutLoggerIntegration() {
       
       if (logError) throw logError;
 
-      // Record each exercise
+      // Process exercises and their sets with circuit awareness
       for (const exercise of exercises) {
         // Create the exercise log entry
         const { data: exerciseLog, error: exerciseError } = await supabase
@@ -122,7 +122,7 @@ export function useWorkoutLoggerIntegration() {
         
         if (exerciseError) throw exerciseError;
         
-        // Record each set for the exercise
+        // Handle sets differently based on whether it's a circuit
         const setEntries = exercise.sets.map((set, index) => ({
           exercise_log_id: exerciseLog.id,
           set_number: index + 1,

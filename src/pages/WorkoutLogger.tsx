@@ -320,21 +320,79 @@ export default function WorkoutLogger() {
         
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {organizedExercises.map(exercise => (
-              <React.Fragment key={exercise.id}>
-                {/* Circuit Exercise Container */}
-                {exercise.isCircuit && exercise.circuitId ? (
-                  <div>
-                    <Card className="mb-2">
-                      <CardHeader className="bg-blue-900/20 border-b border-blue-800">
-                        <h3 className="font-medium text-blue-400">{exercise.name}</h3>
-                        {exercise.notes && <p className="text-sm text-gray-400">{exercise.notes}</p>}
-                      </CardHeader>
-                      {/* Circuit exercises */}
-                      {(circuitMap.get(exercise.circuitId) || []).map(circuitExercise => (
-                        <Card key={circuitExercise.id} className="mb-2 ml-4 mt-2">
+            {organizedExercises.map((exercise) => {
+              // Standard exercise (not a circuit or in a circuit)
+              if (!exercise.isCircuit && !exercise.isInCircuit) {
+                return (
+                  <Card key={exercise.id} className="mb-4">
+                    <CardHeader>
+                      <h3 className="font-medium">{exercise.name}</h3>
+                      {exercise.notes && <p className="text-sm text-gray-400">{exercise.notes}</p>}
+                    </CardHeader>
+                    <CardContent>
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-left">Set</th>
+                            <th className="text-left">Weight</th>
+                            <th className="text-left">Reps</th>
+                            <th className="text-left">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {exercise.sets.map((set, index) => (
+                            <tr key={set.id}>
+                              <td className="py-2">{index + 1}</td>
+                              <td className="py-2">
+                                <Input
+                                  type="text"
+                                  defaultValue={set.weight}
+                                  className="w-24 h-8"
+                                  placeholder="lbs"
+                                  disabled={!activeSessionId}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <Input
+                                  type="text"
+                                  defaultValue={set.reps}
+                                  className="w-20 h-8"
+                                  placeholder="reps"
+                                  disabled={!activeSessionId}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Notes"
+                                  className="w-full h-8"
+                                  disabled={!activeSessionId}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              // Circuit container
+              if (exercise.isCircuit && exercise.circuitId) {
+                const circuitExercises = circuitMap.get(exercise.circuitId) || [];
+                return (
+                  <Card key={exercise.id} className="mb-4 border border-blue-800 bg-blue-900/10">
+                    <CardHeader className="bg-blue-900/20 border-b border-blue-800">
+                      <h3 className="font-medium text-blue-400">{exercise.name}</h3>
+                      {exercise.notes && <p className="text-sm text-gray-400">{exercise.notes}</p>}
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {circuitExercises.map((circuitExercise) => (
+                        <div key={circuitExercise.id} className="border-t border-blue-800/30">
                           <CardHeader>
-                            <h4 className="text-sm font-medium">{circuitExercise.name}</h4>
+                            <h4 className="text-md font-medium">{circuitExercise.name}</h4>
+                            {circuitExercise.notes && <p className="text-xs text-gray-400">{circuitExercise.notes}</p>}
                           </CardHeader>
                           <CardContent>
                             <table className="w-full">
@@ -353,7 +411,7 @@ export default function WorkoutLogger() {
                                     <td className="py-2">
                                       <Input
                                         type="text"
-                                        value={set.weight}
+                                        defaultValue={set.weight}
                                         className="w-24 h-8"
                                         placeholder="lbs"
                                         disabled={!activeSessionId}
@@ -362,7 +420,7 @@ export default function WorkoutLogger() {
                                     <td className="py-2">
                                       <Input
                                         type="text"
-                                        value={set.reps}
+                                        defaultValue={set.reps}
                                         className="w-20 h-8"
                                         placeholder="reps"
                                         disabled={!activeSessionId}
@@ -381,67 +439,15 @@ export default function WorkoutLogger() {
                               </tbody>
                             </table>
                           </CardContent>
-                        </Card>
+                        </div>
                       ))}
-                    </Card>
-                  </div>
-                ) : (
-                  // Regular exercise (not in a circuit)
-                  !exercise.isInCircuit && (
-                    <Card>
-                      <CardHeader>
-                        <h3 className="font-medium">{exercise.name}</h3>
-                      </CardHeader>
-                      <CardContent>
-                        <table className="w-full">
-                          <thead>
-                            <tr>
-                              <th className="text-left">Set</th>
-                              <th className="text-left">Weight</th>
-                              <th className="text-left">Reps</th>
-                              <th className="text-left">Notes</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {exercise.sets.map((set, index) => (
-                              <tr key={set.id}>
-                                <td className="py-2">{index + 1}</td>
-                                <td className="py-2">
-                                  <Input
-                                    type="text"
-                                    value={set.weight}
-                                    className="w-24 h-8"
-                                    placeholder="lbs"
-                                    disabled={!activeSessionId}
-                                  />
-                                </td>
-                                <td className="py-2">
-                                  <Input
-                                    type="text"
-                                    value={set.reps}
-                                    className="w-20 h-8"
-                                    placeholder="reps"
-                                    disabled={!activeSessionId}
-                                  />
-                                </td>
-                                <td className="py-2">
-                                  <Input
-                                    type="text"
-                                    placeholder="Notes"
-                                    className="w-full h-8"
-                                    disabled={!activeSessionId}
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </CardContent>
-                    </Card>
-                  )
-                )}
-              </React.Fragment>
-            ))}
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              return null; // Skip exercises that are in circuits (they're handled by their parent)
+            })}
           </div>
         </ScrollArea>
       </div>
