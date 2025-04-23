@@ -24,6 +24,15 @@ interface ProfileStats {
   recent_achievements: any[];
 }
 
+interface WorkoutLog {
+  id: string;
+  created_at: string;
+  duration?: number;
+  workout?: {
+    name: string;
+  };
+}
+
 export default function OptimizedProfileView() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,80 +55,112 @@ export default function OptimizedProfileView() {
     enabled: !!user?.id
   });
   
-  const { data: stats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['profile-stats', user?.id],
-    queryFn: async (): Promise<ProfileStats> => {
-      if (!user?.id) return {
-        total_workouts: 0,
-        total_exercise_logs: 0,
-        avg_workout_duration: 0,
-        workout_streak: 0,
-        longest_streak: 0,
-        favorite_exercise: '',
-        recent_achievements: []
-      };
+  const { data: workoutCountData } = useQuery({
+    queryKey: ['workout-count', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { count: 0 };
       
-      // Get total workouts
-      const { data: workouts, error: workoutsError } = await supabase
+      const { count, error } = await supabase
         .from('workout_logs')
-        .select('count', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
         
-      if (workoutsError) throw workoutsError;
+      if (error) throw error;
+      return { count: count || 0 };
+    },
+    enabled: !!user?.id
+  });
+  
+  const { data: exerciseLogsCountData } = useQuery({
+    queryKey: ['exercise-logs-count', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { count: 0 };
       
-      // Get exercise logs
-      const { data: exerciseLogs, error: exercisesError } = await supabase
+      const { count, error } = await supabase
         .from('exercise_logs')
-        .select('count', { count: 'exact' })
-        .eq('user_id', user.id);
+        .select('*', { count: 'exact', head: true })
+        .eq('workout_log.user_id', user.id);
         
-      if (exercisesError) throw exercisesError;
+      if (error) throw error;
+      return { count: count || 0 };
+    },
+    enabled: !!user?.id
+  });
+  
+  const { data: streakData } = useQuery({
+    queryKey: ['workout-streak', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { current_streak: 0, longest_streak: 0 };
       
-      // Get workout streak
-      const { data: streak, error: streakError } = await supabase.rpc('calculate_workout_streak', {
-        p_user_id: user.id
-      });
-      
-      if (streakError) throw streakError;
-      
-      // Average workout duration
-      const { data: durationsData, error: durationError } = await supabase
+      // Get all workout dates
+      const { data, error } = await supabase
         .from('workout_logs')
-        .select('duration')
-        .eq('user_id', user.id);
-        
-      if (durationError) throw durationError;
+        .select('created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       
-      const avgDuration = durationsData && durationsData.length > 0 
-        ? durationsData.reduce((sum, log) => sum + (log.duration || 0), 0) / durationsData.length 
-        : 0;
+      if (error) throw error;
       
-      // This would normally come from a proper achievements system
-      const recentAchievements = [
-        { 
-          id: '1', 
-          title: 'First Workout', 
-          description: 'Completed your first workout', 
-          earned_at: new Date().toISOString(),
-          icon: '🏋️' 
-        },
-        { 
-          id: '2', 
-          title: '5 Workout Streak', 
-          description: 'Worked out 5 days in a row', 
-          earned_at: new Date().toISOString(),
-          icon: '🔥' 
+      // Calculate streak manually
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let lastDate: Date | null = null;
+      let inStreak = false;
+      
+      // Get unique dates (one workout per day counts for streak)
+      const uniqueDates = Array.from(new Set(
+        (data || []).map(item => 
+          format(new Date(item.created_at), 'yyyy-MM-dd')
+        )
+      )).map(dateStr => new Date(dateStr));
+      
+      // Sort dates in descending order
+      uniqueDates.sort((a, b) => b.getTime() - a.getTime());
+      
+      for (const date of uniqueDates) {
+        if (!lastDate) {
+          // First date
+          lastDate = date;
+          currentStreak = 1;
+          inStreak = true;
+        } else {
+          const dayDiff = Math.round((lastDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (dayDiff === 1) {
+            // Consecutive day
+            currentStreak++;
+            lastDate = date;
+            inStreak = true;
+          } else {
+            // Streak broken
+            if (inStreak) {
+              longestStreak = Math.max(longestStreak, currentStreak);
+              currentStreak = 1;
+              inStreak = false;
+            }
+            lastDate = date;
+          }
         }
-      ];
+      }
       
-      return {
-        total_workouts: workouts.count || 0,
-        total_exercise_logs: exerciseLogs.count || 0,
-        avg_workout_duration: Math.round(avgDuration),
-        workout_streak: streak[0]?.current_streak || 0,
-        longest_streak: streak[0]?.longest_streak || 0,
-        favorite_exercise: 'Bench Press', // This would come from analytics
-        recent_achievements: recentAchievements
+      // Check final streak
+      longestStreak = Math.max(longestStreak, currentStreak);
+      
+      // If last workout was not from today or yesterday, current streak is 0
+      if (lastDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (lastDate < yesterday) {
+          currentStreak = 0;
+        }
+      }
+      
+      return { 
+        current_streak: currentStreak, 
+        longest_streak: longestStreak 
       };
     },
     enabled: !!user?.id
@@ -142,11 +183,37 @@ export default function OptimizedProfileView() {
     },
     enabled: !!user?.id
   });
+
+  // Calculate average workout duration
+  const avgDuration = React.useMemo(() => {
+    if (!recentWorkouts || recentWorkouts.length === 0) return 0;
+    
+    const totalDuration = recentWorkouts.reduce((sum, log) => sum + (log.duration || 0), 0);
+    return Math.round(totalDuration / recentWorkouts.length);
+  }, [recentWorkouts]);
   
   // Calculate progress for the current week's workout goal
   // In a real app, this would be compared against the user's weekly goal
   const weeklyGoal = 5; // Example: 5 workouts per week
-  const weeklyProgress = Math.min(100, ((stats?.workout_streak || 0) / weeklyGoal) * 100);
+  const weeklyProgress = Math.min(100, ((streakData?.current_streak || 0) / weeklyGoal) * 100);
+
+  // Mock achievements for demo
+  const achievements = [
+    { 
+      id: '1', 
+      title: 'First Workout', 
+      description: 'Completed your first workout', 
+      earned_at: new Date().toISOString(),
+      icon: '🏋️' 
+    },
+    { 
+      id: '2', 
+      title: '5 Workout Streak', 
+      description: 'Worked out 5 days in a row', 
+      earned_at: new Date().toISOString(),
+      icon: '🔥' 
+    }
+  ];
 
   if (!user) {
     return (
@@ -173,8 +240,8 @@ export default function OptimizedProfileView() {
                 </CardDescription>
                 <div className="flex gap-2 mt-1">
                   <Badge variant="outline">Fitness Enthusiast</Badge>
-                  {stats?.workout_streak >= 5 && (
-                    <Badge variant="secondary">🔥 {stats.workout_streak} Day Streak</Badge>
+                  {(streakData?.current_streak || 0) >= 5 && (
+                    <Badge variant="secondary">🔥 {streakData?.current_streak} Day Streak</Badge>
                   )}
                 </div>
               </div>
@@ -213,7 +280,7 @@ export default function OptimizedProfileView() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-400">Workouts Completed</span>
-                      <span className="font-medium">{stats?.workout_streak || 0} / {weeklyGoal}</span>
+                      <span className="font-medium">{streakData?.current_streak || 0} / {weeklyGoal}</span>
                     </div>
                     <Progress value={weeklyProgress} className="h-2" />
                   </div>
@@ -230,12 +297,12 @@ export default function OptimizedProfileView() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-3xl font-bold">{stats?.workout_streak || 0}</div>
+                      <div className="text-3xl font-bold">{streakData?.current_streak || 0}</div>
                       <div className="text-xs text-gray-400">days in a row</div>
                     </div>
                     <div>
                       <div className="text-sm font-medium">Longest Streak</div>
-                      <div className="text-xl font-semibold">{stats?.longest_streak || 0} days</div>
+                      <div className="text-xl font-semibold">{streakData?.longest_streak || 0} days</div>
                     </div>
                   </div>
                 </CardContent>
@@ -256,7 +323,7 @@ export default function OptimizedProfileView() {
                   </div>
                 ) : recentWorkouts && recentWorkouts.length > 0 ? (
                   <div className="space-y-3">
-                    {recentWorkouts.map((workout) => (
+                    {recentWorkouts.map((workout: WorkoutLog) => (
                       <div key={workout.id} className="flex justify-between items-center">
                         <div>
                           <div className="font-medium">{workout.workout?.name || 'Unnamed Workout'}</div>
@@ -287,7 +354,7 @@ export default function OptimizedProfileView() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="py-0 pb-3">
-                  <div className="text-2xl font-bold">{stats?.total_workouts || 0}</div>
+                  <div className="text-2xl font-bold">{workoutCountData?.count || 0}</div>
                 </CardContent>
               </Card>
               
@@ -299,7 +366,7 @@ export default function OptimizedProfileView() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="py-0 pb-3">
-                  <div className="text-2xl font-bold">{stats?.total_exercise_logs || 0}</div>
+                  <div className="text-2xl font-bold">{exerciseLogsCountData?.count || 0}</div>
                 </CardContent>
               </Card>
               
@@ -311,7 +378,7 @@ export default function OptimizedProfileView() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="py-0 pb-3">
-                  <div className="text-2xl font-bold">{stats?.avg_workout_duration || 0} mins</div>
+                  <div className="text-2xl font-bold">{avgDuration || 0} mins</div>
                 </CardContent>
               </Card>
               
@@ -323,7 +390,7 @@ export default function OptimizedProfileView() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="py-0 pb-3">
-                  <div className="text-sm font-medium">{stats?.favorite_exercise || 'None'}</div>
+                  <div className="text-sm font-medium">Bench Press</div>
                 </CardContent>
               </Card>
             </div>
@@ -348,8 +415,8 @@ export default function OptimizedProfileView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stats?.recent_achievements && stats.recent_achievements.length > 0 ? (
-                    stats.recent_achievements.map((achievement) => (
+                  {achievements && achievements.length > 0 ? (
+                    achievements.map((achievement) => (
                       <div key={achievement.id} className="flex items-center gap-4">
                         <div className="flex-shrink-0 h-12 w-12 rounded-full bg-fitbloom-purple/20 flex items-center justify-center text-2xl">
                           {achievement.icon}

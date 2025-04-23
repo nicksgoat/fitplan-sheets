@@ -13,6 +13,21 @@ import { format, subDays, startOfWeek, endOfWeek, getISOWeek } from 'date-fns';
 
 const COLORS = ['#6c5ce7', '#fd79a8', '#00cec9', '#fdcb6e', '#e17055', '#74b9ff'];
 
+interface WorkoutLogCount {
+  log_date: string;
+  workout_count: number;
+}
+
+interface ExerciseUsage {
+  exercise_name: string;
+  usage_count: number;
+}
+
+interface WorkoutStreak {
+  current_streak: number;
+  longest_streak: number;
+}
+
 export default function EnhancedDashboard() {
   const { user } = useAuth();
   const [timeFrame, setTimeFrame] = useState('week'); // week, month, year
@@ -53,15 +68,28 @@ export default function EnhancedDashboard() {
   const { data: workoutAnalytics } = useQuery({
     queryKey: ['workout-analytics', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return [];
       
-      const { data, error } = await supabase.rpc('get_workout_log_counts', {
-        p_user_id: user.id
-      });
+      const { data, error } = await supabase
+        .from('workout_logs')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      return data || [];
+      // Group by date and count
+      const counts: Record<string, number> = {};
+      
+      (data || []).forEach(log => {
+        const date = format(new Date(log.created_at), 'yyyy-MM-dd');
+        counts[date] = (counts[date] || 0) + 1;
+      });
+      
+      return Object.entries(counts).map(([date, count]) => ({
+        log_date: date,
+        workout_count: count
+      }));
     },
     enabled: !!user?.id
   });
@@ -69,16 +97,34 @@ export default function EnhancedDashboard() {
   const { data: exerciseStats } = useQuery({
     queryKey: ['exercise-stats', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return [];
       
-      const { data, error } = await supabase.rpc('get_most_used_exercises', {
-        p_user_id: user.id,
-        p_limit: 10
-      });
+      // Get exercise logs with names
+      const { data, error } = await supabase
+        .from('exercise_logs')
+        .select(`
+          id,
+          exercise_id,
+          workout_log:workout_log_id(user_id),
+          exercise:exercise_id(name)
+        `)
+        .eq('workout_log.user_id', user.id);
       
       if (error) throw error;
       
-      return data || [];
+      // Count exercise usage
+      const counts: Record<string, number> = {};
+      
+      (data || []).forEach(log => {
+        if (log.exercise?.name) {
+          counts[log.exercise.name] = (counts[log.exercise.name] || 0) + 1;
+        }
+      });
+      
+      // Convert to array sorted by count
+      return Object.entries(counts)
+        .map(([name, count]) => ({ exercise_name: name, usage_count: count }))
+        .sort((a, b) => b.usage_count - a.usage_count);
     },
     enabled: !!user?.id
   });
@@ -86,16 +132,78 @@ export default function EnhancedDashboard() {
   const { data: streakData } = useQuery({
     queryKey: ['workout-streak', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return { current_streak: 0, longest_streak: 0 };
       
-      const { data, error } = await supabase.rpc('calculate_workout_streak', {
-        p_user_id: user.id
-      });
+      // Get all workout dates
+      const { data, error } = await supabase
+        .from('workout_logs')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Return first row (should be only one)
-      return data[0] || { current_streak: 0, longest_streak: 0 };
+      // Calculate streak manually
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let lastDate: Date | null = null;
+      let inStreak = false;
+      
+      // Get unique dates (one workout per day counts for streak)
+      const uniqueDates = Array.from(new Set(
+        (data || []).map(item => 
+          format(new Date(item.created_at), 'yyyy-MM-dd')
+        )
+      )).map(dateStr => new Date(dateStr));
+      
+      // Sort dates in descending order
+      uniqueDates.sort((a, b) => b.getTime() - a.getTime());
+      
+      for (const date of uniqueDates) {
+        if (!lastDate) {
+          // First date
+          lastDate = date;
+          currentStreak = 1;
+          inStreak = true;
+        } else {
+          const dayDiff = Math.round((lastDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (dayDiff === 1) {
+            // Consecutive day
+            currentStreak++;
+            lastDate = date;
+            inStreak = true;
+          } else {
+            // Streak broken
+            if (inStreak) {
+              longestStreak = Math.max(longestStreak, currentStreak);
+              currentStreak = 1;
+              inStreak = false;
+            }
+            lastDate = date;
+          }
+        }
+      }
+      
+      // Check final streak
+      longestStreak = Math.max(longestStreak, currentStreak);
+      
+      // If last workout was not from today or yesterday, current streak is 0
+      if (lastDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (lastDate < yesterday) {
+          currentStreak = 0;
+        }
+      }
+      
+      return { 
+        current_streak: currentStreak, 
+        longest_streak: longestStreak 
+      };
     },
     enabled: !!user?.id
   });
@@ -118,20 +226,22 @@ export default function EnhancedDashboard() {
       acc[date].count += 1;
       acc[date].duration += log.duration || 0;
       return acc;
-    }, {});
+    }, {} as Record<string, any>);
     
     return Object.values(grouped);
   }, [workoutLogs]);
   
   const muscleGroupData = React.useMemo(() => {
-    if (!exerciseStats) return [];
+    if (!exerciseStats || !Array.isArray(exerciseStats)) return [];
     
-    // This is simplified - in a real app you would track muscle groups for each exercise
-    return exerciseStats.map((stat, index) => ({
-      name: stat.exercise_name,
-      value: stat.usage_count,
-      color: COLORS[index % COLORS.length]
-    })).slice(0, 6); // Limit to top 6 for pie chart
+    // Map exercise stats to pie chart format
+    return exerciseStats
+      .map((stat, index) => ({
+        name: stat.exercise_name,
+        value: stat.usage_count,
+        color: COLORS[index % COLORS.length]
+      }))
+      .slice(0, 6); // Limit to top 6 for pie chart
   }, [exerciseStats]);
 
   if (!user) {
@@ -326,7 +436,7 @@ export default function EnhancedDashboard() {
               <div className="flex justify-center items-center h-[300px]">
                 <Loader2 className="h-8 w-8 text-fitbloom-purple animate-spin" />
               </div>
-            ) : exerciseStats && exerciseStats.length > 0 ? (
+            ) : exerciseStats && Array.isArray(exerciseStats) && exerciseStats.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
                   data={exerciseStats.slice(0, 8)} // Limit to top 8

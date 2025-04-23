@@ -1,161 +1,154 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { NavLink } from 'react-router-dom';
+import { 
+  Home, Search, FolderHeart, ClipboardList, Users, Calendar, 
+  ChevronLeft, ChevronRight, Settings, Dumbbell, Book, Trophy,
+  UserCircle, LineChart, PlusCircle
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart2, Calendar, FolderHeart, Heart, Home, Layout, PlusCircle, Search, Settings, User, Users, LineChart, Dumbbell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { session } = useAuth();
-  const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
-
+  
+  const navItems = [
+    { 
+      to: '/explore',
+      icon: <Home className="h-5 w-5" />,
+      text: 'Explore' 
+    },
+    { 
+      to: '/search',
+      icon: <Search className="h-5 w-5" />,
+      text: 'Search' 
+    },
+    { 
+      to: '/library',
+      icon: <FolderHeart className="h-5 w-5" />,
+      text: 'Library',
+      requiresAuth: true
+    },
+    { 
+      to: '/sheets',
+      icon: <ClipboardList className="h-5 w-5" />,
+      text: 'Workout Sheets',
+      requiresAuth: true
+    },
+    { 
+      to: '/clubs',
+      icon: <Users className="h-5 w-5" />,
+      text: 'Clubs',
+      requiresAuth: true
+    },
+    { 
+      to: '/schedule',
+      icon: <Calendar className="h-5 w-5" />,
+      text: 'Schedule',
+      requiresAuth: true
+    },
+    { 
+      to: '/ai-workout-generator',
+      icon: <Dumbbell className="h-5 w-5" />,
+      text: 'AI Workout',
+      requiresAuth: true
+    },
+    { 
+      to: '/analytics',
+      icon: <LineChart className="h-5 w-5" />,
+      text: 'Analytics',
+      requiresAuth: true
+    },
+    { 
+      to: '/leaderboards',
+      icon: <Trophy className="h-5 w-5" />,
+      text: 'Leaderboards'
+    },
+    { 
+      to: '/creator',
+      icon: <PlusCircle className="h-5 w-5" />,
+      text: 'Create Content',
+      requiresAuth: true
+    },
+    { 
+      to: '/profile/view',
+      icon: <UserCircle className="h-5 w-5" />,
+      text: 'Profile',
+      requiresAuth: true
+    },
+    { 
+      to: '/profile',
+      icon: <Settings className="h-5 w-5" />,
+      text: 'Settings',
+      requiresAuth: true
+    },
+  ];
+  
   return (
-    <div className="hidden md:block w-64 border-r border-gray-800 h-screen sticky top-0 overflow-y-auto pb-12">
-      <div className="py-4 px-3">
-        <Link to="/" className="flex items-center gap-2 mb-8">
-          <span className="text-2xl font-bold text-fitbloom-purple">FitBloom</span>
-        </Link>
-
-        <nav className="space-y-1">
-          <Link to="/explore">
-            <Button
-              variant={isActive('/explore') ? 'secondary' : 'ghost'}
-              className={cn('w-full justify-start', isActive('/explore') && 'bg-gray-800')}
-            >
-              <Home className="mr-2 h-5 w-5" />
-              Explore
-            </Button>
-          </Link>
-          <Link to="/search">
-            <Button
-              variant={isActive('/search') ? 'secondary' : 'ghost'}
-              className={cn('w-full justify-start', isActive('/search') && 'bg-gray-800')}
-            >
-              <Search className="mr-2 h-5 w-5" />
-              Search
-            </Button>
-          </Link>
-          
-          {/* New features */}
-          <Link to="/ai-workout-generator">
-            <Button
-              variant={isActive('/ai-workout-generator') ? 'secondary' : 'ghost'}
-              className={cn('w-full justify-start', isActive('/ai-workout-generator') && 'bg-gray-800')}
-            >
-              <Dumbbell className="mr-2 h-5 w-5" />
-              AI Workout Generator
-            </Button>
-          </Link>
-          <Link to="/analytics">
-            <Button
-              variant={isActive('/analytics') ? 'secondary' : 'ghost'}
-              className={cn('w-full justify-start', isActive('/analytics') && 'bg-gray-800')}
-            >
-              <LineChart className="mr-2 h-5 w-5" />
-              Analytics
-            </Button>
-          </Link>
-          
-          {session && (
-            <>
-              <Link to="/library">
-                <Button
-                  variant={isActive('/library') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/library') && 'bg-gray-800')}
-                >
-                  <FolderHeart className="mr-2 h-5 w-5" />
-                  Library
-                </Button>
-              </Link>
-              <Link to="/schedule">
-                <Button
-                  variant={isActive('/schedule') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/schedule') && 'bg-gray-800')}
-                >
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Schedule
-                </Button>
-              </Link>
-              <Link to="/clubs">
-                <Button
-                  variant={isActive('/clubs') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/clubs') && 'bg-gray-800')}
-                >
-                  <Users className="mr-2 h-5 w-5" />
-                  Clubs
-                </Button>
-              </Link>
-              <Link to="/liked">
-                <Button
-                  variant={isActive('/liked') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/liked') && 'bg-gray-800')}
-                >
-                  <Heart className="mr-2 h-5 w-5" />
-                  Liked
-                </Button>
-              </Link>
-              <Link to="/sheets">
-                <Button
-                  variant={isActive('/sheets') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/sheets') && 'bg-gray-800')}
-                >
-                  <Layout className="mr-2 h-5 w-5" />
-                  Sheets
-                </Button>
-              </Link>
-              <Link to="/leaderboards">
-                <Button
-                  variant={isActive('/leaderboards') ? 'secondary' : 'ghost'}
-                  className={cn('w-full justify-start', isActive('/leaderboards') && 'bg-gray-800')}
-                >
-                  <BarChart2 className="mr-2 h-5 w-5" />
-                  Leaderboards
-                </Button>
-              </Link>
-            </>
+    <aside 
+      className={cn(
+        "relative h-full bg-gray-900 flex flex-col border-r border-gray-800 transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      <div className="flex items-center p-4 border-b border-gray-800">
+        <div className={cn("flex items-center", collapsed ? "justify-center" : "")}>
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold">FitBloom</span>
+            </div>
           )}
-
-          <div className="pt-4">
-            {session ? (
-              <>
-                <Link to="/profile/view">
-                  <Button
-                    variant={isActive('/profile/view') ? 'secondary' : 'ghost'}
-                    className={cn('w-full justify-start', isActive('/profile/view') && 'bg-gray-800')}
-                  >
-                    <User className="mr-2 h-5 w-5" />
-                    Profile
-                  </Button>
-                </Link>
-                <Link to="/creator">
-                  <Button
-                    variant={isActive('/creator') ? 'secondary' : 'ghost'}
-                    className={cn('w-full justify-start', isActive('/creator') && 'bg-gray-800')}
-                  >
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Creator Dashboard
-                  </Button>
-                </Link>
-                <Link to="/settings">
-                  <Button
-                    variant={isActive('/settings') ? 'secondary' : 'ghost'}
-                    className={cn('w-full justify-start', isActive('/settings') && 'bg-gray-800')}
-                  >
-                    <Settings className="mr-2 h-5 w-5" />
-                    Settings
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <Link to="/auth">
-                <Button className="w-full">Sign In</Button>
-              </Link>
-            )}
-          </div>
+          {collapsed && (
+            <span className="font-bold">FB</span>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex flex-col flex-grow p-2 overflow-y-auto">
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            // Skip if requires auth and no session
+            if (item.requiresAuth && !session) return null;
+            
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => cn(
+                  "flex items-center py-2 px-3 rounded-md transition-colors",
+                  isActive 
+                    ? "bg-fitbloom-purple/20 text-fitbloom-purple" 
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50",
+                  collapsed ? "justify-center" : ""
+                )}
+              >
+                {item.icon}
+                {!collapsed && <span className="ml-3">{item.text}</span>}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
-    </div>
+      
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggleCollapse}
+        className="absolute -right-3 top-20 border border-gray-700 bg-gray-800 rounded-full h-6 w-6 flex items-center justify-center"
+      >
+        {collapsed ? 
+          <ChevronRight className="h-3 w-3" /> : 
+          <ChevronLeft className="h-3 w-3" />
+        }
+      </Button>
+    </aside>
   );
-}
+};
+
+export default Sidebar;

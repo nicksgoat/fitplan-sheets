@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2, Dumbbell, Save, Download, Copy, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckboxGroup } from '@/components/ui/checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
@@ -95,6 +95,34 @@ export default function AIWorkoutGenerator() {
     toast.success('Workout copied to clipboard!');
   };
 
+  const toggleMuscleGroup = (muscle: string) => {
+    if (params.targetMuscles.includes(muscle)) {
+      setParams({
+        ...params,
+        targetMuscles: params.targetMuscles.filter(m => m !== muscle)
+      });
+    } else {
+      setParams({
+        ...params,
+        targetMuscles: [...params.targetMuscles, muscle]
+      });
+    }
+  };
+  
+  const toggleEquipment = (equipment: string) => {
+    if (params.equipment?.includes(equipment)) {
+      setParams({
+        ...params,
+        equipment: params.equipment.filter(e => e !== equipment)
+      });
+    } else {
+      setParams({
+        ...params,
+        equipment: [...(params.equipment || []), equipment]
+      });
+    }
+  };
+
   return (
     <div className="container max-w-4xl mx-auto py-6">
       <Card className="border border-gray-800 bg-gray-900/50">
@@ -143,19 +171,7 @@ export default function AIWorkoutGenerator() {
                         key={muscle}
                         variant={params.targetMuscles.includes(muscle) ? "default" : "outline"}
                         className="cursor-pointer hover:bg-fitbloom-purple/80"
-                        onClick={() => {
-                          if (params.targetMuscles.includes(muscle)) {
-                            setParams({
-                              ...params,
-                              targetMuscles: params.targetMuscles.filter(m => m !== muscle)
-                            });
-                          } else {
-                            setParams({
-                              ...params,
-                              targetMuscles: [...params.targetMuscles, muscle]
-                            });
-                          }
-                        }}
+                        onClick={() => toggleMuscleGroup(muscle)}
                       >
                         {muscle}
                       </Badge>
@@ -184,19 +200,7 @@ export default function AIWorkoutGenerator() {
                         key={equipment}
                         variant={params.equipment?.includes(equipment) ? "default" : "outline"}
                         className="cursor-pointer hover:bg-fitbloom-purple/80"
-                        onClick={() => {
-                          if (params.equipment?.includes(equipment)) {
-                            setParams({
-                              ...params,
-                              equipment: params.equipment.filter(e => e !== equipment)
-                            });
-                          } else {
-                            setParams({
-                              ...params,
-                              equipment: [...(params.equipment || []), equipment]
-                            });
-                          }
-                        }}
+                        onClick={() => toggleEquipment(equipment)}
                       >
                         {equipment}
                       </Badge>
