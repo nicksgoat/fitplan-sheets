@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
@@ -75,6 +76,7 @@ function App() {
             <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="creator" element={<AuthenticatedRoute><CreatorDashboard /></AuthenticatedRoute>} />
             <Route path="workout-logger" element={<AuthenticatedRoute><WorkoutLogger /></AuthenticatedRoute>} />
+            <Route path="workout-logger/:workoutId" element={<AuthenticatedRoute><WorkoutLogger /></AuthenticatedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

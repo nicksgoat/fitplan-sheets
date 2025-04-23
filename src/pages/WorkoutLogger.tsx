@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Play, 
   Pause, 
@@ -14,7 +14,8 @@ import {
   Edit,
   Trash2,
   ArrowLeft,
-  Dumbbell
+  Dumbbell,
+  ChevronLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,13 +27,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
 import { Workout, Exercise, Set } from '@/types/workout';
+import { useWorkoutLoggerIntegration, WorkoutLogExercise } from '@/hooks/useWorkoutLoggerIntegration';
 
 export default function WorkoutLogger() {
   const { user } = useAuth();
   const { workoutId } = useParams<{ workoutId: string }>();
+  const [searchParams] = useSearchParams();
+  const programId = searchParams.get('programId');
   const navigate = useNavigate();
+  
+  // Integration with existing workout and program logic
+  const { 
+    workout, 
+    workoutLoading, 
+    program, 
+    programLoading, 
+    startWorkoutSession, 
+    completeWorkoutLog, 
+    isLoading: integrationLoading 
+  } = useWorkoutLoggerIntegration(workoutId, programId || undefined);
+  
+  // Local state
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [workoutName, setWorkoutName] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
@@ -40,43 +56,11 @@ export default function WorkoutLogger() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Fetch workout data if workoutId is provided
-  const { data: workoutData, isLoading: isLoadingWorkout } = useQuery({
-    queryKey: ['workout', workoutId],
-    queryFn: async () => {
-      if (!workoutId) return null;
-      
-      const { data, error } = await supabase
-        .from('workouts')
-        .select(`
-          *,
-          exercises:exercises(
-            *,
-            sets:exercise_sets(*)
-          )
-        `)
-        .eq('id', workoutId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!workoutId && !!user
-  });
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   
   // Initialize workout from fetched data
   useEffect(() => {
-    if (workoutData) {
-      const workout: Workout = {
-        id: workoutData.id,
-        name: workoutData.name,
-        day: workoutData.day_num,
-        exercises: workoutData.exercises || [],
-        circuits: []
-      };
-      
+    if (workout) {
       setActiveWorkout(workout);
       setWorkoutName(workout.name);
       setExercises(workout.exercises);
@@ -86,7 +70,7 @@ export default function WorkoutLogger() {
         setSelectedExerciseId(workout.exercises[0].id);
       }
     }
-  }, [workoutData]);
+  }, [workout]);
   
   // Timer logic
   useEffect(() => {
@@ -113,7 +97,7 @@ export default function WorkoutLogger() {
   };
   
   // Start a new workout session
-  const startNewWorkout = () => {
+  const startNewWorkout = async () => {
     if (activeWorkout) {
       if (!window.confirm('You have an active workout. Starting a new one will discard the current session. Continue?')) {
         return;
@@ -121,15 +105,7 @@ export default function WorkoutLogger() {
     }
     
     // Use the fetched workout if available, otherwise create a blank one
-    if (workoutData) {
-      const workout: Workout = {
-        id: workoutData.id,
-        name: workoutData.name,
-        day: workoutData.day_num,
-        exercises: workoutData.exercises || [],
-        circuits: []
-      };
-      
+    if (workout) {
       setActiveWorkout(workout);
       setWorkoutName(workout.name);
       setExercises(workout.exercises);
@@ -137,6 +113,12 @@ export default function WorkoutLogger() {
       // Select the first exercise by default if available
       if (workout.exercises.length > 0) {
         setSelectedExerciseId(workout.exercises[0].id);
+      }
+      
+      // Start the workout session in the database
+      const sessionData = await startWorkoutSession(workout);
+      if (sessionData) {
+        setActiveSessionId(sessionData.id);
       }
     } else {
       // Create a blank workout if no workout is loaded
@@ -152,6 +134,12 @@ export default function WorkoutLogger() {
       setActiveWorkout(newWorkout);
       setWorkoutName(newWorkout.name);
       setExercises([]);
+      
+      // Start the workout session in the database
+      const sessionData = await startWorkoutSession(newWorkout);
+      if (sessionData) {
+        setActiveSessionId(sessionData.id);
+      }
     }
     
     setWorkoutNotes('');
@@ -267,7 +255,10 @@ export default function WorkoutLogger() {
   
   // Complete the workout
   const completeWorkout = async () => {
-    if (!activeWorkout || !user?.id) return;
+    if (!activeWorkout || !user?.id || !activeSessionId) {
+      toast.error('Cannot complete workout: missing required information');
+      return;
+    }
     
     // Validation
     if (!workoutName.trim()) {
@@ -285,105 +276,84 @@ export default function WorkoutLogger() {
       return;
     }
     
-    setIsLoading(true);
+    // Map exercises to the format expected by completeWorkoutLog
+    const logExercises: WorkoutLogExercise[] = exercises.map(ex => ({
+      id: ex.id,
+      name: ex.name,
+      notes: ex.notes,
+      sets: ex.sets.map(set => ({
+        id: set.id,
+        reps: set.reps,
+        weight: set.weight,
+        rest: set.rest,
+        completed: true
+      }))
+    }));
     
-    try {
-      const completedWorkout: Workout = {
-        ...activeWorkout,
-        name: workoutName,
-        exercises,
-        circuits: []
-      };
-
-      const now = new Date().toISOString();
-      
-      // Save to Supabase
-      const { data: workoutLog, error } = await supabase
-        .from('workout_logs')
-        .insert({
-          user_id: user.id,
-          workout_id: workoutId || completedWorkout.id,
-          duration: elapsedTime,
-          notes: workoutNotes,
-          start_time: new Date(Date.now() - elapsedTime * 1000).toISOString(),
-          end_time: now
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // Save each exercise and its sets
-      for (const exercise of exercises) {
-        const { data: exerciseLog, error: exerciseError } = await supabase
-          .from('exercise_logs')
-          .insert({
-            workout_log_id: workoutLog.id,
-            exercise_id: exercise.id
-          })
-          .select()
-          .single();
+    // Complete the workout using the integration hook
+    completeWorkoutLog.mutate({
+      logId: activeSessionId,
+      duration: elapsedTime,
+      notes: workoutNotes,
+      exercises: logExercises
+    }, {
+      onSuccess: () => {
+        // Reset state
+        setActiveWorkout(null);
+        setWorkoutName('');
+        setWorkoutNotes('');
+        setExercises([]);
+        setElapsedTime(0);
+        setIsTimerRunning(false);
+        setSelectedExerciseId(null);
+        setActiveSessionId(null);
         
-        if (exerciseError) throw exerciseError;
-        
-        // Save each set
-        for (const set of exercise.sets) {
-          const { error: setError } = await supabase
-            .from('set_logs')
-            .insert({
-              exercise_log_id: exerciseLog.id,
-              set_number: exercise.sets.indexOf(set) + 1,
-              reps: parseInt(set.reps) || 0,
-              weight: set.weight,
-              rest_time: parseInt(set.rest) || 90,
-              notes: exercise.notes
-            });
-          
-          if (setError) throw setError;
-        }
+        // Navigate to a success page or back to schedules
+        toast.success('Workout completed successfully!');
+        setTimeout(() => {
+          navigate('/schedule');
+        }, 1500);
       }
-      
-      toast.success('Workout logged successfully!');
-      
-      // Reset state
-      setActiveWorkout(null);
-      setWorkoutName('');
-      setWorkoutNotes('');
-      setExercises([]);
-      setElapsedTime(0);
-      setIsTimerRunning(false);
-      setSelectedExerciseId(null);
-    } catch (error: any) {
-      console.error('Error saving workout:', error);
-      toast.error('Failed to save workout: ' + error.message);
-    } finally {
-      setIsLoading(false);
+    });
+  };
+  
+  // Return to workout detail if we came from there
+  const handleBackToDetail = () => {
+    if (workoutId) {
+      navigate(`/workout/${workoutId}`);
+    } else {
+      navigate(-1);
     }
   };
+  
+  // Loading state
+  const isPageLoading = workoutLoading || programLoading || integrationLoading || completeWorkoutLog.isPending;
   
   return (
     <div className="container py-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        {workoutId && (
-          <Button
-            variant="ghost"
-            className="mr-2"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          className="mr-2"
+          onClick={handleBackToDetail}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
         
-        <h1 className="text-2xl font-bold">Workout Logger</h1>
+        <h1 className="text-2xl font-bold">
+          {workout ? `Log: ${workout.name}` : 'Workout Logger'}
+          {program && <span className="text-sm text-gray-400 ml-2">({program.name})</span>}
+        </h1>
         
         {!activeWorkout ? (
           <Button 
             onClick={startNewWorkout} 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            disabled={isPageLoading}
           >
             <Play className="h-4 w-4 mr-2" />
-            {workoutId ? 'Start This Workout' : 'Start New Workout'}
+            {workout ? 'Start This Workout' : 'Start New Workout'}
           </Button>
         ) : (
           <div className="flex items-center gap-3">
@@ -396,6 +366,7 @@ export default function WorkoutLogger() {
               variant="outline" 
               size="icon" 
               onClick={toggleTimer}
+              disabled={isPageLoading}
             >
               {isTimerRunning ? (
                 <Pause className="h-4 w-4" />
@@ -407,9 +378,12 @@ export default function WorkoutLogger() {
         )}
       </div>
       
-      {isLoadingWorkout ? (
+      {isPageLoading && !activeWorkout ? (
         <div className="flex items-center justify-center h-64">
-          <p>Loading workout...</p>
+          <div className="flex flex-col items-center">
+            <div className="h-8 w-8 border-4 border-t-fitbloom-purple animate-spin rounded-full"></div>
+            <p className="mt-4">Loading workout...</p>
+          </div>
         </div>
       ) : activeWorkout ? (
         <div className="space-y-6">
@@ -422,12 +396,13 @@ export default function WorkoutLogger() {
                   onChange={(e) => setWorkoutName(e.target.value)}
                   placeholder="Workout Name"
                   className="text-lg font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                  disabled={isPageLoading}
                 />
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={isLoading}
+                    disabled={isPageLoading}
                     className="gap-1"
                   >
                     <Calendar className="h-4 w-4" />
@@ -435,10 +410,10 @@ export default function WorkoutLogger() {
                   </Button>
                   <Button 
                     onClick={completeWorkout}
-                    disabled={isLoading}
+                    disabled={isPageLoading}
                     className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
                   >
-                    {isLoading ? (
+                    {isPageLoading ? (
                       'Saving...'
                     ) : (
                       <>
@@ -458,6 +433,7 @@ export default function WorkoutLogger() {
                 onChange={(e) => setWorkoutNotes(e.target.value)}
                 rows={2}
                 className="resize-none bg-dark-200 border-dark-300"
+                disabled={isPageLoading}
               />
             </CardContent>
           </Card>
@@ -473,6 +449,7 @@ export default function WorkoutLogger() {
                     onClick={addExercise} 
                     size="sm" 
                     variant="ghost"
+                    disabled={isPageLoading}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -513,6 +490,7 @@ export default function WorkoutLogger() {
                                 e.stopPropagation();
                                 deleteExercise(exercise.id);
                               }}
+                              disabled={isPageLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -535,6 +513,7 @@ export default function WorkoutLogger() {
                       onChange={(e) => updateExerciseName(selectedExerciseId, e.target.value)}
                       placeholder="Exercise Name"
                       className="text-lg font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                      disabled={isPageLoading}
                     />
                   ) : (
                     "Select or add an exercise"
@@ -566,6 +545,7 @@ export default function WorkoutLogger() {
                                 onChange={(e) => updateSetDetails(selectedExerciseId, set.id, 'weight', e.target.value)}
                                 className="w-24 h-8 text-center bg-dark-200"
                                 placeholder="lbs"
+                                disabled={isPageLoading}
                               />
                             </td>
                             <td className="py-2">
@@ -575,6 +555,7 @@ export default function WorkoutLogger() {
                                 onChange={(e) => updateSetDetails(selectedExerciseId, set.id, 'reps', e.target.value)}
                                 className="w-20 h-8 text-center bg-dark-200"
                                 placeholder="reps"
+                                disabled={isPageLoading}
                               />
                             </td>
                             <td className="py-2">
@@ -584,6 +565,7 @@ export default function WorkoutLogger() {
                                 onChange={(e) => updateSetDetails(selectedExerciseId, set.id, 'rest', e.target.value)}
                                 className="w-20 h-8 text-center bg-dark-200"
                                 placeholder="sec"
+                                disabled={isPageLoading}
                               />
                             </td>
                             <td className="py-2 text-center">
@@ -592,7 +574,7 @@ export default function WorkoutLogger() {
                                 size="icon"
                                 className="h-8 w-8 text-red-500"
                                 onClick={() => deleteSet(selectedExerciseId, set.id)}
-                                disabled={exercises.find(ex => ex.id === selectedExerciseId)?.sets.length === 1}
+                                disabled={exercises.find(ex => ex.id === selectedExerciseId)?.sets.length === 1 || isPageLoading}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -607,6 +589,7 @@ export default function WorkoutLogger() {
                       size="sm"
                       onClick={() => addSetToExercise(selectedExerciseId)}
                       className="mt-4 w-full border-dashed"
+                      disabled={isPageLoading}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Set
@@ -625,6 +608,7 @@ export default function WorkoutLogger() {
                         }}
                         rows={2}
                         className="resize-none bg-dark-200 border-dark-300"
+                        disabled={isPageLoading}
                       />
                     </div>
                   </>
@@ -647,10 +631,11 @@ export default function WorkoutLogger() {
             <p className="text-gray-400 mb-6">
               Log your exercises, sets, reps, and weights to track your progress over time.
             </p>
-            {workoutId ? (
+            {workout ? (
               <Button 
                 onClick={startNewWorkout} 
                 className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
+                disabled={isPageLoading}
               >
                 <Dumbbell className="h-4 w-4 mr-2" />
                 Start This Workout
@@ -659,6 +644,7 @@ export default function WorkoutLogger() {
               <Button 
                 onClick={startNewWorkout} 
                 className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
+                disabled={isPageLoading}
               >
                 <Play className="h-4 w-4 mr-2" />
                 Start Workout

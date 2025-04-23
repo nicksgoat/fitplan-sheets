@@ -6,6 +6,9 @@ import ExerciseDetail from './ExerciseDetail';
 import WorkoutDetail from './WorkoutDetail';
 import ProgramDetail from './ProgramDetail';
 import { useLibrary } from '@/contexts/LibraryContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { Play } from 'lucide-react';
 
 interface DetailDrawerProps {
   item: ItemType;
@@ -15,6 +18,7 @@ interface DetailDrawerProps {
 const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
   const [open, setOpen] = React.useState(false);
   const { workouts, programs } = useLibrary();
+  const navigate = useNavigate();
 
   // Find the actual complete workout or program data from the library
   const workoutData = item.type === 'workout' 
@@ -29,6 +33,18 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
     setOpen(false);
   };
 
+  // Start logging workout
+  const startWorkoutLog = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    
+    if (item.type === 'workout') {
+      navigate(`/workout-logger/${item.id}`);
+    } else if (item.type === 'program') {
+      navigate(`/workout-logger?programId=${item.id}`);
+    }
+  };
+
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
@@ -41,10 +57,34 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ item, children }) => {
           <ExerciseDetail item={item} onClose={handleClose} />
         )}
         {item.type === 'workout' && (
-          <WorkoutDetail item={item} workoutData={workoutData} onClose={handleClose} />
+          <>
+            <WorkoutDetail item={item} workoutData={workoutData} onClose={handleClose} />
+            <div className="fixed bottom-8 right-8">
+              <Button 
+                onClick={startWorkoutLog}
+                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 rounded-full h-12 w-12 shadow-lg"
+                size="icon"
+                title="Log this workout"
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         )}
         {item.type === 'program' && (
-          <ProgramDetail item={item} programData={programData} onClose={handleClose} />
+          <>
+            <ProgramDetail item={item} programData={programData} onClose={handleClose} />
+            <div className="fixed bottom-8 right-8">
+              <Button 
+                onClick={startWorkoutLog}
+                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 rounded-full h-12 w-12 shadow-lg"
+                size="icon"
+                title="Start program workout"
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
         )}
         {item.type === 'collection' && (
           // For collections, we'll use the Exercise detail as a fallback

@@ -47,8 +47,8 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
   const queryClient = useQueryClient();
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
 
-  // Use a string literal type for the query key to solve the deep instantiation issue
-  const queryKey = [`${contentType}-clubs-sharing-${contentId}`] as const;
+  // Define the query key as a constant to avoid deep instantiation issues
+  const queryKey = [`${contentType}-clubs-sharing-${contentId}`];
 
   // Get clubs that this content is shared with
   const { data: sharedClubs, isLoading } = useQuery({
@@ -86,18 +86,18 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const columnName = contentType === 'workout' ? 'workout_id' : 'program_id';
       
-      // Explicitly create the object with the correct types instead of using Record
-      const shareData = {
+      // Create a properly typed object for the insert
+      const insertData: Record<string, string> = {
         club_id: clubId,
         shared_by: user?.id || ''
-      } as any; // Use any temporarily and then add the specific field
+      };
       
-      // Add the correct ID column based on content type
-      shareData[columnName] = contentId;
+      // Add the content ID with the appropriate column name
+      insertData[columnName] = contentId;
       
       const { error } = await supabase
         .from(tableName)
-        .insert(shareData);
+        .insert(insertData as any);
       
       if (error) {
         if (error.code === '23505') { // Unique violation
@@ -166,8 +166,10 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
         <div className="flex gap-2">
           <ClubShareSelection 
             contentType={contentType} 
+            contentId={contentId}
             selectedClubIds={selectedClubs}
             onSelectionChange={setSelectedClubs}
+            sharedClubs={[]}
           />
           <Button 
             onClick={() => selectedClubs.length > 0 && handleShareWithClub(selectedClubs[0])} 

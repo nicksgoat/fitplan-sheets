@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ClubShareDialog } from './club/ClubShareDialog';
-import { ClubShareSelectionProps } from '@/types/clubSharing';
 import { 
   Select,
   SelectContent,
@@ -16,6 +15,16 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+
+// Updated interface to include all necessary props
+export interface ClubShareSelectionProps {
+  contentId?: string;
+  contentType: 'workout' | 'program';
+  sharedClubs?: string[];
+  selectedClubIds?: string[];
+  onClubsChange?: (clubs: string[]) => void;
+  onSelectionChange?: (clubs: string[]) => void;
+}
 
 // This component allows selecting a single club with a dropdown
 export function ClubSelection({ 
@@ -75,19 +84,19 @@ export function ClubShareSelection({
   sharedClubs = [], 
   onClubsChange,
   onSelectionChange,
-  selectedClubIds: initialSelectedClubIds = []
+  selectedClubIds = []
 }: ClubShareSelectionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(initialSelectedClubIds);
+  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(selectedClubIds);
   
   // Update local state when the prop changes
   useEffect(() => {
     if (sharedClubs && sharedClubs.length > 0) {
       setSelectedClubIds(sharedClubs);
-    } else if (initialSelectedClubIds && initialSelectedClubIds.length > 0) {
-      setSelectedClubIds(initialSelectedClubIds);
+    } else if (selectedClubIds && selectedClubIds.length > 0) {
+      setSelectedClubIds(selectedClubIds);
     }
-  }, [sharedClubs, initialSelectedClubIds]);
+  }, [sharedClubs, selectedClubIds]);
 
   const handleSelectionChange = (clubs: string[]) => {
     setSelectedClubIds(clubs);
