@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,8 +37,8 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
     mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      const tableName: ShareTableType = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const contentIdField: ShareContentType = contentType === 'workout' ? 'workout_id' : 'program_id';
       
       // First get existing shares
       const { data: existingShares, error: fetchError } = await supabase
@@ -115,8 +116,8 @@ export function useSharedClubs(contentId: string, contentType: 'workout' | 'prog
   return useQuery({
     queryKey: ['shared-clubs', contentType, contentId],
     queryFn: async () => {
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      const tableName: ShareTableType = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const contentIdField: ShareContentType = contentType === 'workout' ? 'workout_id' : 'program_id';
       
       const { data, error } = await supabase
         .from(tableName)

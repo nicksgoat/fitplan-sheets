@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Play, Pause, Save, Clock, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,12 +10,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useWorkout } from '@/contexts/WorkoutContext';
-import { useWorkoutLoggerIntegration } from '@/hooks/useWorkoutLoggerIntegration';
+import { useWorkoutLoggerIntegration, WorkoutLogExercise } from '@/hooks/useWorkoutLoggerIntegration';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
+import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
   const { workoutId } = useParams();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get('source');
   const { program, setActiveWorkoutId } = useWorkout();
   
   // Fetch workout details if we have a workoutId
@@ -34,7 +38,6 @@ export default function WorkoutLogger() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   
   // Set active workout ID when navigating directly to this page
   useEffect(() => {
@@ -89,6 +92,8 @@ export default function WorkoutLogger() {
       
       if (activeWorkout) {
         setWorkoutName(activeWorkout.name);
+      } else if (workoutDetails) {
+        setWorkoutName(workoutDetails.name);
       }
     }
   };
@@ -100,7 +105,9 @@ export default function WorkoutLogger() {
   
   // Complete the workout
   const handleCompleteWorkout = async () => {
-    if (!activeWorkout || !activeSessionId) {
+    const workoutToLog = activeWorkout || workoutDetails;
+    
+    if (!workoutToLog || !activeSessionId) {
       toast.error('Cannot complete workout: missing required information');
       return;
     }
@@ -110,24 +117,72 @@ export default function WorkoutLogger() {
       return;
     }
     
-    if (activeWorkout.exercises.length === 0) {
+    if (workoutToLog.exercises.length === 0) {
       toast.error('Add at least one exercise');
       return;
     }
     
-    // Map exercises for logging
-    const logExercises = activeWorkout.exercises.map(ex => ({
-      id: ex.id,
-      name: ex.name,
-      notes: ex.notes,
-      sets: ex.sets.map(set => ({
-        id: set.id,
-        reps: set.reps,
-        weight: set.weight,
-        rest: set.rest,
-        completed: true
-      }))
-    }));
+    // Map exercises for logging, preserving circuit structure
+    const logExercises: WorkoutLogExercise[] = [];
+    
+    // Get organized exercises with circuit mapping
+    const { exercises, circuitMap } = getOrganizedExercises(workoutToLog.exercises);
+    
+    // Process top-level exercises
+    exercises.forEach(ex => {
+      // Add circuit container exercise
+      if (ex.isCircuit && ex.circuitId) {
+        const circuitExercises = circuitMap.get(ex.circuitId) || [];
+        
+        // Log the parent circuit exercise
+        logExercises.push({
+          id: ex.id,
+          name: ex.name,
+          notes: ex.notes,
+          isCircuit: true,
+          sets: ex.sets.map(set => ({
+            id: set.id,
+            reps: set.reps,
+            weight: set.weight,
+            rest: set.rest,
+            completed: true
+          }))
+        });
+        
+        // Log all exercises in the circuit
+        circuitExercises.forEach(circuitEx => {
+          logExercises.push({
+            id: circuitEx.id,
+            name: circuitEx.name,
+            notes: circuitEx.notes,
+            isInCircuit: true,
+            circuitId: ex.circuitId,
+            sets: circuitEx.sets.map(set => ({
+              id: set.id,
+              reps: set.reps,
+              weight: set.weight,
+              rest: set.rest,
+              completed: true
+            }))
+          });
+        });
+      } 
+      // Regular exercise
+      else if (!ex.isInCircuit) {
+        logExercises.push({
+          id: ex.id,
+          name: ex.name,
+          notes: ex.notes,
+          sets: ex.sets.map(set => ({
+            id: set.id,
+            reps: set.reps,
+            weight: set.weight,
+            rest: set.rest,
+            completed: true
+          }))
+        });
+      }
+    });
     
     // Complete the workout
     completeWorkoutLog.mutate({
@@ -139,7 +194,6 @@ export default function WorkoutLogger() {
       onSuccess: () => {
         setElapsedTime(0);
         setIsTimerRunning(false);
-        setSelectedExerciseId(null);
         setActiveSessionId(null);
         navigate('/schedule');
       }
@@ -174,6 +228,11 @@ export default function WorkoutLogger() {
 
   // Use workout from context or from direct fetch
   const displayWorkout = activeWorkout || workoutDetails;
+  
+  // Get organized exercises for display
+  const { exercises: organizedExercises, circuitMap } = displayWorkout 
+    ? getOrganizedExercises(displayWorkout.exercises) 
+    : { exercises: [], circuitMap: new Map() };
 
   return (
     <div className="container max-w-5xl mx-auto py-6">
@@ -261,57 +320,127 @@ export default function WorkoutLogger() {
         
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {displayWorkout && displayWorkout.exercises.map(exercise => (
-              <Card key={exercise.id} className="overflow-hidden">
-                <CardHeader>
-                  <h3 className="font-medium">{exercise.name}</h3>
-                </CardHeader>
-                <CardContent>
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="text-left">Set</th>
-                        <th className="text-left">Weight</th>
-                        <th className="text-left">Reps</th>
-                        <th className="text-left">Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {exercise.sets.map((set, index) => (
-                        <tr key={set.id}>
-                          <td className="py-2">{index + 1}</td>
-                          <td className="py-2">
-                            <Input
-                              type="text"
-                              value={set.weight}
-                              className="w-24 h-8"
-                              placeholder="lbs"
-                              disabled={!activeSessionId}
-                            />
-                          </td>
-                          <td className="py-2">
-                            <Input
-                              type="text"
-                              value={set.reps}
-                              className="w-20 h-8"
-                              placeholder="reps"
-                              disabled={!activeSessionId}
-                            />
-                          </td>
-                          <td className="py-2">
-                            <Input
-                              type="text"
-                              placeholder="Notes"
-                              className="w-full h-8"
-                              disabled={!activeSessionId}
-                            />
-                          </td>
-                        </tr>
+            {organizedExercises.map(exercise => (
+              <React.Fragment key={exercise.id}>
+                {/* Circuit Exercise Container */}
+                {exercise.isCircuit && exercise.circuitId ? (
+                  <div>
+                    <Card className="mb-2">
+                      <CardHeader className="bg-blue-900/20 border-b border-blue-800">
+                        <h3 className="font-medium text-blue-400">{exercise.name}</h3>
+                        {exercise.notes && <p className="text-sm text-gray-400">{exercise.notes}</p>}
+                      </CardHeader>
+                      {/* Circuit exercises */}
+                      {(circuitMap.get(exercise.circuitId) || []).map(circuitExercise => (
+                        <Card key={circuitExercise.id} className="mb-2 ml-4 mt-2">
+                          <CardHeader>
+                            <h4 className="text-sm font-medium">{circuitExercise.name}</h4>
+                          </CardHeader>
+                          <CardContent>
+                            <table className="w-full">
+                              <thead>
+                                <tr>
+                                  <th className="text-left">Set</th>
+                                  <th className="text-left">Weight</th>
+                                  <th className="text-left">Reps</th>
+                                  <th className="text-left">Notes</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {circuitExercise.sets.map((set, index) => (
+                                  <tr key={set.id}>
+                                    <td className="py-2">{index + 1}</td>
+                                    <td className="py-2">
+                                      <Input
+                                        type="text"
+                                        value={set.weight}
+                                        className="w-24 h-8"
+                                        placeholder="lbs"
+                                        disabled={!activeSessionId}
+                                      />
+                                    </td>
+                                    <td className="py-2">
+                                      <Input
+                                        type="text"
+                                        value={set.reps}
+                                        className="w-20 h-8"
+                                        placeholder="reps"
+                                        disabled={!activeSessionId}
+                                      />
+                                    </td>
+                                    <td className="py-2">
+                                      <Input
+                                        type="text"
+                                        placeholder="Notes"
+                                        className="w-full h-8"
+                                        disabled={!activeSessionId}
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+                    </Card>
+                  </div>
+                ) : (
+                  // Regular exercise (not in a circuit)
+                  !exercise.isInCircuit && (
+                    <Card>
+                      <CardHeader>
+                        <h3 className="font-medium">{exercise.name}</h3>
+                      </CardHeader>
+                      <CardContent>
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="text-left">Set</th>
+                              <th className="text-left">Weight</th>
+                              <th className="text-left">Reps</th>
+                              <th className="text-left">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {exercise.sets.map((set, index) => (
+                              <tr key={set.id}>
+                                <td className="py-2">{index + 1}</td>
+                                <td className="py-2">
+                                  <Input
+                                    type="text"
+                                    value={set.weight}
+                                    className="w-24 h-8"
+                                    placeholder="lbs"
+                                    disabled={!activeSessionId}
+                                  />
+                                </td>
+                                <td className="py-2">
+                                  <Input
+                                    type="text"
+                                    value={set.reps}
+                                    className="w-20 h-8"
+                                    placeholder="reps"
+                                    disabled={!activeSessionId}
+                                  />
+                                </td>
+                                <td className="py-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Notes"
+                                    className="w-full h-8"
+                                    disabled={!activeSessionId}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
+              </React.Fragment>
             ))}
           </div>
         </ScrollArea>

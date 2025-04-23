@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,9 @@ export interface WorkoutLogExercise {
   name: string;
   sets: WorkoutLogSet[];
   notes?: string;
+  isCircuit?: boolean;
+  circuitId?: string;
+  isInCircuit?: boolean;
 }
 
 export interface WorkoutLogSet {
@@ -104,10 +108,9 @@ export function useWorkoutLoggerIntegration() {
       
       if (logError) throw logError;
 
-      console.log("Logging exercises:", exercises);
-      
       // Record each exercise
       for (const exercise of exercises) {
+        // Create the exercise log entry
         const { data: exerciseLog, error: exerciseError } = await supabase
           .from('exercise_logs')
           .insert({
