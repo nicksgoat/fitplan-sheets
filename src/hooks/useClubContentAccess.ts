@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-// Define a simple return type to avoid circular references
-interface ClubContentAccessResult {
+// Define simplified types to avoid circular references
+export interface ClubContentAccessResult {
   hasAccess: boolean;
   sharedWithClubs: string[];
 }

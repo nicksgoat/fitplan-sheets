@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { handleApiV2Request } from "./v2.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,9 @@ const routes = {
   // Club API
   'GET /clubs': getUserClubs,
   'GET /clubs/:id': getClubDetails,
+  
+  // Club events
+  'GET /clubs/:id/events': getClubEvents,
 };
 
 serve(async (req) => {
@@ -69,6 +73,12 @@ serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname.replace('/api', '');
     const method = req.method;
+    
+    // Check for v2 API endpoints
+    if (path.startsWith('/v2/')) {
+      const v2Endpoint = path.replace('/v2/', '');
+      return await handleApiV2Request(req, v2Endpoint);
+    }
     
     // Find the matching route
     const routePattern = Object.keys(routes).find(route => {
@@ -439,6 +449,61 @@ async function getClubDetails(context) {
   
   return new Response(
     JSON.stringify({ data: clubData }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+async function getClubEvents(context) {
+  const { supabase, user, params } = context;
+  const clubId = params.id;
+  
+  // First verify the user is a member of this club
+  const { data: memberData, error: memberError } = await supabase
+    .from('club_members')
+    .select('id')
+    .eq('club_id', clubId)
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle();
+    
+  if (memberError || !memberData) {
+    return new Response(
+      JSON.stringify({ error: 'Access denied or not a member of this club' }),
+      { 
+        status: 403, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  }
+  
+  // Get events for this club
+  const { data: events, error } = await supabase
+    .from('club_events')
+    .select(`
+      id, name, description, location, image_url,
+      start_time, end_time, attendee_count,
+      created_by, created_at,
+      creator:created_by(id, display_name, avatar_url),
+      participants:event_participants(
+        id, user_id, status,
+        user:user_id(id, display_name, avatar_url)
+      )
+    `)
+    .eq('club_id', clubId)
+    .order('start_time', { ascending: true });
+    
+  if (error) {
+    return new Response(
+      JSON.stringify({ error: `Error fetching club events: ${error.message}` }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  }
+  
+  return new Response(
+    JSON.stringify({ data: events || [] }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }

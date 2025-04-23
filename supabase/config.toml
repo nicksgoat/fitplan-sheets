@@ -1,5 +1,5 @@
 
-project_id = "your-project-id"
+project_id = "cmzhdyiadvuuwypocxjv"
 
 [functions]
 [functions.check-club-content-access]
@@ -8,3 +8,5 @@ verify_jwt = true
 [functions.api]
 verify_jwt = true
 
+[functions.run-sql-rpcs]
+verify_jwt = true
