@@ -115,21 +115,25 @@ export function useWorkoutLoggerIntegration() {
           .from('exercise_logs')
           .insert({
             workout_log_id: logId,
-            exercise_id: exercise.id
+            exercise_id: exercise.id,
+            is_circuit: exercise.isCircuit || false,
+            circuit_id: exercise.circuitId || null,
+            is_in_circuit: exercise.isInCircuit || false,
+            notes: exercise.notes || ''
           })
           .select()
           .single();
         
         if (exerciseError) throw exerciseError;
         
-        // Handle sets differently based on whether it's a circuit
+        // Handle sets
         const setEntries = exercise.sets.map((set, index) => ({
           exercise_log_id: exerciseLog.id,
           set_number: index + 1,
           reps: parseInt(set.reps) || 0,
           weight: set.weight || '',
           rest_time: parseInt(set.rest || '60'),
-          notes: exercise.notes || ''
+          is_completed: set.completed || false
         }));
         
         if (setEntries.length > 0) {
