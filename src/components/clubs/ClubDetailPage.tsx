@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchClubChannels, uploadPostImage } from './ClubDetailPageUtils';
+import ClubChat from './ClubChat';
 
 const ClubDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('feed');

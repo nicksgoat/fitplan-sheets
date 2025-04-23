@@ -3,11 +3,11 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-interface ShareInput {
+type ShareInput = {
   contentId: string;
   contentType: 'workout' | 'program';
   clubIds: string[];
-}
+};
 
 export function useShareWithClubs() {
   const { user } = useAuth();
@@ -29,31 +29,31 @@ export function useShareWithClubs() {
       if (clubIds.length > 0) {
         // Handle workout sharing
         if (contentType === 'workout') {
-          const workoutShares = clubIds.map(clubId => ({
-            club_id: clubId,
-            workout_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error: workoutError } = await supabase
-            .from('club_shared_workouts')
-            .insert(workoutShares);
-            
-          if (workoutError) throw workoutError;
+          for (const clubId of clubIds) {
+            const { error } = await supabase
+              .from('club_shared_workouts')
+              .insert({
+                club_id: clubId,
+                workout_id: contentId,
+                shared_by: user.id
+              });
+              
+            if (error) throw error;
+          }
         } 
         // Handle program sharing
         else {
-          const programShares = clubIds.map(clubId => ({
-            club_id: clubId,
-            program_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error: programError } = await supabase
-            .from('club_shared_programs')
-            .insert(programShares);
-            
-          if (programError) throw programError;
+          for (const clubId of clubIds) {
+            const { error } = await supabase
+              .from('club_shared_programs')
+              .insert({
+                club_id: clubId,
+                program_id: contentId,
+                shared_by: user.id
+              });
+              
+            if (error) throw error;
+          }
         }
       }
       

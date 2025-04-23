@@ -30,8 +30,9 @@ export function ClubShareDialog({
     clubs, 
     selectedClubIds, 
     isLoading, 
-    loadUserClubs, 
-    toggleClub
+    loadUserClubs,
+    setSelectedClubIds,
+    handleCheckboxChange
   } = useClubSelection(initialSelectedClubIds);
   
   const shareWithClubsMutation = useShareWithClubs();
@@ -42,6 +43,16 @@ export function ClubShareDialog({
       loadUserClubs();
     }
   }, [open, loadUserClubs]);
+
+  // Fixed toggleClub to return string[] as expected by ClubsList
+  const toggleClub = (clubId: string): string[] => {
+    const updatedIds = selectedClubIds.includes(clubId)
+      ? selectedClubIds.filter(id => id !== clubId)
+      : [...selectedClubIds, clubId];
+    
+    setSelectedClubIds(updatedIds);
+    return updatedIds;
+  };
 
   const handleShare = async () => {
     if (selectedClubIds.length === 0) {
