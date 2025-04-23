@@ -13,23 +13,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ClubPost } from '@/types/club';
+import { ClubPost, SharedWorkout } from '@/types/club';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import ClubPost from './ClubPost';
+import ClubPostComponent from './ClubPost';
 
 interface ClubFeedProps {
   clubId: string;
-}
-
-interface SharedWorkout {
-  workout_id: string;
-  workouts?: {
-    id: string;
-    name: string;
-    description?: string;
-  } | null;
 }
 
 const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
@@ -60,7 +51,26 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
         .eq('club_id', clubId);
 
       if (error) throw error;
-      return (data || []) as SharedWorkout[];
+      
+      // Type safety: ensure the returned data is formatted as SharedWorkout[]
+      const formattedData = data?.map(item => {
+        // Handle the case where workouts might be an error
+        if (item.workouts && 
+            typeof item.workouts === 'object' && 
+            !('error' in item.workouts)) {
+          return {
+            workout_id: item.workout_id,
+            workouts: item.workouts
+          } as SharedWorkout;
+        }
+        // Return a properly formatted object with null workouts if there was an error
+        return {
+          workout_id: item.workout_id,
+          workouts: null
+        } as SharedWorkout;
+      }) || [];
+      
+      return formattedData;
     },
     enabled: showWorkoutPicker,
   });
@@ -180,7 +190,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <ClubPost 
+            <ClubPostComponent 
               key={post.id} 
               post={post}
               currentUserId={user?.id}

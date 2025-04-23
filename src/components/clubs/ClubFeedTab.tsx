@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, PlusCircle } from 'lucide-react';
 import ClubPost from './ClubPost';
 import { ClubPost as ClubPostType } from '@/types/club';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ClubFeedTabProps {
   posts: ClubPostType[];
@@ -23,6 +24,8 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
   onCreatePost,
   onRefresh
 }) => {
+  const { user } = useAuth();
+
   if (loadingPosts) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -58,6 +61,7 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
             <ClubPost 
               key={post.id} 
               post={post}
+              currentUserId={user?.id}
               onCommentAdded={onRefresh}
             />
           ))}

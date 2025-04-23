@@ -3,45 +3,74 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-type ShareInput = {
+type ShareWorkoutInput = {
   contentId: string;
-  contentType: 'workout' | 'program';
+  clubIds: string[];
+};
+
+type ShareProgramInput = {
+  contentId: string;
   clubIds: string[];
 };
 
 export function useShareWithClubs() {
   const { user } = useAuth();
 
-  return useMutation({
-    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
+  const shareWorkoutMutation = useMutation({
+    mutationFn: async ({ clubIds, contentId }: ShareWorkoutInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Handle each club ID separately to ensure proper typing
+      // Process each club ID separately
       for (const clubId of clubIds) {
-        if (contentType === 'workout') {
-          const { error } = await supabase
-            .from('club_shared_workouts')
-            .insert({
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            });
-            
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from('club_shared_programs')
-            .insert({
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            });
-            
-          if (error) throw error;
-        }
+        const { error } = await supabase
+          .from('club_shared_workouts')
+          .insert({
+            club_id: clubId,
+            workout_id: contentId,
+            shared_by: user.id
+          });
+          
+        if (error) throw error;
       }
       
       return clubIds;
     }
   });
+
+  const shareProgramMutation = useMutation({
+    mutationFn: async ({ clubIds, contentId }: ShareProgramInput) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Process each club ID separately
+      for (const clubId of clubIds) {
+        const { error } = await supabase
+          .from('club_shared_programs')
+          .insert({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          });
+          
+        if (error) throw error;
+      }
+      
+      return clubIds;
+    }
+  });
+
+  // Combined function to share either workout or program
+  const shareContent = (contentId: string, contentType: 'workout' | 'program', clubIds: string[]) => {
+    if (contentType === 'workout') {
+      return shareWorkoutMutation.mutateAsync({ contentId, clubIds });
+    } else {
+      return shareProgramMutation.mutateAsync({ contentId, clubIds });
+    }
+  };
+
+  return {
+    shareWorkoutMutation,
+    shareProgramMutation,
+    shareContent,
+    isLoading: shareWorkoutMutation.isPending || shareProgramMutation.isPending
+  };
 }
