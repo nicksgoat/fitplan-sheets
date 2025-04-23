@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +11,8 @@ import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
 import WorkoutLoggerHeader from '@/components/workout-logger/WorkoutLoggerHeader';
 import ExerciseLogCard from '@/components/workout-logger/ExerciseLogCard';
-import { WorkoutLogExercise, WorkoutLogSet } from '@/types/workoutLog';
+import { WorkoutLogExercise } from '@/types/workoutLog';
+import { useLibrary } from '@/contexts/LibraryContext';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ export default function WorkoutLogger() {
     isLoading
   } = useWorkoutLoggerIntegration();
 
-  // Use the useWorkoutDetail hook to fetch workout details if needed
   const { workout: workoutFromDetail, loading: workoutDetailLoading } = useWorkoutDetail(workoutId || null);
   
   const [workoutName, setWorkoutName] = useState('');
@@ -37,7 +36,8 @@ export default function WorkoutLogger() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   
-  // Track completed sets for each exercise
+  const { workouts: libraryWorkouts } = useLibrary();
+  
   const [completedSets, setCompletedSets] = useState<Record<string, number[]>>({});
   
   useEffect(() => {
@@ -83,7 +83,6 @@ export default function WorkoutLogger() {
     setIsTimerRunning(prev => !prev);
   };
 
-  // Handle set completion
   const handleSetComplete = (exerciseId: string, setIndex: number, completed: boolean) => {
     setCompletedSets(prev => {
       const exerciseSets = [...(prev[exerciseId] || [])];
@@ -130,7 +129,6 @@ export default function WorkoutLogger() {
       if (ex.isCircuit && ex.circuitId) {
         const circuitExercises = circuitMap.get(ex.circuitId) || [];
         
-        // Log the circuit container
         logExercises.push({
           id: ex.id,
           name: ex.name,
@@ -146,7 +144,6 @@ export default function WorkoutLogger() {
           }))
         });
         
-        // Log each exercise within the circuit
         circuitExercises.forEach(circuitEx => {
           const exerciseSets = circuitEx.sets.map((set, idx) => ({
             id: set.id,
@@ -167,7 +164,6 @@ export default function WorkoutLogger() {
         });
       } 
       else if (!ex.isInCircuit) {
-        // Handle regular exercises
         const exerciseSets = ex.sets.map((set, idx) => ({
           id: set.id,
           reps: set.reps,
@@ -216,15 +212,28 @@ export default function WorkoutLogger() {
           activeSessionId={null}
         />
         
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-lg mb-4">Please select a workout from the library first</p>
-              <Button onClick={() => navigate('/library')}>
-                Go to Library
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="flex-1 p-4">
+          <h2 className="text-xl font-semibold mb-4">Available Workouts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {libraryWorkouts.map((workout) => (
+              <Card key={workout.id} className="bg-dark-200 hover:bg-dark-300 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex flex-col space-y-2">
+                    <h3 className="font-medium">{workout.name}</h3>
+                    <p className="text-sm text-gray-400">
+                      {workout.exercises.length} exercises
+                    </p>
+                    <Button
+                      className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+                      onClick={() => navigate(`/workout-logger/${workout.id}`)}
+                    >
+                      Start Workout
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     );
