@@ -57,7 +57,7 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
           {posts.map(post => (
             <ClubPost 
               key={post.id} 
-              post={post} 
+              post={post}
               onCommentAdded={onRefresh}
             />
           ))}

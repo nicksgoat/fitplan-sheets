@@ -20,7 +20,12 @@ interface ClubPostProps {
   onCommentAdded?: () => void;
 }
 
-const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete, onCommentAdded }) => {
+const ClubPost: React.FC<ClubPostProps> = ({ 
+  post, 
+  currentUserId, 
+  onDelete, 
+  onCommentAdded 
+}) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);

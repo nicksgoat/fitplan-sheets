@@ -25,21 +25,33 @@ export function useShareWithClubs() {
       // If there are clubs to share with
       if (clubIds.length > 0) {
         try {
-          const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-          const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
-          
-          // Process shares in batch
-          const sharesToInsert = clubIds.map(clubId => ({
-            club_id: clubId,
-            [contentIdField]: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error } = await supabase
-            .from(table)
-            .insert(sharesToInsert);
+          if (contentType === 'workout') {
+            // Process workout shares
+            const sharesToInsert = clubIds.map(clubId => ({
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            }));
             
-          if (error) throw error;
+            const { error } = await supabase
+              .from('club_shared_workouts')
+              .insert(sharesToInsert);
+              
+            if (error) throw error;
+          } else {
+            // Process program shares
+            const sharesToInsert = clubIds.map(clubId => ({
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            }));
+            
+            const { error } = await supabase
+              .from('club_shared_programs')
+              .insert(sharesToInsert);
+              
+            if (error) throw error;
+          }
         } catch (error) {
           console.error('Error sharing with clubs:', error);
           throw error;

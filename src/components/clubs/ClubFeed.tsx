@@ -23,6 +23,15 @@ interface ClubFeedProps {
   clubId: string;
 }
 
+interface SharedWorkout {
+  workout_id: string;
+  workouts?: {
+    id: string;
+    name: string;
+    description?: string;
+  } | null;
+}
+
 const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
   const { posts, loadingPosts, createNewPost, removePost, isUserClubMember } = useClub();
   const { user } = useAuth();
@@ -51,7 +60,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
         .eq('club_id', clubId);
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as SharedWorkout[];
     },
     enabled: showWorkoutPicker,
   });
@@ -146,7 +155,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">
                       Selected workout: {
-                        sharedWorkouts.find(w => w.workout_id === selectedWorkoutId)?.workouts?.name
+                        sharedWorkouts.find(w => w.workout_id === selectedWorkoutId)?.workouts?.name || 'Workout'
                       }
                     </span>
                     <Button
@@ -211,7 +220,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
                       setShowWorkoutPicker(false);
                     }}
                   >
-                    <h4 className="font-medium">{workoutShare.workouts?.name}</h4>
+                    <h4 className="font-medium">{workoutShare.workouts?.name || 'Unnamed Workout'}</h4>
                     {workoutShare.workouts?.description && (
                       <p className="text-sm text-muted-foreground mt-1">
                         {workoutShare.workouts.description}
