@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -16,6 +15,13 @@ import ClubSharedContent from './ClubSharedContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import ClubChannel from './ClubChannel';
+import ClubMembersTab from './ClubMembersTab';
+import ClubSettings from './ClubSettings';
+import ClubMobileNav from './ClubMobileNav';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchClubChannels, uploadPostImage } from './ClubDetailPageUtils';
 
 const ClubDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('feed');
@@ -23,7 +29,7 @@ const ClubDetailPage: React.FC = () => {
   const [newPostContent, setNewPostContent] = useState('');
   const [postingStatus, setPostingStatus] = useState(false);
   const [joiningClub, setJoiningClub] = useState(false);
-  // Add missing state variables
+  const [postImage, setPostImage] = useState<File | null>(null);
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
   
@@ -42,8 +48,23 @@ const ClubDetailPage: React.FC = () => {
     refreshMembers,
     refreshEvents,
     refreshPosts,
-    createNewPost
+    createNewPost,
+    getUserClubRole
   } = useClub();
+
+  useEffect(() => {
+    if (currentClub?.id) {
+      const fetchChannels = async () => {
+        const channelData = await fetchClubChannels(currentClub.id);
+        setChannels(channelData);
+      };
+      
+      fetchChannels();
+    }
+  }, [currentClub?.id]);
+
+  const userClubRole = currentClub ? getUserClubRole(currentClub.id) : 'member';
+  const isAdmin = userClubRole === 'admin' || userClubRole === 'owner' || userClubRole === 'moderator';
 
   const handleJoinClub = async () => {
     if (!user) {
@@ -73,12 +94,23 @@ const ClubDetailPage: React.FC = () => {
     
     try {
       setPostingStatus(true);
+      
+      let imageUrl = null;
+      
+      // Upload image if one is selected
+      if (postImage) {
+        imageUrl = await uploadPostImage(postImage);
+      }
+      
       await createNewPost({
         club_id: currentClub!.id,
-        content: newPostContent.trim()
+        content: newPostContent.trim(),
+        image_url: imageUrl
       });
+      
       setShowCreatePostDialog(false);
       setNewPostContent('');
+      setPostImage(null);
       refreshPosts();
       toast.success('Post created successfully');
     } catch (error) {
@@ -99,7 +131,7 @@ const ClubDetailPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
-      <div className="mb-6">
+      <div className="md:block hidden mb-6">
         <Button
           variant="ghost"
           onClick={() => navigate('/clubs')}
@@ -109,6 +141,12 @@ const ClubDetailPage: React.FC = () => {
           Back to Clubs
         </Button>
       </div>
+      
+      <ClubMobileNav 
+        club={currentClub}
+        activeTab={activeTab}
+        onChangeTab={setActiveTab}
+      />
       
       <div className="bg-card rounded-lg shadow overflow-hidden">
         <ClubDetailHeader
@@ -120,27 +158,33 @@ const ClubDetailPage: React.FC = () => {
         
         <div className="px-6 pb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6">
               <TabsTrigger value="feed" className="flex items-center gap-2">
                 <FileText size={16} />
-                <span>Feed</span>
+                <span className="hidden md:inline">Feed</span>
               </TabsTrigger>
               <TabsTrigger value="events" className="flex items-center gap-2">
                 <Calendar size={16} />
-                <span>Events</span>
+                <span className="hidden md:inline">Events</span>
               </TabsTrigger>
               <TabsTrigger value="channels" className="flex items-center gap-2">
                 <MessageSquare size={16} />
-                <span>Channels</span>
+                <span className="hidden md:inline">Channels</span>
               </TabsTrigger>
               <TabsTrigger value="members" className="flex items-center gap-2">
                 <Users size={16} />
-                <span>Members</span>
+                <span className="hidden md:inline">Members</span>
               </TabsTrigger>
               <TabsTrigger value="shared" className="flex items-center gap-2">
                 <Dumbbell size={16} />
-                <span>Shared</span>
+                <span className="hidden md:inline">Shared</span>
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="settings" className="flex items-center gap-2">
+                  <Dumbbell size={16} />
+                  <span className="hidden md:inline">Settings</span>
+                </TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="feed">
@@ -148,7 +192,9 @@ const ClubDetailPage: React.FC = () => {
                 posts={posts}
                 isUserClubMember={isUserClubMember(currentClub.id)}
                 loadingPosts={loadingPosts}
+                clubId={currentClub.id}
                 onCreatePost={() => setShowCreatePostDialog(true)}
+                onRefresh={refreshPosts}
               />
             </TabsContent>
             
@@ -197,64 +243,36 @@ const ClubDetailPage: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="members">
-              <div>
-                {loadingMembers ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                  </div>
-                ) : members.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <Users size={64} className="mb-4" />
-                    <h3 className="text-lg font-medium">No members yet</h3>
-                    <p>Be the first to join this club!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {members.map(member => (
-                      <div 
-                        key={member.id} 
-                        className="flex items-center p-3 hover:bg-muted rounded-lg transition-colors"
-                      >
-                        <Avatar className="mr-3">
-                          <AvatarImage src={member.profile?.avatar_url} />
-                          <AvatarFallback>
-                            {member.profile?.display_name?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <p className="font-medium">
-                            {member.profile?.display_name || 'Unknown User'}
-                          </p>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {member.role}
-                          </p>
-                        </div>
-                        
-                        {member.role === 'admin' && (
-                          <Badge variant="secondary">Admin</Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ClubMembersTab
+                members={members}
+                loadingMembers={loadingMembers}
+                isAdmin={isAdmin}
+                currentUserRole={userClubRole}
+                clubId={currentClub.id}
+                onRefresh={refreshMembers}
+              />
             </TabsContent>
 
             <TabsContent value="shared">
               <ClubSharedContent clubId={currentClub.id!} />
             </TabsContent>
+            
+            {isAdmin && (
+              <TabsContent value="settings">
+                <ClubSettings clubId={currentClub.id} />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>
       
       <Dialog open={showCreatePostDialog} onOpenChange={setShowCreatePostDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Create Post</DialogTitle>
           </DialogHeader>
           
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <Textarea
               placeholder="What's on your mind?"
               value={newPostContent}
@@ -262,6 +280,34 @@ const ClubDetailPage: React.FC = () => {
               rows={5}
               className="resize-none"
             />
+            
+            <div className="space-y-2">
+              <Label htmlFor="post-image">Add Image (optional)</Label>
+              <Input
+                id="post-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPostImage(e.target.files?.[0] || null)}
+              />
+            </div>
+            
+            {postImage && (
+              <div className="relative">
+                <img 
+                  src={URL.createObjectURL(postImage)} 
+                  alt="Post preview" 
+                  className="w-full h-auto rounded-md max-h-[200px] object-contain"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-6 w-6"
+                  onClick={() => setPostImage(null)}
+                >
+                  ×
+                </Button>
+              </div>
+            )}
           </div>
           
           <DialogFooter>

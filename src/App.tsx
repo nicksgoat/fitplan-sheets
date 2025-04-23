@@ -61,12 +61,17 @@ function App() {
               <Route path=":username/:workoutSlug" element={<CreatorWorkoutDetail />} />
               <Route path=":username/:programSlug" element={<CreatorProgramDetail />} />
               
-              {/* Updated clubs routes */}
+              {/* Updated clubs routes with better organization */}
               <Route path="clubs" element={<AuthenticatedRoute><ClubsHome /></AuthenticatedRoute>} />
-              <Route path="clubs/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path="clubs/create" element={<AuthenticatedRoute><CreateEvent type="club" /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
-              <Route path="clubs/:clubId/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/events/create" element={<AuthenticatedRoute><CreateEvent type="event" /></AuthenticatedRoute>} />
               <Route path="clubs/:clubId/events/:eventId" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/channels/create" element={<AuthenticatedRoute><CreateEvent type="channel" /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/channels/:channelId" element={<AuthenticatedRoute><ClubDetailPage initialTab="channels" /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/members" element={<AuthenticatedRoute><ClubDetailPage initialTab="members" /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/settings" element={<AuthenticatedRoute><ClubDetailPage initialTab="settings" /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/shared" element={<AuthenticatedRoute><ClubDetailPage initialTab="shared" /></AuthenticatedRoute>} />
 
               <Route path="liked" element={<Liked />} />
               <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />

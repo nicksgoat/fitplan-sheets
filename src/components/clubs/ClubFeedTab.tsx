@@ -1,23 +1,27 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { FileText, Heart, MessageCircle, Share2, PlusCircle } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { FileText, PlusCircle } from 'lucide-react';
+import ClubPost from './ClubPost';
+import { ClubPost as ClubPostType } from '@/types/club';
 
 interface ClubFeedTabProps {
-  posts: any[];
+  posts: ClubPostType[];
   isUserClubMember: boolean;
   loadingPosts: boolean;
+  clubId: string;
   onCreatePost: () => void;
+  onRefresh: () => void;
 }
 
 const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
   posts,
   isUserClubMember,
   loadingPosts,
-  onCreatePost
+  clubId,
+  onCreatePost,
+  onRefresh
 }) => {
   if (loadingPosts) {
     return (
@@ -26,15 +30,6 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
       </div>
     );
   }
-
-  // Helper function to format relative time (replacing the import)
-  const formatRelativeTime = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
-      return "Unknown time";
-    }
-  };
 
   return (
     <div>
@@ -60,53 +55,12 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
       ) : (
         <div className="space-y-6">
           {posts.map(post => (
-            <Card key={post.id} className="overflow-hidden">
-              <div className="p-4">
-                <div className="flex items-center mb-4">
-                  <Avatar className="mr-3">
-                    <AvatarImage src={post.profile?.avatar_url} />
-                    <AvatarFallback>
-                      {post.profile?.display_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {post.profile?.display_name || 'Unknown User'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatRelativeTime(post.created_at)}
-                    </p>
-                  </div>
-                </div>
-                
-                <p className="mb-4">{post.content}</p>
-                
-                {post.image_url && (
-                  <img 
-                    src={post.image_url} 
-                    alt="Post image" 
-                    className="w-full h-auto rounded-md mb-4"
-                  />
-                )}
-                
-                <div className="flex items-center gap-4 pt-3 border-t">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <Heart size={18} />
-                    <span>Like</span>
-                  </Button>
-                  
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <MessageCircle size={18} />
-                    <span>Comment</span>
-                  </Button>
-                  
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <Share2 size={18} />
-                    <span>Share</span>
-                  </Button>
-                </div>
-              </div>
-            </Card>
+            <ClubPost 
+              key={post.id} 
+              post={post} 
+              clubId={clubId}
+              onCommentAdded={onRefresh}
+            />
           ))}
         </div>
       )}
