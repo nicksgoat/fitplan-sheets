@@ -11,7 +11,7 @@ interface ClubSharingManagementProps {
   contentId: string;
   contentType: 'workout' | 'program';
   initialSharedClubs?: string[];
-  contentName?: string; // Add this property to fix the error
+  contentName?: string;
   onSave?: (selectedClubIds: string[]) => void;
   onClose?: () => void;
 }

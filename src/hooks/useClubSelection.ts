@@ -33,8 +33,7 @@ export function useClubSelection(initialSelectedClubIds: string[] = [], contentI
       }
       
       // Safely cast data to Club[] type
-      const validClubs = Array.isArray(data) ? data as Club[] : [];
-      return validClubs;
+      return Array.isArray(data) ? data as Club[] : [];
     },
     enabled: !!user?.id
   });
@@ -49,8 +48,8 @@ export function useClubSelection(initialSelectedClubIds: string[] = [], contentI
     });
   };
 
-  // Load clubs and initial shared clubs
-  const loadUserClubs = async () => {
+  // Load clubs and initial shared clubs - ensure this returns string[] for the selected IDs
+  const loadUserClubs = async (): Promise<Club[]> => {
     if (!user?.id) {
       return [];
     }

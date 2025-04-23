@@ -63,13 +63,11 @@ const ClubDetailPage: React.FC = () => {
         console.log("ClubDetailPage: Loading club data for ID:", clubId);
         setIsLoading(true);
         
-        // First check if we already have the club in context
         const existingClub = clubs.find(c => c.id === clubId);
         if (existingClub) {
           console.log("Found club in context:", existingClub.name);
           setCurrentClub(existingClub);
         } else {
-          // If not in context, fetch it directly
           console.log("Club not found in context, fetching from API");
           try {
             const { data: clubData, error } = await supabase
@@ -85,7 +83,6 @@ const ClubDetailPage: React.FC = () => {
             if (clubData) {
               console.log("Fetched club data:", clubData.name);
               setCurrentClub(clubData);
-              // Also refresh clubs to update the context
               refreshClubs();
             } else {
               console.error("No club found with ID:", clubId);
@@ -101,7 +98,6 @@ const ClubDetailPage: React.FC = () => {
           }
         }
         
-        // Fetch necessary data
         Promise.all([
           refreshMembers(),
           refreshEvents(),
@@ -120,16 +116,33 @@ const ClubDetailPage: React.FC = () => {
   useEffect(() => {
     if (currentClub?.id) {
       const fetchChannels = async () => {
-        const channelData = await fetchClubChannels(currentClub.id);
-        setChannels(channelData);
+        try {
+          console.log("Fetching channels for club:", currentClub.id);
+          const channelData = await fetchClubChannels(currentClub.id);
+          console.log("Channel data received:", channelData);
+          setChannels(channelData);
+          
+          if (channelData.length > 0 && !activeChannel) {
+            setActiveChannel(channelData[0]);
+            console.log("Setting active channel to:", channelData[0]);
+          }
+        } catch (error) {
+          console.error("Error fetching channels:", error);
+        }
       };
       
       fetchChannels();
     }
-  }, [currentClub?.id]);
+  }, [currentClub?.id, activeChannel]);
 
   const userClubRole = currentClub ? getUserClubRole(currentClub.id) : 'member';
   const isAdmin = userClubRole === 'admin' || userClubRole === 'moderator' || userClubRole === 'owner';
+
+  const handleChannelClick = (channel: any) => {
+    console.log("Channel clicked:", channel);
+    setActiveChannel(channel);
+    setActiveTab('channels');
+  };
 
   const handleJoinClub = async () => {
     if (!user) {
@@ -162,7 +175,6 @@ const ClubDetailPage: React.FC = () => {
       
       let imageUrl = null;
       
-      // Upload image if one is selected
       if (postImage) {
         imageUrl = await uploadPostImage(postImage);
       }
@@ -300,9 +312,19 @@ const ClubDetailPage: React.FC = () => {
                       <ClubChannel
                         key={channel.id}
                         channel={channel}
-                        onClick={() => setActiveChannel(channel)}
+                        isActive={activeChannel?.id === channel.id}
+                        onClick={handleChannelClick}
                       />
                     ))}
+                  </div>
+                )}
+
+                {activeChannel && (
+                  <div className="mt-6 border border-border rounded-md overflow-hidden">
+                    <ClubChat 
+                      clubId={currentClub.id} 
+                      channel={activeChannel}
+                    />
                   </div>
                 )}
               </div>

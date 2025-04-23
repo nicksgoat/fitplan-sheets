@@ -21,7 +21,7 @@ interface ClubChannelProps {
   isActive?: boolean;
 }
 
-const ClubChannel = ({ channel, onClick, isActive }: ClubChannelProps) => {
+const ClubChannel = ({ channel, onClick, isActive = false }: ClubChannelProps) => {
   // Get icon based on channel type
   const getChannelIcon = () => {
     switch (channel.type) {
