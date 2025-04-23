@@ -41,12 +41,13 @@ export function ClubShareDialog({
     }
   }, [open, loadUserClubs]);
 
-  const toggleClub = (clubId: string): void => {
+  const toggleClub = (clubId: string): string[] => {
     const updatedIds = selectedClubIds.includes(clubId)
       ? selectedClubIds.filter(id => id !== clubId)
       : [...selectedClubIds, clubId];
     
     setSelectedClubIds(updatedIds);
+    return updatedIds;
   };
 
   const handleShare = async () => {

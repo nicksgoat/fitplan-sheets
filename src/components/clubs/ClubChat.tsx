@@ -2,13 +2,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, MessageSquare } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
-import { AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Send, MessageSquare, ChevronLeft } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ClubChatProps {
   clubId: string;
@@ -18,16 +18,17 @@ interface ClubChatProps {
     description?: string;
     type: string;
   };
+  onBack?: () => void;
 }
 
-const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel }) => {
+const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel, onBack }) => {
   const { user } = useAuth();
   const { messages, sendNewMessage, refreshMessages, loadingMessages } = useClub();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -72,8 +73,21 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel }) => {
   }
 
   return (
-    <div className="flex flex-col h-[500px]">
-      <div className="flex items-center p-4 border-b">
+    <div className={cn(
+      "flex flex-col",
+      isMobile ? "h-[100vh]" : "h-[500px]"
+    )}>
+      <div className="flex items-center p-4 border-b bg-background sticky top-0 z-10">
+        {isMobile && onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="mr-2"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         <div>
           <h3 className="font-semibold text-lg">{channel.name}</h3>
           {channel.description && (
@@ -137,7 +151,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel }) => {
 
       <form 
         onSubmit={handleSubmit}
-        className="border-t p-4 flex items-center gap-2"
+        className="border-t p-4 flex items-center gap-2 bg-background sticky bottom-0"
       >
         <Input
           placeholder="Type a message..."

@@ -16,9 +16,9 @@ export function useShareWithClubs() {
     mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Delete existing shares first
       const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       
+      // Delete existing shares
       await supabase
         .from(table)
         .delete()
@@ -26,23 +26,14 @@ export function useShareWithClubs() {
 
       // Insert new shares if there are any clubs selected
       if (clubIds.length > 0) {
-        if (contentType === 'workout') {
-          await supabase.from('club_shared_workouts').insert(
-            clubIds.map(clubId => ({
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            }))
-          );
-        } else {
-          await supabase.from('club_shared_programs').insert(
-            clubIds.map(clubId => ({
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            }))
-          );
-        }
+        const insertData = clubIds.map(clubId => ({
+          club_id: clubId,
+          [contentType === 'workout' ? 'workout_id' : 'program_id']: contentId,
+          shared_by: user.id
+        }));
+
+        const { error } = await supabase.from(table).insert(insertData);
+        if (error) throw error;
       }
       
       return clubIds;
