@@ -25,11 +25,11 @@ export function useClubSelection(
     try {
       setIsLoading(true);
       
-      // Get clubs where the user is an admin/owner/moderator
+      // Get clubs where the user is an admin/owner/creator
       const { data: userClubs, error } = await supabase
         .from('clubs')
         .select(`
-          id, name, description, created_at, created_by, updated_at,
+          id, name, description, created_at, updated_at,
           banner_url, logo_url, club_type, membership_type, premium_price, creator_id
         `)
         .eq('creator_id', user.id);
@@ -41,7 +41,7 @@ export function useClubSelection(
         .from('club_members')
         .select(`
           clubs (
-            id, name, description, created_at, created_by, updated_at,
+            id, name, description, created_at, updated_at,
             banner_url, logo_url, club_type, membership_type, premium_price, creator_id
           )
         `)
@@ -51,17 +51,18 @@ export function useClubSelection(
       
       if (memberError) throw memberError;
       
-      // Combine and deduplicate clubs
+      // Cast the data to ensure TypeScript recognizes it properly
       const memberClubsList = memberClubs
-        .map(item => item.clubs)
-        .filter(Boolean) as Club[];
+        .filter(item => item.clubs)
+        .map(item => item.clubs as Club);
       
+      // Combine and deduplicate clubs
       const allClubs = [...(userClubs || []), ...memberClubsList];
       
       // Remove duplicates
-      const uniqueClubsMap = new Map();
+      const uniqueClubsMap = new Map<string, Club>();
       allClubs.forEach(club => {
-        if (!uniqueClubsMap.has(club.id)) {
+        if (club && club.id && !uniqueClubsMap.has(club.id)) {
           uniqueClubsMap.set(club.id, club);
         }
       });

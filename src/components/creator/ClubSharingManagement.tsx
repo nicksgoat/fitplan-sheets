@@ -62,7 +62,7 @@ export function ClubSharingManagement({
   }, [contentId, contentType, setSelectedClubIds]);
 
   const handleSaveSharing = async () => {
-    if (!contentId || !user) return;
+    if (!contentId || !user?.id) return;
     
     setIsSubmitting(true);
     
@@ -80,32 +80,32 @@ export function ClubSharingManagement({
       
       // Add new shares
       if (selectedClubIds.length > 0) {
-        const sharesToInsert = selectedClubIds.map(clubId => {
-          if (contentType === 'workout') {
-            return {
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            };
-          } else {
-            return {
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            };
-          }
-        });
-        
         if (contentType === 'workout') {
+          // Create array of workout shares
+          const workoutShares = selectedClubIds.map(clubId => ({
+            club_id: clubId,
+            workout_id: contentId,
+            shared_by: user.id
+          }));
+          
+          // Insert all workout shares at once
           const { error: insertError } = await supabase
             .from('club_shared_workouts')
-            .insert(sharesToInsert);
+            .insert(workoutShares);
             
           if (insertError) throw insertError;
         } else {
+          // Create array of program shares
+          const programShares = selectedClubIds.map(clubId => ({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          }));
+          
+          // Insert all program shares at once
           const { error: insertError } = await supabase
             .from('club_shared_programs')
-            .insert(sharesToInsert);
+            .insert(programShares);
             
           if (insertError) throw insertError;
         }

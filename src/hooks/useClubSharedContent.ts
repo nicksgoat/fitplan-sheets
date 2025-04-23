@@ -60,7 +60,24 @@ export function useClubSharedContent(clubId: string) {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setSharedWorkouts(data || []);
+        
+        // Process data to ensure it matches the SharedWorkout type
+        const processedData: SharedWorkout[] = (data || []).map(item => ({
+          id: item.id,
+          club_id: item.club_id,
+          workout_id: item.workout_id,
+          shared_by: item.shared_by,
+          created_at: item.created_at,
+          workouts: item.workouts,
+          // Handle potential query errors by providing a default empty object
+          profiles: typeof item.profiles === 'object' ? item.profiles : {
+            display_name: 'Unknown',
+            username: 'member',
+            avatar_url: undefined
+          }
+        }));
+        
+        setSharedWorkouts(processedData);
       } catch (err) {
         console.error('Error fetching shared workouts:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
@@ -83,7 +100,24 @@ export function useClubSharedContent(clubId: string) {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setSharedPrograms(data || []);
+        
+        // Process data to ensure it matches the SharedProgram type
+        const processedData: SharedProgram[] = (data || []).map(item => ({
+          id: item.id,
+          club_id: item.club_id,
+          program_id: item.program_id,
+          shared_by: item.shared_by,
+          created_at: item.created_at,
+          programs: item.programs,
+          // Handle potential query errors by providing a default empty object
+          profiles: typeof item.profiles === 'object' ? item.profiles : {
+            display_name: 'Unknown',
+            username: 'member',
+            avatar_url: undefined
+          }
+        }));
+        
+        setSharedPrograms(processedData);
       } catch (err) {
         console.error('Error fetching shared programs:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
