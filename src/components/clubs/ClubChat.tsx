@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
-import { ClubMessage, ClubChannel } from '@/types/club';
+import { ClubMessage } from '@/types/club';
 import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
+import { cn } from '@/lib/utils';
 
 interface ClubChatProps {
   channel?: {
@@ -18,95 +18,119 @@ interface ClubChatProps {
     description?: string;
     type: string;
   };
-  messages?: ClubMessage[];
   onBack?: () => void;
-  onSendMessage?: (message: string) => void;
-  sendingMessage?: boolean;
-  clubId?: string; // Add clubId prop to support both usage patterns
+  clubId?: string;
 }
 
-const ClubChat = ({ 
-  channel, 
-  messages: propMessages, 
-  onBack, 
-  onSendMessage,
-  sendingMessage: propSendingMessage,
-  clubId 
-}: ClubChatProps) => {
+const ClubChat = ({ channel, onBack, clubId }: ClubChatProps) => {
   const { user } = useAuth();
-  const { messages: contextMessages, sendNewMessage, refreshMessages, loadingMessages } = useClub();
+  const { messages, sendNewMessage, refreshMessages, loadingMessages } = useClub();
   const [message, setMessage] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const [activeChannel, setActiveChannel] = useState<ClubChannel | null>(null);
-  const { channels } = useClub();
-  
-  // Initialize with either prop messages or context messages
-  const displayMessages = propMessages || contextMessages;
-  const isLoading = loadingMessages && !propMessages;
-  const isSending = propSendingMessage !== undefined ? propSendingMessage : sendingMessage;
-
-  // If clubId is provided, use it to select a default channel
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (clubId && channels.length > 0 && !channel) {
-      const defaultChannel = channels.find(c => c.is_default) || channels[0];
-      setActiveChannel(defaultChannel);
-    }
-  }, [clubId, channels, channel]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !isSending) {
-      if (onSendMessage) {
-        // Use the provided onSendMessage callback
-        onSendMessage(message);
+    if (message.trim() && !sending && channel) {
+      try {
+        setSending(true);
+        await sendNewMessage({
+          club_id: clubId,
+          channel_id: channel.id,
+          content: message
+        });
         setMessage('');
-      } else if (activeChannel) {
-        // Use context method
-        try {
-          setSendingMessage(true);
-          await sendNewMessage({
-            club_id: clubId,
-            channel_id: activeChannel.id,
-            content: message
-          });
-          setMessage('');
-          refreshMessages();
-        } catch (error) {
-          console.error('Error sending message:', error);
-        } finally {
-          setSendingMessage(false);
-        }
+        refreshMessages();
+      } catch (error) {
+        console.error('Error sending message:', error);
+      } finally {
+        setSending(false);
       }
     }
   };
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [displayMessages]);
-
-  // Format time
   const formatTime = (dateString: string) => {
     return format(new Date(dateString), 'h:mm a');
   };
 
-  const currentChannel = channel || activeChannel;
+  const renderMessageGroup = (messages: ClubMessage[], index: number) => {
+    const message = messages[0];
+    const isCurrentUser = message.user_id === user?.id;
 
-  if (!currentChannel && !clubId) {
+    return (
+      <div 
+        key={index}
+        className={cn(
+          "flex flex-col mb-4",
+          isCurrentUser ? "items-end" : "items-start"
+        )}
+      >
+        {/* User info for non-current user */}
+        {!isCurrentUser && message.profile && (
+          <div className="flex items-center mb-1 ml-12">
+            <span className="text-sm font-medium text-muted-foreground">
+              {message.profile.display_name || message.profile.username || 'Unknown User'}
+            </span>
+          </div>
+        )}
+        
+        <div className="flex items-end gap-2">
+          {!isCurrentUser && (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={message.profile?.avatar_url} />
+              <AvatarFallback>
+                {message.profile?.display_name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          )}
+          
+          <div className={cn(
+            "flex flex-col gap-1",
+            isCurrentUser ? "items-end" : "items-start"
+          )}>
+            {messages.map((msg, i) => (
+              <div 
+                key={msg.id}
+                className={cn(
+                  "px-4 py-2 rounded-2xl max-w-[85%] break-words",
+                  isCurrentUser 
+                    ? "bg-primary text-primary-foreground rounded"
+                    : "bg-muted",
+                  i === 0 && "rounded-t-2xl",
+                  i === messages.length - 1 && "rounded-b-2xl",
+                  messages.length === 1 && "rounded-2xl"
+                )}
+              >
+                <p className="text-sm">{msg.content}</p>
+                <span className="text-[10px] opacity-70">
+                  {formatTime(msg.created_at)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!channel && !clubId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
         <MessageSquare className="h-16 w-16 mb-2" />
-        <p>Select a channel</p>
+        <p>Select a channel to start chatting</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      {currentChannel && (
-        <div className="flex items-center p-4 border-b">
+      {channel && (
+        <div className="flex items-center p-4 border-b bg-card">
           {onBack && (
             <Button 
               variant="ghost" 
@@ -117,76 +141,66 @@ const ClubChat = ({
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <h3 className="font-semibold text-lg">{currentChannel.name}</h3>
+          <div>
+            <h3 className="font-semibold text-lg">{channel.name}</h3>
+            {channel.description && (
+              <p className="text-sm text-muted-foreground">{channel.description}</p>
+            )}
+          </div>
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {isLoading ? (
+        {loadingMessages ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : displayMessages.length === 0 ? (
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <MessageSquare className="h-16 w-16 mb-2" />
             <p>No messages yet</p>
             <p className="text-sm">Be the first to send a message!</p>
           </div>
         ) : (
-          displayMessages.map((msg) => (
-            <div 
-              key={msg.id} 
-              className={`flex ${msg.user_id === user?.id ? 'justify-end' : 'justify-start'}`}
-            >
-              <div 
-                className={`max-w-[80%] ${
-                  msg.user_id === user?.id 
-                    ? 'bg-primary text-primary-foreground rounded-tl-lg rounded-tr-lg rounded-bl-lg' 
-                    : 'bg-muted rounded-tr-lg rounded-tl-lg rounded-br-lg'
-                } p-3`}
-              >
-                {msg.user_id !== user?.id && msg.profile && (
-                  <div className="flex items-center mb-1">
-                    <Avatar className="h-5 w-5 mr-2">
-                      <AvatarImage src={msg.profile.avatar_url} />
-                      <AvatarFallback>
-                        {msg.profile.display_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-sm font-medium">
-                      {msg.profile.display_name || 'Unknown User'}
-                    </p>
-                  </div>
-                )}
-                <p className="mb-1">{msg.content}</p>
-                <p className="text-xs opacity-70 text-right">
-                  {formatTime(msg.created_at)}
-                </p>
-              </div>
-            </div>
-          ))
+          // Group messages by user and render them together
+          messages.reduce<ClubMessage[][]>((groups, message) => {
+            const lastGroup = groups[groups.length - 1];
+            
+            if (lastGroup && 
+                lastGroup[0].user_id === message.user_id &&
+                new Date(message.created_at).getTime() - 
+                new Date(lastGroup[lastGroup.length - 1].created_at).getTime() < 300000) {
+              lastGroup.push(message);
+            } else {
+              groups.push([message]);
+            }
+            
+            return groups;
+          }, []).map((group, index) => renderMessageGroup(group, index))
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            disabled={isSending}
-            className="flex-1"
-          />
-          <Button 
-            type="submit" 
-            size="icon"
-            disabled={!message.trim() || isSending}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </div>
+      <form 
+        onSubmit={handleSubmit} 
+        className="p-4 border-t bg-card flex gap-2 items-center"
+      >
+        <Input
+          placeholder="Type a message..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          disabled={sending || !user}
+          className="flex-1 rounded-full"
+        />
+        <Button 
+          type="submit" 
+          size="icon"
+          disabled={!message.trim() || sending || !user}
+          className="rounded-full"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
     </div>
   );
 };

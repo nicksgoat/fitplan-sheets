@@ -3,11 +3,11 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-type ShareInput = {
+interface ShareInput {
   contentId: string;
   contentType: 'workout' | 'program';
   clubIds: string[];
-};
+}
 
 export function useShareWithClubs() {
   const { user } = useAuth();
@@ -16,33 +16,25 @@ export function useShareWithClubs() {
     mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Handle content sharing based on type
-      if (contentType === 'workout') {
-        // Create array of workout shares
-        const workoutShares = clubIds.map(clubId => ({
+      // Delete existing shares first
+      const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      
+      await supabase
+        .from(table)
+        .delete()
+        .eq(idField, contentId);
+
+      if (clubIds.length > 0) {
+        const shares = clubIds.map(clubId => ({
           club_id: clubId,
-          workout_id: contentId,
+          [idField]: contentId,
           shared_by: user.id
         }));
-        
-        // Insert all workout shares at once
+
         const { error } = await supabase
-          .from('club_shared_workouts')
-          .insert(workoutShares);
-          
-        if (error) throw error;
-      } else {
-        // Create array of program shares
-        const programShares = clubIds.map(clubId => ({
-          club_id: clubId,
-          program_id: contentId,
-          shared_by: user.id
-        }));
-        
-        // Insert all program shares at once
-        const { error } = await supabase
-          .from('club_shared_programs')
-          .insert(programShares);
+          .from(table)
+          .insert(shares);
           
         if (error) throw error;
       }
