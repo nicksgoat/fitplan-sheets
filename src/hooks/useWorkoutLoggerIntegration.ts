@@ -58,20 +58,22 @@ export function useWorkoutLoggerIntegration() {
       
       const currentTime = new Date().toISOString();
       
-      // Fix: Add end_time to match the required schema
+      // Include end_time to match the required schema
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
           workout_id: activeWorkoutId,
           start_time: currentTime,
-          end_time: currentTime, // Add a temporary end_time that will be updated later
+          end_time: currentTime, // Temporary end_time that will be updated later
           duration: 0
         })
         .select()
         .single();
       
       if (error) throw error;
+      
+      console.log('Workout session started:', data);
       
       return data;
     } catch (error: any) {

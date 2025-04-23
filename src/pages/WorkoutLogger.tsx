@@ -49,6 +49,7 @@ export default function WorkoutLogger() {
   // Set the active workout ID based on the route parameter
   useEffect(() => {
     if (workoutId) {
+      console.log("Setting active workout ID:", workoutId);
       setActiveWorkoutId(workoutId);
     }
   }, [workoutId, setActiveWorkoutId]);
@@ -72,9 +73,12 @@ export default function WorkoutLogger() {
   // Update local state when active workout changes
   useEffect(() => {
     if (activeWorkout) {
+      console.log("Active workout loaded:", activeWorkout);
       setWorkoutName(activeWorkout.name);
+    } else {
+      console.log("No active workout found with ID:", workoutId);
     }
-  }, [activeWorkout]);
+  }, [activeWorkout, workoutId]);
   
   // Timer logic
   useEffect(() => {
@@ -110,12 +114,15 @@ export default function WorkoutLogger() {
     // Start the workout session in the database
     const sessionData = await startWorkoutSession();
     if (sessionData) {
+      console.log("Workout session started:", sessionData);
       setActiveSessionId(sessionData.id);
       setIsTimerRunning(true);
       
       if (activeWorkout) {
         setWorkoutName(activeWorkout.name);
       }
+    } else {
+      console.error("Failed to start workout session");
     }
   };
   
@@ -511,6 +518,18 @@ export default function WorkoutLogger() {
           </div>
         </div>
       )}
+      
+      <div className="hidden">
+        <pre>
+          {JSON.stringify({
+            activeWorkoutId,
+            programId,
+            hasActiveWorkout: !!activeWorkout,
+            activeWorkoutName: activeWorkout?.name,
+            exercises: activeWorkout?.exercises?.length || 0
+          }, null, 2)}
+        </pre>
+      </div>
     </div>
   );
 }

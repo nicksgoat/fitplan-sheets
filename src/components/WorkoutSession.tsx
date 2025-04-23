@@ -5,14 +5,10 @@ import WorkoutTable from './WorkoutTable';
 import CircuitControls from './CircuitControls';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { buildCreatorProductUrl, generateSlug } from '@/utils/urlUtils';
 import { useNavigate } from 'react-router-dom';
 
 const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
   const { program, addExercise } = useWorkout();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   // If no program, return null
@@ -43,6 +39,11 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
     );
   }
 
+  // Navigate to the workout logger
+  const handleLogWorkout = () => {
+    navigate(`/workout-logger/${currentWorkout.id}?programId=${program.id}`);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -56,6 +57,13 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Exercise
+          </Button>
+          <Button 
+            onClick={handleLogWorkout} 
+            className="bg-green-600 hover:bg-green-700"
+            size="sm"
+          >
+            Log Workout
           </Button>
         </div>
       </div>
