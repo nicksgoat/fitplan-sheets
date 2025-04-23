@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -215,7 +216,7 @@ export default function WorkoutLogger() {
         
         <div className="flex-1 p-4">
           <h2 className="text-xl font-semibold mb-4">Available Workouts</h2>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {libraryWorkouts.map((workout) => (
               <WorkoutCard
                 key={workout.id}
