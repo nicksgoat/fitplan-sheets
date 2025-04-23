@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,21 @@ import { GeneratedWorkout, GeneratedExercise } from '@/hooks/useAIWorkoutGenerat
 export interface FileUpload {
   file: File;
   content: string;
+}
+
+export interface AIResponse {
+  workout: {
+    exercises: Array<{
+      name: string;
+      sets: Array<{
+        reps: number;
+        weight?: string;
+        rest?: number;
+      }>;
+    }>;
+    name: string;
+    description?: string;
+  };
 }
 
 export function useAIWorkoutTools() {
@@ -118,9 +132,7 @@ export function useAIWorkoutTools() {
     });
   };
   
-  // Fix the recursive type issue by clearly defining the return type
   const convertToPlatformFormat = (generatedWorkout: GeneratedWorkout): Workout => {
-    // Create sets array using correct TypeScript approach
     const platformExercises: Exercise[] = generatedWorkout.exercises.map((ex: GeneratedExercise) => {
       const sets = Array.from({ length: ex.sets || 1 }, () => ({
         id: crypto.randomUUID(),
@@ -167,6 +179,23 @@ export function useAIWorkoutTools() {
     });
   };
 
+  const generateWorkout = async (prompt: string): Promise<AIResponse> => {
+    try {
+      const response = await supabase.functions.invoke('generate-ai-workout', {
+        body: { prompt }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      return response.data as AIResponse;
+    } catch (error) {
+      console.error('Error generating workout:', error);
+      throw error;
+    }
+  };
+
   return {
     generateFromHistory: generateFromHistoryMutation.mutate,
     processUpload: processUploadMutation.mutate,
@@ -178,6 +207,7 @@ export function useAIWorkoutTools() {
     generatedWorkoutFromUpload: processUploadMutation.data,
     isGenerating: isGenerating || generateFromHistoryMutation.isPending || processUploadMutation.isPending,
     historyError: generateFromHistoryMutation.error,
-    uploadError: processUploadMutation.error
+    uploadError: processUploadMutation.error,
+    generateWorkout
   };
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClubShareSelection } from '@/components/ClubShareSelection';
@@ -16,7 +15,7 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
-// Define a simplified interface for content shares
+// Define a more specific type for shares
 interface ContentShare {
   club_id: string;
   club?: {
@@ -33,8 +32,8 @@ export function ClubSharingManagement({
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const shareWithClubsMutation = useShareWithClubs();
   
-  // Fetch existing shares using a safer approach
-  const { data: existingShares = [], isLoading } = useQuery({
+  // Fetch existing shares with proper typing
+  const { data: existingShares = [], isLoading } = useQuery<ContentShare[]>({
     queryKey: ['content-shares', contentId, contentType],
     queryFn: async () => {
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
@@ -47,10 +46,10 @@ export function ClubSharingManagement({
       
       if (error) {
         console.error(`Error fetching ${contentType} shares:`, error);
-        return [] as ContentShare[];
+        return [];
       }
       
-      return (data || []) as ContentShare[];
+      return data || [];
     }
   });
   
