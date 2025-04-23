@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +10,7 @@ interface ShareInput {
   clubIds: string[];
 }
 
-// Define table types without recursive references
+// Define simplified types without recursive references
 type WorkoutShareRecord = {
   club_id: string;
   workout_id: string;

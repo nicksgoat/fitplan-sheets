@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +27,9 @@ export default function WorkoutLogger() {
     completeWorkoutLog,
     isLoading
   } = useWorkoutLoggerIntegration();
+
+  // Use the useWorkoutDetail hook to fetch workout details if needed
+  const { workout: workoutFromDetail, loading: workoutDetailLoading } = useWorkoutDetail(workoutId || null);
   
   const [workoutName, setWorkoutName] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
@@ -66,8 +70,8 @@ export default function WorkoutLogger() {
       
       if (activeWorkout) {
         setWorkoutName(activeWorkout.name);
-      } else if (workoutDetail) {
-        setWorkoutName(workoutDetail.name);
+      } else if (workoutFromDetail) {
+        setWorkoutName(workoutFromDetail.name);
       }
     }
   };
@@ -77,7 +81,7 @@ export default function WorkoutLogger() {
   };
   
   const handleCompleteWorkout = async () => {
-    const workoutToLog = activeWorkout || workoutDetail;
+    const workoutToLog = activeWorkout || workoutFromDetail;
     
     if (!workoutToLog || !activeSessionId) {
       toast.error('Cannot complete workout: missing required information');
@@ -165,7 +169,7 @@ export default function WorkoutLogger() {
     });
   };
 
-  if (!activeWorkout && !workoutDetail) {
+  if (!activeWorkout && !workoutFromDetail) {
     return (
       <div className="h-full flex flex-col">
         <WorkoutLoggerHeader
@@ -194,7 +198,7 @@ export default function WorkoutLogger() {
     );
   }
 
-  const displayWorkout = activeWorkout || workoutDetail;
+  const displayWorkout = activeWorkout || workoutFromDetail;
   const { exercises: organizedExercises, circuitMap } = displayWorkout 
     ? getOrganizedExercises(displayWorkout.exercises) 
     : { exercises: [], circuitMap: new Map() };
