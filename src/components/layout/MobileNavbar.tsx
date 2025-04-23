@@ -11,7 +11,7 @@ export default function MobileNavbar() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-gray-900/90 backdrop-blur-md z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-dark-400 bg-dark-300/90 backdrop-blur-md z-50">
       <div className="flex justify-around items-center py-2">
         <Link
           to="/explore"
@@ -76,4 +76,4 @@ export default function MobileNavbar() {
       </div>
     </div>
   );
-};
+}
