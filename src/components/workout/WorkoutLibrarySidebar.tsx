@@ -1,5 +1,5 @@
 
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useSearchParams } from 'react-router-dom';
 
 interface WorkoutLibrarySidebarProps {
   open: boolean;
@@ -21,7 +22,16 @@ export interface WorkoutLibrarySidebarRef {
 
 const WorkoutLibrarySidebar = forwardRef<WorkoutLibrarySidebarRef, WorkoutLibrarySidebarProps>(
   ({ open, onOpenChange }, ref) => {
-    const [activeTab, setActiveTab] = useState('workouts');
+    const [searchParams] = useSearchParams();
+    const defaultTab = searchParams.get('tab') || 'workouts';
+    const [activeTab, setActiveTab] = useState(defaultTab);
+    
+    // Update active tab based on URL parameter
+    useEffect(() => {
+      if (searchParams.get('tab')) {
+        setActiveTab(searchParams.get('tab') || 'workouts');
+      }
+    }, [searchParams]);
     
     // Expose methods to parent component via ref
     useImperativeHandle(ref, () => ({

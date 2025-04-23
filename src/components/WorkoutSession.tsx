@@ -4,7 +4,7 @@ import { useWorkout } from '@/contexts/WorkoutContext';
 import WorkoutTable from './WorkoutTable';
 import CircuitControls from './CircuitControls';
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ClipboardList } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
@@ -63,6 +63,7 @@ const WorkoutSession = ({ sessionId }: { sessionId: string }) => {
             className="bg-green-600 hover:bg-green-700"
             size="sm"
           >
+            <ClipboardList className="h-4 w-4 mr-1" />
             Log Workout
           </Button>
         </div>

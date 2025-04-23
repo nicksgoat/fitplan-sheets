@@ -45,6 +45,9 @@ export function useWorkoutLoggerIntegration() {
   const activeWorkout = activeWorkoutId && program ? 
     program.workouts.find(w => w.id === activeWorkoutId) : 
     undefined;
+
+  console.log('[useWorkoutLoggerIntegration] Active workout:', activeWorkout);
+  console.log('[useWorkoutLoggerIntegration] Program workouts:', program?.workouts);
   
   // Start a new workout log session
   const startWorkoutSession = async () => {
@@ -58,7 +61,14 @@ export function useWorkoutLoggerIntegration() {
       
       const currentTime = new Date().toISOString();
       
-      // Include end_time to match the required schema
+      console.log('[useWorkoutLoggerIntegration] Starting workout session with data:', {
+        user_id: user.id,
+        workout_id: activeWorkoutId,
+        start_time: currentTime,
+        end_time: currentTime, // Temporary end_time that will be updated later
+        duration: 0
+      });
+      
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
@@ -71,7 +81,10 @@ export function useWorkoutLoggerIntegration() {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('[useWorkoutLoggerIntegration] Error starting session:', error);
+        throw error;
+      }
       
       console.log('Workout session started:', data);
       
