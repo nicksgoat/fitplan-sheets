@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Play, 
   Pause, 
@@ -10,7 +12,9 @@ import {
   Award,
   Calendar,
   Edit,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Dumbbell
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,10 +26,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 import { Workout, Exercise, Set } from '@/types/workout';
 
 export default function WorkoutLogger() {
   const { user } = useAuth();
+  const { workoutId } = useParams<{ workoutId: string }>();
+  const navigate = useNavigate();
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [workoutName, setWorkoutName] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
@@ -34,6 +41,52 @@ export default function WorkoutLogger() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch workout data if workoutId is provided
+  const { data: workoutData, isLoading: isLoadingWorkout } = useQuery({
+    queryKey: ['workout', workoutId],
+    queryFn: async () => {
+      if (!workoutId) return null;
+      
+      const { data, error } = await supabase
+        .from('workouts')
+        .select(`
+          *,
+          exercises:exercises(
+            *,
+            sets:exercise_sets(*)
+          )
+        `)
+        .eq('id', workoutId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!workoutId && !!user
+  });
+  
+  // Initialize workout from fetched data
+  useEffect(() => {
+    if (workoutData) {
+      const workout: Workout = {
+        id: workoutData.id,
+        name: workoutData.name,
+        day: workoutData.day_num,
+        exercises: workoutData.exercises || [],
+        circuits: []
+      };
+      
+      setActiveWorkout(workout);
+      setWorkoutName(workout.name);
+      setExercises(workout.exercises);
+      
+      // Select the first exercise by default if available
+      if (workout.exercises.length > 0) {
+        setSelectedExerciseId(workout.exercises[0].id);
+      }
+    }
+  }, [workoutData]);
   
   // Timer logic
   useEffect(() => {
@@ -67,19 +120,41 @@ export default function WorkoutLogger() {
       }
     }
     
-    const today = format(new Date(), 'EEEE, MMMM d');
-    const newWorkout: Workout = {
-      id: crypto.randomUUID(),
-      name: `Workout - ${today}`,
-      day: 1,
-      exercises: [],
-      circuits: []
-    };
+    // Use the fetched workout if available, otherwise create a blank one
+    if (workoutData) {
+      const workout: Workout = {
+        id: workoutData.id,
+        name: workoutData.name,
+        day: workoutData.day_num,
+        exercises: workoutData.exercises || [],
+        circuits: []
+      };
+      
+      setActiveWorkout(workout);
+      setWorkoutName(workout.name);
+      setExercises(workout.exercises);
+      
+      // Select the first exercise by default if available
+      if (workout.exercises.length > 0) {
+        setSelectedExerciseId(workout.exercises[0].id);
+      }
+    } else {
+      // Create a blank workout if no workout is loaded
+      const today = format(new Date(), 'EEEE, MMMM d');
+      const newWorkout: Workout = {
+        id: crypto.randomUUID(),
+        name: `Workout - ${today}`,
+        day: 1,
+        exercises: [],
+        circuits: []
+      };
+      
+      setActiveWorkout(newWorkout);
+      setWorkoutName(newWorkout.name);
+      setExercises([]);
+    }
     
-    setActiveWorkout(newWorkout);
-    setWorkoutName(newWorkout.name);
     setWorkoutNotes('');
-    setExercises([]);
     setElapsedTime(0);
     setIsTimerRunning(true);
   };
@@ -223,19 +298,50 @@ export default function WorkoutLogger() {
       const now = new Date().toISOString();
       
       // Save to Supabase
-      const { error } = await supabase
+      const { data: workoutLog, error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
-          workout_id: completedWorkout.id,
+          workout_id: workoutId || completedWorkout.id,
           duration: elapsedTime,
           notes: workoutNotes,
           start_time: new Date(Date.now() - elapsedTime * 1000).toISOString(),
-          end_time: now,
-          // Store exercises and sets as JSON in separate tables or columns if needed
-        });
+          end_time: now
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      
+      // Save each exercise and its sets
+      for (const exercise of exercises) {
+        const { data: exerciseLog, error: exerciseError } = await supabase
+          .from('exercise_logs')
+          .insert({
+            workout_log_id: workoutLog.id,
+            exercise_id: exercise.id
+          })
+          .select()
+          .single();
+        
+        if (exerciseError) throw exerciseError;
+        
+        // Save each set
+        for (const set of exercise.sets) {
+          const { error: setError } = await supabase
+            .from('set_logs')
+            .insert({
+              exercise_log_id: exerciseLog.id,
+              set_number: exercise.sets.indexOf(set) + 1,
+              reps: parseInt(set.reps) || 0,
+              weight: set.weight,
+              rest_time: parseInt(set.rest) || 90,
+              notes: exercise.notes
+            });
+          
+          if (setError) throw setError;
+        }
+      }
       
       toast.success('Workout logged successfully!');
       
@@ -258,6 +364,17 @@ export default function WorkoutLogger() {
   return (
     <div className="container py-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
+        {workoutId && (
+          <Button
+            variant="ghost"
+            className="mr-2"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        )}
+        
         <h1 className="text-2xl font-bold">Workout Logger</h1>
         
         {!activeWorkout ? (
@@ -266,7 +383,7 @@ export default function WorkoutLogger() {
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
           >
             <Play className="h-4 w-4 mr-2" />
-            Start New Workout
+            {workoutId ? 'Start This Workout' : 'Start New Workout'}
           </Button>
         ) : (
           <div className="flex items-center gap-3">
@@ -290,7 +407,11 @@ export default function WorkoutLogger() {
         )}
       </div>
       
-      {activeWorkout ? (
+      {isLoadingWorkout ? (
+        <div className="flex items-center justify-center h-64">
+          <p>Loading workout...</p>
+        </div>
+      ) : activeWorkout ? (
         <div className="space-y-6">
           {/* Workout Header */}
           <Card>
@@ -526,13 +647,23 @@ export default function WorkoutLogger() {
             <p className="text-gray-400 mb-6">
               Log your exercises, sets, reps, and weights to track your progress over time.
             </p>
-            <Button 
-              onClick={startNewWorkout} 
-              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Start Workout
-            </Button>
+            {workoutId ? (
+              <Button 
+                onClick={startNewWorkout} 
+                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
+              >
+                <Dumbbell className="h-4 w-4 mr-2" />
+                Start This Workout
+              </Button>
+            ) : (
+              <Button 
+                onClick={startNewWorkout} 
+                className="bg-fitbloom-purple hover:bg-fitbloom-purple/90 w-full"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Start Workout
+              </Button>
+            )}
           </div>
         </div>
       )}
