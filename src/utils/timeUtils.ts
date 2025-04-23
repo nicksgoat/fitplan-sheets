@@ -1,78 +1,69 @@
 
-// Utility functions for working with time
+import { formatDistance, formatDistanceToNow, format } from 'date-fns';
 
-/**
- * Formats a date string or timestamp as a relative time string
- * (e.g., "5 minutes ago", "2 days ago")
- */
-export const formatRelativeTime = (date: string | Date | null): string => {
-  if (!date) return 'Unknown time';
+export const formatRelativeTime = (timestamp: string) => {
+  if (!timestamp) return 'Unknown time';
   
-  const now = new Date();
-  const pastDate = typeof date === 'string' ? new Date(date) : date;
-  
-  const seconds = Math.round((now.getTime() - pastDate.getTime()) / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
-  const months = Math.round(days / 30);
-  const years = Math.round(days / 365);
-  
-  if (seconds < 60) {
-    return seconds <= 1 ? 'just now' : `${seconds} seconds ago`;
-  } else if (minutes < 60) {
-    return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
-  } else if (hours < 24) {
-    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
-  } else if (days < 30) {
-    return days === 1 ? '1 day ago' : `${days} days ago`;
-  } else if (months < 12) {
-    return months === 1 ? '1 month ago' : `${months} months ago`;
-  } else {
-    return years === 1 ? '1 year ago' : `${years} years ago`;
+  try {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch (error) {
+    return 'Invalid date';
   }
 };
 
-/**
- * Formats a date in a standardized format (e.g., "Apr 23, 2025")
- */
-export const formatDate = (date: string | Date | null): string => {
-  if (!date) return 'Unknown date';
+export const formatDateRange = (startDate: string, endDate: string) => {
+  if (!startDate || !endDate) return 'Date not specified';
   
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  };
-  
-  return new Date(date).toLocaleDateString(undefined, options);
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const sameDay = start.toDateString() === end.toDateString();
+    
+    if (sameDay) {
+      return `${format(start, 'MMMM d, yyyy')} ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+    }
+    
+    return `${format(start, 'MMMM d, yyyy h:mm a')} - ${format(end, 'MMMM d, yyyy h:mm a')}`;
+  } catch (error) {
+    return 'Invalid date range';
+  }
 };
 
-/**
- * Formats a time in a standardized format (e.g., "2:30 PM")
- */
-export const formatTime = (date: string | Date | number | null): string => {
-  if (date === null || date === undefined) return 'Unknown time';
+export const formatDate = (timestamp: string) => {
+  if (!timestamp) return 'Unknown date';
   
-  // If it's a number (seconds), convert to string representation
-  if (typeof date === 'number') {
-    const hours = Math.floor(date / 3600);
-    const minutes = Math.floor((date % 3600) / 60);
-    const seconds = Math.floor(date % 60);
-    
-    const formattedHours = hours > 0 ? `${hours}:` : '';
-    const formattedMinutes = minutes < 10 && hours > 0 ? `0${minutes}:` : `${minutes}:`;
-    const formattedSeconds = seconds < 10 ? `0${seconds}` : `${seconds}`;
-    
-    return `${formattedHours}${formattedMinutes}${formattedSeconds}`;
+  try {
+    return format(new Date(timestamp), 'MMMM d, yyyy');
+  } catch (error) {
+    return 'Invalid date';
   }
+};
+
+export const formatTime = (timestamp: string) => {
+  if (!timestamp) return 'Unknown time';
   
-  // Handle string or Date objects
-  const options: Intl.DateTimeFormatOptions = { 
-    hour: 'numeric', 
-    minute: 'numeric',
-    hour12: true
-  };
+  try {
+    return format(new Date(timestamp), 'MMMM d, yyyy');
+  } catch (error) {
+    return 'Invalid date';
+  }
+};
+
+export const formatDateTime = (timestamp: string) => {
+  if (!timestamp) return 'Unknown time';
   
-  return new Date(date).toLocaleTimeString(undefined, options);
+  try {
+    return format(new Date(timestamp), 'MMMM d, yyyy h:mm a');
+  } catch (error) {
+    return 'Invalid date';
+  }
+};
+
+export default {
+  formatRelativeTime,
+  formatDateRange,
+  formatDate,
+  formatTime,
+  formatDateTime
 };

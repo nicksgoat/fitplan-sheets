@@ -6,11 +6,11 @@ import { EventParticipationStatus } from '@/types/club';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Users, Check, X } from 'lucide-react';
-import { formatTimestamp } from '@/utils/timeUtils';
+import { formatTime } from '@/utils/timeUtils'; // Changed from formatTimestamp to formatTime
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from '@/components/ui/label';
-import { format, addHours } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export const ClubEvents = () => {
@@ -113,7 +113,7 @@ export const ClubEvents = () => {
                 <CardDescription className="flex items-center gap-1">
                   <Calendar size={14} />
                   <span className="ml-1">
-                    {formatTimestamp(event.start_time)}
+                    {formatTime(event.start_time)} {/* Using formatTime instead of formatTimestamp */}
                   </span>
                 </CardDescription>
               </CardHeader>

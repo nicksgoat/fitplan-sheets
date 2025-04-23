@@ -19,6 +19,8 @@ import {
   EventParticipant,
   EventParticipationStatus,
   ClubMessage,
+  MemberRole,
+  MemberStatus,
 } from '@/types/club';
 
 interface ClubContextType {
@@ -58,6 +60,13 @@ interface ClubContextType {
   sendNewMessage: (messageData: any) => Promise<void>;
   upgradeToMembership: (membershipType: MembershipType) => Promise<void>;
   createClubEvent: (eventData: Partial<ClubEvent>) => Promise<ClubEvent>;
+  isUserClubMember: (clubId: string) => boolean;
+  joinCurrentClub: () => Promise<void>;
+  leaveCurrentClub: () => Promise<void>;
+  createNewPost: (postData: Partial<ClubPost>) => Promise<ClubPost>;
+  getUserClubRole: (clubId: string) => string;
+  isUserClubAdmin: (clubId: string) => boolean;
+  userClubs: Club[];
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
@@ -68,6 +77,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useAuth();
   const [currentClub, setCurrentClub] = useState<Club | null>(null);
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [userClubs, setUserClubs] = useState<Club[]>([]);
   const [loadingClubs, setLoadingClubs] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [members, setMembers] = useState<ClubMember[]>([]);
@@ -105,6 +115,46 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user, currentClub]);
 
+  const fetchUserClubs = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: membershipsData, error: membershipsError } = await supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', user.id);
+
+      if (membershipsError) throw membershipsError;
+
+      if (membershipsData && membershipsData.length > 0) {
+        const clubIds = membershipsData.map(item => item.club_id);
+        
+        const { data: userClubsData, error: clubsError } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('id', clubIds);
+
+        if (clubsError) throw clubsError;
+        
+        if (userClubsData) {
+          const typedUserClubs = userClubsData.map(club => ({
+            ...club,
+            creator_id: club.creator_id,
+            club_type: club.club_type as ClubType,
+            membership_type: club.membership_type as MembershipType
+          }));
+          
+          setUserClubs(typedUserClubs);
+        }
+      } else {
+        setUserClubs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching user clubs:', error);
+      setUserClubs([]);
+    }
+  };
+
   const refreshClubs = async () => {
     if (!user) return;
 
@@ -118,15 +168,16 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
       if (error) throw error;
 
       if (clubsData) {
-        // Fix mapping properties and add support for created_by in types
         const typedClubs = clubsData.map(club => ({
           ...club,
-          creator_id: club.creator_id || club.created_by, // Handle both fields
+          creator_id: club.creator_id,
           club_type: club.club_type as ClubType,
           membership_type: club.membership_type as MembershipType
         }));
         setClubs(typedClubs);
       }
+      
+      await fetchUserClubs();
     } catch (error) {
       console.error('Error fetching clubs:', error);
       toast.error('Failed to load clubs');
@@ -139,12 +190,20 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) throw new Error('User not authenticated');
 
     try {
+      const insertData = {
+        name: clubData.name || '',
+        description: clubData.description || '',
+        logo_url: clubData.logo_url,
+        banner_url: clubData.banner_url,
+        club_type: clubData.club_type || 'fitness',
+        membership_type: clubData.membership_type || 'free',
+        creator_id: user.id,
+        premium_price: clubData.premium_price
+      };
+      
       const { data, error } = await supabase
         .from('clubs')
-        .insert({
-          ...clubData,
-          creator_id: user.id,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -181,6 +240,14 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const joinCurrentClub = async (): Promise<void> => {
+    if (!currentClub || !user) {
+      throw new Error('No current club selected or user not authenticated');
+    }
+    
+    return joinClub(currentClub.id);
+  };
+
   const leaveClub = async (clubId: string): Promise<void> => {
     if (!user) throw new Error('User not authenticated');
 
@@ -198,6 +265,31 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Error leaving club:', error);
       throw error;
     }
+  };
+
+  const leaveCurrentClub = async (): Promise<void> => {
+    if (!currentClub || !user) {
+      throw new Error('No current club selected or user not authenticated');
+    }
+    
+    return leaveClub(currentClub.id);
+  };
+
+  const isUserClubMember = (clubId: string): boolean => {
+    if (!user) return false;
+    return userClubs.some(club => club.id === clubId);
+  };
+
+  const isUserClubAdmin = (clubId: string): boolean => {
+    if (!user) return false;
+    const member = members.find(m => m.user_id === user.id && m.club_id === clubId);
+    return member ? ['admin', 'moderator', 'owner'].includes(member.role) : false;
+  };
+
+  const getUserClubRole = (clubId: string): string => {
+    if (!user) return 'member';
+    const member = members.find(m => m.user_id === user.id && m.club_id === clubId);
+    return member ? member.role : 'member';
   };
 
   const refreshMembership = async () => {
@@ -245,11 +337,7 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
       if (error) throw error;
 
       if (membersData) {
-        // Fix for null profile access patterns
-        // Where we're formatting member profiles:
-
         const formattedMembers = membersData.map(member => {
-          // Handle potential null profile or error in profile fetch
           let formattedProfile = null;
           
           if (member.profile && typeof member.profile === 'object' && !('error' in member.profile)) {
@@ -321,9 +409,9 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
         ...eventData,
         club_id: currentClub.id,
         created_by: user.id,
-        name: eventData.name || 'New Event', // Ensure name is always provided
-        start_time: eventData.start_time || new Date().toISOString(), // Ensure start_time is always provided
-        end_time: eventData.end_time || new Date(Date.now() + 3600000).toISOString(), // Ensure end_time is always provided
+        name: eventData.name || 'New Event',
+        start_time: eventData.start_time || new Date().toISOString(),
+        end_time: eventData.end_time || new Date(Date.now() + 3600000).toISOString(),
       };
       
       const { data, error } = await supabase
@@ -410,9 +498,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (error) throw error;
 
-      // Similar pattern for post profiles and message profiles:
-
-      // For posts:
       const formattedPosts = postsData.map(post => {
         let formattedProfile = null;
         
@@ -463,6 +548,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
       throw error;
     }
   };
+
+  const createNewPost = createPost;
 
   const deletePost = async (postId: string): Promise<void> => {
     try {
@@ -568,7 +655,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (error) throw error;
 
-      // Similar pattern for post profiles and message profiles:
       const formattedMessages = messagesData.map(message => {
         let formattedProfile = null;
         
@@ -620,7 +706,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
       
-      // Find current membership
       const { data: memberData, error: memberError } = await supabase
         .from('club_members')
         .select('*')
@@ -635,10 +720,8 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
       
-      // Convert the membershipType to string if needed for compatibility
       const membershipTypeValue = String(membershipType);
       
-      // Update membership type
       const { error: updateError } = await supabase
         .from('club_members')
         .update({ membership_type: membershipTypeValue })
@@ -658,7 +741,6 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (!user || !currentClub) throw new Error('User not authenticated or no club selected');
       
-      // Ensure required fields are present
       if (!eventData.name || !eventData.start_time || !eventData.end_time) {
         throw new Error('Name, start time and end time are required');
       }
@@ -724,6 +806,13 @@ export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
     sendNewMessage,
     upgradeToMembership,
     createClubEvent,
+    isUserClubMember,
+    joinCurrentClub,
+    leaveCurrentClub,
+    createNewPost,
+    getUserClubRole,
+    isUserClubAdmin,
+    userClubs
   };
 
   return (
