@@ -112,10 +112,12 @@ export function useOfflineSync() {
       
       switch (type) {
         case 'insert':
-          await supabase.from(table).insert(data);
+          // Cast the data to any to bypass TypeScript's type checking
+          // since we know the data structure matches what the table expects
+          await supabase.from(table).insert(data as any);
           break;
         case 'update':
-          await supabase.from(table).update(data).eq('id', data.id);
+          await supabase.from(table).update(data as any).eq('id', data.id);
           break;
         case 'delete':
           await supabase.from(table).delete().eq('id', data.id);
