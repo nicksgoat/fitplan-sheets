@@ -10,11 +10,17 @@ export interface ClubSharePayload {
   clubIds: string[];
 }
 
-interface ShareRecord {
+// Define separate types for workout and program shares to avoid TypeScript confusion
+interface WorkoutShareRecord {
   club_id: string;
   shared_by: string;
-  workout_id?: string;
-  program_id?: string;
+  workout_id: string;
+}
+
+interface ProgramShareRecord {
+  club_id: string;
+  shared_by: string;
+  program_id: string;
 }
 
 export function useShareWithClubs() {
@@ -43,14 +49,26 @@ export function useShareWithClubs() {
         await supabase.from(table).delete().eq(idField, contentId);
         
         if (clubIds.length > 0) {
-          const sharesToInsert: ShareRecord[] = clubIds.map(clubId => ({
-            club_id: clubId,
-            shared_by: user.id,
-            [idField]: contentId
-          }));
-          
-          const { error } = await supabase.from(table).insert(sharesToInsert);
-          if (error) throw error;
+          // Create properly typed records based on content type
+          if (contentType === 'workout') {
+            const sharesToInsert: WorkoutShareRecord[] = clubIds.map(clubId => ({
+              club_id: clubId,
+              shared_by: user.id,
+              workout_id: contentId
+            }));
+            
+            const { error } = await supabase.from('club_shared_workouts').insert(sharesToInsert);
+            if (error) throw error;
+          } else {
+            const sharesToInsert: ProgramShareRecord[] = clubIds.map(clubId => ({
+              club_id: clubId,
+              shared_by: user.id,
+              program_id: contentId
+            }));
+            
+            const { error } = await supabase.from('club_shared_programs').insert(sharesToInsert);
+            if (error) throw error;
+          }
         }
         
         return { success: true };
