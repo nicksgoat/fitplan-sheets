@@ -12,6 +12,7 @@ import PurchaseReceipt from '@/components/clubs/PurchaseReceipt';
 import { toast } from 'sonner';
 import { getUserPurchases } from '@/utils/clubUtils';
 import { useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Clubs: React.FC = () => {
   const { clubId } = useParams<{ clubId: string }>();
@@ -20,6 +21,7 @@ const Clubs: React.FC = () => {
   const { currentClub, setCurrentClub, clubs, loadingClubs, refreshMembers, refreshProducts } = useClub();
   const navigate = useNavigate();
   const [purchaseData, setPurchaseData] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Check if the current path is the create club path
   const isCreatePath = location.pathname.endsWith('/create');
@@ -67,21 +69,45 @@ const Clubs: React.FC = () => {
   }, [checkoutStatus, navigate, location.pathname, clubId, refreshMembers, refreshProducts]);
   
   useEffect(() => {
-    if (clubId && !isCreatePath && !isReceiptPath) {
-      // Load specific club
-      const club = clubs.find(c => c.id === clubId);
-      if (club) {
-        setCurrentClub(club);
-      } else if (!loadingClubs) {
-        // Club not found and not loading, redirect to clubs list
-        navigate('/clubs');
+    const initializeClub = async () => {
+      if (clubId && !isCreatePath && !isReceiptPath) {
+        // Load specific club
+        const club = clubs.find(c => c.id === clubId);
+        if (club) {
+          setCurrentClub(club);
+        } else if (!loadingClubs) {
+          // Club not found and not loading, redirect to clubs list
+          navigate('/clubs');
+        }
+      } else if (!clubId && !isCreatePath && !isReceiptPath) {
+        // Clubs list, clear current club
+        setCurrentClub(null);
       }
-    } else if (!clubId && !isCreatePath && !isReceiptPath) {
-      // Clubs list, clear current club
-      setCurrentClub(null);
-    }
-  }, [clubId, isCreatePath, isReceiptPath, clubs, loadingClubs]);
+      
+      setIsInitialized(true);
+    };
+    
+    initializeClub();
+  }, [clubId, isCreatePath, isReceiptPath, clubs, loadingClubs, setCurrentClub, navigate]);
   
+  if (!isInitialized || (clubId && !currentClub && loadingClubs)) {
+    return (
+      <div className="container mx-auto py-6 px-4">
+        <div className="animate-pulse space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, index) => (
+              <Skeleton key={index} className="h-64 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // When viewing a specific club, render the ClubDetailPage
   if (clubId && currentClub && !isCreatePath && !isReceiptPath) {
     return <ClubDetailPage />;
