@@ -107,7 +107,6 @@ export default function WorkoutLogger() {
   
   const [showCompleteScreen, setShowCompleteScreen] = useState(false);
   
-  // Calculate total completed sets
   const getTotalCompletedSets = () => {
     return Object.values(completedSets).reduce((total, sets) => total + sets.length, 0);
   };
@@ -342,6 +341,7 @@ export default function WorkoutLogger() {
         exerciseCount={organizedExercises.length}
         completedSetsCount={getTotalCompletedSets()}
         onSave={handleSaveWorkoutWithNotes}
+        workoutName={workoutName}
       />
     </div>
   );

@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Check } from 'lucide-react';
-import EnhancedShareButton from '@/components/share/EnhancedShareButton';
+import { Check, Instagram, MessageSquare } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface WorkoutCompleteScreenProps {
   open: boolean;
@@ -13,6 +16,7 @@ interface WorkoutCompleteScreenProps {
   exerciseCount: number;
   completedSetsCount: number;
   onSave: (notes: string) => void;
+  workoutName: string;
 }
 
 export default function WorkoutCompleteScreen({
@@ -21,9 +25,12 @@ export default function WorkoutCompleteScreen({
   duration,
   exerciseCount,
   completedSetsCount,
-  onSave
+  onSave,
+  workoutName
 }: WorkoutCompleteScreenProps) {
   const [notes, setNotes] = React.useState('');
+  const { user } = useAuth();
+  const { profile } = useProfile(user?.id);
   
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
@@ -31,6 +38,28 @@ export default function WorkoutCompleteScreen({
   const handleSave = () => {
     onSave(notes);
     onClose();
+  };
+
+  const handleInstagramShare = () => {
+    // Instagram story sharing logic
+    if (navigator.share) {
+      navigator.share({
+        url: window.location.href,
+        title: `Completed ${workoutName}`,
+        text: `Just completed ${workoutName} workout with ${exerciseCount} exercises in ${minutes}:${seconds.toString().padStart(2, '0')}!`
+      });
+    }
+  };
+
+  const handleMessageShare = () => {
+    // Message sharing logic
+    if (navigator.share) {
+      navigator.share({
+        url: window.location.href,
+        title: `Check out my workout`,
+        text: `I just completed ${workoutName} workout!`
+      });
+    }
   };
 
   return (
@@ -42,23 +71,48 @@ export default function WorkoutCompleteScreen({
             <Check className="w-8 h-8 text-fitbloom-purple" />
           </div>
           
-          {/* Title */}
-          <h2 className="text-2xl font-bold text-center">Workout Complete!</h2>
+          {/* Workout Card Preview */}
+          <Card className="w-full bg-dark-200 p-4 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="bg-fitbloom-purple/20 text-fitbloom-purple">
+                  {profile?.display_name?.[0] || user?.email?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{profile?.display_name || 'Athlete'}</span>
+                  <span className="text-gray-400 text-sm">@{profile?.username || 'user'}</span>
+                </div>
+                <h3 className="text-lg font-bold mt-1">{workoutName}</h3>
+                <div className="flex gap-4 mt-2 text-sm text-gray-400">
+                  <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
+                  <span>{exerciseCount} exercises</span>
+                  <span>{completedSetsCount} sets</span>
+                </div>
+              </div>
+            </div>
+          </Card>
           
-          {/* Stats */}
-          <div className="w-full bg-black/20 rounded-lg p-4 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Duration</span>
-              <span>{minutes} min {seconds} sec</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Exercises</span>
-              <span>{exerciseCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Sets Completed</span>
-              <span>{completedSetsCount}</span>
-            </div>
+          {/* Share Buttons */}
+          <div className="flex gap-3 w-full">
+            <Button
+              onClick={handleInstagramShare}
+              variant="outline"
+              className="flex-1 bg-dark-200 border-gray-700 hover:bg-dark-300"
+            >
+              <Instagram className="mr-2 h-4 w-4" />
+              Share to Story
+            </Button>
+            <Button
+              onClick={handleMessageShare}
+              variant="outline"
+              className="flex-1 bg-dark-200 border-gray-700 hover:bg-dark-300"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Message
+            </Button>
           </div>
           
           {/* Notes Input */}
@@ -68,18 +122,9 @@ export default function WorkoutCompleteScreen({
               placeholder="How was your workout?"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="bg-black/20 border-gray-700 resize-none h-24"
+              className="bg-dark-200 border-gray-700 resize-none h-24"
             />
           </div>
-          
-          {/* Share Button */}
-          <EnhancedShareButton
-            url={window.location.href}
-            title="Check out my workout!"
-            description={`Completed ${exerciseCount} exercises in ${minutes}:${seconds.toString().padStart(2, '0')}`}
-            variant="outline"
-            className="w-full bg-black/20 hover:bg-black/30 border-gray-700"
-          />
           
           {/* Done Button */}
           <Button
