@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Exercise } from '@/types/workout';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import SetLogger from './SetLogger';
+import { Check } from 'lucide-react';
 
 interface ExerciseLogCardProps {
   exercise: Exercise;
@@ -22,9 +22,11 @@ export default function ExerciseLogCard({
   const [completedSets, setCompletedSets] = useState<number[]>([]);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
-  const handleSetComplete = (setIndex: number, data: { weight: string; reps: string }) => {
-    setCompletedSets(prev => [...prev, setIndex]);
-    setCurrentSetIndex(prev => prev + 1);
+  const handleSetComplete = (setIndex: number) => {
+    if (!completedSets.includes(setIndex)) {
+      setCompletedSets(prev => [...prev, setIndex]);
+      setCurrentSetIndex(prev => prev + 1);
+    }
   };
 
   return (
@@ -56,42 +58,50 @@ export default function ExerciseLogCard({
           </div>
         </div>
 
-        {!exercise.isCircuit && !exercise.isGroup && currentSetIndex < exercise.sets.length && (
-          <SetLogger
-            setNumber={currentSetIndex + 1}
-            restTime={exercise.sets[currentSetIndex].rest}
-            isDisabled={isDisabled}
-            defaultWeight={exercise.sets[currentSetIndex].weight}
-            defaultReps={exercise.sets[currentSetIndex].reps}
-            onComplete={(data) => handleSetComplete(currentSetIndex, data)}
-          />
-        )}
-
-        {completedSets.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm text-gray-400 mb-2">Completed Sets</h4>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-400">
-                  <th className="pb-2">Set</th>
-                  <th className="pb-2">Weight</th>
-                  <th className="pb-2">Reps</th>
+        <div className="mt-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-400">
+                <th className="pb-2 w-1/12">Set</th>
+                <th className="pb-2 w-3/12">Weight</th>
+                <th className="pb-2 w-3/12">Reps</th>
+                <th className="pb-2 w-1/12 text-center">Done</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exercise.sets.map((set, index) => (
+                <tr 
+                  key={set.id || index} 
+                  className={cn(
+                    "border-t border-dark-border", 
+                    completedSets.includes(index) ? "opacity-50" : ""
+                  )}
+                >
+                  <td className="py-2 pr-2 text-amber-400">{index + 1}</td>
+                  <td className="py-2 px-2 text-white">{set.weight}</td>
+                  <td className="py-2 px-2 text-white">{set.reps}</td>
+                  <td className="py-2 px-2 text-center">
+                    <button 
+                      onClick={() => handleSetComplete(index)}
+                      disabled={isDisabled || completedSets.includes(index)}
+                      className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                        completedSets.includes(index) 
+                          ? "bg-green-500 text-white" 
+                          : "bg-dark-200 border border-gray-600 text-gray-400 hover:bg-dark-300",
+                        isDisabled && "cursor-not-allowed opacity-50"
+                      )}
+                    >
+                      {completedSets.includes(index) ? (
+                        <Check className="w-4 h-4" />
+                      ) : null}
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {exercise.sets.map((set, index) => (
-                  completedSets.includes(index) && (
-                    <tr key={set.id || index} className="border-t border-dark-border">
-                      <td className="py-2 pr-2 text-amber-400">{index + 1}</td>
-                      <td className="py-2 px-2 text-white">{set.weight}</td>
-                      <td className="py-2 px-2 text-white">{set.reps}</td>
-                    </tr>
-                  )
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </motion.div>
   );

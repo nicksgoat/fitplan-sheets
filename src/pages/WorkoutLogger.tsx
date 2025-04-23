@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,9 +19,6 @@ export default function WorkoutLogger() {
   const [searchParams] = useSearchParams();
   const source = searchParams.get('source');
   const { program, setActiveWorkoutId } = useWorkout();
-  
-  // Get workout details
-  const { workout: workoutDetail } = useWorkoutDetail(workoutId || null);
   
   const { 
     activeWorkout,
@@ -203,7 +199,6 @@ export default function WorkoutLogger() {
     ? getOrganizedExercises(displayWorkout.exercises) 
     : { exercises: [], circuitMap: new Map() };
 
-  // Create a mapping of circuit IDs to circuit names for displaying in badges
   const circuitNames = new Map<string, string>();
   organizedExercises.forEach(exercise => {
     if (exercise.isCircuit && exercise.circuitId) {
