@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,7 +97,6 @@ export function useAIWorkoutTools() {
     }
   });
 
-  // Helper function to read the file content as text
   const handleFileUpload = async (file: File): Promise<void> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -115,17 +113,15 @@ export function useAIWorkoutTools() {
         reject(new Error('Error reading file'));
       };
       
-      // Read file as text for txt, csv, etc.
       reader.readAsText(file);
     });
   };
   
-  // Convert the generated workout to platform format
   const convertToPlatformFormat = (generatedWorkout: GeneratedWorkout): Workout => {
     const platformExercises: Exercise[] = generatedWorkout.exercises.map((ex: GeneratedExercise) => ({
       id: crypto.randomUUID(),
       name: ex.name,
-      sets: Array(ex.sets || 1).fill(0).map(() => ({
+      sets: Array(ex.sets || 1).fill({}).map(() => ({
         id: crypto.randomUUID(),
         reps: ex.reps || "",
         weight: "",
@@ -144,7 +140,6 @@ export function useAIWorkoutTools() {
     };
   };
 
-  // Get recent workouts for the user
   const getRecentWorkouts = () => {
     return useQuery({
       queryKey: ['recent-workouts', user?.id],

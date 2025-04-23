@@ -1179,6 +1179,8 @@ export type Database = {
           platform_fee: number
           program_id: string
           purchase_date: string | null
+          referral_code: string | null
+          referral_source: string | null
           status: string | null
           stripe_session_id: string | null
           updated_at: string | null
@@ -1192,6 +1194,8 @@ export type Database = {
           platform_fee: number
           program_id: string
           purchase_date?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
           status?: string | null
           stripe_session_id?: string | null
           updated_at?: string | null
@@ -1205,6 +1209,8 @@ export type Database = {
           platform_fee?: number
           program_id?: string
           purchase_date?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
           status?: string | null
           stripe_session_id?: string | null
           updated_at?: string | null
@@ -1216,6 +1222,13 @@ export type Database = {
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_purchases_referral_code_fkey"
+            columns: ["referral_code"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -1260,6 +1273,98 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          commission_percent: number
+          created_at: string
+          creator_id: string
+          description: string | null
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          code: string
+          commission_percent?: number
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          code?: string
+          commission_percent?: number
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      referral_transactions: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          discount_amount: number
+          id: string
+          product_id: string
+          product_type: string
+          purchase_amount: number
+          referral_code_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          discount_amount: number
+          id?: string
+          product_id: string
+          product_type: string
+          purchase_amount: number
+          referral_code_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          product_id?: string
+          product_type?: string
+          purchase_amount?: number
+          referral_code_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_transactions_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -1786,6 +1891,8 @@ export type Database = {
           id: string
           platform_fee: number
           purchase_date: string | null
+          referral_code: string | null
+          referral_source: string | null
           status: string | null
           stripe_session_id: string | null
           updated_at: string | null
@@ -1799,6 +1906,8 @@ export type Database = {
           id?: string
           platform_fee: number
           purchase_date?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
           status?: string | null
           stripe_session_id?: string | null
           updated_at?: string | null
@@ -1812,6 +1921,8 @@ export type Database = {
           id?: string
           platform_fee?: number
           purchase_date?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
           status?: string | null
           stripe_session_id?: string | null
           updated_at?: string | null
@@ -1819,6 +1930,13 @@ export type Database = {
           workout_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workout_purchases_referral_code_fkey"
+            columns: ["referral_code"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workout_purchases_workout_id_fkey"
             columns: ["workout_id"]
@@ -2158,6 +2276,7 @@ export type Database = {
         | "upper chest"
         | "core"
         | "other"
+      referral_status: "active" | "inactive" | "expired"
       rep_type:
         | "fixed"
         | "range"
@@ -2318,6 +2437,7 @@ export const Constants = {
         "core",
         "other",
       ],
+      referral_status: ["active", "inactive", "expired"],
       rep_type: ["fixed", "range", "descending", "time", "each-side", "amrap"],
       weight_type: [
         "pounds",
