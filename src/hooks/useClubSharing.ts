@@ -25,18 +25,36 @@ export function useShareWithClubs() {
         .delete()
         .eq(idField, contentId);
 
+      // Insert new shares if there are any clubs selected
       if (clubIds.length > 0) {
-        const shares = clubIds.map(clubId => ({
-          club_id: clubId,
-          [idField]: contentId,
-          shared_by: user.id
-        }));
-
-        const { error } = await supabase
-          .from(table)
-          .insert(shares);
+        // Handle workout sharing
+        if (contentType === 'workout') {
+          const workoutShares = clubIds.map(clubId => ({
+            club_id: clubId,
+            workout_id: contentId,
+            shared_by: user.id
+          }));
           
-        if (error) throw error;
+          const { error: workoutError } = await supabase
+            .from('club_shared_workouts')
+            .insert(workoutShares);
+            
+          if (workoutError) throw workoutError;
+        } 
+        // Handle program sharing
+        else {
+          const programShares = clubIds.map(clubId => ({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          }));
+          
+          const { error: programError } = await supabase
+            .from('club_shared_programs')
+            .insert(programShares);
+            
+          if (programError) throw programError;
+        }
       }
       
       return clubIds;

@@ -11,6 +11,7 @@ interface ClubSharingManagementProps {
   contentId: string;
   contentType: 'workout' | 'program';
   initialSharedClubs?: string[];
+  contentName?: string; // Add this property to fix the error
   onSave?: (selectedClubIds: string[]) => void;
   onClose?: () => void;
 }
@@ -18,6 +19,7 @@ interface ClubSharingManagementProps {
 export function ClubSharingManagement({
   contentId,
   contentType,
+  contentName,
   initialSharedClubs = [],
   onSave,
   onClose
@@ -64,7 +66,7 @@ export function ClubSharingManagement({
       <CardHeader>
         <CardTitle>Share with Your Clubs</CardTitle>
         <CardDescription>
-          Select clubs where you want to share this {contentType}
+          Select clubs where you want to share this {contentName || contentType}
         </CardDescription>
       </CardHeader>
       <CardContent>

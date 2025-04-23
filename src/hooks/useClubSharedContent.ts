@@ -69,7 +69,7 @@ export function useClubSharedContent(clubId: string) {
           shared_by: item.shared_by,
           created_at: item.created_at,
           workouts: item.workouts,
-          // Handle potential query errors by providing a default empty object
+          // Handle cases where profile data might be missing or have errors
           profiles: typeof item.profiles === 'object' ? item.profiles : {
             display_name: 'Unknown',
             username: 'member',
@@ -109,7 +109,7 @@ export function useClubSharedContent(clubId: string) {
           shared_by: item.shared_by,
           created_at: item.created_at,
           programs: item.programs,
-          // Handle potential query errors by providing a default empty object
+          // Handle cases where profile data might be missing or have errors
           profiles: typeof item.profiles === 'object' ? item.profiles : {
             display_name: 'Unknown',
             username: 'member',
