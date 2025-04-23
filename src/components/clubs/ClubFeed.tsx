@@ -5,8 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatDistanceToNow } from 'date-fns';
-import { Send, Share2, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, Share2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,12 +13,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ClubPost } from '@/types/club';
+import { ClubPost as ClubPostType } from '@/types/club';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import ClubPost from './ClubPost';
 
 interface ClubFeedProps {
   clubId: string;
@@ -37,7 +35,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
   const isMember = isUserClubMember(clubId);
 
   // Fetch shared workouts for the club
-  const { data: sharedWorkouts } = useQuery({
+  const { data: sharedWorkouts, isLoading: loadingWorkouts } = useQuery({
     queryKey: ['shared-workouts', clubId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -178,6 +176,10 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
               post={post}
               currentUserId={user?.id}
               onDelete={() => setDeletePostId(post.id)}
+              onCommentAdded={() => {
+                // Re-fetch posts or update comment count
+                // This would typically be handled by the club context
+              }}
             />
           ))}
         </div>
@@ -188,31 +190,41 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
         <DialogContent>
           <DialogTitle>Select a Workout to Share</DialogTitle>
           <div className="space-y-4 my-4">
-            {sharedWorkouts?.map((workoutShare) => (
-              <div
-                key={workoutShare.workout_id}
-                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                  selectedWorkoutId === workoutShare.workout_id
-                    ? 'bg-primary/10 border-primary'
-                    : 'hover:bg-muted'
-                }`}
-                onClick={() => {
-                  setSelectedWorkoutId(workoutShare.workout_id);
-                  setShowWorkoutPicker(false);
-                }}
-              >
-                <h4 className="font-medium">{workoutShare.workouts?.name}</h4>
-                {workoutShare.workouts?.description && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {workoutShare.workouts.description}
+            {loadingWorkouts ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="w-full h-20" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {sharedWorkouts?.map((workoutShare) => (
+                  <div
+                    key={workoutShare.workout_id}
+                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                      selectedWorkoutId === workoutShare.workout_id
+                        ? 'bg-primary/10 border-primary'
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => {
+                      setSelectedWorkoutId(workoutShare.workout_id);
+                      setShowWorkoutPicker(false);
+                    }}
+                  >
+                    <h4 className="font-medium">{workoutShare.workouts?.name}</h4>
+                    {workoutShare.workouts?.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {workoutShare.workouts.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {(!sharedWorkouts || sharedWorkouts.length === 0) && (
+                  <p className="text-center text-muted-foreground py-4">
+                    No workouts have been shared with this club yet.
                   </p>
                 )}
-              </div>
-            ))}
-            {(!sharedWorkouts || sharedWorkouts.length === 0) && (
-              <p className="text-center text-muted-foreground py-4">
-                No workouts have been shared with this club yet.
-              </p>
+              </>
             )}
           </div>
           <DialogFooter>

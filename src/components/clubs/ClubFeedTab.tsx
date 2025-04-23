@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, PlusCircle } from 'lucide-react';
@@ -58,7 +58,6 @@ const ClubFeedTab: React.FC<ClubFeedTabProps> = ({
             <ClubPost 
               key={post.id} 
               post={post} 
-              clubId={clubId}
               onCommentAdded={onRefresh}
             />
           ))}

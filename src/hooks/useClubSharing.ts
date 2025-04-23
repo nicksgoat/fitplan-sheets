@@ -9,19 +9,6 @@ type ShareInput = {
   clubIds: string[];
 };
 
-// Define separate interfaces for workout and program shares to avoid type recursion
-type WorkoutShare = {
-  club_id: string;
-  workout_id: string;
-  shared_by: string;
-};
-
-type ProgramShare = {
-  club_id: string;
-  program_id: string;
-  shared_by: string;
-};
-
 export function useShareWithClubs() {
   const { user } = useAuth();
 
@@ -38,33 +25,21 @@ export function useShareWithClubs() {
       // If there are clubs to share with
       if (clubIds.length > 0) {
         try {
-          if (contentType === 'workout') {
-            // Process workout shares
-            for (const clubId of clubIds) {
-              const { error } = await supabase
-                .from('club_shared_workouts')
-                .insert({
-                  club_id: clubId,
-                  workout_id: contentId,
-                  shared_by: user.id
-                });
-                
-              if (error) throw error;
-            }
-          } else {
-            // Process program shares
-            for (const clubId of clubIds) {
-              const { error } = await supabase
-                .from('club_shared_programs')
-                .insert({
-                  club_id: clubId,
-                  program_id: contentId,
-                  shared_by: user.id
-                });
-                
-              if (error) throw error;
-            }
-          }
+          const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+          const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
+          
+          // Process shares in batch
+          const sharesToInsert = clubIds.map(clubId => ({
+            club_id: clubId,
+            [contentIdField]: contentId,
+            shared_by: user.id
+          }));
+          
+          const { error } = await supabase
+            .from(table)
+            .insert(sharesToInsert);
+            
+          if (error) throw error;
         } catch (error) {
           console.error('Error sharing with clubs:', error);
           throw error;

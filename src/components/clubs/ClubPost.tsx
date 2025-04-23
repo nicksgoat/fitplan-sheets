@@ -16,10 +16,11 @@ import { useNavigate } from 'react-router-dom';
 interface ClubPostProps {
   post: ClubPostType;
   currentUserId?: string;
-  onDelete: () => void;
+  onDelete?: () => void;
+  onCommentAdded?: () => void;
 }
 
-const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete }) => {
+const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete, onCommentAdded }) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -45,6 +46,11 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete }) =>
       setNewComment('');
       setShowComments(true);
       toast.success('Comment added');
+      
+      // Call the callback if provided
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
       
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -73,7 +79,7 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete }) =>
                 {formatRelativeTime(post.created_at)}
               </p>
             </div>
-            {currentUserId === post.user_id && (
+            {currentUserId === post.user_id && onDelete && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -88,7 +94,7 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, currentUserId, onDelete }) =>
           <p className="mt-2 whitespace-pre-wrap">{post.content}</p>
           
           {/* Workout Card */}
-          {post.workout && (
+          {post.workout_id && post.workout && (
             <div className="mt-4 p-4 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
                  onClick={() => navigate(`/workout/${post.workout_id}`)}>
               <div className="flex items-center justify-between mb-2">
