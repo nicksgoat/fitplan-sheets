@@ -26,7 +26,7 @@ interface EditProfileFormProps {
 const EditProfileForm = ({ profile, isOpen, onClose, onSave }: EditProfileFormProps) => {
   const [formData, setFormData] = useState<Partial<Profile>>(profile || {});
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
-    profile?.social_links || []
+    Array.isArray(profile?.social_links) ? profile.social_links : []
   );
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState('');

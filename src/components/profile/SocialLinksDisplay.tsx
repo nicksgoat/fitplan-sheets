@@ -9,13 +9,21 @@ interface SocialLinksDisplayProps {
 }
 
 const SocialLinksDisplay = ({ socialLinks }: SocialLinksDisplayProps) => {
-  if (!socialLinks || socialLinks.length === 0) {
+  // Early return if socialLinks is not provided or empty
+  if (!socialLinks) {
+    return null;
+  }
+  
+  // Check if socialLinks is an array before using map
+  const linksArray = Array.isArray(socialLinks) ? socialLinks : [];
+  
+  if (linksArray.length === 0) {
     return null;
   }
 
   return (
     <div className="mt-4 flex flex-wrap gap-2">
-      {socialLinks.map((link, index) => (
+      {linksArray.map((link, index) => (
         <Badge key={index} variant="outline" className="flex items-center">
           <Link className="h-3 w-3 mr-1" />
           <a 
