@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +49,8 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
     combineDataLength: combineData?.length,
     sortMetric,
     isLoading,
-    hasError: !!error
+    hasError: !!error,
+    sampleData: combineData?.length > 0 ? combineData[0] : null
   });
 
   // Helper to determine if user beats the NFL player's score
@@ -84,7 +84,7 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
   };
 
   // Determine if lower values are better for this metric
-  const isLowerBetter = (metric: string): boolean => {
+  const isLowerBetter = (metric: string): string => {
     return ['40yd', '3Cone', 'Shuttle'].includes(metric);
   };
 
@@ -144,7 +144,7 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
           ) : (
             combineData.map((player, index) => (
               <TableRow 
-                key={player.id} 
+                key={index} 
                 className={`border-b border-gray-800 hover:bg-gray-900/50 ${index % 2 === 0 ? 'bg-gray-900/20' : ''} ${userBeatsStat(player) ? 'bg-green-900/10' : ''}`}
               >
                 <TableCell className="font-medium text-center">

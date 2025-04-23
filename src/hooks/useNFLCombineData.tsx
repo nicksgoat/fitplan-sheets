@@ -39,36 +39,34 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
   const fetchFilterOptions = async () => {
     try {
       console.log('Fetching filter options...');
-      // Fetch unique positions
+      // Fetch unique positions - using raw RPC call to work with "NFL_Combine_Database" table
       const { data: posData, error: posError } = await supabase
-        .from('NFL Combine Database')
-        .select('Pos')
-        .not('Pos', 'is', null)
-        .order('Pos');
+        .rpc('run_sql_query', { 
+          query: `SELECT DISTINCT "Pos" FROM "NFL_Combine_Database" WHERE "Pos" IS NOT NULL ORDER BY "Pos"` 
+        });
 
       if (posError) {
         console.error('Error fetching positions:', posError);
         setError('Failed to load position filters');
       } else if (posData) {
         // Extract unique positions
-        const uniquePositions = Array.from(new Set(posData.map(item => item.Pos))).filter(Boolean);
+        const uniquePositions = posData.map(item => item.Pos).filter(Boolean);
         console.log('Positions loaded:', uniquePositions);
         setPositions(uniquePositions);
       }
 
       // Fetch unique draft years
       const { data: yearData, error: yearError } = await supabase
-        .from('NFL Combine Database')
-        .select('Draft_Year')
-        .not('Draft_Year', 'is', null)
-        .order('Draft_Year', { ascending: false });
+        .rpc('run_sql_query', { 
+          query: `SELECT DISTINCT "Draft_Year" FROM "NFL_Combine_Database" WHERE "Draft_Year" IS NOT NULL ORDER BY "Draft_Year" DESC` 
+        });
 
       if (yearError) {
         console.error('Error fetching years:', yearError);
         setError('Failed to load year filters');
       } else if (yearData) {
         // Extract unique years
-        const uniqueYears = Array.from(new Set(yearData.map(item => item.Draft_Year))).filter(Boolean);
+        const uniqueYears = yearData.map(item => Number(item.Draft_Year)).filter(Boolean);
         console.log('Years loaded:', uniqueYears);
         setYears(uniqueYears);
       }
@@ -89,31 +87,26 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
     try {
       console.log('Fetching data with filters:', { selectedPosition, selectedYear, sortMetric });
       
-      let query = supabase
-        .from('NFL Combine Database')
-        .select('*');
+      let query = `SELECT * FROM "NFL_Combine_Database" WHERE 1=1`;
 
       // Apply position filter if selected
       if (selectedPosition) {
-        query = query.eq('Pos', selectedPosition);
+        query += ` AND "Pos" = '${selectedPosition}'`;
       }
 
       // Apply year filter if selected
       if (selectedYear) {
-        query = query.eq('Draft_Year', selectedYear);
+        query += ` AND "Draft_Year" = ${selectedYear}`;
       }
 
       // Apply sorting based on the metric
-      // Make sure to properly handle the case where the field might be null
       if (sortMetric) {
-        // First, get rows where the sort metric is not null
-        const { data: notNullData, error: notNullError } = await query
-          .not(sortMetric, 'is', null)
-          .order(sortMetric, { 
-            ascending: ['40yd', '3Cone', 'Shuttle'].includes(sortMetric), 
-            nullsFirst: false 
-          })
-          .limit(100);
+        const isAscending = ['40yd', '3Cone', 'Shuttle'].includes(sortMetric);
+        query += ` AND "${sortMetric}" IS NOT NULL AND "${sortMetric}" != ''`;
+        query += ` ORDER BY "${sortMetric}"::numeric ${isAscending ? 'ASC' : 'DESC'} LIMIT 100`;
+        
+        const { data: notNullData, error: notNullError } = await supabase
+          .rpc('run_sql_query', { query });
 
         if (notNullError) {
           console.error('Error fetching combine data:', notNullError);
@@ -126,17 +119,17 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         if (notNullData && notNullData.length > 0) {
           console.log(`Success: Retrieved ${notNullData.length} records`);
           console.log('Sample data:', notNullData[0]);
-          setCombineData(notNullData);
+          setCombineData(notNullData as unknown as NFLCombineResult[]);
         } else {
           console.log('No data found with current filters');
           setCombineData([]);
         }
       } else {
         // Default to 40yd sorting if no sortMetric provided
-        const { data, error } = await query
-          .not('40yd', 'is', null)
-          .order('40yd', { ascending: true, nullsFirst: false })
-          .limit(100);
+        query += ` AND "40yd" IS NOT NULL AND "40yd" != '' ORDER BY "40yd"::numeric ASC LIMIT 100`;
+        
+        const { data, error } = await supabase
+          .rpc('run_sql_query', { query });
 
         if (error) {
           console.error('Error fetching combine data:', error);
@@ -145,7 +138,7 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         } else if (data && data.length > 0) {
           console.log(`Success: Retrieved ${data.length} records`);
           console.log('Sample data:', data[0]);
-          setCombineData(data);
+          setCombineData(data as unknown as NFLCombineResult[]);
         } else {
           console.log('No data found with current filters');
           setCombineData([]);

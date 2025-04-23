@@ -76,7 +76,7 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
           .from(tableName)
           .delete()
           .eq(contentIdField, contentId)
-          .in('club_id', clubsToRemove);
+          .in('club_id', clubsToRemove as string[]);  // Type casting to fix the infinite recursion error
           
         if (error) {
           console.error(`Error removing ${contentType} shares:`, error);

@@ -19,15 +19,16 @@ const Leaderboards = () => {
   useEffect(() => {
     const checkCombineData = async () => {
       try {
-        const { count, error } = await supabase
-          .from('NFL Combine Database')
-          .select('*', { count: 'exact', head: true });
+        // Use rpc to run a count query instead of direct table access
+        const { data, error } = await supabase
+          .rpc('run_sql_query', { query: `SELECT COUNT(*) FROM "NFL_Combine_Database"` });
         
         if (error) {
           console.error("Error checking combine data:", error);
           return;
         }
         
+        const count = data && data.length > 0 ? Number(data[0].count) : 0;
         if (count === 0) {
           toast.info("No combine data found. Please initialize data to see NFL combine statistics.", {
             duration: 5000,
