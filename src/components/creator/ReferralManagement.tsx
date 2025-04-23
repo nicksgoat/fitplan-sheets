@@ -63,6 +63,15 @@ export const ReferralManagement: React.FC = () => {
     return `${baseUrl}?ref=${code}`;
   };
 
+  // Safe access to referralStats with type guards
+  const stats = referralStats || {
+    totalCommissionEarnings: 0,
+    totalReferralCodes: 0,
+    totalReferrals: 0,
+    totalDiscountGiven: 0,
+    recentTransactions: []
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -90,7 +99,7 @@ export const ReferralManagement: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(referralStats?.totalCommissionEarnings || 0)}
+                  {formatCurrency(stats.totalCommissionEarnings || 0)}
                 </div>
               </CardContent>
             </Card>
@@ -101,7 +110,7 @@ export const ReferralManagement: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {referralStats?.totalReferralCodes || 0}
+                  {stats.totalReferralCodes || 0}
                 </div>
               </CardContent>
             </Card>
@@ -112,7 +121,7 @@ export const ReferralManagement: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {referralStats?.totalReferrals || 0}
+                  {stats.totalReferrals || 0}
                 </div>
               </CardContent>
             </Card>
@@ -123,7 +132,7 @@ export const ReferralManagement: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(referralStats?.totalDiscountGiven || 0)}
+                  {formatCurrency(stats.totalDiscountGiven || 0)}
                 </div>
               </CardContent>
             </Card>
@@ -151,14 +160,14 @@ export const ReferralManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-dark-300">
-                    {referralCodes?.length === 0 ? (
+                    {!referralCodes || referralCodes.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                           No referral codes created yet
                         </td>
                       </tr>
                     ) : (
-                      referralCodes?.map((code: ReferralCode) => (
+                      referralCodes.map((code: ReferralCode) => (
                         <tr key={code.id} className="hover:bg-dark-300/50">
                           <td className="px-4 py-3">
                             <div className="flex items-center">
@@ -234,14 +243,14 @@ export const ReferralManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-dark-300">
-                    {referralStats?.recentTransactions.length === 0 ? (
+                    {!stats.recentTransactions || stats.recentTransactions.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                           No transactions yet
                         </td>
                       </tr>
                     ) : (
-                      referralStats?.recentTransactions.map((transaction) => (
+                      stats.recentTransactions.map((transaction) => (
                         <tr key={transaction.id} className="hover:bg-dark-300/50">
                           <td className="px-4 py-3">
                             {format(new Date(transaction.created_at), 'MMM d, yyyy')}

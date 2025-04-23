@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -70,10 +70,58 @@ export function useReferralCodes() {
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase.rpc('get_referral_stats');
+      // Use a direct SQL query instead of rpc since get_referral_stats doesn't exist yet
+      const { data, error } = await supabase
+        .from('referral_transactions')
+        .select(`
+          referral_code_id,
+          purchase_amount,
+          commission_amount,
+          discount_amount,
+          referral_codes!inner(creator_id)
+        `)
+        .eq('referral_codes.creator_id', user.id);
       
       if (error) throw error;
-      return data;
+      
+      if (!data || data.length === 0) {
+        // Return default empty stats
+        return {
+          totalReferralCodes: 0,
+          totalReferrals: 0,
+          totalCommissionEarnings: 0,
+          totalDiscountGiven: 0,
+          referralSummary: [],
+          recentTransactions: []
+        };
+      }
+      
+      // Calculate stats from transactions
+      const stats: ReferralStats = {
+        totalReferralCodes: 0, // Will be set from referralCodes query
+        totalReferrals: data.length,
+        totalCommissionEarnings: data.reduce((sum, tx) => sum + tx.commission_amount, 0),
+        totalDiscountGiven: data.reduce((sum, tx) => sum + tx.discount_amount, 0),
+        referralSummary: [],
+        recentTransactions: []
+      };
+      
+      // Get recent transactions with their codes
+      const { data: recentTxs, error: recentError } = await supabase
+        .from('referral_transactions')
+        .select(`
+          *,
+          referral_codes(code)
+        `)
+        .eq('referral_codes.creator_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!recentError && recentTxs) {
+        stats.recentTransactions = recentTxs as unknown as ReferralTransaction[];
+      }
+      
+      return stats as ReferralStats;
     },
     enabled: !!user
   });

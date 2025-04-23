@@ -33,8 +33,8 @@ export function ClubSharingManagement({
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const shareWithClubsMutation = useShareWithClubs();
   
-  // Fetch existing shares
-  const { data: existingShares, isLoading } = useQuery({
+  // Fetch existing shares using a safer approach
+  const { data: existingShares = [], isLoading } = useQuery({
     queryKey: ['content-shares', contentId, contentType],
     queryFn: async () => {
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';

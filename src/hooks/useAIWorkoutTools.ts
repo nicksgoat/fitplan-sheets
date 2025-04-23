@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -117,19 +118,25 @@ export function useAIWorkoutTools() {
     });
   };
   
+  // Fix the recursive type issue by clearly defining the return type
   const convertToPlatformFormat = (generatedWorkout: GeneratedWorkout): Workout => {
-    const platformExercises: Exercise[] = generatedWorkout.exercises.map((ex: GeneratedExercise) => ({
-      id: crypto.randomUUID(),
-      name: ex.name,
-      sets: Array(ex.sets || 1).fill({}).map(() => ({
+    // Create sets array using correct TypeScript approach
+    const platformExercises: Exercise[] = generatedWorkout.exercises.map((ex: GeneratedExercise) => {
+      const sets = Array.from({ length: ex.sets || 1 }, () => ({
         id: crypto.randomUUID(),
         reps: ex.reps || "",
         weight: "",
         intensity: "",
         rest: ex.restBetweenSets || ""
-      })),
-      notes: ex.notes || "",
-    }));
+      }));
+      
+      return {
+        id: crypto.randomUUID(),
+        name: ex.name,
+        sets,
+        notes: ex.notes || "",
+      };
+    });
 
     return {
       id: crypto.randomUUID(),
