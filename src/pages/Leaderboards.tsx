@@ -18,18 +18,17 @@ const Leaderboards = () => {
   useEffect(() => {
     const checkCombineData = async () => {
       try {
-        // Use rpc to run a count query instead of direct table access
         const { data, error } = await supabase
-          .rpc('run_sql_query', { query: `SELECT COUNT(*) FROM "NFL_Combine_Database"` });
+          .rpc('run_sql_query', { query: `SELECT COUNT(*) as count FROM "NFL_Combine_Database"` });
         
         if (error) {
           console.error("Error checking combine data:", error);
           return;
         }
         
-        // Properly handle the data which is a JSON array
-        const count = data && Array.isArray(data) && data.length > 0 && data[0].count 
-          ? parseInt(data[0].count) 
+        // Parse count from data array
+        const count = data && Array.isArray(data) && data[0] 
+          ? parseInt(data[0].count as string) || 0
           : 0;
           
         if (count === 0) {

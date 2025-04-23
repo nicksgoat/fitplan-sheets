@@ -4,11 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-type ShareInput = {
+interface ShareInput {
   contentId: string;
   contentType: 'workout' | 'program';
   clubIds: string[];
-};
+}
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
@@ -21,54 +21,33 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
+      // First get existing shares
       const { data: existingShares, error: fetchError } = await supabase
         .from(tableName)
         .select('club_id')
         .eq(contentIdField, contentId);
         
-      if (fetchError) {
-        console.error(`Error fetching ${contentType} shares:`, fetchError);
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
       const existingClubIds = new Set((existingShares || []).map(share => share.club_id));
       const sharesToAdd = clubIds.filter(id => !existingClubIds.has(id));
       
+      // Add new shares
       if (sharesToAdd.length > 0) {
-        if (contentType === 'workout') {
-          const sharingRecords = sharesToAdd.map(clubId => ({
-            club_id: clubId,
-            workout_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error } = await supabase
-            .from('club_shared_workouts')
-            .insert(sharingRecords);
+        const sharingRecords = sharesToAdd.map(clubId => ({
+          club_id: clubId,
+          [contentIdField]: contentId,
+          shared_by: user.id
+        }));
+        
+        const { error } = await supabase
+          .from(tableName)
+          .insert(sharingRecords);
             
-          if (error) {
-            console.error(`Error sharing workout:`, error);
-            throw error;
-          }
-        } else {
-          const sharingRecords = sharesToAdd.map(clubId => ({
-            club_id: clubId,
-            program_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error } = await supabase
-            .from('club_shared_programs')
-            .insert(sharingRecords);
-            
-          if (error) {
-            console.error(`Error sharing program:`, error);
-            throw error;
-          }
-        }
+        if (error) throw error;
       }
       
-      // Handle removals (clubs that were previously shared but now unselected)
+      // Remove unselected shares
       const clubsToRemove = Array.from(existingClubIds).filter(id => !clubIds.includes(id as string));
       
       if (clubsToRemove.length > 0) {
@@ -76,29 +55,26 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
           .from(tableName)
           .delete()
           .eq(contentIdField, contentId)
-          .in('club_id', clubsToRemove as string[]); 
+          .in('club_id', clubsToRemove);
           
-        if (error) {
-          console.error(`Error removing ${contentType} shares:`, error);
-          throw error;
-        }
+        if (error) throw error;
       }
       
       return clubIds;
     },
     onSuccess: (clubIds) => {
-      toast.success("Content shared successfully with selected clubs.");
+      toast.success("Content shared successfully with selected clubs");
       
       if (onSuccess) {
         onSuccess(clubIds);
       }
       
-      // Fix: Use a string constant instead of user?.id directly to avoid deep type instantiation
-      const userIdForQuery = user?.id || 'anonymous';
-      queryClient.invalidateQueries({ queryKey: ['creator-clubs', userIdForQuery] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['creator-clubs', user.id] });
+      }
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to share content with clubs.");
+      toast.error(error.message || "Failed to share content with clubs");
     }
   });
 }

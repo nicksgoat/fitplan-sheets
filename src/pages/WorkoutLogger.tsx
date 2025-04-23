@@ -1,18 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  Play, 
-  Pause, 
-  Plus, 
-  Save,
-  Clock,
-  Edit,
-  Trash2,
-  ChevronLeft,
-  Dumbbell
-} from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Play, Pause, Save, Clock, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,75 +10,34 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useWorkout } from '@/contexts/WorkoutContext';
-import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { useWorkoutLoggerIntegration } from '@/hooks/useWorkoutLoggerIntegration';
-import { Workout } from '@/types/workout';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
   const { workoutId } = useParams();
-  const [searchParams] = useSearchParams();
-  const programId = searchParams.get('programId');
-  
-  // Use the workout context to get access to workout data and mutations
-  const { 
-    program,
-    setActiveWorkoutId,
-    addExercise,
-    updateExercise,
-    updateSet,
-    addSet: addNewSet,
-    deleteSet: removeSet,
-    deleteExercise: removeExercise,
-    updateWorkoutName
-  } = useWorkout();
-  
-  // Fetch workout details directly if not in context
-  const { workout: fetchedWorkout, loading: detailsLoading } = useWorkoutDetail(workoutId || null);
-  
-  // Set the active workout ID based on the route parameter
-  useEffect(() => {
-    if (workoutId) {
-      console.log("Setting active workout ID:", workoutId);
-      setActiveWorkoutId(workoutId);
-    }
-  }, [workoutId, setActiveWorkoutId]);
+  const { activeWorkout } = useWorkout();
   
   // Integration with workout logger
   const { 
     startWorkoutSession, 
-    completeWorkoutLog, 
-    isLoading: integrationLoading,
-    activeWorkout: contextWorkout 
+    completeWorkoutLog,
+    isLoading
   } = useWorkoutLoggerIntegration();
-  
-  // Use either the workout from context or the fetched workout
-  const activeWorkout = contextWorkout || fetchedWorkout;
   
   // Local state
   const [workoutName, setWorkoutName] = useState('');
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   
-  // Update local state when active workout changes
+  // Update workout name when active workout changes
   useEffect(() => {
     if (activeWorkout) {
-      console.log("Active workout loaded:", activeWorkout);
       setWorkoutName(activeWorkout.name);
-      setIsLoading(false);
-    } else if (!detailsLoading && !activeWorkout) {
-      console.log("No active workout found with ID:", workoutId);
-      // Wait a bit before showing a loading error
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
     }
-  }, [activeWorkout, workoutId, detailsLoading]);
+  }, [activeWorkout]);
   
   // Timer logic
   useEffect(() => {
@@ -110,7 +59,6 @@ export default function WorkoutLogger() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
@@ -121,64 +69,20 @@ export default function WorkoutLogger() {
       return;
     }
     
-    // Start the workout session in the database
     const sessionData = await startWorkoutSession();
     if (sessionData) {
-      console.log("Workout session started:", sessionData);
       setActiveSessionId(sessionData.id);
       setIsTimerRunning(true);
       
       if (activeWorkout) {
         setWorkoutName(activeWorkout.name);
       }
-    } else {
-      console.error("Failed to start workout session");
     }
   };
   
   // Toggle timer
   const toggleTimer = () => {
     setIsTimerRunning(prev => !prev);
-  };
-  
-  // Update exercise name
-  const handleUpdateExerciseName = (exerciseId: string, name: string) => {
-    if (workoutId) {
-      updateExercise(workoutId, exerciseId, { name });
-    }
-  };
-  
-  // Update set details
-  const handleUpdateSet = (exerciseId: string, setId: string, field: keyof import('@/types/workout').Set, value: string) => {
-    if (workoutId) {
-      updateSet(workoutId, exerciseId, setId, { [field]: value });
-    }
-  };
-  
-  // Add set to exercise
-  const handleAddSet = (exerciseId: string) => {
-    if (workoutId) {
-      addNewSet(workoutId, exerciseId);
-    }
-  };
-  
-  // Delete set
-  const handleDeleteSet = (exerciseId: string, setId: string) => {
-    if (workoutId) {
-      removeSet(workoutId, exerciseId, setId);
-    }
-    
-  };
-  
-  // Delete exercise
-  const handleDeleteExercise = (exerciseId: string) => {
-    if (workoutId) {
-      removeExercise(workoutId, exerciseId);
-    
-      if (selectedExerciseId === exerciseId) {
-        setSelectedExerciseId(null);
-      }
-    }
   };
   
   // Complete the workout
@@ -188,7 +92,6 @@ export default function WorkoutLogger() {
       return;
     }
     
-    // Validation
     if (!workoutName.trim()) {
       toast.error('Please give your workout a name');
       return;
@@ -199,7 +102,7 @@ export default function WorkoutLogger() {
       return;
     }
     
-    // Map exercises to the format expected by completeWorkoutLog
+    // Map exercises for logging
     const logExercises = activeWorkout.exercises.map(ex => ({
       id: ex.id,
       name: ex.name,
@@ -213,7 +116,7 @@ export default function WorkoutLogger() {
       }))
     }));
     
-    // Complete the workout using the integration hook
+    // Complete the workout
     completeWorkoutLog.mutate({
       logId: activeSessionId,
       duration: elapsedTime,
@@ -225,133 +128,62 @@ export default function WorkoutLogger() {
         setIsTimerRunning(false);
         setSelectedExerciseId(null);
         setActiveSessionId(null);
-        
-        setTimeout(() => {
-          navigate('/schedule');
-        }, 1500);
+        navigate('/schedule');
       }
     });
   };
-  
-  // Return to workout detail
-  const handleBackToDetail = () => {
-    if (workoutId) {
-      navigate(`/workout/${workoutId}`);
-    } else {
-      navigate(-1);
-    }
-  };
 
-  // Show loading or error state
-  if (isLoading || detailsLoading) {
+  if (!activeWorkout) {
     return (
-      <div className="container py-6 max-w-5xl mx-auto">
+      <div className="container max-w-5xl mx-auto py-6">
         <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
-            className="mr-2"
-            onClick={handleBackToDetail}
+            onClick={() => navigate(-1)}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          
-          <h1 className="text-2xl font-bold">Loading Workout</h1>
         </div>
         
-        <div className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center">
-            <div className="h-12 w-12 border-4 border-t-fitbloom-purple animate-spin rounded-full mb-4"></div>
-            <p className="text-lg">Loading workout...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Show error if workout is not found
-  if (!activeWorkout && !isLoading && !detailsLoading) {
-    return (
-      <div className="container py-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
-            className="mr-2"
-            onClick={handleBackToDetail}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          
-          <h1 className="text-2xl font-bold">Workout Not Found</h1>
-        </div>
-        
-        <div className="flex flex-col items-center justify-center p-8 border border-dashed border-gray-300 rounded-lg">
-          <Dumbbell className="h-16 w-16 text-gray-300 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Could not load the workout</h2>
-          <p className="text-gray-500 mb-6">The workout you're trying to access may not exist or you might not have permission to view it.</p>
-          
-          <div className="flex gap-4">
-            <Button onClick={() => navigate('/sheets')}>
-              Go to Workout Sheets
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-lg mb-4">Please select a workout from the library first</p>
+            <Button onClick={() => navigate('/library')}>
+              Go to Library
             </Button>
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-        
-        <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-md">
-          <h3 className="font-medium text-amber-800 mb-2">Debug Information</h3>
-          <pre className="text-xs overflow-auto p-2 bg-amber-100 rounded">
-            {JSON.stringify({
-              workoutId,
-              programId,
-              hasProgram: !!program,
-              programWorkouts: program?.workouts.map(w => ({ id: w.id, name: w.name })) || [],
-              contextWorkout: contextWorkout ? { id: contextWorkout.id, name: contextWorkout.name } : null,
-              fetchedWorkout: fetchedWorkout ? { id: fetchedWorkout.id, name: fetchedWorkout.name } : null,
-            }, null, 2)}
-          </pre>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Main content when workout is loaded
   return (
-    <div className="container py-6 max-w-5xl mx-auto">
+    <div className="container max-w-5xl mx-auto py-6">
       <div className="flex items-center justify-between mb-6">
         <Button
           variant="ghost"
-          className="mr-2"
-          onClick={handleBackToDetail}
+          onClick={() => navigate(-1)}
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
         
-        <h1 className="text-2xl font-bold">
-          {activeWorkout ? `Log: ${activeWorkout.name}` : 'Workout Logger'}
-          {program && <span className="text-sm text-gray-400 ml-2">({program.name})</span>}
-        </h1>
-        
-        {!activeSessionId ? (
-          <Button 
-            onClick={startNewWorkout} 
-            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            disabled={!workoutId}
-          >
-            <Play className="h-4 w-4 mr-2" />
-            {activeWorkout ? 'Start This Workout' : 'Start New Workout'}
-          </Button>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-dark-200 rounded-md px-3 py-1">
-              <Clock className="h-4 w-4 mr-2 text-gray-400" />
-              <span className="font-mono">{formatTime(elapsedTime)}</span>
-            </div>
-            
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-dark-200 rounded-md px-3 py-1">
+            <Clock className="h-4 w-4 mr-2 text-gray-400" />
+            <span className="font-mono">{formatTime(elapsedTime)}</span>
+          </div>
+          
+          {!activeSessionId ? (
+            <Button 
+              onClick={startNewWorkout}
+              className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Start Workout
+            </Button>
+          ) : (
             <Button 
               variant="outline" 
               size="icon" 
@@ -363,8 +195,8 @@ export default function WorkoutLogger() {
                 <Play className="h-4 w-4" />
               )}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="space-y-6">
@@ -373,29 +205,19 @@ export default function WorkoutLogger() {
             <div className="flex items-center justify-between">
               <Input
                 value={workoutName}
-                onChange={(e) => {
-                  setWorkoutName(e.target.value);
-                  if (activeWorkout && workoutId) {
-                    updateWorkoutName(workoutId, e.target.value);
-                  }
-                }}
+                onChange={(e) => setWorkoutName(e.target.value)}
                 placeholder="Workout Name"
                 className="text-lg font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                readOnly={!activeSessionId}
               />
+              
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                >
-                  {format(new Date(), 'MMM dd')}
-                </Button>
                 <Button 
                   onClick={handleCompleteWorkout}
                   className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                  disabled={!activeSessionId}
+                  disabled={!activeSessionId || isLoading}
                 >
-                  {integrationLoading ? (
+                  {isLoading ? (
                     'Saving...'
                   ) : (
                     <>
@@ -415,200 +237,67 @@ export default function WorkoutLogger() {
               onChange={(e) => setWorkoutNotes(e.target.value)}
               rows={2}
               className="resize-none bg-dark-200 border-dark-300"
+              disabled={!activeSessionId}
             />
           </CardContent>
         </Card>
         
-        {activeWorkout && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-1">
-              <CardHeader className="pb-2">
-                <div className="text-lg flex justify-between items-center">
-                  Exercises
-                  <Button 
-                    onClick={() => workoutId && addExercise(workoutId)} 
-                    size="sm" 
-                    variant="ghost"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <ScrollArea className="h-[60vh] pr-4">
-                  <div className="space-y-2">
-                    {activeWorkout.exercises.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <p>No exercises added yet</p>
-                        <p className="text-sm">Click + to add your first exercise</p>
-                      </div>
-                    ) : (
-                      activeWorkout.exercises.map(exercise => (
-                        <div 
-                          key={exercise.id} 
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedExerciseId === exercise.id 
-                              ? 'bg-fitbloom-purple/20 border border-fitbloom-purple/40' 
-                              : 'bg-dark-200 hover:bg-dark-300 border border-dark-300'
-                          }`}
-                          onClick={() => setSelectedExerciseId(exercise.id)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-medium">{exercise.name}</h3>
-                              <div className="text-sm text-gray-400 mt-1">
-                                {exercise.sets.length} {exercise.sets.length === 1 ? 'set' : 'sets'}
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="opacity-0 hover:opacity-100 text-red-500"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteExercise(exercise.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-            
-            <Card className="md:col-span-2">
-              <CardHeader className="pb-2">
-                <div className="text-lg">
-                  {selectedExerciseId ? (
-                    <Input
-                      value={activeWorkout.exercises.find(ex => ex.id === selectedExerciseId)?.name || ''}
-                      onChange={(e) => handleUpdateExerciseName(selectedExerciseId, e.target.value)}
-                      placeholder="Exercise Name"
-                      className="text-lg font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
-                    />
-                  ) : (
-                    "Select or add an exercise"
-                  )}
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {selectedExerciseId ? (
-                  <>
-                    <table className="w-full">
-                      <thead className="border-b border-gray-800">
-                        <tr>
-                          <th className="pb-2 text-left text-gray-400 font-medium text-sm">#</th>
-                          <th className="pb-2 text-left text-gray-400 font-medium text-sm">Weight</th>
-                          <th className="pb-2 text-left text-gray-400 font-medium text-sm">Reps</th>
-                          <th className="pb-2 text-left text-gray-400 font-medium text-sm">Rest</th>
-                          <th className="pb-2 text-center text-gray-400 font-medium text-sm">Actions</th>
+        <ScrollArea className="h-[calc(100vh-300px)]">
+          <div className="space-y-4">
+            {activeWorkout.exercises.map(exercise => (
+              <Card key={exercise.id} className="overflow-hidden">
+                <CardHeader>
+                  <h3 className="font-medium">{exercise.name}</h3>
+                </CardHeader>
+                <CardContent>
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left">Set</th>
+                        <th className="text-left">Weight</th>
+                        <th className="text-left">Reps</th>
+                        <th className="text-left">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exercise.sets.map((set, index) => (
+                        <tr key={set.id}>
+                          <td className="py-2">{index + 1}</td>
+                          <td className="py-2">
+                            <Input
+                              type="text"
+                              value={set.weight}
+                              className="w-24 h-8"
+                              placeholder="lbs"
+                              disabled={!activeSessionId}
+                            />
+                          </td>
+                          <td className="py-2">
+                            <Input
+                              type="text"
+                              value={set.reps}
+                              className="w-20 h-8"
+                              placeholder="reps"
+                              disabled={!activeSessionId}
+                            />
+                          </td>
+                          <td className="py-2">
+                            <Input
+                              type="text"
+                              placeholder="Notes"
+                              className="w-full h-8"
+                              disabled={!activeSessionId}
+                            />
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {activeWorkout.exercises.find(ex => ex.id === selectedExerciseId)?.sets.map((set, index) => (
-                          <tr key={set.id} className="border-b border-dark-300 last:border-0">
-                            <td className="py-3 text-sm">Set {index + 1}</td>
-                            <td className="py-2">
-                              <Input
-                                type="text"
-                                value={set.weight}
-                                onChange={(e) => handleUpdateSet(selectedExerciseId, set.id, 'weight', e.target.value)}
-                                className="w-24 h-8 text-center bg-dark-200"
-                                placeholder="lbs"
-                              />
-                            </td>
-                            <td className="py-2">
-                              <Input
-                                type="text"
-                                value={set.reps}
-                                onChange={(e) => handleUpdateSet(selectedExerciseId, set.id, 'reps', e.target.value)}
-                                className="w-20 h-8 text-center bg-dark-200"
-                                placeholder="reps"
-                              />
-                            </td>
-                            <td className="py-2">
-                              <Input
-                                type="text"
-                                value={set.rest}
-                                onChange={(e) => handleUpdateSet(selectedExerciseId, set.id, 'rest', e.target.value)}
-                                className="w-20 h-8 text-center bg-dark-200"
-                                placeholder="sec"
-                              />
-                            </td>
-                            <td className="py-2 text-center">
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8 text-red-500"
-                                onClick={() => handleDeleteSet(selectedExerciseId, set.id)}
-                                disabled={activeWorkout.exercises.find(ex => ex.id === selectedExerciseId)?.sets.length === 1}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddSet(selectedExerciseId)}
-                      className="mt-4 w-full border-dashed"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Set
-                    </Button>
-                    
-                    <div className="mt-6">
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Exercise Notes</h4>
-                      <Textarea
-                        placeholder="Notes about this exercise (optional)"
-                        value={activeWorkout.exercises.find(ex => ex.id === selectedExerciseId)?.notes || ''}
-                        onChange={(e) => {
-                          if (activeWorkout && selectedExerciseId && workoutId) {
-                            updateExercise(workoutId, selectedExerciseId, { notes: e.target.value });
-                          }
-                        }}
-                        rows={2}
-                        className="resize-none bg-dark-200 border-dark-300"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                    <Edit className="h-12 w-12 mb-4 opacity-20" />
-                    <p>Select an exercise from the list</p>
-                    <p className="text-sm">or add a new one</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
-      </div>
-      
-      <div className="mt-8 p-4 bg-dark-200 border border-dark-300 rounded-md">
-        <h3 className="font-medium text-white mb-2">Debug Information</h3>
-        <pre className="text-xs overflow-auto p-2 bg-dark-300 rounded text-gray-300">
-          {JSON.stringify({
-            workoutId,
-            programId,
-            activeWorkoutId: activeWorkout?.id,
-            hasProgram: !!program,
-            programWorkouts: program?.workouts.map(w => ({ id: w.id, name: w.name })) || [],
-            exerciseCount: activeWorkout?.exercises?.length || 0,
-            fetchedWorkoutId: fetchedWorkout?.id,
-            contextWorkoutId: contextWorkout?.id
-          }, null, 2)}
-        </pre>
+        </ScrollArea>
       </div>
     </div>
   );
