@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +19,7 @@ interface ShareRecord {
   shared_by: string;
 }
 
-// Specific record types for sharing
+// Specific record types for sharing without recursive types
 interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
 }
