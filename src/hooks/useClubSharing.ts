@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -8,8 +9,6 @@ type ShareInput = {
   contentType: 'workout' | 'program';
   clubIds: string[];
 };
-
-type ShareMutationResult = string[];
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
@@ -69,6 +68,7 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
         }
       }
       
+      // Handle removals (clubs that were previously shared but now unselected)
       const clubsToRemove = Array.from(existingClubIds).filter(id => !clubIds.includes(id as string));
       
       if (clubsToRemove.length > 0) {
