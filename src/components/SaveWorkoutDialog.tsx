@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const shareWithClubsMutation = useShareWithClubs();
   
-  // Get the current workout
   const workout = program?.workouts.find(w => w.id === workoutId);
   
   const handleSave = async () => {
@@ -41,20 +39,16 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
     setSaving(true);
     
     try {
-      // Create a copy of the workout with the new name
       const workoutToSave = {
         ...workout,
         name: name.trim()
       };
       
-      // Save to library using the context
       const result = await saveWorkout(workoutToSave);
       
-      // Check if we got a valid result (string ID)
       if (typeof result === 'string' && result) {
         const savedId = result;
         
-        // If workout was saved successfully and clubs are selected, share with clubs
         if (selectedClubs.length > 0) {
           await shareWithClubsMutation.mutateAsync({
             contentId: savedId,

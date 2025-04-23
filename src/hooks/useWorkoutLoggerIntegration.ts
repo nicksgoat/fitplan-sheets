@@ -39,11 +39,16 @@ export function useWorkoutLoggerIntegration() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const { workout } = useWorkout();
+  const { activeWorkoutId, program } = useWorkout();
+  
+  // Get active workout from context
+  const activeWorkout = activeWorkoutId && program ? 
+    program.workouts.find(w => w.id === activeWorkoutId) : 
+    undefined;
   
   // Start a new workout log session
   const startWorkoutSession = async () => {
-    if (!user?.id || !workout?.id) {
+    if (!user?.id || !activeWorkoutId) {
       toast.error('Missing required information to start workout');
       return null;
     }
@@ -57,10 +62,9 @@ export function useWorkoutLoggerIntegration() {
         .from('workout_logs')
         .insert({
           user_id: user.id,
-          workout_id: workout.id,
+          workout_id: activeWorkoutId,
           start_time: currentTime,
-          duration: 0,
-          end_time: null
+          duration: 0
         })
         .select()
         .single();
@@ -174,7 +178,7 @@ export function useWorkoutLoggerIntegration() {
   };
   
   return {
-    workout,
+    activeWorkout,
     isLoading: isLoading || completeWorkoutLog.isPending,
     startWorkoutSession,
     completeWorkoutLog,

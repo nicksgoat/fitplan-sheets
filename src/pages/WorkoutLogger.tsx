@@ -32,24 +32,33 @@ export default function WorkoutLogger() {
   const [searchParams] = useSearchParams();
   const programId = searchParams.get('programId');
   
-  // Use the workout context
+  // Use the workout context to get access to workout data and mutations
   const { 
     program,
-    workout: activeWorkout,
+    activeWorkoutId,
     addExercise,
     updateExercise,
     updateSet,
     addSet: addNewSet,
     deleteSet: removeSet,
     deleteExercise: removeExercise,
-    updateWorkoutName
+    updateWorkoutName,
+    setActiveWorkoutId
   } = useWorkout();
+  
+  // Set the active workout ID based on the route parameter
+  useEffect(() => {
+    if (workoutId) {
+      setActiveWorkoutId(workoutId);
+    }
+  }, [workoutId, setActiveWorkoutId]);
   
   // Integration with workout logger
   const { 
     startWorkoutSession, 
     completeWorkoutLog, 
-    isLoading: integrationLoading 
+    isLoading: integrationLoading,
+    activeWorkout 
   } = useWorkoutLoggerIntegration();
   
   // Local state
@@ -59,6 +68,13 @@ export default function WorkoutLogger() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  
+  // Update local state when active workout changes
+  useEffect(() => {
+    if (activeWorkout) {
+      setWorkoutName(activeWorkout.name);
+    }
+  }, [activeWorkout]);
   
   // Timer logic
   useEffect(() => {
@@ -86,7 +102,7 @@ export default function WorkoutLogger() {
   
   // Start a new workout session
   const startNewWorkout = async () => {
-    if (!workoutId) {
+    if (!activeWorkoutId) {
       toast.error('No workout selected');
       return;
     }
@@ -110,30 +126,41 @@ export default function WorkoutLogger() {
   
   // Update exercise name
   const handleUpdateExerciseName = (exerciseId: string, name: string) => {
-    updateExercise(workoutId!, exerciseId, { name });
+    if (activeWorkoutId) {
+      updateExercise(activeWorkoutId, exerciseId, { name });
+    }
   };
   
   // Update set details
   const handleUpdateSet = (exerciseId: string, setId: string, field: keyof Set, value: string) => {
-    updateSet(workoutId!, exerciseId, setId, { [field]: value });
+    if (activeWorkoutId) {
+      updateSet(activeWorkoutId, exerciseId, setId, { [field]: value });
+    }
   };
   
   // Add set to exercise
   const handleAddSet = (exerciseId: string) => {
-    addNewSet(workoutId!, exerciseId);
+    if (activeWorkoutId) {
+      addNewSet(activeWorkoutId, exerciseId);
+    }
   };
   
   // Delete set
   const handleDeleteSet = (exerciseId: string, setId: string) => {
-    removeSet(workoutId!, exerciseId, setId);
+    if (activeWorkoutId) {
+      removeSet(activeWorkoutId, exerciseId, setId);
+    }
+    
   };
   
   // Delete exercise
   const handleDeleteExercise = (exerciseId: string) => {
-    removeExercise(workoutId!, exerciseId);
+    if (activeWorkoutId) {
+      removeExercise(activeWorkoutId, exerciseId);
     
-    if (selectedExerciseId === exerciseId) {
-      setSelectedExerciseId(null);
+      if (selectedExerciseId === exerciseId) {
+        setSelectedExerciseId(null);
+      }
     }
   };
   
@@ -215,11 +242,11 @@ export default function WorkoutLogger() {
           {program && <span className="text-sm text-gray-400 ml-2">({program.name})</span>}
         </h1>
         
-        {!activeWorkout ? (
+        {!activeSessionId ? (
           <Button 
             onClick={startNewWorkout} 
             className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            disabled={!workoutId}
+            disabled={!activeWorkoutId}
           >
             <Play className="h-4 w-4 mr-2" />
             {activeWorkout ? 'Start This Workout' : 'Start New Workout'}

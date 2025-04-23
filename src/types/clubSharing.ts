@@ -33,6 +33,7 @@ export interface ClubShareSelectionProps {
   // Legacy props - support backwards compatibility
   sharedClubs?: string[];
   onClubsChange?: (clubs: string[]) => void;
+  initialSelectedClubs?: string[];
   // New consistent prop names
   selectedClubIds?: string[];
   onSelectionChange?: (selectedClubs: string[]) => void;

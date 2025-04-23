@@ -10,21 +10,33 @@ export interface ClubShareSelectionProps {
   contentType: 'workout' | 'program';
   onClubsChange?: (clubs: string[]) => void;
   initialSelectedClubs?: string[];
+  // Consistent naming for selectedClubIds and onSelectionChange
+  selectedClubIds?: string[];
+  onSelectionChange?: (clubs: string[]) => void;
 }
 
 export function ClubShareSelection({ 
   contentId, 
   contentType,
   onClubsChange,
-  initialSelectedClubs = []
+  initialSelectedClubs = [],
+  selectedClubIds,
+  onSelectionChange
 }: ClubShareSelectionProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedClubs, setSelectedClubs] = React.useState<string[]>(initialSelectedClubs);
+  // Use selectedClubIds from props if provided, otherwise use initialSelectedClubs
+  const [selectedClubs, setSelectedClubs] = React.useState<string[]>(selectedClubIds || initialSelectedClubs);
 
   const handleSelectionChange = (clubs: string[]) => {
     setSelectedClubs(clubs);
+    
+    // Support both callback patterns
     if (onClubsChange) {
       onClubsChange(clubs);
+    }
+    
+    if (onSelectionChange) {
+      onSelectionChange(clubs);
     }
   };
   
@@ -43,7 +55,7 @@ export function ClubShareSelection({
         onOpenChange={setIsOpen}
         contentId={contentId || ''}
         contentType={contentType}
-        selectedClubs={selectedClubs}
+        selectedClubIds={selectedClubs}
         onSelectionChange={handleSelectionChange}
       />
     </>

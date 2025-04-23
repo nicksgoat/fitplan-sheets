@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   const { saveProgram, saveWorkout } = useLibrary();
   const shareWithClubsMutation = useShareWithClubs();
 
-  // Check if we're saving a single workout or a full program
   const isSingleWorkout = program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1;
   
   const itemTypeLabel = isSingleWorkout ? "Workout" : "Program";
@@ -43,12 +41,10 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
         let savedId: string | null = null;
         
         if (isSingleWorkout) {
-          // Get the workout ID
           const workoutId = program.weeks[0].workouts[0];
           const workout = program.workouts.find(w => w.id === workoutId);
           
           if (workout) {
-            // Save as a single workout and ensure we get a string result
             const result = await saveWorkout({
               ...workout,
               name: programName,
@@ -56,14 +52,12 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
               isPurchasable: isPurchasable
             });
             
-            // Check if we have a valid string ID back
             if (typeof result === 'string' && result) {
               savedId = result;
               toast.success(`Workout "${programName}" saved to library`);
             }
           }
         } else {
-          // Save as a program with multiple workouts
           const result = await saveProgram(
             {
               ...program,
@@ -74,14 +68,12 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
             programName
           );
           
-          // Check if we have a valid string ID back
           if (typeof result === 'string' && result) {
             savedId = result;
             toast.success(`Program "${programName}" saved to library`);
           }
         }
         
-        // If content was saved successfully and clubs are selected, share with clubs
         if (savedId && selectedClubs.length > 0) {
           await shareWithClubsMutation.mutateAsync({
             contentId: savedId,
