@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,7 +7,8 @@ import { Check, Instagram, MessageSquare } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 interface WorkoutCompleteScreenProps {
   open: boolean;
@@ -31,6 +32,7 @@ export default function WorkoutCompleteScreen({
   const [notes, setNotes] = React.useState('');
   const { user } = useAuth();
   const { profile } = useProfile(user?.id);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
@@ -40,23 +42,81 @@ export default function WorkoutCompleteScreen({
     onClose();
   };
 
-  const handleInstagramShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        url: window.location.href,
-        title: `Completed ${workoutName}`,
-        text: `Just completed ${workoutName} workout with ${exerciseCount} exercises in ${minutes}:${seconds.toString().padStart(2, '0')}!`
+  const captureCard = async () => {
+    if (!cardRef.current) return null;
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2
       });
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error capturing card:', error);
+      return null;
     }
   };
 
-  const handleMessageShare = () => {
+  const handleInstagramShare = async () => {
+    const imageData = await captureCard();
+    if (!imageData) {
+      toast.error("Could not create sharing image");
+      return;
+    }
+
     if (navigator.share) {
-      navigator.share({
-        url: window.location.href,
-        title: `Check out my workout`,
-        text: `I just completed ${workoutName} workout!`
-      });
+      const blob = await (await fetch(imageData)).blob();
+      const file = new File([blob], 'workout.png', { type: 'image/png' });
+
+      try {
+        await navigator.share({
+          files: [file],
+          title: `Completed ${workoutName}`,
+          text: `Just completed ${workoutName} workout with ${exerciseCount} exercises in ${minutes}:${seconds.toString().padStart(2, '0')}!`,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        // Fallback to downloading the image
+        const link = document.createElement('a');
+        link.download = 'workout-complete.png';
+        link.href = imageData;
+        link.click();
+        toast.success("Image downloaded - you can now share it to your stories!");
+      }
+    } else {
+      // Direct download if sharing is not supported
+      const link = document.createElement('a');
+      link.download = 'workout-complete.png';
+      link.href = imageData;
+      link.click();
+      toast.success("Image downloaded - you can now share it to your stories!");
+    }
+  };
+
+  const handleMessageShare = async () => {
+    const imageData = await captureCard();
+    if (!imageData) {
+      toast.error("Could not create sharing image");
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Check out my workout`,
+          text: `I just completed ${workoutName} workout!`,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        // Fallback to copying to clipboard
+        navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copied to clipboard!");
+      }
+    } else {
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
     }
   };
 
@@ -70,9 +130,8 @@ export default function WorkoutCompleteScreen({
           </div>
           
           {/* Workout Card Preview */}
-          <Card className="w-full bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-gray-700 shadow-xl">
+          <Card ref={cardRef} className="w-full bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-gray-700 shadow-xl">
             <div className="flex items-start gap-3">
-              {/* Chrome Logo */}
               <img 
                 src="/lovable-uploads/776879d2-1d7f-499e-a729-2d4fb447485d.png"
                 alt="Logo"
