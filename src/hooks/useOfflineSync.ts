@@ -14,6 +14,13 @@ interface SyncableItem {
   [key: string]: any;
 }
 
+// Define the structure for specific sync operations to ensure type safety
+type SyncOperation = {
+  table: ValidTableName;
+  type: 'insert' | 'update' | 'delete';
+  data: Record<string, any>; // Using Record to ensure it matches supabase expectations
+}
+
 interface SyncStatus {
   lastSynced: string | null;
   isSyncing: boolean;
@@ -91,17 +98,13 @@ export function useOfflineSync() {
   }, [user]);
 
   // Helper to get pending changes (this would be implemented using IndexedDB in a real app)
-  const getPendingChanges = () => {
+  const getPendingChanges = (): SyncOperation[] => {
     // This is a simplified version. In a real app, you'd retrieve from IndexedDB
     return [];
   };
 
   // Process a single sync change
-  const processSyncChange = async (change: { 
-    table: ValidTableName, 
-    type: 'insert' | 'update' | 'delete',
-    data: SyncableItem
-  }) => {
+  const processSyncChange = async (change: SyncOperation) => {
     try {
       const { table, type, data } = change;
       

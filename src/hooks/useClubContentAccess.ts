@@ -33,6 +33,7 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
         const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
         const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
         
+        // Use explicitly typed query to avoid deep instantiation issues
         const { data: sharedData, error: sharedError } = await supabase
           .from(tableName)
           .select('club_id')
