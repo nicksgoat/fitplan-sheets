@@ -27,10 +27,15 @@ const Leaderboards = () => {
           return;
         }
         
-        // Parse count from data array - ensure proper type checking
-        const count = data && Array.isArray(data) && data[0] && typeof data[0] === 'object'
-          ? parseInt(String(data[0].count || '0'), 10) || 0
-          : 0;
+        // Parse count from data array with safer type handling
+        let count = 0;
+        if (data && Array.isArray(data) && data.length > 0) {
+          const firstItem = data[0];
+          if (typeof firstItem === 'object' && firstItem !== null && 'count' in firstItem) {
+            // Convert to string first to handle various possible formats
+            count = parseInt(String(firstItem.count), 10) || 0;
+          }
+        }
           
         if (count === 0) {
           toast.info("No combine data found. Please initialize data to see NFL combine statistics.", {

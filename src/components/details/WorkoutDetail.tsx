@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ItemType } from '@/lib/types';
 import { DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer";
@@ -12,6 +13,7 @@ import { ClubShareDialog } from '@/components/club/ClubShareDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { buildCreatorProductUrl } from '@/utils/urlUtils';
 import { useProfile } from '@/hooks/useProfile';
+import { useNavigate } from 'react-router-dom';
 
 interface WorkoutDetailProps {
   item: ItemType;
@@ -23,6 +25,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   const { user } = useAuth();
   const [showShareDialog, setShowShareDialog] = React.useState(false);
   const { profile: creatorProfile } = useProfile(workoutData?.creatorId);
+  const navigate = useNavigate();
   
   // Calculate workout stats
   const totalExercises = workoutData?.exercises.length || 0;
@@ -55,6 +58,14 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
     
     // Fallback to regular workout URL
     return `/workout/${workoutData.id}`;
+  };
+  
+  // Start workout function that redirects to the workout logger
+  const handleStartWorkout = () => {
+    if (workoutData) {
+      navigate(`/workout-logger/${workoutData.id}`);
+      onClose(); // Close the drawer after navigation
+    }
   };
 
   return (
@@ -110,7 +121,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
         <div className="flex gap-2">
           <Button 
             className="flex-1 bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-            onClick={() => window.location.href = "/sheets"}
+            onClick={handleStartWorkout}
           >
             Start Workout
           </Button>

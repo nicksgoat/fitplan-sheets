@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,11 +11,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { useWorkoutLoggerIntegration } from '@/hooks/useWorkoutLoggerIntegration';
+import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
   const { workoutId } = useParams();
-  const { program } = useWorkout();
+  const { program, setActiveWorkoutId } = useWorkout();
+  
+  // Fetch workout details if we have a workoutId
+  const { workout: workoutDetails } = useWorkoutDetail(workoutId || null);
   
   // Integration with workout logger
   const { 
@@ -32,12 +37,21 @@ export default function WorkoutLogger() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   
+  // Set active workout ID when navigating directly to this page
+  useEffect(() => {
+    if (workoutId) {
+      setActiveWorkoutId(workoutId);
+    }
+  }, [workoutId, setActiveWorkoutId]);
+  
   // Update workout name when active workout changes
   useEffect(() => {
     if (activeWorkout) {
       setWorkoutName(activeWorkout.name);
+    } else if (workoutDetails) {
+      setWorkoutName(workoutDetails.name);
     }
-  }, [activeWorkout]);
+  }, [activeWorkout, workoutDetails]);
   
   // Timer logic
   useEffect(() => {
@@ -133,7 +147,8 @@ export default function WorkoutLogger() {
     });
   };
 
-  if (!activeWorkout) {
+  // If no workout is available, show placeholder
+  if (!activeWorkout && !workoutDetails) {
     return (
       <div className="container max-w-5xl mx-auto py-6">
         <div className="flex items-center justify-between mb-6">
@@ -157,6 +172,9 @@ export default function WorkoutLogger() {
       </div>
     );
   }
+
+  // Use workout from context or from direct fetch
+  const displayWorkout = activeWorkout || workoutDetails;
 
   return (
     <div className="container max-w-5xl mx-auto py-6">
@@ -244,7 +262,7 @@ export default function WorkoutLogger() {
         
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {activeWorkout.exercises.map(exercise => (
+            {displayWorkout && displayWorkout.exercises.map(exercise => (
               <Card key={exercise.id} className="overflow-hidden">
                 <CardHeader>
                   <h3 className="font-medium">{exercise.name}</h3>

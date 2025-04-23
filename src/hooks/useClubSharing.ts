@@ -23,6 +23,9 @@ interface ProgramShareRecord {
   shared_by: string;
 }
 
+// Define record type based on content type to avoid deep type instantiation
+type ShareRecord = WorkoutShareRecord | ProgramShareRecord;
+
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
