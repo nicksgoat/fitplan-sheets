@@ -122,21 +122,15 @@ export function useAIWorkoutTools() {
   
   // Convert the generated workout to platform format
   const convertToPlatformFormat = (generatedWorkout: GeneratedWorkout): Workout => {
-    const sets = generatedWorkout.exercises.map(exercise => ({
-      reps: exercise.reps,
-      weight: "",
-      rest: exercise.restBetweenSets
-    }));
-
     const platformExercises: Exercise[] = generatedWorkout.exercises.map((ex: GeneratedExercise) => ({
       id: crypto.randomUUID(),
       name: ex.name,
-      sets: sets.map(set => ({
+      sets: Array(ex.sets || 1).fill(0).map(() => ({
         id: crypto.randomUUID(),
-        reps: set.reps,
-        weight: set.weight,
+        reps: ex.reps || "",
+        weight: "",
         intensity: "",
-        rest: set.rest
+        rest: ex.restBetweenSets || ""
       })),
       notes: ex.notes || "",
     }));
