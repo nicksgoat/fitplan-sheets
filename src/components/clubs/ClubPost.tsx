@@ -9,10 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { ClubPost, ClubPostComment } from '@/types/club';
+import { ClubPost as ClubPostType, ClubPostComment } from '@/types/club';
 
 interface ClubPostProps {
-  post: ClubPost;
+  post: ClubPostType;
   onCommentAdded: () => void;
   clubId: string;
 }
@@ -37,6 +37,7 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, onCommentAdded, clubId }) => 
         .from('club_post_comments')
         .select(`
           id,
+          post_id,
           content,
           user_id,
           created_at,
@@ -78,6 +79,7 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, onCommentAdded, clubId }) => 
         })
         .select(`
           id,
+          post_id,
           content,
           user_id,
           created_at,
@@ -89,7 +91,7 @@ const ClubPost: React.FC<ClubPostProps> = ({ post, onCommentAdded, clubId }) => 
       if (error) throw error;
       
       // Add the new comment to the list
-      setComments([...comments, data]);
+      setComments([...comments, data as ClubPostComment]);
       setNewComment('');
       onCommentAdded();
       

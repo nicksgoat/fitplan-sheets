@@ -31,7 +31,8 @@ const ClubMemberItem: React.FC<ClubMemberItemProps> = ({
 
   const canManageMember = isAdmin && (
     currentUserRole === 'admin' ||
-    (currentUserRole === 'moderator' && member.role !== 'admin')
+    currentUserRole === 'owner' ||
+    (currentUserRole === 'moderator' && member.role !== 'admin' && member.role !== 'owner')
   );
 
   const getRoleIcon = (role: string) => {
@@ -136,13 +137,13 @@ const ClubMemberItem: React.FC<ClubMemberItemProps> = ({
                   </DropdownMenuItem>
                 )}
                 
-                {member.role !== 'moderator' && member.role !== 'admin' && (
+                {member.role !== 'moderator' && member.role !== 'admin' && member.role !== 'owner' && (
                   <DropdownMenuItem onClick={() => handleUpdateMemberRole('moderator')}>
                     Make Moderator
                   </DropdownMenuItem>
                 )}
                 
-                {member.role !== 'member' && member.role !== 'owner' && (
+                {(member.role === 'admin' || member.role === 'moderator') && (
                   <DropdownMenuItem onClick={() => handleUpdateMemberRole('member')}>
                     Remove Privileges
                   </DropdownMenuItem>

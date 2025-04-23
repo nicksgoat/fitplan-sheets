@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,8 +31,8 @@ const ClubDetailPage: React.FC = () => {
   const [postingStatus, setPostingStatus] = useState(false);
   const [joiningClub, setJoiningClub] = useState(false);
   const [postImage, setPostImage] = useState<File | null>(null);
-  const [channels, setChannels] = useState([]);
-  const [activeChannel, setActiveChannel] = useState(null);
+  const [channels, setChannels] = useState<any[]>([]);
+  const [activeChannel, setActiveChannel] = useState<any>(null);
   
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -64,7 +65,7 @@ const ClubDetailPage: React.FC = () => {
   }, [currentClub?.id]);
 
   const userClubRole = currentClub ? getUserClubRole(currentClub.id) : 'member';
-  const isAdmin = userClubRole === 'admin' || userClubRole === 'owner' || userClubRole === 'moderator';
+  const isAdmin = userClubRole === 'admin' || userClubRole === 'moderator' || userClubRole === 'owner';
 
   const handleJoinClub = async () => {
     if (!user) {
