@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import ExerciseLogCard from '@/components/workout-logger/ExerciseLogCard';
 import { WorkoutLogExercise } from '@/types/workoutLog';
 import { useLibrary } from '@/contexts/LibraryContext';
 import WorkoutCard from '@/components/workout-logger/WorkoutCard';
+import WorkoutCompleteScreen from '@/components/workout-logger/WorkoutCompleteScreen';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
@@ -105,7 +105,35 @@ export default function WorkoutLogger() {
     });
   };
   
+  const [showCompleteScreen, setShowCompleteScreen] = useState(false);
+  
+  // Calculate total completed sets
+  const getTotalCompletedSets = () => {
+    return Object.values(completedSets).reduce((total, sets) => total + sets.length, 0);
+  };
+
   const handleCompleteWorkout = async () => {
+    setShowCompleteScreen(true);
+  };
+
+  const displayWorkout = activeWorkout || workoutFromDetail;
+  const { exercises: organizedExercises, circuitMap } = displayWorkout 
+    ? getOrganizedExercises(displayWorkout.exercises) 
+    : { exercises: [], circuitMap: new Map() };
+
+  const circuitNames = new Map<string, string>();
+  organizedExercises.forEach(exercise => {
+    if (exercise.isCircuit && exercise.circuitId) {
+      circuitNames.set(exercise.circuitId, exercise.name);
+    }
+  });
+
+  const handleSaveWorkoutWithNotes = async (notes: string) => {
+    if (!workoutId) {
+      toast.error('No workout selected');
+      return;
+    }
+    
     const workoutToLog = activeWorkout || workoutFromDetail;
     
     if (!workoutToLog || !activeSessionId) {
@@ -184,9 +212,9 @@ export default function WorkoutLogger() {
     });
     
     completeWorkoutLog.mutate({
-      logId: activeSessionId,
+      logId: activeSessionId!,
       duration: elapsedTime,
-      notes: workoutNotes,
+      notes,
       exercises: logExercises
     }, {
       onSuccess: () => {
@@ -229,18 +257,6 @@ export default function WorkoutLogger() {
       </div>
     );
   }
-
-  const displayWorkout = activeWorkout || workoutFromDetail;
-  const { exercises: organizedExercises, circuitMap } = displayWorkout 
-    ? getOrganizedExercises(displayWorkout.exercises) 
-    : { exercises: [], circuitMap: new Map() };
-
-  const circuitNames = new Map<string, string>();
-  organizedExercises.forEach(exercise => {
-    if (exercise.isCircuit && exercise.circuitId) {
-      circuitNames.set(exercise.circuitId, exercise.name);
-    }
-  });
 
   return (
     <div className="h-full flex flex-col">
@@ -318,6 +334,15 @@ export default function WorkoutLogger() {
           </div>
         </ScrollArea>
       </div>
+      
+      <WorkoutCompleteScreen
+        open={showCompleteScreen}
+        onClose={() => setShowCompleteScreen(false)}
+        duration={elapsedTime}
+        exerciseCount={organizedExercises.length}
+        completedSetsCount={getTotalCompletedSets()}
+        onSave={handleSaveWorkoutWithNotes}
+      />
     </div>
   );
 }
