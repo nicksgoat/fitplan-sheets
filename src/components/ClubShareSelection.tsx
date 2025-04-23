@@ -5,6 +5,68 @@ import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ClubShareDialog } from './club/ClubShareDialog';
 import { ClubShareSelectionProps } from '@/types/clubSharing';
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+
+// Add this component to support the existing code
+export function ClubSelection({ 
+  onClubSelect, 
+  selectedClubId 
+}: { 
+  onClubSelect: (clubId: string) => void; 
+  selectedClubId: string | null;
+}) {
+  const { user } = useAuth();
+
+  // Fetch clubs created by the user
+  const { data: clubs, isLoading } = useQuery({
+    queryKey: ['user-clubs', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('clubs')
+        .select('*')
+        .eq('creator_id', user.id);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  return (
+    <Select value={selectedClubId || undefined} onValueChange={onClubSelect}>
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select a club" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {isLoading ? (
+            <SelectItem value="loading" disabled>Loading clubs...</SelectItem>
+          ) : clubs && clubs.length > 0 ? (
+            clubs.map((club) => (
+              <SelectItem key={club.id} value={club.id}>
+                {club.name}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="none" disabled>No clubs found</SelectItem>
+          )}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
 
 export function ClubShareSelection({ 
   contentId, 

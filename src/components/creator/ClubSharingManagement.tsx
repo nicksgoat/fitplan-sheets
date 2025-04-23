@@ -15,9 +15,8 @@ import {
 } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Plus, Trash2 } from 'lucide-react';
-import { ClubSharingStatus } from '@/types/clubSharing';
 import { useAuth } from '@/hooks/useAuth';
-import { ClubSelection } from '@/components/ClubShareSelection';
+import { ClubShareSelection } from '@/components/ClubShareSelection';
 
 interface ClubSharingManagementProps {
   contentId: string;
@@ -36,7 +35,7 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
   const queryClient = useQueryClient();
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
-  // Fix the TypeScript error by explicitly typing the query key tuple
+  // Explicitly type the query key as a tuple with const assertion to avoid deep instantiation error
   const queryKey = [`${contentType}-clubs-sharing`, contentId] as const;
 
   // Get clubs that this content is shared with
@@ -75,13 +74,17 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const columnName = contentType === 'workout' ? 'workout_id' : 'program_id';
       
+      const shareData: Record<string, string> = {
+        club_id: clubId,
+        shared_by: user?.id || ''
+      };
+      
+      // Add the correct ID column based on content type
+      shareData[columnName] = contentId;
+      
       const { error } = await supabase
         .from(tableName)
-        .insert({
-          club_id: clubId,
-          [columnName]: contentId,
-          shared_by: user?.id
-        });
+        .insert(shareData);
       
       if (error) {
         if (error.code === '23505') { // Unique violation
@@ -148,7 +151,7 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       
       <div className="space-y-4">
         <div className="flex gap-2">
-          <ClubSelection onClubSelect={setSelectedClubId} selectedClubId={selectedClubId} />
+          <ClubShareSelection onClubSelect={setSelectedClubId} selectedClubId={selectedClubId} />
           <Button 
             onClick={handleShareWithClub} 
             disabled={!selectedClubId || shareWithClub.isPending}

@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.create-club-event]
 verify_jwt = true
+
+[functions.ai-workout-tools]
+verify_jwt = true
