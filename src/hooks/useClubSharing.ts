@@ -18,42 +18,30 @@ export function useShareWithClubs() {
 
       // Delete existing shares first
       const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
       await supabase
         .from(table)
         .delete()
-        .eq(idField, contentId);
+        .eq(contentType === 'workout' ? 'workout_id' : 'program_id', contentId);
 
       // Insert new shares if there are any clubs selected
       if (clubIds.length > 0) {
-        // Handle workout sharing
         if (contentType === 'workout') {
-          for (const clubId of clubIds) {
-            const { error } = await supabase
-              .from('club_shared_workouts')
-              .insert({
-                club_id: clubId,
-                workout_id: contentId,
-                shared_by: user.id
-              });
-              
-            if (error) throw error;
-          }
-        } 
-        // Handle program sharing
-        else {
-          for (const clubId of clubIds) {
-            const { error } = await supabase
-              .from('club_shared_programs')
-              .insert({
-                club_id: clubId,
-                program_id: contentId,
-                shared_by: user.id
-              });
-              
-            if (error) throw error;
-          }
+          await supabase.from('club_shared_workouts').insert(
+            clubIds.map(clubId => ({
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            }))
+          );
+        } else {
+          await supabase.from('club_shared_programs').insert(
+            clubIds.map(clubId => ({
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            }))
+          );
         }
       }
       

@@ -34,7 +34,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel }) => {
 
   useEffect(() => {
     if (channel?.id) {
-      refreshMessages(channel.id);
+      refreshMessages();
     }
   }, [channel?.id, refreshMessages]);
 
@@ -49,7 +49,7 @@ const ClubChat: React.FC<ClubChatProps> = ({ clubId, channel }) => {
           content: message
         });
         setMessage('');
-        refreshMessages(channel.id);
+        refreshMessages();
       } catch (error) {
         console.error('Error sending message:', error);
       } finally {
