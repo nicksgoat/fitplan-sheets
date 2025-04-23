@@ -24,7 +24,6 @@ import Leaderboards from './pages/Leaderboards';
 import CreateEvent from './pages/CreateEvent';
 import EventDetailScreen from './components/clubs/EventDetailScreen';
 import ClubDetailPage from './components/clubs/ClubDetailPage';
-import Clubs from './pages/Clubs';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import PurchaseCancel from './pages/PurchaseCancel';
 import CreatorDashboard from './pages/CreatorDashboard';
@@ -62,12 +61,12 @@ function App() {
               <Route path=":username/:workoutSlug" element={<CreatorWorkoutDetail />} />
               <Route path=":username/:programSlug" element={<CreatorProgramDetail />} />
               
-              <Route path="clubs" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>}>
-                <Route path="create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
-                <Route path=":clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
-                <Route path=":clubId/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
-                <Route path=":clubId/events/:eventId" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
-              </Route>
+              {/* Updated clubs routes */}
+              <Route path="clubs" element={<AuthenticatedRoute><ClubsHome /></AuthenticatedRoute>} />
+              <Route path="clubs/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/events/create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
+              <Route path="clubs/:clubId/events/:eventId" element={<AuthenticatedRoute><EventDetailScreen /></AuthenticatedRoute>} />
 
               <Route path="liked" element={<Liked />} />
               <Route path="sheets" element={<AuthenticatedRoute><Sheets /></AuthenticatedRoute>} />

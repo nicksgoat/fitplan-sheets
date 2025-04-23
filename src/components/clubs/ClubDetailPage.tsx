@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -24,7 +23,9 @@ import {
   Heart,
   MessageCircle,
   Share2,
-  ArrowLeft
+  ArrowLeft,
+  BookOpen,
+  Dumbbell
 } from 'lucide-react';
 import { format, formatDistance } from 'date-fns';
 import { toast } from 'sonner';
@@ -32,8 +33,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useClub } from '@/contexts/ClubContext';
 import ClubChannel from './ClubChannel';
 import ClubChat from './ClubChat';
+import ClubSharedContent from './ClubSharedContent';
 
-const ClubDetailPage = () => {
+const ClubDetailPage: React.FC = () => {
   const params = useParams();
   const navigate = useNavigate();
   const clubId = params.clubId;
@@ -64,7 +66,7 @@ const ClubDetailPage = () => {
   } = useClub();
 
   // State
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState('posts');
   const [joiningClub, setJoiningClub] = useState(false);
   const [activeChannel, setActiveChannel] = useState<any>(null);
   const [messageText, setMessageText] = useState('');
@@ -578,7 +580,7 @@ const ClubDetailPage = () => {
         
         <div className="px-6 pb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="feed" className="flex items-center gap-2">
                 <FileText size={16} />
                 <span>Feed</span>
@@ -594,6 +596,10 @@ const ClubDetailPage = () => {
               <TabsTrigger value="members" className="flex items-center gap-2">
                 <Users size={16} />
                 <span>Members</span>
+              </TabsTrigger>
+              <TabsTrigger value="shared" className="flex items-center gap-2">
+                <Dumbbell size={16} />
+                <span>Shared</span>
               </TabsTrigger>
             </TabsList>
             
@@ -611,6 +617,10 @@ const ClubDetailPage = () => {
             
             <TabsContent value="members">
               {renderMembersTab()}
+            </TabsContent>
+
+            <TabsContent value="shared">
+              <ClubSharedContent clubId={clubId!} />
             </TabsContent>
           </Tabs>
         </div>
