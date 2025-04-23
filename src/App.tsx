@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
@@ -33,13 +32,13 @@ import CreatorProgramDetail from './pages/CreatorProgramDetail';
 import AIWorkoutGenerator from './components/workout/AIWorkoutGenerator';
 import EnhancedDashboard from './components/analytics/EnhancedDashboard';
 import OptimizedProfileView from './components/profile/OptimizedProfileView';
+import WorkoutLogger from './pages/WorkoutLogger';
 
 function App() {
   return (
     <AppProviders>
       <Router>
         <Routes>
-          {/* Redirect root to explore */}
           <Route path="/" element={<Navigate to="/explore" replace />} />
           <Route path="/index" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -49,20 +48,16 @@ function App() {
             <Route path="library" element={<Library />} />
             <Route path="schedule" element={<AuthenticatedRoute><Schedule /></AuthenticatedRoute>} />
             
-            {/* New routes for AI features and enhanced analytics */}
             <Route path="ai-workout-generator" element={<AuthenticatedRoute><AIWorkoutGenerator /></AuthenticatedRoute>} />
             <Route path="analytics" element={<AuthenticatedRoute><EnhancedDashboard /></AuthenticatedRoute>} />
             <Route path="profile/view" element={<AuthenticatedRoute><OptimizedProfileView /></AuthenticatedRoute>} />
             
-            {/* Product detail routes */}
             <Route path="workout/:workoutId" element={<WorkoutDetail />} />
             <Route path="program/:programId" element={<ProgramDetail />} />
             
-            {/* New creator/slug based routes */}
             <Route path=":username/:workoutSlug" element={<CreatorWorkoutDetail />} />
             <Route path=":username/:programSlug" element={<CreatorProgramDetail />} />
             
-            {/* Club Routes */}
             <Route path="clubs" element={<AuthenticatedRoute><Clubs /></AuthenticatedRoute>}>
               <Route path="create" element={<AuthenticatedRoute><CreateEvent /></AuthenticatedRoute>} />
               <Route path=":clubId" element={<AuthenticatedRoute><ClubDetailPage /></AuthenticatedRoute>} />
@@ -79,6 +74,7 @@ function App() {
             <Route path="purchase/cancel" element={<PurchaseCancel />} />
             <Route path="leaderboards" element={<Leaderboards />} />
             <Route path="creator" element={<AuthenticatedRoute><CreatorDashboard /></AuthenticatedRoute>} />
+            <Route path="workout-logger" element={<AuthenticatedRoute><WorkoutLogger /></AuthenticatedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
