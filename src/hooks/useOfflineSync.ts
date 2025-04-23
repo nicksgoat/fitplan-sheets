@@ -14,7 +14,7 @@ interface SyncableItem {
   [key: string]: any;
 }
 
-// Define the structure for specific sync operations to ensure type safety
+// Define specific typed operations for each table to ensure type safety
 type SyncOperation = {
   table: ValidTableName;
   type: 'insert' | 'update' | 'delete';

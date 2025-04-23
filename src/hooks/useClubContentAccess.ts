@@ -36,9 +36,8 @@ export function useClubContentAccess(contentId: string, contentType: 'workout' |
         // Use explicitly typed query to avoid deep instantiation issues
         const { data: sharedData, error: sharedError } = await supabase
           .from(tableName)
-          .select('club_id')
-          .eq(idField, contentId);
-          
+          .select('club_id');
+        
         if (sharedError) {
           console.error(`[useClubContentAccess] Error checking shared ${contentType}:`, sharedError);
           return { hasAccess: false, sharedWithClubs: [] };

@@ -11,10 +11,7 @@ interface MobileApiClient {
 }
 
 // Create the mobile API client with all required methods
-export const mobileApi: MobileApiClient = {
-  // The base URL for our mobile API - hardcoded to avoid process.env issues
-  baseUrl: 'https://api.fitbloom-mobile.com/v1',
-
+const mobileApi: MobileApiClient = {
   // Initialize the mobile API connection
   initialize: async () => {
     try {
@@ -34,6 +31,9 @@ export const mobileApi: MobileApiClient = {
   getWorkouts: async (limit: number = 10, offset: number = 0) => {
     try {
       console.log(`[mobileApi] Getting workouts (limit: ${limit}, offset: ${offset})`);
+      
+      const baseUrl = 'https://api.fitbloom-mobile.com/v1';
+      console.log(`[mobileApi] Using base URL: ${baseUrl}`);
       
       // Simulate API response for development
       return {
@@ -56,6 +56,9 @@ export const mobileApi: MobileApiClient = {
   getPrograms: async (limit: number = 10, offset: number = 0) => {
     try {
       console.log(`[mobileApi] Getting programs (limit: ${limit}, offset: ${offset})`);
+      
+      const baseUrl = 'https://api.fitbloom-mobile.com/v1';
+      console.log(`[mobileApi] Using base URL: ${baseUrl}`);
       
       // Simulate API response for development
       return {
@@ -87,3 +90,5 @@ export const mobileApi: MobileApiClient = {
     }
   }
 };
+
+export { mobileApi };
