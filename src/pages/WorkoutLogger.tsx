@@ -203,6 +203,14 @@ export default function WorkoutLogger() {
     ? getOrganizedExercises(displayWorkout.exercises) 
     : { exercises: [], circuitMap: new Map() };
 
+  // Create a mapping of circuit IDs to circuit names for displaying in badges
+  const circuitNames = new Map<string, string>();
+  organizedExercises.forEach(exercise => {
+    if (exercise.isCircuit && exercise.circuitId) {
+      circuitNames.set(exercise.circuitId, exercise.name);
+    }
+  });
+
   return (
     <div className="h-full flex flex-col">
       <WorkoutLoggerHeader
@@ -232,10 +240,12 @@ export default function WorkoutLogger() {
           <div className="space-y-4 pb-4">
             {organizedExercises.map((exercise) => {
               if (exercise.isCircuit && exercise.circuitId) {
+                const circuitExercises = circuitMap.get(exercise.circuitId) || [];
+                
                 return (
                   <Card key={exercise.id} className="mb-4 border border-blue-800 bg-blue-900/10">
-                    <CardContent className="p-0">
-                      <div className="px-4 py-3 bg-blue-900/20 border-b border-blue-800">
+                    <CardContent className="p-4">
+                      <div className="px-4 py-3 mb-4 bg-blue-900/20 border border-blue-800 rounded-md">
                         <h3 className="font-medium text-blue-400">
                           Circuit: {exercise.name}
                         </h3>
@@ -244,14 +254,17 @@ export default function WorkoutLogger() {
                         )}
                       </div>
                       
-                      {(circuitMap.get(exercise.circuitId) || []).map((circuitEx) => (
-                        <div key={circuitEx.id} className="p-4 border-t border-blue-800/30">
+                      <div className="space-y-4">
+                        {circuitExercises.map((circuitEx) => (
                           <ExerciseLogCard
+                            key={circuitEx.id}
                             exercise={circuitEx}
                             isDisabled={!activeSessionId}
+                            isInCircuit={true}
+                            circuitName={exercise.name}
                           />
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 );

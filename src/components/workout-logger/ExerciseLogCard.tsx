@@ -3,13 +3,21 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Exercise } from '@/types/workout';
+import { Badge } from '@/components/ui/badge';
 
 interface ExerciseLogCardProps {
   exercise: Exercise;
   isDisabled: boolean;
+  isInCircuit?: boolean;
+  circuitName?: string;
 }
 
-export default function ExerciseLogCard({ exercise, isDisabled }: ExerciseLogCardProps) {
+export default function ExerciseLogCard({ 
+  exercise, 
+  isDisabled, 
+  isInCircuit = false,
+  circuitName
+}: ExerciseLogCardProps) {
   const renderSetRow = (set: any, index: number) => (
     <tr key={set.id || index} className="border-b border-gray-800/50 last:border-0">
       <td className="py-3 pr-2 text-sm text-gray-400">{index + 1}</td>
@@ -43,11 +51,21 @@ export default function ExerciseLogCard({ exercise, isDisabled }: ExerciseLogCar
   );
 
   return (
-    <Card className="mb-4 bg-dark-300 border-dark-border overflow-hidden">
-      <CardHeader className="px-4 py-3">
-        <h3 className="font-medium">{exercise.name}</h3>
-        {exercise.notes && (
-          <p className="text-sm text-gray-400">{exercise.notes}</p>
+    <Card className={`mb-4 overflow-hidden ${isInCircuit 
+      ? "bg-dark-300 border-blue-800/50 border-l-4" 
+      : "bg-dark-300 border-dark-border"}`}>
+      <CardHeader className="px-4 py-3 flex flex-row items-center justify-between">
+        <div>
+          <h3 className="font-medium">{exercise.name}</h3>
+          {exercise.notes && (
+            <p className="text-sm text-gray-400">{exercise.notes}</p>
+          )}
+        </div>
+        
+        {isInCircuit && circuitName && (
+          <Badge variant="secondary" className="bg-blue-900/40 text-blue-300 hover:bg-blue-900/60 border border-blue-700">
+            Circuit: {circuitName}
+          </Badge>
         )}
       </CardHeader>
       <CardContent className="p-0">

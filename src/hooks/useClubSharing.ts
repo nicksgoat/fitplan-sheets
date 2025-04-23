@@ -20,17 +20,13 @@ interface ShareRecord {
   shared_by: string;
 }
 
-// Specific record types that extend the base
+// Specific record types for sharing
 interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
-  id?: string;
-  created_at?: string;
 }
 
 interface ProgramShareRecord extends ShareRecord {
   program_id: string;
-  id?: string;
-  created_at?: string;
 }
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
