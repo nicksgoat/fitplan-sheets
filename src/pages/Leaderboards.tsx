@@ -28,8 +28,8 @@ const Leaderboards = () => {
         }
         
         // Parse count from data array - ensure proper type checking
-        const count = data && Array.isArray(data) && data[0] 
-          ? parseInt(data[0].count as string) || 0
+        const count = data && Array.isArray(data) && data[0] && typeof data[0] === 'object'
+          ? parseInt(String(data[0].count || '0'), 10) || 0
           : 0;
           
         if (count === 0) {

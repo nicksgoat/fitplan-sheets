@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -15,10 +14,11 @@ import { useWorkoutLoggerIntegration } from '@/hooks/useWorkoutLoggerIntegration
 export default function WorkoutLogger() {
   const navigate = useNavigate();
   const { workoutId } = useParams();
-  const { activeWorkout } = useWorkout();
+  const { program } = useWorkout();
   
   // Integration with workout logger
   const { 
+    activeWorkout,
     startWorkoutSession, 
     completeWorkoutLog,
     isLoading

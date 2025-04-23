@@ -10,6 +10,19 @@ interface ShareInput {
   clubIds: string[];
 }
 
+// Define TypeScript interfaces for sharing records
+interface WorkoutShareRecord {
+  club_id: string;
+  workout_id: string;
+  shared_by: string;
+}
+
+interface ProgramShareRecord {
+  club_id: string;
+  program_id: string;
+  shared_by: string;
+}
+
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -42,13 +55,13 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
               club_id: clubId,
               workout_id: contentId,
               shared_by: user.id
-            };
+            } as WorkoutShareRecord;
           } else {
             return {
               club_id: clubId,
               program_id: contentId,
               shared_by: user.id
-            };
+            } as ProgramShareRecord;
           }
         });
         
