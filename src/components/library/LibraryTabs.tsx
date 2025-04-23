@@ -1,8 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
 import WorkoutsLibraryTab from '@/components/WorkoutsLibraryTab';
 import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
@@ -76,27 +74,21 @@ const LibraryTabs = ({
       </TabsContent>
       
       <TabsContent value="workouts" className="mt-4">
-        <DndProvider backend={HTML5Backend}>
-          <WorkoutProvider>
-            <WorkoutsLibraryTab />
-          </WorkoutProvider>
-        </DndProvider>
+        <WorkoutProvider>
+          <WorkoutsLibraryTab />
+        </WorkoutProvider>
       </TabsContent>
       
       <TabsContent value="programs" className="mt-4">
-        <DndProvider backend={HTML5Backend}>
-          <WorkoutProvider>
-            <ProgramsLibraryTab />
-          </WorkoutProvider>
-        </DndProvider>
+        <WorkoutProvider>
+          <ProgramsLibraryTab />
+        </WorkoutProvider>
       </TabsContent>
       
       <TabsContent value="weeks" className="mt-4">
-        <DndProvider backend={HTML5Backend}>
-          <WorkoutProvider>
-            <WeeksLibraryTab />
-          </WorkoutProvider>
-        </DndProvider>
+        <WorkoutProvider>
+          <WeeksLibraryTab />
+        </WorkoutProvider>
       </TabsContent>
       
       <TabsContent value="purchases" className="mt-4">

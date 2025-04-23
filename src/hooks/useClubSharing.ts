@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +10,7 @@ interface ShareInput {
   clubIds: string[];
 }
 
-// Define specific table and field types to avoid recursive type issues
+// Define specific table and field types for clarity
 type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
 type ShareContentType = 'workout_id' | 'program_id';
 
@@ -19,7 +20,7 @@ interface ShareRecord {
   shared_by: string;
 }
 
-// Specific record types for sharing without recursive types
+// Specific record types for sharing
 interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
 }

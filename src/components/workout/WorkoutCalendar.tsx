@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { WorkoutSession } from '@/types/workout';
 import WorkoutDayCard from './WorkoutDayCard';
 import CalendarHeader from './CalendarHeader';
@@ -136,32 +134,30 @@ const WorkoutCalendar = ({ onSelectWorkout }: WorkoutCalendarProps) => {
   const totalWeeks = program.weeks.length;
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="mb-6">
-        <CalendarHeader
-          currentWeek={currentWeek}
-          totalWeeks={totalWeeks}
-          onPrevWeek={goToPreviousWeek}
-          onNextWeek={goToNextWeek}
-          onAddWeek={handleAddWeek}
-        />
-        
-        <div className="flex space-x-2 overflow-x-auto pb-4">
-          {weekDays.map(({ date, day, dayNumber }) => (
-            <WorkoutDayCard
-              key={day}
-              date={date}
-              day={day}
-              dayNumber={dayNumber}
-              workouts={workoutsByDay[dayNumber] || []}
-              onAddWorkout={handleAddWorkout}
-              onSelectWorkout={onSelectWorkout}
-              weekId={activeWeek?.id || ''}
-            />
-          ))}
-        </div>
+    <div className="mb-6">
+      <CalendarHeader
+        currentWeek={currentWeek}
+        totalWeeks={totalWeeks}
+        onPrevWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onAddWeek={handleAddWeek}
+      />
+      
+      <div className="flex space-x-2 overflow-x-auto pb-4">
+        {weekDays.map(({ date, day, dayNumber }) => (
+          <WorkoutDayCard
+            key={day}
+            date={date}
+            day={day}
+            dayNumber={dayNumber}
+            workouts={workoutsByDay[dayNumber] || []}
+            onAddWorkout={handleAddWorkout}
+            onSelectWorkout={onSelectWorkout}
+            weekId={activeWeek?.id || ''}
+          />
+        ))}
       </div>
-    </DndProvider>
+    </div>
   );
 };
 

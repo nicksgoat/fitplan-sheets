@@ -11,8 +11,6 @@ import { LibraryProvider } from "@/contexts/LibraryContext";
 import WorkoutCalendar from "@/components/workout/WorkoutCalendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WorkoutLibrarySidebar, { WorkoutLibrarySidebarRef } from "@/components/workout/WorkoutLibrarySidebar";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import AIWorkoutTools from "@/components/workout/AIWorkoutTools";
 
 const WorkoutApp: React.FC = () => {
@@ -211,12 +209,10 @@ const Sheets: React.FC = () => {
   return (
     <WorkoutProvider>
       <LibraryProvider>
-        <DndProvider backend={HTML5Backend}>
-          <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
-            <WorkoutHeader />
-            <WorkoutApp />
-          </div>
-        </DndProvider>
+        <div className="min-h-screen py-4 px-4 bg-dark-100 text-white">
+          <WorkoutHeader />
+          <WorkoutApp />
+        </div>
       </LibraryProvider>
     </WorkoutProvider>
   );

@@ -7,8 +7,6 @@ import ProgramsLibraryTab from '@/components/ProgramsLibraryTab';
 import WeeksLibraryTab from '@/components/WeeksLibraryTab';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { WorkoutProvider } from '@/contexts/WorkoutContext';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useSearchParams } from 'react-router-dom';
 
 interface WorkoutLibrarySidebarProps {
@@ -63,21 +61,19 @@ const WorkoutLibrarySidebar = forwardRef<WorkoutLibrarySidebarRef, WorkoutLibrar
                 </TabsTrigger>
               </TabsList>
               
-              <DndProvider backend={HTML5Backend}>
-                <WorkoutProvider>
-                  <TabsContent value="workouts">
-                    <WorkoutsLibraryTab onDragStart={() => onOpenChange(false)} />
-                  </TabsContent>
-                  
-                  <TabsContent value="programs">
-                    <ProgramsLibraryTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="weeks">
-                    <WeeksLibraryTab />
-                  </TabsContent>
-                </WorkoutProvider>
-              </DndProvider>
+              <WorkoutProvider>
+                <TabsContent value="workouts">
+                  <WorkoutsLibraryTab onDragStart={() => onOpenChange(false)} />
+                </TabsContent>
+                
+                <TabsContent value="programs">
+                  <ProgramsLibraryTab />
+                </TabsContent>
+                
+                <TabsContent value="weeks">
+                  <WeeksLibraryTab />
+                </TabsContent>
+              </WorkoutProvider>
             </Tabs>
           </div>
         </SheetContent>
