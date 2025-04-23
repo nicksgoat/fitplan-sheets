@@ -21,9 +21,9 @@ export interface ClubShareSelectionProps {
   contentId?: string;
   contentType: 'workout' | 'program';
   sharedClubs?: string[];
-  selectedClubIds?: string[];
   onClubsChange?: (clubs: string[]) => void;
   onSelectionChange?: (clubs: string[]) => void;
+  selectedClubIds?: string[];
 }
 
 // This component allows selecting a single club with a dropdown
@@ -87,19 +87,19 @@ export function ClubShareSelection({
   selectedClubIds = []
 }: ClubShareSelectionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(selectedClubIds);
+  const [localSelectedClubIds, setLocalSelectedClubIds] = useState<string[]>(selectedClubIds);
   
   // Update local state when the prop changes
   useEffect(() => {
     if (sharedClubs && sharedClubs.length > 0) {
-      setSelectedClubIds(sharedClubs);
+      setLocalSelectedClubIds(sharedClubs);
     } else if (selectedClubIds && selectedClubIds.length > 0) {
-      setSelectedClubIds(selectedClubIds);
+      setLocalSelectedClubIds(selectedClubIds);
     }
   }, [sharedClubs, selectedClubIds]);
 
   const handleSelectionChange = (clubs: string[]) => {
-    setSelectedClubIds(clubs);
+    setLocalSelectedClubIds(clubs);
     
     // Call appropriate callback handlers
     if (onSelectionChange) {
@@ -115,8 +115,8 @@ export function ClubShareSelection({
       <Button variant="outline" size="sm" className="gap-1" onClick={() => setIsOpen(true)}>
         <Plus size={16} />
         Share with Club
-        {selectedClubIds.length > 0 && (
-          <Badge variant="secondary" className="ml-1">{selectedClubIds.length}</Badge>
+        {localSelectedClubIds.length > 0 && (
+          <Badge variant="secondary" className="ml-1">{localSelectedClubIds.length}</Badge>
         )}
       </Button>
       
@@ -125,7 +125,7 @@ export function ClubShareSelection({
         onOpenChange={setIsOpen}
         contentId={contentId || ''}
         contentType={contentType}
-        selectedClubIds={selectedClubIds}
+        selectedClubIds={localSelectedClubIds}
         onSelectionChange={handleSelectionChange}
       />
     </>

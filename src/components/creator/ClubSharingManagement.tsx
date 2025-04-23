@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ClubShareSelection } from '@/components/ClubShareSelection';
+import { useShareWithClubs } from '@/hooks/useClubSharing';
 
 interface ClubSharingManagementProps {
   contentId: string;
@@ -80,43 +81,8 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
     enabled: !!user && !!contentId
   });
   
-  // Share with club mutation
-  const shareWithClub = useMutation({
-    mutationFn: async (clubId: string) => {
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const columnName = contentType === 'workout' ? 'workout_id' : 'program_id';
-      
-      // Create a properly typed object for the insert
-      const insertData: Record<string, string> = {
-        club_id: clubId,
-        shared_by: user?.id || ''
-      };
-      
-      // Add the content ID with the appropriate column name
-      insertData[columnName] = contentId;
-      
-      const { error } = await supabase
-        .from(tableName)
-        .insert(insertData as any);
-      
-      if (error) {
-        if (error.code === '23505') { // Unique violation
-          throw new Error('This content is already shared with this club');
-        }
-        throw error;
-      }
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      toast.success(`${contentType === 'workout' ? 'Workout' : 'Program'} shared with club successfully`);
-      queryClient.invalidateQueries({ queryKey });
-      setSelectedClubs([]);
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to share: ${error.message}`);
-    }
-  });
+  // Use our hook for sharing
+  const shareWithClubMutation = useShareWithClubs();
   
   // Remove share mutation
   const removeShare = useMutation({
@@ -141,9 +107,13 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
     }
   });
   
-  const handleShareWithClub = (clubId: string) => {
-    if (clubId) {
-      shareWithClub.mutate(clubId);
+  const handleShareWithClubs = () => {
+    if (selectedClubs.length > 0) {
+      shareWithClubMutation.mutate({
+        contentId,
+        contentType,
+        clubIds: selectedClubs
+      });
     }
   };
   
@@ -169,11 +139,10 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
             contentId={contentId}
             selectedClubIds={selectedClubs}
             onSelectionChange={setSelectedClubs}
-            sharedClubs={[]}
           />
           <Button 
-            onClick={() => selectedClubs.length > 0 && handleShareWithClub(selectedClubs[0])} 
-            disabled={!selectedClubs.length || shareWithClub.isPending}
+            onClick={handleShareWithClubs} 
+            disabled={!selectedClubs.length || shareWithClubMutation.isPending}
             size="sm"
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -181,12 +150,12 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
           </Button>
         </div>
         
-        {shareWithClub.isError && (
+        {shareWithClubMutation.isError && (
           <Alert variant="destructive" className="mt-2">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              {shareWithClub.error.message}
+              {shareWithClubMutation.error instanceof Error ? shareWithClubMutation.error.message : "An error occurred"}
             </AlertDescription>
           </Alert>
         )}

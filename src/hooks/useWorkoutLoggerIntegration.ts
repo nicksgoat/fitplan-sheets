@@ -55,12 +55,17 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
     try {
       setIsLoading(true);
       
+      const currentTime = new Date().toISOString();
+      
+      // Create a workout log with required fields
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
           workout_id: workout.id,
-          start_time: new Date().toISOString()
+          start_time: currentTime,
+          end_time: null, // Will be updated when workout is completed
+          duration: 0 // Will be updated when workout is completed
         })
         .select()
         .single();
