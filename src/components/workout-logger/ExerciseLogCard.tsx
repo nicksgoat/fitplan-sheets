@@ -12,7 +12,7 @@ interface ExerciseLogCardProps {
   isDisabled: boolean;
   isInCircuit?: boolean;
   circuitName?: string;
-  onSetComplete?: (exerciseId: string, setIndex: number) => void;
+  onSetComplete?: (exerciseId: string, setIndex: number, completed: boolean) => void;
 }
 
 export default function ExerciseLogCard({ 
@@ -52,12 +52,13 @@ export default function ExerciseLogCard({
 
   const handleSetComplete = (setIndex: number) => {
     if (!completedSets.includes(setIndex)) {
-      setCompletedSets(prev => [...prev, setIndex]);
+      const newCompletedSets = [...completedSets, setIndex];
+      setCompletedSets(newCompletedSets);
       setCurrentSetIndex(prev => prev + 1);
       
       // Call the parent callback if provided
       if (onSetComplete) {
-        onSetComplete(exercise.id, setIndex);
+        onSetComplete(exercise.id, setIndex, true);
       }
       
       // Start rest timer when set is completed

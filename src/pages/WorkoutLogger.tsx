@@ -84,11 +84,24 @@ export default function WorkoutLogger() {
   };
 
   // Handle set completion
-  const handleSetComplete = (exerciseId: string, setIndex: number) => {
-    setCompletedSets(prev => ({
-      ...prev,
-      [exerciseId]: [...(prev[exerciseId] || []), setIndex]
-    }));
+  const handleSetComplete = (exerciseId: string, setIndex: number, completed: boolean) => {
+    setCompletedSets(prev => {
+      const exerciseSets = [...(prev[exerciseId] || [])];
+      
+      if (completed && !exerciseSets.includes(setIndex)) {
+        exerciseSets.push(setIndex);
+      } else if (!completed && exerciseSets.includes(setIndex)) {
+        const idx = exerciseSets.indexOf(setIndex);
+        if (idx !== -1) {
+          exerciseSets.splice(idx, 1);
+        }
+      }
+      
+      return {
+        ...prev,
+        [exerciseId]: exerciseSets
+      };
+    });
   };
   
   const handleCompleteWorkout = async () => {
@@ -184,10 +197,6 @@ export default function WorkoutLogger() {
         setActiveSessionId(null);
         setCompletedSets({});
         navigate('/schedule');
-      },
-      onError: (error: any) => {
-        console.error('Error logging workout:', error);
-        toast.error(`Failed to log workout: ${error.message}`);
       }
     });
   };

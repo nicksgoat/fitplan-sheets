@@ -1,127 +1,75 @@
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-interface ShareInput {
+// Use simpler types to avoid excessive type instantiation
+export interface ClubSharePayload {
   contentId: string;
   contentType: 'workout' | 'program';
   clubIds: string[];
 }
 
-// Define simplified types without recursive references
-type WorkoutShareRecord = {
-  club_id: string;
-  workout_id: string;
-  shared_by: string;
-};
-
-type ProgramShareRecord = {
-  club_id: string;
-  program_id: string;
-  shared_by: string;
-};
-
-export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
-  const { user } = useAuth();
+export function useClubSharing() {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  return useMutation({
-    mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
-      if (!user?.id) throw new Error('User not authenticated');
+  const shareWithClubs = useMutation({
+    mutationFn: async ({ contentId, contentType, clubIds }: ClubSharePayload) => {
+      if (!contentId || !contentType || !clubIds.length) {
+        throw new Error('Missing required share data');
+      }
 
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
+      setIsLoading(true);
       
-      const { data: existingShares, error: fetchError } = await supabase
-        .from(tableName)
-        .select('club_id')
-        .eq(contentIdField, contentId);
+      try {
+        // Determine table and fields based on content type
+        const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+        const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
         
-      if (fetchError) throw fetchError;
-
-      const existingClubIds = new Set((existingShares || []).map(share => share.club_id));
-      const sharesToAdd = clubIds.filter(id => !existingClubIds.has(id));
-      
-      if (sharesToAdd.length > 0) {
-        if (contentType === 'workout') {
-          const sharingRecords: WorkoutShareRecord[] = sharesToAdd.map(clubId => ({
-            club_id: clubId,
-            workout_id: contentId,
-            shared_by: user.id
-          }));
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+        
+        // First, remove any existing shares for this content
+        await supabase.from(table).delete().eq(idField, contentId);
+        
+        // Then insert new shares
+        const sharesToInsert = clubIds.map(clubId => ({
+          [idField]: contentId,
+          club_id: clubId,
+          shared_by: user.id
+        }));
+        
+        if (sharesToInsert.length > 0) {
+          const { error } = await supabase.from(table).insert(sharesToInsert);
           
-          const { error } = await supabase
-            .from('club_shared_workouts')
-            .insert(sharingRecords);
-            
-          if (error) throw error;
-        } else {
-          const sharingRecords: ProgramShareRecord[] = sharesToAdd.map(clubId => ({
-            club_id: clubId,
-            program_id: contentId,
-            shared_by: user.id
-          }));
-          
-          const { error } = await supabase
-            .from('club_shared_programs')
-            .insert(sharingRecords);
-            
           if (error) throw error;
         }
-      }
-      
-      // Remove unselected shares
-      const clubsToRemove = Array.from(existingClubIds).filter(id => !clubIds.includes(id as string));
-      
-      if (clubsToRemove.length > 0) {
-        const { error } = await supabase
-          .from(tableName)
-          .delete()
-          .eq(contentIdField, contentId)
-          .in('club_id', clubsToRemove);
-          
-        if (error) throw error;
-      }
-      
-      return clubIds;
-    },
-    onSuccess: (clubIds) => {
-      toast.success("Content shared successfully with selected clubs");
-      
-      if (onSuccess) {
-        onSuccess(clubIds);
-      }
-      
-      if (user?.id) {
-        queryClient.invalidateQueries({ queryKey: ['creator-clubs', user.id] });
+        
+        return { success: true };
+      } catch (error: any) {
+        console.error('Error sharing with clubs:', error);
+        throw error;
+      } finally {
+        setIsLoading(false);
       }
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to share content with clubs");
+    onSuccess: () => {
+      toast.success('Content shared with selected clubs');
+      queryClient.invalidateQueries({ queryKey: ['club-content'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Error sharing content: ${error.message}`);
     }
   });
-}
-
-export function useSharedClubs(contentId: string, contentType: 'workout' | 'program') {
-  const { user } = useAuth();
   
-  return useQuery({
-    queryKey: ['shared-clubs', contentType, contentId],
-    queryFn: async () => {
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
-      
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('club_id')
-        .eq(contentIdField, contentId);
-        
-      if (error) throw error;
-      
-      return (data || []).map(share => share.club_id);
-    },
-    enabled: !!contentId && !!user?.id
-  });
+  return {
+    shareWithClubs,
+    isLoading: isLoading || shareWithClubs.isPending
+  };
 }

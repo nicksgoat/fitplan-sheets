@@ -86,52 +86,74 @@ export function useWorkoutLoggerIntegration() {
       for (const exercise of exercises) {
         console.log(`Processing exercise: ${exercise.name} (ID: ${exercise.id})`);
         
-        // Create exercise log entry - but skip database if exercise has no ID
-        // This ensures we don't violate foreign key constraints
+        // Skip database operations if exercise has no ID - CRITICAL FIX
         if (!exercise.id) {
           console.warn('Skipping exercise logging due to missing ID:', exercise);
           continue;
         }
         
-        // Create the exercise log entry
-        const { data: exerciseLog, error: exerciseError } = await supabase
-          .from('exercise_logs')
-          .insert({
-            workout_log_id: logId,
-            exercise_id: exercise.id,
-            is_circuit: exercise.isCircuit || false,
-            circuit_id: exercise.circuitId || null,
-            is_in_circuit: exercise.isInCircuit || false,
-            notes: exercise.notes || ''
-          })
-          .select()
-          .single();
-        
-        if (exerciseError) {
-          console.error('Error logging exercise:', exerciseError);
-          console.error('Problem exercise:', exercise);
-          throw exerciseError;
+        // Verify if the exercise exists in the database to avoid foreign key violations
+        const { count, error: countError } = await supabase
+          .from('exercises')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', exercise.id);
+          
+        if (countError) {
+          console.error('Error checking if exercise exists:', countError);
+          throw countError;
         }
         
-        // Handle sets
-        const setEntries = exercise.sets.map((set, index) => ({
-          exercise_log_id: exerciseLog.id,
-          set_number: index + 1,
-          reps: parseInt(set.reps) || 0,
-          weight: set.weight || '',
-          rest_time: parseInt(set.rest || '60'),
-          is_completed: set.completed || false
-        }));
+        if (count === 0) {
+          console.warn(`Exercise with ID ${exercise.id} does not exist in the database. Skipping.`);
+          continue;
+        }
         
-        if (setEntries.length > 0) {
-          const { error: setsError } = await supabase
-            .from('set_logs')
-            .insert(setEntries);
+        try {
+          // Create the exercise log entry
+          const { data: exerciseLog, error: exerciseError } = await supabase
+            .from('exercise_logs')
+            .insert({
+              workout_log_id: logId,
+              exercise_id: exercise.id,
+              is_circuit: exercise.isCircuit || false,
+              circuit_id: exercise.circuitId || null,
+              is_in_circuit: exercise.isInCircuit || false,
+              notes: exercise.notes || ''
+            })
+            .select()
+            .single();
           
-          if (setsError) {
-            console.error('Error logging sets:', setsError);
-            throw setsError;
+          if (exerciseError) {
+            console.error('Error logging exercise:', exerciseError);
+            console.error('Problem exercise:', exercise);
+            throw exerciseError;
           }
+          
+          // Handle sets
+          if (exerciseLog && exercise.sets.length > 0) {
+            const setEntries = exercise.sets.map((set, index) => ({
+              exercise_log_id: exerciseLog.id,
+              set_number: index + 1,
+              reps: parseInt(set.reps) || 0,
+              weight: set.weight || '',
+              rest_time: parseInt(set.rest || '60'),
+              is_completed: set.completed || false
+            }));
+            
+            if (setEntries.length > 0) {
+              const { error: setsError } = await supabase
+                .from('set_logs')
+                .insert(setEntries);
+              
+              if (setsError) {
+                console.error('Error logging sets:', setsError);
+                throw setsError;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing exercise ${exercise.name}:`, error);
+          // Continue with other exercises rather than failing the whole process
         }
       }
       
