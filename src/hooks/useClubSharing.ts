@@ -28,27 +28,29 @@ export function useShareWithClubs() {
       if (clubIds.length > 0) {
         try {
           if (contentType === 'workout') {
+            // Create an array of workout shares
+            const workoutShares = clubIds.map(clubId => ({
+              club_id: clubId,
+              workout_id: contentId,
+              shared_by: user.id
+            }));
+            
             const { error } = await supabase
               .from('club_shared_workouts')
-              .insert(
-                clubIds.map(clubId => ({
-                  club_id: clubId,
-                  workout_id: contentId,
-                  shared_by: user.id
-                }))
-              );
+              .insert(workoutShares);
             
             if (error) throw error;
           } else {
+            // Create an array of program shares
+            const programShares = clubIds.map(clubId => ({
+              club_id: clubId,
+              program_id: contentId,
+              shared_by: user.id
+            }));
+            
             const { error } = await supabase
               .from('club_shared_programs')
-              .insert(
-                clubIds.map(clubId => ({
-                  club_id: clubId,
-                  program_id: contentId,
-                  shared_by: user.id
-                }))
-              );
+              .insert(programShares);
             
             if (error) throw error;
           }

@@ -10,9 +10,11 @@ import { useNavigate } from 'react-router-dom';
 
 interface ClubCardProps {
   club: Club;
+  isMember?: boolean;
+  onClick?: () => void;
 }
 
-const ClubCard: React.FC<ClubCardProps> = ({ club }) => {
+const ClubCard: React.FC<ClubCardProps> = ({ club, isMember, onClick }) => {
   const { isUserClubMember } = useClub();
   const navigate = useNavigate();
   
@@ -25,18 +27,22 @@ const ClubCard: React.FC<ClubCardProps> = ({ club }) => {
     }
   };
   
-  const membershipStatus = isUserClubMember(club.id) 
+  const membershipStatus = isMember || isUserClubMember(club.id) 
     ? 'Member' 
     : club.membership_type === 'premium' 
       ? 'Premium' 
       : 'Free';
       
-  const cardStyle = isUserClubMember(club.id)
+  const cardStyle = (isMember || isUserClubMember(club.id))
     ? 'bg-dark-200 border-fitbloom-purple/50'
     : 'bg-dark-200 border-dark-300';
   
   const handleClick = () => {
-    navigate(`/clubs/${club.id}`);
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/clubs/${club.id}`);
+    }
   };
 
   return (
