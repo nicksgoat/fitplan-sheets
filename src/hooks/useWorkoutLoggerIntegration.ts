@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Workout, Exercise, Set } from '@/types/workout';
+import { Exercise, Set } from '@/types/workout';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { useProgram } from '@/hooks/useWorkoutData';
 
@@ -46,9 +46,9 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
   const programQuery = useProgram(programId || '');
   
   // Start a new workout log session
-  const startWorkoutSession = async (workout: Workout) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to start a workout');
+  const startWorkoutSession = async () => {
+    if (!user?.id || !workout?.id) {
+      toast.error('Missing required information to start workout');
       return null;
     }
     
@@ -57,15 +57,14 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
       
       const currentTime = new Date().toISOString();
       
-      // Create a workout log with required fields
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
           workout_id: workout.id,
           start_time: currentTime,
-          end_time: null, // Will be updated when workout is completed
-          duration: 0 // Will be updated when workout is completed
+          duration: 0,
+          end_time: null
         })
         .select()
         .single();
@@ -94,7 +93,7 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
       
       const { logId, duration, notes, exercises } = payload;
       
-      // 1. Update the workout log with completion details
+      // Update the workout log with completion details
       const { error: logError } = await supabase
         .from('workout_logs')
         .update({
@@ -106,7 +105,7 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
       
       if (logError) throw logError;
       
-      // 2. Record each exercise
+      // Record each exercise
       for (const exercise of exercises) {
         const { data: exerciseLog, error: exerciseError } = await supabase
           .from('exercise_logs')
@@ -119,7 +118,7 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
         
         if (exerciseError) throw exerciseError;
         
-        // 3. Record each set for the exercise
+        // Record each set for the exercise
         const setEntries = exercise.sets.map((set, index) => ({
           exercise_log_id: exerciseLog.id,
           set_number: index + 1,

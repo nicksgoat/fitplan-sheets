@@ -16,17 +16,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-// Updated interface to include all necessary props
 export interface ClubShareSelectionProps {
   contentId?: string;
   contentType: 'workout' | 'program';
   sharedClubs?: string[];
   onClubsChange?: (clubs: string[]) => void;
-  onSelectionChange?: (clubs: string[]) => void;
-  selectedClubIds?: string[];
+  initialSelectedClubs?: string[];
 }
 
-// This component allows selecting a single club with a dropdown
 export function ClubSelection({ 
   onClubSelect, 
   selectedClubId 
@@ -36,7 +33,6 @@ export function ClubSelection({
 }) {
   const { user } = useAuth();
 
-  // Fetch clubs created by the user
   const { data: clubs, isLoading } = useQuery({
     queryKey: ['user-clubs', user?.id],
     queryFn: async () => {
@@ -77,34 +73,26 @@ export function ClubSelection({
   );
 }
 
-// This component supports sharing content with multiple clubs via a dialog
 export function ClubShareSelection({ 
   contentId, 
   contentType, 
   sharedClubs = [], 
   onClubsChange,
-  onSelectionChange,
-  selectedClubIds = []
+  initialSelectedClubs = []
 }: ClubShareSelectionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [localSelectedClubIds, setLocalSelectedClubIds] = useState<string[]>(selectedClubIds);
+  const [selectedClubIds, setSelectedClubIds] = useState<string[]>(initialSelectedClubs);
   
-  // Update local state when the prop changes
   useEffect(() => {
-    if (sharedClubs && sharedClubs.length > 0) {
-      setLocalSelectedClubIds(sharedClubs);
-    } else if (selectedClubIds && selectedClubIds.length > 0) {
-      setLocalSelectedClubIds(selectedClubIds);
+    if (sharedClubs.length > 0) {
+      setSelectedClubIds(sharedClubs);
+    } else if (initialSelectedClubs.length > 0) {
+      setSelectedClubIds(initialSelectedClubs);
     }
-  }, [sharedClubs, selectedClubIds]);
+  }, [sharedClubs, initialSelectedClubs]);
 
   const handleSelectionChange = (clubs: string[]) => {
-    setLocalSelectedClubIds(clubs);
-    
-    // Call appropriate callback handlers
-    if (onSelectionChange) {
-      onSelectionChange(clubs);
-    }
+    setSelectedClubIds(clubs);
     if (onClubsChange) {
       onClubsChange(clubs);
     }
@@ -115,8 +103,8 @@ export function ClubShareSelection({
       <Button variant="outline" size="sm" className="gap-1" onClick={() => setIsOpen(true)}>
         <Plus size={16} />
         Share with Club
-        {localSelectedClubIds.length > 0 && (
-          <Badge variant="secondary" className="ml-1">{localSelectedClubIds.length}</Badge>
+        {selectedClubIds.length > 0 && (
+          <Badge variant="secondary" className="ml-1">{selectedClubIds.length}</Badge>
         )}
       </Button>
       
@@ -125,7 +113,7 @@ export function ClubShareSelection({
         onOpenChange={setIsOpen}
         contentId={contentId || ''}
         contentType={contentType}
-        selectedClubIds={localSelectedClubIds}
+        selectedClubIds={selectedClubIds}
         onSelectionChange={handleSelectionChange}
       />
     </>
