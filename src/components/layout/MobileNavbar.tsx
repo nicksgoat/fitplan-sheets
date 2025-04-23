@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Home, Search, FolderHeart, Dumbbell, LineChart } from 'lucide-react';
+import { User, Home, Search, Dumbbell, LineChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -76,4 +76,4 @@ export default function MobileNavbar() {
       </div>
     </div>
   );
-}
+};
