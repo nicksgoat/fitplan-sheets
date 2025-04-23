@@ -13,25 +13,25 @@ interface ShareInput {
 type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
 type ShareContentType = 'workout_id' | 'program_id';
 
-interface WorkoutShareRecord {
+interface ShareRecord {
   club_id: string;
   shared_by: string;
+  [key: string]: string;
+}
+
+interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
   id?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-interface ProgramShareRecord {
-  club_id: string;
-  shared_by: string;
+interface ProgramShareRecord extends ShareRecord {
   program_id: string;
   id?: string;
   created_at?: string;
   updated_at?: string;
 }
-
-type ShareRecord = WorkoutShareRecord | ProgramShareRecord;
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();

@@ -236,7 +236,7 @@ export default function WorkoutLogger() {
 
   // Function to render a set row for an exercise
   const renderSetRow = (set: any, index: number, isDisabled: boolean) => (
-    <tr key={set.id}>
+    <tr key={set.id || index}>
       <td className="py-2">{index + 1}</td>
       <td className="py-2">
         <Input
@@ -296,37 +296,42 @@ export default function WorkoutLogger() {
 
   // Function to render a circuit card with its exercises
   const renderCircuitCard = (circuitExercise: Exercise) => {
+    // Get circuit exercises from the circuit map
     const circuitExercises = circuitMap.get(circuitExercise.circuitId || '') || [];
     
     return (
       <Card key={circuitExercise.id} className="mb-4 border border-blue-800 bg-blue-900/10">
         <CardHeader className="bg-blue-900/20 border-b border-blue-800">
-          <h3 className="font-medium text-blue-400">{circuitExercise.name}</h3>
+          <h3 className="font-medium text-blue-400">Circuit: {circuitExercise.name}</h3>
           {circuitExercise.notes && <p className="text-sm text-gray-400">{circuitExercise.notes}</p>}
         </CardHeader>
         <CardContent className="p-0">
-          {circuitExercises.map((circuitEx) => (
-            <div key={circuitEx.id} className="border-t border-blue-800/30 p-4">
-              <h4 className="text-md font-medium mb-2">{circuitEx.name}</h4>
-              {circuitEx.notes && <p className="text-xs text-gray-400 mb-3">{circuitEx.notes}</p>}
-              
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="text-left text-sm">Set</th>
-                    <th className="text-left text-sm">Weight</th>
-                    <th className="text-left text-sm">Reps</th>
-                    <th className="text-left text-sm">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {circuitEx.sets.map((set, index) => 
-                    renderSetRow(set, index, !activeSessionId)
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ))}
+          {circuitExercises.length > 0 ? (
+            circuitExercises.map((circuitEx) => (
+              <div key={circuitEx.id} className="border-t border-blue-800/30 p-4">
+                <h4 className="text-md font-medium mb-2">{circuitEx.name}</h4>
+                {circuitEx.notes && <p className="text-xs text-gray-400 mb-3">{circuitEx.notes}</p>}
+                
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-sm">Set</th>
+                      <th className="text-left text-sm">Weight</th>
+                      <th className="text-left text-sm">Reps</th>
+                      <th className="text-left text-sm">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {circuitEx.sets.map((set, index) => 
+                      renderSetRow(set, index, !activeSessionId)
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          ) : (
+            <div className="p-4 text-gray-400 italic">No exercises in this circuit</div>
+          )}
         </CardContent>
       </Card>
     );
@@ -419,12 +424,9 @@ export default function WorkoutLogger() {
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
             {organizedExercises.map((exercise) => {
-              // Circuit exercise
               if (exercise.isCircuit && exercise.circuitId) {
                 return renderCircuitCard(exercise);
-              }
-              // Standard exercise (not in a circuit)
-              else if (!exercise.isInCircuit) {
+              } else if (!exercise.isInCircuit) {
                 return renderExerciseCard(exercise);
               }
               // Skip exercises that are in circuits (they're handled by their parent)
