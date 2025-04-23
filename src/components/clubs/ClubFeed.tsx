@@ -6,17 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { Send, MoreVertical, Trash2, MessageSquare, Share2, Loader2 } from 'lucide-react';
+import { Send, Share2, MessageSquare, Loader2 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ClubPost } from '@/types/club';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClubFeedProps {
   clubId: string;
@@ -28,9 +31,32 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
   const [newPostContent, setNewPostContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [showWorkoutPicker, setShowWorkoutPicker] = useState(false);
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   
   const isMember = isUserClubMember(clubId);
+
+  // Fetch shared workouts for the club
+  const { data: sharedWorkouts } = useQuery({
+    queryKey: ['shared-workouts', clubId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('club_shared_workouts')
+        .select(`
+          workout_id,
+          workouts (
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('club_id', clubId);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: showWorkoutPicker,
+  });
   
   const handleCreatePost = async () => {
     if (!user) {
@@ -45,19 +71,15 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
     
     try {
       setIsSubmitting(true);
-      console.log("Creating new post:", {
-        club_id: clubId,
-        user_id: user.id,
-        content: newPostContent
-      });
       
       await createNewPost({
         club_id: clubId,
-        user_id: user.id,
-        content: newPostContent
+        content: newPostContent.trim(),
+        workout_id: selectedWorkoutId
       });
       
       setNewPostContent('');
+      setSelectedWorkoutId(null);
       toast.success('Post created successfully');
     } catch (error) {
       console.error('Error creating post:', error);
@@ -66,42 +88,12 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
       setIsSubmitting(false);
     }
   };
-  
-  const handleDeletePost = async () => {
-    if (!deletePostId) return;
-    
-    try {
-      await removePost(deletePostId);
-      setDeletePostId(null);
-    } catch (error) {
-      console.error('Error deleting post:', error);
-    }
-  };
-  
-  const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
-  
+
   if (loadingPosts) {
     return (
       <div className="space-y-6">
         {[...Array(3)].map((_, index) => (
-          <div key={index} className="bg-dark-300 rounded-lg p-4 space-y-4">
-            <div className="flex items-center space-x-3">
-              <Skeleton className="h-10 w-10 rounded-full bg-dark-400" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-24 bg-dark-400" />
-                <Skeleton className="h-3 w-16 bg-dark-400" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full bg-dark-400" />
-              <Skeleton className="h-4 w-3/4 bg-dark-400" />
-            </div>
-          </div>
+          <Skeleton key={index} className="w-full h-[200px] rounded-lg" />
         ))}
       </div>
     );
@@ -110,7 +102,7 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
   return (
     <div className="space-y-6">
       {isMember && (
-        <div className="bg-dark-300 rounded-lg p-4">
+        <div className="bg-card rounded-lg p-4">
           <div className="flex items-start gap-4">
             <Avatar>
               <AvatarImage src={user?.user_metadata?.avatar_url} />
@@ -118,16 +110,23 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
             </Avatar>
             <div className="flex-1">
               <Textarea
-                placeholder="Share an update with the club..."
-                className="bg-dark-200 border-dark-400 mb-2"
+                placeholder="What's on your mind?"
                 value={newPostContent}
                 onChange={e => setNewPostContent(e.target.value)}
                 rows={3}
+                className="mb-2 resize-none"
                 disabled={isSubmitting}
               />
-              <div className="flex justify-end">
-                <Button 
-                  className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowWorkoutPicker(true)}
+                  disabled={isSubmitting}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Add Workout
+                </Button>
+                <Button
                   onClick={handleCreatePost}
                   disabled={isSubmitting || !newPostContent.trim()}
                 >
@@ -144,137 +143,111 @@ const ClubFeed: React.FC<ClubFeedProps> = ({ clubId }) => {
                   )}
                 </Button>
               </div>
+              {selectedWorkoutId && sharedWorkouts && (
+                <div className="mt-2 p-2 bg-muted rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">
+                      Selected workout: {
+                        sharedWorkouts.find(w => w.workout_id === selectedWorkoutId)?.workouts?.name
+                      }
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedWorkoutId(null)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
       
       {posts.length === 0 ? (
-        <div className="text-center py-8 bg-dark-300 rounded-lg">
-          <p className="text-gray-400">No posts yet. Be the first to share something!</p>
+        <div className="text-center py-8 bg-card rounded-lg">
+          <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
         </div>
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <PostItem 
+            <ClubPost 
               key={post.id} 
-              post={post} 
-              onDelete={() => setDeletePostId(post.id)}
-              onToggleComments={() => toggleComments(post.id)}
-              showComments={!!showComments[post.id]}
+              post={post}
               currentUserId={user?.id}
+              onDelete={() => setDeletePostId(post.id)}
             />
           ))}
         </div>
       )}
       
+      {/* Workout picker dialog */}
+      <Dialog open={showWorkoutPicker} onOpenChange={setShowWorkoutPicker}>
+        <DialogContent>
+          <DialogTitle>Select a Workout to Share</DialogTitle>
+          <div className="space-y-4 my-4">
+            {sharedWorkouts?.map((workoutShare) => (
+              <div
+                key={workoutShare.workout_id}
+                className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                  selectedWorkoutId === workoutShare.workout_id
+                    ? 'bg-primary/10 border-primary'
+                    : 'hover:bg-muted'
+                }`}
+                onClick={() => {
+                  setSelectedWorkoutId(workoutShare.workout_id);
+                  setShowWorkoutPicker(false);
+                }}
+              >
+                <h4 className="font-medium">{workoutShare.workouts?.name}</h4>
+                {workoutShare.workouts?.description && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {workoutShare.workouts.description}
+                  </p>
+                )}
+              </div>
+            ))}
+            {(!sharedWorkouts || sharedWorkouts.length === 0) && (
+              <p className="text-center text-muted-foreground py-4">
+                No workouts have been shared with this club yet.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWorkoutPicker(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
       <Dialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
-        <DialogContent className="bg-dark-200 border-dark-300">
+        <DialogContent>
           <DialogTitle>Delete Post</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <p className="text-muted-foreground">
             Are you sure you want to delete this post? This action cannot be undone.
-          </DialogDescription>
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletePostId(null)}>
               Cancel
             </Button>
             <Button 
               variant="destructive" 
-              onClick={handleDeletePost}
+              onClick={async () => {
+                if (deletePostId) {
+                  await removePost(deletePostId);
+                  setDeletePostId(null);
+                }
+              }}
             >
               Delete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
-
-interface PostItemProps {
-  post: ClubPost;
-  onDelete: () => void;
-  onToggleComments: () => void;
-  showComments: boolean;
-  currentUserId?: string;
-}
-
-const PostItem: React.FC<PostItemProps> = ({ 
-  post, 
-  onDelete, 
-  onToggleComments, 
-  showComments,
-  currentUserId 
-}) => {
-  const formatDate = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
-      return "Unknown";
-    }
-  };
-  
-  const isAuthor = currentUserId === post.user_id;
-  
-  return (
-    <div className="bg-dark-300 rounded-lg p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
-          <Avatar>
-            <AvatarImage src={post.profile?.avatar_url} />
-            <AvatarFallback>
-              {post.profile?.display_name?.charAt(0) || post.profile?.username?.charAt(0) || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-medium">
-              {post.profile?.display_name || post.profile?.username || 'Unknown User'}
-            </h3>
-            <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-          </div>
-        </div>
-        
-        {isAuthor && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-dark-200 border-dark-300">
-              <DropdownMenuItem 
-                className="text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                onClick={onDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-      
-      <div className="mt-3 mb-3">
-        <p className="whitespace-pre-wrap">{post.content}</p>
-      </div>
-      
-      <div className="flex items-center justify-between border-t border-dark-400 pt-3">
-        <Button variant="ghost" size="sm" onClick={onToggleComments}>
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Comments
-        </Button>
-        
-        <Button variant="ghost" size="sm">
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
-        </Button>
-      </div>
-      
-      {showComments && (
-        <div className="mt-4 pt-4 border-t border-dark-400">
-          <p className="text-gray-400 text-sm text-center">Comments feature coming soon</p>
-        </div>
-      )}
     </div>
   );
 };

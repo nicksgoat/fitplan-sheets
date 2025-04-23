@@ -70,7 +70,11 @@ export interface ClubPost {
   profile?: any;
   image_url?: string;
   workout_id?: string;
-  workout?: any;
+  workout?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
   comments?: ClubPostComment[];
 }
 
