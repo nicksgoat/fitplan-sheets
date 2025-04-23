@@ -8,6 +8,8 @@ interface MobileApiClient {
   getWorkouts: (limit: number, offset: number) => Promise<{ data: any[], total: number }>;
   getPrograms: (limit: number, offset: number) => Promise<{ data: any[], total: number }>;
   syncData: () => Promise<boolean>;
+  generateAIWorkout: (params: any) => Promise<any>;
+  getAnalytics: () => Promise<any>;
 }
 
 // Create the mobile API client with all required methods
@@ -32,8 +34,8 @@ const mobileApi: MobileApiClient = {
     try {
       console.log(`[mobileApi] Getting workouts (limit: ${limit}, offset: ${offset})`);
       
-      const baseUrl = 'https://api.fitbloom-mobile.com/v1';
-      console.log(`[mobileApi] Using base URL: ${baseUrl}`);
+      const apiUrl = 'https://api.fitbloom-mobile.com/v1';
+      console.log(`[mobileApi] Using API URL: ${apiUrl}`);
       
       // Simulate API response for development
       return {
@@ -57,8 +59,8 @@ const mobileApi: MobileApiClient = {
     try {
       console.log(`[mobileApi] Getting programs (limit: ${limit}, offset: ${offset})`);
       
-      const baseUrl = 'https://api.fitbloom-mobile.com/v1';
-      console.log(`[mobileApi] Using base URL: ${baseUrl}`);
+      const apiUrl = 'https://api.fitbloom-mobile.com/v1';
+      console.log(`[mobileApi] Using API URL: ${apiUrl}`);
       
       // Simulate API response for development
       return {
@@ -74,6 +76,62 @@ const mobileApi: MobileApiClient = {
       console.error('[mobileApi] Error fetching programs:', error);
       toast.error('Failed to load programs from mobile');
       return { data: [], total: 0 };
+    }
+  },
+
+  // Generate an AI workout
+  generateAIWorkout: async (params: any) => {
+    try {
+      console.log('[mobileApi] Generating AI workout with params:', params);
+      
+      // Simulate API response for development
+      const workout = {
+        id: `ai-workout-${Date.now()}`,
+        name: `${params.fitnessLevel} ${params.targetMuscles[0]} Workout`,
+        description: `AI-generated workout targeting ${params.targetMuscles.join(', ')}`,
+        difficulty: params.fitnessLevel,
+        duration: params.duration || 45,
+        targetMuscles: params.targetMuscles,
+        exercises: Array.from({ length: 5 }, (_, i) => ({
+          name: `Exercise ${i + 1}`,
+          sets: 3,
+          reps: '8-12',
+          restBetweenSets: '60s',
+          notes: 'Focus on proper form'
+        }))
+      };
+      
+      return { success: true, workout };
+    } catch (error) {
+      console.error('[mobileApi] Error generating AI workout:', error);
+      toast.error('Failed to generate workout');
+      return { success: false, error };
+    }
+  },
+
+  // Get analytics data
+  getAnalytics: async () => {
+    try {
+      console.log('[mobileApi] Getting analytics data');
+      
+      // Simulate API response for development
+      return {
+        workoutCount: 32,
+        streak: 5,
+        longestStreak: 12,
+        totalDuration: 1840, // in minutes
+        mostFrequentMuscleGroups: ['Chest', 'Back', 'Legs'],
+        recentWorkouts: Array.from({ length: 5 }, (_, i) => ({
+          id: `workout-log-${i + 1}`,
+          name: `Workout ${i + 1}`,
+          date: new Date(Date.now() - (i * 86400000)).toISOString(),
+          duration: 45 + (i * 5)
+        }))
+      };
+    } catch (error) {
+      console.error('[mobileApi] Error fetching analytics:', error);
+      toast.error('Failed to load analytics');
+      return null;
     }
   },
 

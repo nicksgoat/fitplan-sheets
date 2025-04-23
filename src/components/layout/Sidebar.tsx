@@ -1,182 +1,161 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Library, Compass, Heart, User, Home, FileSpreadsheet, ChevronLeft, ChevronRight, LogOut, Calendar, Users, Award, LayoutDashboard, Dumbbell } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { BarChart2, Calendar, FolderHeart, Heart, Home, Layout, PlusCircle, Search, Settings, User, Users, LineChart, Dumbbell } from 'lucide-react';
 
-interface SidebarProps {
-  mobileFooter?: boolean;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
-}
-
-const Sidebar = ({ 
-  mobileFooter = false, 
-  collapsed = false,
-  onToggleCollapse
-}: SidebarProps) => {
+export default function Sidebar() {
+  const { session } = useAuth();
   const location = useLocation();
-  const isMobile = useIsMobile();
-  const { signOut, user } = useAuth();
-
-  const navItems = [
-    { name: 'Home', path: '/explore', icon: <Home className="h-5 w-5" /> },
-    { name: 'Search', path: '/search', icon: <Search className="h-5 w-5" /> },
-    { name: 'My Library', path: '/library', icon: <Library className="h-5 w-5" /> },
-    { name: 'Schedule', path: '/schedule', icon: <Calendar className="h-5 w-5" /> },
-    { name: 'Clubs', path: '/clubs', icon: <Users className="h-5 w-5" /> },
-    { name: 'Leaderboards', path: '/leaderboards', icon: <Award className="h-5 w-5" /> },
-    { name: 'Liked', path: '/liked', icon: <Heart className="h-5 w-5" /> },
-    { name: 'Sheets', path: '/sheets', icon: <FileSpreadsheet className="h-5 w-5" /> },
-  ];
-  
-  // Creator tools navigation items
-  const creatorItems = [
-    { name: 'Create Exercise', path: '/exercises/create', icon: <Dumbbell className="h-5 w-5" /> },
-    { name: 'Creator Dashboard', path: '/creator', icon: <LayoutDashboard className="h-5 w-5" /> },
-  ];
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  if (mobileFooter) {
-    return (
-      <div className="flex justify-around items-center h-16 px-2">
-        {navItems.map((item) => (
-          <Link key={item.path} to={item.path} className="flex flex-col items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-full",
-                location.pathname === item.path ? "text-fitbloom-purple" : "text-gray-400"
-              )}
-            >
-              {item.icon}
-            </Button>
-            <span className="text-xs mt-1">{item.name}</span>
-          </Link>
-        ))}
-      </div>
-    );
-  }
+  const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className={cn(
-      "bg-black h-full flex flex-col transition-all duration-300",
-      collapsed ? "w-16" : "w-64"
-    )}>
-      <div className={cn(
-        "p-6",
-        collapsed && "p-4 flex justify-center"
-      )}>
-        {!collapsed ? (
-          <h1 className="text-2xl font-bold flex items-center">
-            <span className="text-fitbloom-purple">Fit</span>
-            <span className="text-white">Bloom</span>
-          </h1>
-        ) : (
-          <span className="text-2xl font-bold text-fitbloom-purple">F</span>
-        )}
-      </div>
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link to={item.path}>
+    <div className="hidden md:block w-64 border-r border-gray-800 h-screen sticky top-0 overflow-y-auto pb-12">
+      <div className="py-4 px-3">
+        <Link to="/" className="flex items-center gap-2 mb-8">
+          <span className="text-2xl font-bold text-fitbloom-purple">FitBloom</span>
+        </Link>
+
+        <nav className="space-y-1">
+          <Link to="/explore">
+            <Button
+              variant={isActive('/explore') ? 'secondary' : 'ghost'}
+              className={cn('w-full justify-start', isActive('/explore') && 'bg-gray-800')}
+            >
+              <Home className="mr-2 h-5 w-5" />
+              Explore
+            </Button>
+          </Link>
+          <Link to="/search">
+            <Button
+              variant={isActive('/search') ? 'secondary' : 'ghost'}
+              className={cn('w-full justify-start', isActive('/search') && 'bg-gray-800')}
+            >
+              <Search className="mr-2 h-5 w-5" />
+              Search
+            </Button>
+          </Link>
+          
+          {/* New features */}
+          <Link to="/ai-workout-generator">
+            <Button
+              variant={isActive('/ai-workout-generator') ? 'secondary' : 'ghost'}
+              className={cn('w-full justify-start', isActive('/ai-workout-generator') && 'bg-gray-800')}
+            >
+              <Dumbbell className="mr-2 h-5 w-5" />
+              AI Workout Generator
+            </Button>
+          </Link>
+          <Link to="/analytics">
+            <Button
+              variant={isActive('/analytics') ? 'secondary' : 'ghost'}
+              className={cn('w-full justify-start', isActive('/analytics') && 'bg-gray-800')}
+            >
+              <LineChart className="mr-2 h-5 w-5" />
+              Analytics
+            </Button>
+          </Link>
+          
+          {session && (
+            <>
+              <Link to="/library">
                 <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-white hover:bg-gray-900 hover:text-white",
-                    location.pathname === item.path && "bg-gray-900 text-fitbloom-purple font-medium",
-                    collapsed && "justify-center px-2"
-                  )}
-                  title={collapsed ? item.name : undefined}
+                  variant={isActive('/library') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/library') && 'bg-gray-800')}
                 >
-                  {item.icon}
-                  {!collapsed && <span className="ml-3">{item.name}</span>}
+                  <FolderHeart className="mr-2 h-5 w-5" />
+                  Library
                 </Button>
               </Link>
-            </li>
-          ))}
-        </ul>
-        
-        {/* Creator Tools Section */}
-        {user && (
-          <div className="mt-8 space-y-2">
-            {!collapsed && <h3 className="px-3 text-xs text-gray-400 uppercase tracking-wider">Creator Tools</h3>}
-            <ul className="space-y-2">
-              {creatorItems.map((item) => (
-                <li key={item.path}>
-                  <Link to={item.path}>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-start text-white hover:bg-gray-900 hover:text-white",
-                        location.pathname === item.path && "bg-gray-900 text-fitbloom-purple font-medium",
-                        collapsed && "justify-center px-2"
-                      )}
-                      title={collapsed ? item.name : undefined}
-                    >
-                      {item.icon}
-                      {!collapsed && <span className="ml-3">{item.name}</span>}
-                    </Button>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </nav>
-      <div className="p-4 border-t border-gray-800 space-y-2">
-        <Link to="/profile">
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "w-full text-white hover:bg-gray-900",
-              collapsed ? "justify-center px-2" : "justify-start"
-            )}
-            title={collapsed ? "Profile" : undefined}
-          >
-            <User className="h-5 w-5" />
-            {!collapsed && <span className="ml-3">Profile</span>}
-          </Button>
-        </Link>
-        
-        <Button 
-          variant="ghost"
-          onClick={handleLogout}
-          className={cn(
-            "w-full text-white hover:bg-gray-900 hover:text-red-400",
-            collapsed ? "justify-center px-2" : "justify-start"
+              <Link to="/schedule">
+                <Button
+                  variant={isActive('/schedule') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/schedule') && 'bg-gray-800')}
+                >
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Schedule
+                </Button>
+              </Link>
+              <Link to="/clubs">
+                <Button
+                  variant={isActive('/clubs') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/clubs') && 'bg-gray-800')}
+                >
+                  <Users className="mr-2 h-5 w-5" />
+                  Clubs
+                </Button>
+              </Link>
+              <Link to="/liked">
+                <Button
+                  variant={isActive('/liked') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/liked') && 'bg-gray-800')}
+                >
+                  <Heart className="mr-2 h-5 w-5" />
+                  Liked
+                </Button>
+              </Link>
+              <Link to="/sheets">
+                <Button
+                  variant={isActive('/sheets') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/sheets') && 'bg-gray-800')}
+                >
+                  <Layout className="mr-2 h-5 w-5" />
+                  Sheets
+                </Button>
+              </Link>
+              <Link to="/leaderboards">
+                <Button
+                  variant={isActive('/leaderboards') ? 'secondary' : 'ghost'}
+                  className={cn('w-full justify-start', isActive('/leaderboards') && 'bg-gray-800')}
+                >
+                  <BarChart2 className="mr-2 h-5 w-5" />
+                  Leaderboards
+                </Button>
+              </Link>
+            </>
           )}
-          title={collapsed ? "Logout" : undefined}
-        >
-          <LogOut className="h-5 w-5" />
-          {!collapsed && <span className="ml-3">Logout</span>}
-        </Button>
+
+          <div className="pt-4">
+            {session ? (
+              <>
+                <Link to="/profile/view">
+                  <Button
+                    variant={isActive('/profile/view') ? 'secondary' : 'ghost'}
+                    className={cn('w-full justify-start', isActive('/profile/view') && 'bg-gray-800')}
+                  >
+                    <User className="mr-2 h-5 w-5" />
+                    Profile
+                  </Button>
+                </Link>
+                <Link to="/creator">
+                  <Button
+                    variant={isActive('/creator') ? 'secondary' : 'ghost'}
+                    className={cn('w-full justify-start', isActive('/creator') && 'bg-gray-800')}
+                  >
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Creator Dashboard
+                  </Button>
+                </Link>
+                <Link to="/settings">
+                  <Button
+                    variant={isActive('/settings') ? 'secondary' : 'ghost'}
+                    className={cn('w-full justify-start', isActive('/settings') && 'bg-gray-800')}
+                  >
+                    <Settings className="mr-2 h-5 w-5" />
+                    Settings
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button className="w-full">Sign In</Button>
+              </Link>
+            )}
+          </div>
+        </nav>
       </div>
-      {onToggleCollapse && (
-        <div className="p-4 border-t border-gray-800">
-          <Button 
-            variant="ghost" 
-            onClick={onToggleCollapse} 
-            className="w-full justify-center text-gray-400 hover:text-white"
-          >
-            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </Button>
-        </div>
-      )}
     </div>
   );
-};
-
-export default Sidebar;
+}

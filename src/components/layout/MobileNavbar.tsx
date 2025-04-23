@@ -1,49 +1,79 @@
 
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, Library, Heart, FileSpreadsheet, Calendar, Users, Award } from 'lucide-react';
-import { ExpandableTabs, type TabItem } from '@/components/ui/expandable-tabs';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { User, Home, Search, FolderHeart, Dumbbell, LineChart } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
-const MobileNavbar = () => {
-  const navigate = useNavigate();
+export default function MobileNavbar() {
   const location = useLocation();
-  
-  // Define navigation tabs with correct type
-  const tabs: TabItem[] = [
-    { title: 'Home', icon: Home },
-    { title: 'Search', icon: Search },
-    { title: 'Library', icon: Library },
-    { title: 'Clubs', icon: Users },
-    { type: "separator" },
-    { title: 'Schedule', icon: Calendar },
-    { title: 'Leaderboards', icon: Award },
-    { title: 'Liked', icon: Heart },
-    { title: 'Sheets', icon: FileSpreadsheet },
-  ];
-  
-  // Handle tab selection
-  const handleTabChange = (index: number | null) => {
-    if (index === null) return;
-    
-    // Map the tab index to the corresponding route
-    const routes = ['/explore', '/search', '/library', '/clubs', '', '/schedule', '/leaderboards', '/liked', '/sheets'];
-    // Skip separators when mapping (index 4 is a separator in our tabs array)
-    const routeIndex = index >= 4 ? index + 1 : index;
-    
-    if (routes[routeIndex]) {
-      navigate(routes[routeIndex]);
-    }
-  };
-  
+  const { session } = useAuth();
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4">
-      <ExpandableTabs 
-        tabs={tabs}
-        activeColor="text-fitbloom-purple"
-        className="border-dark-300 bg-dark-300/80 backdrop-blur-md w-full"
-        onChange={handleTabChange}
-      />
+    <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-gray-900/90 backdrop-blur-md z-50">
+      <div className="flex justify-around items-center py-2">
+        <Link
+          to="/explore"
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 py-2 text-xs",
+            isActive("/explore")
+              ? "text-fitbloom-purple"
+              : "text-gray-400 hover:text-gray-300"
+          )}
+        >
+          <Home className="h-5 w-5 mb-1" />
+          <span>Home</span>
+        </Link>
+        <Link
+          to="/search"
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 py-2 text-xs",
+            isActive("/search")
+              ? "text-fitbloom-purple"
+              : "text-gray-400 hover:text-gray-300"
+          )}
+        >
+          <Search className="h-5 w-5 mb-1" />
+          <span>Search</span>
+        </Link>
+        <Link
+          to="/ai-workout-generator"
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 py-2 text-xs",
+            isActive("/ai-workout-generator")
+              ? "text-fitbloom-purple"
+              : "text-gray-400 hover:text-gray-300"
+          )}
+        >
+          <Dumbbell className="h-5 w-5 mb-1" />
+          <span>AI Workout</span>
+        </Link>
+        <Link
+          to="/analytics"
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 py-2 text-xs",
+            isActive("/analytics")
+              ? "text-fitbloom-purple"
+              : "text-gray-400 hover:text-gray-300"
+          )}
+        >
+          <LineChart className="h-5 w-5 mb-1" />
+          <span>Stats</span>
+        </Link>
+        <Link
+          to={session ? "/profile/view" : "/auth"}
+          className={cn(
+            "flex flex-col items-center justify-center w-1/5 py-2 text-xs",
+            isActive("/profile/view") || isActive("/auth")
+              ? "text-fitbloom-purple"
+              : "text-gray-400 hover:text-gray-300"
+          )}
+        >
+          <User className="h-5 w-5 mb-1" />
+          <span>{session ? "Profile" : "Login"}</span>
+        </Link>
+      </div>
     </div>
   );
-};
-
-export default MobileNavbar;
+}

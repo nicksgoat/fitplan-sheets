@@ -10,3 +10,6 @@ verify_jwt = true
 
 [functions.run-sql-rpcs]
 verify_jwt = true
+
+[functions.generate-ai-workout]
+verify_jwt = true

@@ -30,6 +30,9 @@ import WorkoutDetail from './pages/WorkoutDetail';
 import ProgramDetail from './pages/ProgramDetail';
 import CreatorWorkoutDetail from './pages/CreatorWorkoutDetail';
 import CreatorProgramDetail from './pages/CreatorProgramDetail';
+import AIWorkoutGenerator from './components/workout/AIWorkoutGenerator';
+import EnhancedDashboard from './components/analytics/EnhancedDashboard';
+import OptimizedProfileView from './components/profile/OptimizedProfileView';
 
 function App() {
   return (
@@ -45,6 +48,11 @@ function App() {
             <Route path="search" element={<Search />} />
             <Route path="library" element={<Library />} />
             <Route path="schedule" element={<AuthenticatedRoute><Schedule /></AuthenticatedRoute>} />
+            
+            {/* New routes for AI features and enhanced analytics */}
+            <Route path="ai-workout-generator" element={<AuthenticatedRoute><AIWorkoutGenerator /></AuthenticatedRoute>} />
+            <Route path="analytics" element={<AuthenticatedRoute><EnhancedDashboard /></AuthenticatedRoute>} />
+            <Route path="profile/view" element={<AuthenticatedRoute><OptimizedProfileView /></AuthenticatedRoute>} />
             
             {/* Product detail routes */}
             <Route path="workout/:workoutId" element={<WorkoutDetail />} />
