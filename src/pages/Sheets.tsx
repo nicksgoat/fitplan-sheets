@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { WorkoutProvider, useWorkout } from "@/contexts/WorkoutContext";
 import WorkoutHeader from "@/components/WorkoutHeader";
@@ -12,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import WorkoutLibrarySidebar, { WorkoutLibrarySidebarRef } from "@/components/workout/WorkoutLibrarySidebar";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import AIWorkoutTools from "@/components/workout/AIWorkoutTools";
 
 const WorkoutApp: React.FC = () => {
   const { 
@@ -114,7 +116,8 @@ const WorkoutApp: React.FC = () => {
   
   return (
     <div className="w-full max-w-screen-2xl mx-auto">
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end gap-2">
+        <AIWorkoutTools />
         <Button
           variant="outline"
           size="sm"
