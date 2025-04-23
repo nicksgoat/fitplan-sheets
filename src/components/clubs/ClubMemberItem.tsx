@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Shield, ShieldAlert, UserX, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ClubMember } from '@/types/club';
+import { ClubMember, MemberRole } from '@/types/club';
 import { formatRelativeTime } from '@/utils/timeUtils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -44,7 +44,7 @@ const ClubMemberItem: React.FC<ClubMemberItemProps> = ({
     }
   };
 
-  const handleUpdateMemberRole = async (newRole: string) => {
+  const handleUpdateMemberRole = async (newRole: MemberRole) => {
     try {
       setUpdatingMember(true);
       

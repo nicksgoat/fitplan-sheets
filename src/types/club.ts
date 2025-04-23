@@ -1,3 +1,4 @@
+
 export interface Club {
   id: string;
   name: string;
@@ -55,7 +56,7 @@ export interface EventParticipant {
 }
 
 export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
-export type MemberRole = 'admin' | 'moderator' | 'member';
+export type MemberRole = 'admin' | 'moderator' | 'member' | 'owner';
 export type MemberStatus = 'pending' | 'active' | 'banned';
 export type MembershipType = 'free' | 'premium' | 'vip';
 export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
