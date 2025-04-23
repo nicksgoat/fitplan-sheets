@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -12,6 +11,7 @@ interface ShareButtonProps {
   image?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'icon';
+  className?: string;
 }
 
 const EnhancedShareButton: React.FC<ShareButtonProps> = ({
@@ -20,11 +20,11 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
   description = '',
   image = '',
   variant = 'outline',
-  size = 'default'
+  size = 'default',
+  className = ''
 }) => {
   const [open, setOpen] = useState(false);
   
-  // Make sure url is properly formatted
   const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`;
   
   const shareData = {
@@ -38,7 +38,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
       if (navigator.share) {
         await navigator.share(shareData);
         
-        // Track share event
         if (typeof window !== 'undefined' && window.gtag) {
           window.gtag('event', 'share', {
             method: 'native',
@@ -62,7 +61,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
     navigator.clipboard.writeText(fullUrl).then(() => {
       toast.success('Link copied to clipboard!');
       
-      // Track copy event
       if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', 'share', {
           method: 'copy_link',
@@ -83,7 +81,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
     
     window.open(twitterUrl, '_blank');
     
-    // Track Twitter share event
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'share', {
         method: 'twitter',
@@ -100,7 +97,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
     window.open(facebookUrl, '_blank');
     
-    // Track Facebook share event
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'share', {
         method: 'facebook',
@@ -119,7 +115,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
     )}&title=${encodeURIComponent(title)}`;
     window.open(linkedinUrl, '_blank');
     
-    // Track LinkedIn share event
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'share', {
         method: 'linkedin',
@@ -139,7 +134,6 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
     
     window.open(emailUrl, '_blank');
     
-    // Track email share event
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'share', {
         method: 'email',
@@ -160,6 +154,7 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
           size="icon"
           onClick={handleNativeShare}
           aria-label="Share"
+          className={className}
         >
           <Share2 className="h-4 w-4" />
         </Button>
@@ -185,6 +180,7 @@ const EnhancedShareButton: React.FC<ShareButtonProps> = ({
         variant={variant} 
         size={size}
         onClick={handleNativeShare}
+        className={className}
       >
         <Share2 className="h-4 w-4 mr-2" />
         Share
