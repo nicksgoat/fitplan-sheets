@@ -835,23 +835,35 @@ export type Database = {
       }
       exercise_logs: {
         Row: {
+          circuit_id: string | null
           created_at: string | null
           exercise_id: string
           id: string
+          is_circuit: boolean | null
+          is_in_circuit: boolean | null
+          notes: string | null
           updated_at: string | null
           workout_log_id: string
         }
         Insert: {
+          circuit_id?: string | null
           created_at?: string | null
           exercise_id: string
           id?: string
+          is_circuit?: boolean | null
+          is_in_circuit?: boolean | null
+          notes?: string | null
           updated_at?: string | null
           workout_log_id: string
         }
         Update: {
+          circuit_id?: string | null
           created_at?: string | null
           exercise_id?: string
           id?: string
+          is_circuit?: boolean | null
+          is_in_circuit?: boolean | null
+          notes?: string | null
           updated_at?: string | null
           workout_log_id?: string
         }
