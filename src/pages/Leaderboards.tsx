@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NFLCombineTab from '@/components/leaderboard/NFLCombineTab';
@@ -26,7 +27,7 @@ const Leaderboards = () => {
           return;
         }
         
-        // Parse count from data array
+        // Parse count from data array - ensure proper type checking
         const count = data && Array.isArray(data) && data[0] 
           ? parseInt(data[0].count as string) || 0
           : 0;
