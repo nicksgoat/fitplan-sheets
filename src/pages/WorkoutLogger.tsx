@@ -13,6 +13,7 @@ import WorkoutLoggerHeader from '@/components/workout-logger/WorkoutLoggerHeader
 import ExerciseLogCard from '@/components/workout-logger/ExerciseLogCard';
 import { WorkoutLogExercise } from '@/types/workoutLog';
 import { useLibrary } from '@/contexts/LibraryContext';
+import WorkoutCard from '@/components/workout-logger/WorkoutCard';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
@@ -214,24 +215,13 @@ export default function WorkoutLogger() {
         
         <div className="flex-1 p-4">
           <h2 className="text-xl font-semibold mb-4">Available Workouts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {libraryWorkouts.map((workout) => (
-              <Card key={workout.id} className="bg-dark-200 hover:bg-dark-300 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex flex-col space-y-2">
-                    <h3 className="font-medium">{workout.name}</h3>
-                    <p className="text-sm text-gray-400">
-                      {workout.exercises.length} exercises
-                    </p>
-                    <Button
-                      className="w-full bg-fitbloom-purple hover:bg-fitbloom-purple/90"
-                      onClick={() => navigate(`/workout-logger/${workout.id}`)}
-                    >
-                      Start Workout
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <WorkoutCard
+                key={workout.id}
+                workout={workout}
+                onSelect={() => navigate(`/workout-logger/${workout.id}`)}
+              />
             ))}
           </div>
         </div>
