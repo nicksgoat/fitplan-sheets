@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ItemType } from '@/lib/types';
 import { DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from "@/components/ui/drawer";
@@ -63,8 +62,8 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ item, workoutData, onClos
   // Start workout function that redirects to the workout logger
   const handleStartWorkout = () => {
     if (workoutData) {
-      navigate(`/workout-logger/${workoutData.id}`);
-      onClose(); // Close the drawer after navigation
+      onClose(); // Close the drawer first
+      navigate(`/workout-logger/${workoutData.id}?source=library`);
     }
   };
 

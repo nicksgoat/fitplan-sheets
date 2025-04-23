@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,16 +38,13 @@ export function useWorkoutLoggerIntegration() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const { activeWorkoutId, program } = useWorkout();
+  const { program, activeWorkoutId } = useWorkout();
   
   // Get active workout from context
   const activeWorkout = activeWorkoutId && program ? 
     program.workouts.find(w => w.id === activeWorkoutId) : 
     undefined;
 
-  console.log('[useWorkoutLoggerIntegration] Active workout:', activeWorkout);
-  console.log('[useWorkoutLoggerIntegration] Program workouts:', program?.workouts);
-  
   // Start a new workout log session
   const startWorkoutSession = async () => {
     if (!user?.id || !activeWorkoutId) {
@@ -61,37 +57,23 @@ export function useWorkoutLoggerIntegration() {
       
       const currentTime = new Date().toISOString();
       
-      console.log('[useWorkoutLoggerIntegration] Starting workout session with data:', {
-        user_id: user.id,
-        workout_id: activeWorkoutId,
-        start_time: currentTime,
-        end_time: currentTime, // Temporary end_time that will be updated later
-        duration: 0
-      });
-      
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
           user_id: user.id,
           workout_id: activeWorkoutId,
           start_time: currentTime,
-          end_time: currentTime, // Temporary end_time that will be updated later
+          end_time: currentTime,
           duration: 0
         })
-        .select()
+        .select('*')
         .single();
       
-      if (error) {
-        console.error('[useWorkoutLoggerIntegration] Error starting session:', error);
-        throw error;
-      }
-      
-      console.log('Workout session started:', data);
-      
+      if (error) throw error;
       return data;
     } catch (error: any) {
       console.error('Error starting workout session:', error);
-      toast.error(`Failed to start workout: ${error.message}`);
+      toast.error(error.message);
       return null;
     } finally {
       setIsLoading(false);

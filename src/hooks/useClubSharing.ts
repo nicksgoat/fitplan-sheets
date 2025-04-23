@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,21 +9,24 @@ interface ShareInput {
   clubIds: string[];
 }
 
-// Define TypeScript interfaces for sharing records
-interface WorkoutShareRecord {
+type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
+type ShareContentType = 'workout_id' | 'program_id';
+
+interface BaseShareRecord {
   club_id: string;
+  shared_by: string;
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface WorkoutShareRecord extends BaseShareRecord {
   workout_id: string;
-  shared_by: string;
 }
 
-interface ProgramShareRecord {
-  club_id: string;
+interface ProgramShareRecord extends BaseShareRecord {
   program_id: string;
-  shared_by: string;
 }
-
-// Define record type based on content type to avoid deep type instantiation
-type ShareRecord = WorkoutShareRecord | ProgramShareRecord;
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
