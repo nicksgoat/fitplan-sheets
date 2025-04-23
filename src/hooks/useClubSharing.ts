@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,24 +9,18 @@ interface ShareInput {
   clubIds: string[];
 }
 
-// Define specific table and field types for clarity
-type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
-type ShareContentType = 'workout_id' | 'program_id';
-
-// Base record type for sharing
-interface ShareRecord {
+// Define table types without recursive references
+type WorkoutShareRecord = {
   club_id: string;
-  shared_by: string;
-}
-
-// Specific record types for sharing
-interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
-}
+  shared_by: string;
+};
 
-interface ProgramShareRecord extends ShareRecord {
+type ProgramShareRecord = {
+  club_id: string;
   program_id: string;
-}
+  shared_by: string;
+};
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
   const { user } = useAuth();
@@ -37,10 +30,9 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
     mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const tableName: ShareTableType = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField: ShareContentType = contentType === 'workout' ? 'workout_id' : 'program_id';
+      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
-      // First get existing shares
       const { data: existingShares, error: fetchError } = await supabase
         .from(tableName)
         .select('club_id')
@@ -51,7 +43,6 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
       const existingClubIds = new Set((existingShares || []).map(share => share.club_id));
       const sharesToAdd = clubIds.filter(id => !existingClubIds.has(id));
       
-      // Add new shares
       if (sharesToAdd.length > 0) {
         if (contentType === 'workout') {
           const sharingRecords: WorkoutShareRecord[] = sharesToAdd.map(clubId => ({
@@ -118,8 +109,8 @@ export function useSharedClubs(contentId: string, contentType: 'workout' | 'prog
   return useQuery({
     queryKey: ['shared-clubs', contentType, contentId],
     queryFn: async () => {
-      const tableName: ShareTableType = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const contentIdField: ShareContentType = contentType === 'workout' ? 'workout_id' : 'program_id';
+      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
       const { data, error } = await supabase
         .from(tableName)
