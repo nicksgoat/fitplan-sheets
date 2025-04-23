@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClubShareSelection } from '@/components/ClubShareSelection';
@@ -31,7 +32,7 @@ export function ClubSharingManagement({
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const shareWithClubsMutation = useShareWithClubs();
   
-  const { data: existingShares = [], isLoading } = useQuery<ClubShareData[]>({
+  const { data: existingShares = [], isLoading } = useQuery({
     queryKey: ['content-shares', contentId, contentType] as const,
     queryFn: async () => {
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';

@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.create-referral-stats-function]
 verify_jwt = true
+
+[functions.create-club-event]
+verify_jwt = true
