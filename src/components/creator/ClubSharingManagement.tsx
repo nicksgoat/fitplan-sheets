@@ -15,8 +15,7 @@ interface ClubSharingManagementProps {
   onClose: () => void;
 }
 
-// Define a more specific type for shares
-interface ContentShare {
+interface ClubShareData {
   club_id: string;
   club?: {
     name?: string;
@@ -32,9 +31,8 @@ export function ClubSharingManagement({
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const shareWithClubsMutation = useShareWithClubs();
   
-  // Fetch existing shares with proper typing
-  const { data: existingShares = [], isLoading } = useQuery<ContentShare[]>({
-    queryKey: ['content-shares', contentId, contentType],
+  const { data: existingShares = [], isLoading } = useQuery<ClubShareData[]>({
+    queryKey: ['content-shares', contentId, contentType] as const,
     queryFn: async () => {
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
@@ -49,11 +47,10 @@ export function ClubSharingManagement({
         return [];
       }
       
-      return data || [];
+      return data as ClubShareData[];
     }
   });
   
-  // Initialize selected clubs from existing shares when data loads
   useEffect(() => {
     if (existingShares && existingShares.length > 0) {
       setSelectedClubs(existingShares.map(share => share.club_id));

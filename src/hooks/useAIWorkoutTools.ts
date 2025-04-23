@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -160,8 +161,15 @@ export function useAIWorkoutTools() {
   };
 
   const getRecentWorkouts = () => {
-    return useQuery({
-      queryKey: ['recent-workouts', user?.id],
+    type WorkoutData = {
+      id: string;
+      name: string;
+      created_at: string;
+      // Add other fields as needed
+    };
+
+    return useQuery<WorkoutData[]>({
+      queryKey: ['recent-workouts', user?.id] as const,
       queryFn: async () => {
         if (!user?.id) return [];
         
