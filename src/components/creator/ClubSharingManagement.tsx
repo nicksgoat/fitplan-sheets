@@ -25,6 +25,18 @@ interface ClubSharingManagementProps {
   onClose?: () => void;
 }
 
+type SharedClub = {
+  id: string;
+  club_id: string;
+  created_at: string;
+  clubs?: {
+    id: string;
+    name: string;
+    description?: string;
+    logo_url?: string;
+  } | null;
+};
+
 export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
   contentId,
   contentType,
@@ -33,10 +45,10 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
 
-  // Explicitly type the query key as a tuple with const assertion to avoid deep instantiation error
-  const queryKey = [`${contentType}-clubs-sharing`, contentId] as const;
+  // Use a string literal type for the query key to solve the deep instantiation issue
+  const queryKey = [`${contentType}-clubs-sharing-${contentId}`] as const;
 
   // Get clubs that this content is shared with
   const { data: sharedClubs, isLoading } = useQuery({
@@ -63,7 +75,7 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       
       if (error) throw error;
       
-      return data || [];
+      return (data || []) as SharedClub[];
     },
     enabled: !!user && !!contentId
   });
@@ -74,10 +86,11 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const columnName = contentType === 'workout' ? 'workout_id' : 'program_id';
       
-      const shareData: Record<string, string> = {
+      // Explicitly create the object with the correct types instead of using Record
+      const shareData = {
         club_id: clubId,
         shared_by: user?.id || ''
-      };
+      } as any; // Use any temporarily and then add the specific field
       
       // Add the correct ID column based on content type
       shareData[columnName] = contentId;
@@ -98,7 +111,7 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
     onSuccess: () => {
       toast.success(`${contentType === 'workout' ? 'Workout' : 'Program'} shared with club successfully`);
       queryClient.invalidateQueries({ queryKey });
-      setSelectedClubId(null);
+      setSelectedClubs([]);
     },
     onError: (error: any) => {
       toast.error(`Failed to share: ${error.message}`);
@@ -128,9 +141,9 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
     }
   });
   
-  const handleShareWithClub = () => {
-    if (selectedClubId) {
-      shareWithClub.mutate(selectedClubId);
+  const handleShareWithClub = (clubId: string) => {
+    if (clubId) {
+      shareWithClub.mutate(clubId);
     }
   };
   
@@ -151,10 +164,14 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
       
       <div className="space-y-4">
         <div className="flex gap-2">
-          <ClubShareSelection onClubSelect={setSelectedClubId} selectedClubId={selectedClubId} />
+          <ClubShareSelection 
+            contentType={contentType} 
+            selectedClubIds={selectedClubs}
+            onSelectionChange={setSelectedClubs}
+          />
           <Button 
-            onClick={handleShareWithClub} 
-            disabled={!selectedClubId || shareWithClub.isPending}
+            onClick={() => selectedClubs.length > 0 && handleShareWithClub(selectedClubs[0])} 
+            disabled={!selectedClubs.length || shareWithClub.isPending}
             size="sm"
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -187,7 +204,7 @@ export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sharedClubs.map((share: any) => (
+              {sharedClubs.map((share: SharedClub) => (
                 <TableRow key={share.id}>
                   <TableCell>{share.clubs?.name || 'Unknown club'}</TableCell>
                   <TableCell>{new Date(share.created_at).toLocaleDateString()}</TableCell>

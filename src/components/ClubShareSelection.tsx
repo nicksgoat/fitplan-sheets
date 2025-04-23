@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-// Add this component to support the existing code
+// This component allows selecting a single club with a dropdown
 export function ClubSelection({ 
   onClubSelect, 
   selectedClubId 
@@ -68,6 +68,7 @@ export function ClubSelection({
   );
 }
 
+// This component supports sharing content with multiple clubs via a dialog
 export function ClubShareSelection({ 
   contentId, 
   contentType, 
