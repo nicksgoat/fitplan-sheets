@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Exercise } from '@/types/workout';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { formatTime } from '@/utils/timeUtils';
 
 interface ExerciseLogCardProps {
   exercise: Exercise;
@@ -21,11 +22,46 @@ export default function ExerciseLogCard({
 }: ExerciseLogCardProps) {
   const [completedSets, setCompletedSets] = useState<number[]>([]);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [restTimeRemaining, setRestTimeRemaining] = useState<number | null>(null);
+  const [isRestTimerActive, setIsRestTimerActive] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (isRestTimerActive && restTimeRemaining !== null && restTimeRemaining > 0) {
+      timer = setInterval(() => {
+        setRestTimeRemaining(prev => {
+          if (prev === null || prev <= 0) {
+            setIsRestTimerActive(false);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (restTimeRemaining === 0) {
+      setIsRestTimerActive(false);
+      setRestTimeRemaining(null);
+    }
+    
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isRestTimerActive, restTimeRemaining]);
 
   const handleSetComplete = (setIndex: number) => {
     if (!completedSets.includes(setIndex)) {
       setCompletedSets(prev => [...prev, setIndex]);
       setCurrentSetIndex(prev => prev + 1);
+      
+      // Start rest timer when set is completed
+      const currentSet = exercise.sets[setIndex];
+      if (currentSet && currentSet.rest) {
+        const restSeconds = parseInt(currentSet.rest);
+        if (!isNaN(restSeconds)) {
+          setRestTimeRemaining(restSeconds);
+          setIsRestTimerActive(true);
+        }
+      }
     }
   };
 
@@ -56,6 +92,12 @@ export default function ExerciseLogCard({
               <p className="text-sm text-gray-400 mt-1 italic">{exercise.notes}</p>
             )}
           </div>
+          
+          {isRestTimerActive && restTimeRemaining !== null && (
+            <div className="text-sm font-mono bg-dark-200 px-3 py-1 rounded-full">
+              Rest: {formatTime(restTimeRemaining)}
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
