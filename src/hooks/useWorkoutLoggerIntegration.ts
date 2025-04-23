@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Exercise, Set } from '@/types/workout';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { useProgram } from '@/hooks/useWorkoutData';
+import { useWorkout } from '@/contexts/WorkoutContext';
 
 export interface WorkoutLogData {
   id: string;
@@ -34,16 +35,11 @@ export interface WorkoutLogSet {
   completed: boolean;
 }
 
-export function useWorkoutLoggerIntegration(workoutId?: string, programId?: string) {
+export function useWorkoutLoggerIntegration() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Fetch workout details if workoutId is provided
-  const { workout, loading: workoutLoading } = useWorkoutDetail(workoutId || null);
-  
-  // Fetch program details if programId is provided
-  const programQuery = useProgram(programId || '');
+  const { workout } = useWorkout();
   
   // Start a new workout log session
   const startWorkoutSession = async () => {
@@ -179,12 +175,9 @@ export function useWorkoutLoggerIntegration(workoutId?: string, programId?: stri
   
   return {
     workout,
-    workoutLoading,
-    program: programQuery.data,
-    programLoading: programQuery.isLoading,
+    isLoading: isLoading || completeWorkoutLog.isPending,
     startWorkoutSession,
     completeWorkoutLog,
-    isLoading: isLoading || workoutLoading || completeWorkoutLog.isPending,
     getWorkoutHistory
   };
 }

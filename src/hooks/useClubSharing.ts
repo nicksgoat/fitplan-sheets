@@ -2,6 +2,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 interface ShareContentConfig {
   contentId: string;
@@ -10,8 +11,12 @@ interface ShareContentConfig {
 }
 
 export function useClubSharing() {
+  const { user } = useAuth();
+  
   const shareContent = useMutation({
     mutationFn: async ({ contentId, contentType, clubIds }: ShareContentConfig) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
       const contentIdField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
@@ -27,14 +32,15 @@ export function useClubSharing() {
       
       // Add new shares
       if (sharesToAdd.length > 0) {
+        const insertData = sharesToAdd.map(clubId => ({
+          club_id: clubId,
+          [contentIdField]: contentId,
+          shared_by: user.id
+        }));
+        
         const { error: insertError } = await supabase
           .from(tableName)
-          .insert(
-            sharesToAdd.map(clubId => ({
-              club_id: clubId,
-              [contentIdField]: contentId
-            }))
-          );
+          .insert(insertData);
         
         if (insertError) throw insertError;
       }
