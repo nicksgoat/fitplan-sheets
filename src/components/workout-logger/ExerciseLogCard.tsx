@@ -12,13 +12,15 @@ interface ExerciseLogCardProps {
   isDisabled: boolean;
   isInCircuit?: boolean;
   circuitName?: string;
+  onSetComplete?: (exerciseId: string, setIndex: number) => void;
 }
 
 export default function ExerciseLogCard({ 
   exercise, 
   isDisabled,
   isInCircuit,
-  circuitName
+  circuitName,
+  onSetComplete
 }: ExerciseLogCardProps) {
   const [completedSets, setCompletedSets] = useState<number[]>([]);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
@@ -52,6 +54,11 @@ export default function ExerciseLogCard({
     if (!completedSets.includes(setIndex)) {
       setCompletedSets(prev => [...prev, setIndex]);
       setCurrentSetIndex(prev => prev + 1);
+      
+      // Call the parent callback if provided
+      if (onSetComplete) {
+        onSetComplete(exercise.id, setIndex);
+      }
       
       // Start rest timer when set is completed
       const currentSet = exercise.sets[setIndex];

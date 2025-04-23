@@ -12,7 +12,7 @@ import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
 import WorkoutLoggerHeader from '@/components/workout-logger/WorkoutLoggerHeader';
 import ExerciseLogCard from '@/components/workout-logger/ExerciseLogCard';
-import { WorkoutLogExercise } from '@/types/workoutLog';
+import { WorkoutLogExercise, WorkoutLogSet } from '@/types/workoutLog';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
@@ -36,6 +36,9 @@ export default function WorkoutLogger() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  
+  // Track completed sets for each exercise
+  const [completedSets, setCompletedSets] = useState<Record<string, number[]>>({});
   
   useEffect(() => {
     if (workoutId) {
@@ -79,6 +82,14 @@ export default function WorkoutLogger() {
   const toggleTimer = () => {
     setIsTimerRunning(prev => !prev);
   };
+
+  // Handle set completion
+  const handleSetComplete = (exerciseId: string, setIndex: number) => {
+    setCompletedSets(prev => ({
+      ...prev,
+      [exerciseId]: [...(prev[exerciseId] || []), setIndex]
+    }));
+  };
   
   const handleCompleteWorkout = async () => {
     const workoutToLog = activeWorkout || workoutFromDetail;
@@ -106,6 +117,7 @@ export default function WorkoutLogger() {
       if (ex.isCircuit && ex.circuitId) {
         const circuitExercises = circuitMap.get(ex.circuitId) || [];
         
+        // Log the circuit container
         logExercises.push({
           id: ex.id,
           name: ex.name,
@@ -121,35 +133,41 @@ export default function WorkoutLogger() {
           }))
         });
         
+        // Log each exercise within the circuit
         circuitExercises.forEach(circuitEx => {
+          const exerciseSets = circuitEx.sets.map((set, idx) => ({
+            id: set.id,
+            reps: set.reps,
+            weight: set.weight,
+            rest: set.rest,
+            completed: (completedSets[circuitEx.id] || []).includes(idx)
+          }));
+          
           logExercises.push({
             id: circuitEx.id,
             name: circuitEx.name,
             notes: circuitEx.notes,
             isInCircuit: true,
             circuitId: ex.circuitId,
-            sets: circuitEx.sets.map(set => ({
-              id: set.id,
-              reps: set.reps,
-              weight: set.weight,
-              rest: set.rest,
-              completed: true
-            }))
+            sets: exerciseSets
           });
         });
       } 
       else if (!ex.isInCircuit) {
+        // Handle regular exercises
+        const exerciseSets = ex.sets.map((set, idx) => ({
+          id: set.id,
+          reps: set.reps,
+          weight: set.weight,
+          rest: set.rest,
+          completed: (completedSets[ex.id] || []).includes(idx)
+        }));
+        
         logExercises.push({
           id: ex.id,
           name: ex.name,
           notes: ex.notes,
-          sets: ex.sets.map(set => ({
-            id: set.id,
-            reps: set.reps,
-            weight: set.weight,
-            rest: set.rest,
-            completed: true
-          }))
+          sets: exerciseSets
         });
       }
     });
@@ -164,7 +182,12 @@ export default function WorkoutLogger() {
         setElapsedTime(0);
         setIsTimerRunning(false);
         setActiveSessionId(null);
+        setCompletedSets({});
         navigate('/schedule');
+      },
+      onError: (error: any) => {
+        console.error('Error logging workout:', error);
+        toast.error(`Failed to log workout: ${error.message}`);
       }
     });
   };
@@ -261,6 +284,7 @@ export default function WorkoutLogger() {
                             isDisabled={!activeSessionId}
                             isInCircuit={true}
                             circuitName={exercise.name}
+                            onSetComplete={handleSetComplete}
                           />
                         ))}
                       </div>
@@ -275,6 +299,7 @@ export default function WorkoutLogger() {
                     key={exercise.id}
                     exercise={exercise}
                     isDisabled={!activeSessionId}
+                    onSetComplete={handleSetComplete}
                   />
                 );
               }

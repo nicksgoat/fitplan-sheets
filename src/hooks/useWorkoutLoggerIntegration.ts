@@ -68,6 +68,8 @@ export function useWorkoutLoggerIntegration() {
       
       const { logId, duration, notes, exercises } = payload;
       
+      console.log('Completing workout log with exercises:', exercises);
+      
       // Update the workout log with completion details
       const { error: logError } = await supabase
         .from('workout_logs')
@@ -82,6 +84,15 @@ export function useWorkoutLoggerIntegration() {
 
       // Process exercises and their sets with circuit awareness
       for (const exercise of exercises) {
+        console.log(`Processing exercise: ${exercise.name} (ID: ${exercise.id})`);
+        
+        // Create exercise log entry - but skip database if exercise has no ID
+        // This ensures we don't violate foreign key constraints
+        if (!exercise.id) {
+          console.warn('Skipping exercise logging due to missing ID:', exercise);
+          continue;
+        }
+        
         // Create the exercise log entry
         const { data: exerciseLog, error: exerciseError } = await supabase
           .from('exercise_logs')
@@ -96,7 +107,11 @@ export function useWorkoutLoggerIntegration() {
           .select()
           .single();
         
-        if (exerciseError) throw exerciseError;
+        if (exerciseError) {
+          console.error('Error logging exercise:', exerciseError);
+          console.error('Problem exercise:', exercise);
+          throw exerciseError;
+        }
         
         // Handle sets
         const setEntries = exercise.sets.map((set, index) => ({
@@ -113,7 +128,10 @@ export function useWorkoutLoggerIntegration() {
             .from('set_logs')
             .insert(setEntries);
           
-          if (setsError) throw setsError;
+          if (setsError) {
+            console.error('Error logging sets:', setsError);
+            throw setsError;
+          }
         }
       }
       
