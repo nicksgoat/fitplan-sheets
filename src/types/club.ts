@@ -52,6 +52,7 @@ export interface ClubPost {
   updated_at?: string;
   profile?: {
     display_name?: string;
+    username?: string;
     avatar_url?: string;
   };
   image_url?: string;
@@ -73,6 +74,7 @@ export interface ClubPostComment {
   updated_at: string;
   profile?: {
     display_name?: string;
+    username?: string;
     avatar_url?: string;
   };
 }
@@ -100,6 +102,7 @@ export interface ClubMessage {
   is_pinned: boolean;
   profile?: {
     display_name?: string;
+    username?: string;
     avatar_url?: string;
   };
 }
@@ -119,6 +122,7 @@ export interface ClubEvent {
   created_by: string;
   attendee_count?: number;
   category?: string;
+  participants?: EventParticipant[];
 }
 
 export interface EventParticipant {
@@ -129,6 +133,7 @@ export interface EventParticipant {
   joined_at: string;
   profile?: {
     display_name?: string;
+    username?: string;
     avatar_url?: string;
   };
 }

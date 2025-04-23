@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import {
   AlertDialog,
@@ -32,7 +33,7 @@ export function ClubShareDialog({
     setSelectedClubIds,
   } = useClubSelection(initialSelectedClubIds);
   
-  const shareWithClubsMutation = useShareWithClubs();
+  const shareWithClubs = useShareWithClubs();
 
   // Load user clubs when dialog opens
   useEffect(() => {
@@ -56,7 +57,7 @@ export function ClubShareDialog({
       return;
     }
 
-    shareWithClubsMutation.mutate({
+    shareWithClubs.mutate({
       contentId,
       contentType,
       clubIds: selectedClubIds
@@ -90,8 +91,8 @@ export function ClubShareDialog({
         
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleShare} disabled={shareWithClubsMutation.isPending}>
-            {shareWithClubsMutation.isPending ? "Sharing..." : "Share"}
+          <AlertDialogAction onClick={handleShare} disabled={shareWithClubs.isPending}>
+            {shareWithClubs.isPending ? "Sharing..." : "Share"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

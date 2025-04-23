@@ -326,16 +326,16 @@ const EventCard: React.FC<EventCardProps> = ({
   };
   
   const getUserResponse = (): EventParticipationStatus | null => {
-    if (!currentUserId) return null;
+    if (!currentUserId || !event.participants) return null;
     
-    const userParticipation = event.participants?.find(p => p.user_id === currentUserId);
+    const userParticipation = event.participants.find(p => p.user_id === currentUserId);
     return userParticipation ? userParticipation.status : null;
   };
   
   const userResponse = getUserResponse();
   
   const goingCount = event.participants?.filter(p => p.status === 'going').length || 0;
-  const maybeCount = event.participants?.filter(p => p.status === 'maybe').length || 0;
+  const maybeCount = event.participants?.filter(p => p.status === 'interested').length || 0;
   
   return (
     <Card className="bg-dark-300 border-dark-400 overflow-hidden">
@@ -426,7 +426,7 @@ const EventCard: React.FC<EventCardProps> = ({
                   {participant.status === 'going' && (
                     <Badge className="ml-1 bg-green-600 text-[10px] px-1">Going</Badge>
                   )}
-                  {participant.status === 'maybe' && (
+                  {participant.status === 'interested' && (
                     <Badge className="ml-1 bg-yellow-600 text-[10px] px-1">Maybe</Badge>
                   )}
                 </div>
@@ -449,10 +449,10 @@ const EventCard: React.FC<EventCardProps> = ({
           </Button>
           
           <Button 
-            variant={userResponse === 'maybe' ? 'default' : 'outline'} 
+            variant={userResponse === 'interested' ? 'default' : 'outline'} 
             size="sm"
-            className={userResponse === 'maybe' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
-            onClick={() => onRespond(event.id, 'maybe')}
+            className={userResponse === 'interested' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+            onClick={() => onRespond(event.id, 'interested')}
           >
             <HelpCircle className="h-4 w-4 mr-1" />
             Maybe

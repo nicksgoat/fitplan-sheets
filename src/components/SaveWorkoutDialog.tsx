@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
-  const shareWithClubsMutation = useShareWithClubs();
+  const shareWithClubs = useShareWithClubs();
   
   const workout = program?.workouts.find(w => w.id === workoutId);
   
@@ -50,7 +51,7 @@ const SaveWorkoutDialog = ({ open, onOpenChange, workoutId }: SaveWorkoutDialogP
         const savedId = result;
         
         if (selectedClubs.length > 0) {
-          await shareWithClubsMutation.mutateAsync({
+          await shareWithClubs.mutate({
             contentId: savedId,
             contentType: 'workout',
             clubIds: selectedClubs

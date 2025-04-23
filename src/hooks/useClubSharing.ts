@@ -13,6 +13,12 @@ type ShareProgramInput = {
   clubIds: string[];
 };
 
+type ShareInput = {
+  contentId: string;
+  contentType: 'workout' | 'program';
+  clubIds: string[];
+};
+
 export function useShareWithClubs() {
   const { user } = useAuth();
 
@@ -58,6 +64,17 @@ export function useShareWithClubs() {
     }
   });
 
+  // Combined mutation for usage with mutate/mutateAsync
+  const combinedMutation = useMutation({
+    mutationFn: async ({ contentId, contentType, clubIds }: ShareInput) => {
+      if (contentType === 'workout') {
+        return shareWorkoutMutation.mutateAsync({ contentId, clubIds });
+      } else {
+        return shareProgramMutation.mutateAsync({ contentId, clubIds });
+      }
+    }
+  });
+
   // Combined function to share either workout or program
   const shareContent = (contentId: string, contentType: 'workout' | 'program', clubIds: string[]) => {
     if (contentType === 'workout') {
@@ -71,6 +88,10 @@ export function useShareWithClubs() {
     shareWorkoutMutation,
     shareProgramMutation,
     shareContent,
-    isLoading: shareWorkoutMutation.isPending || shareProgramMutation.isPending
+    isLoading: shareWorkoutMutation.isPending || shareProgramMutation.isPending,
+    // Expose these methods for direct use
+    mutate: combinedMutation.mutate,
+    mutateAsync: combinedMutation.mutateAsync,
+    isPending: combinedMutation.isPending
   };
 }

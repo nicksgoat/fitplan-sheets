@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ClubList } from '@/components/club/ClubList';
 import { useShareWithClubs } from '@/hooks/useClubSharing';
 import { toast } from 'sonner';
+import { Club } from '@/types/club';
 
 interface ClubSharingManagementProps {
   contentId: string;
@@ -33,12 +34,12 @@ export function ClubSharingManagement({
   } = useClubSelection(initialSharedClubs);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { mutate: shareWithClubs } = useShareWithClubs();
+  const shareWithClubs = useShareWithClubs();
 
   const handleSaveSharing = async () => {
     setIsSubmitting(true);
     try {
-      await shareWithClubs({ 
+      await shareWithClubs.mutate({ 
         contentId,
         contentType, 
         clubIds: selectedClubIds 
@@ -71,7 +72,7 @@ export function ClubSharingManagement({
       </CardHeader>
       <CardContent>
         <ClubList 
-          clubs={clubs || []} 
+          clubs={clubs as Club[] || []} 
           selectedIds={selectedClubIds}
           onToggle={toggleClub}
           isLoading={isLoading}

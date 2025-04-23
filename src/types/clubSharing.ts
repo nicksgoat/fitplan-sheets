@@ -1,16 +1,21 @@
 
-// We're defining a simplified Club type without circular references
+import { ClubType, MembershipType } from './club';
+
+// We're defining a simplified Club type compatible with the main Club type
 export interface Club {
   id: string;
   name: string;
   description?: string;
   logo_url?: string;
-  // Adding the required fields from ClubBase to make it compatible
+  // Adding the required fields to make it compatible
   created_at: string;
-  club_type: 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
-  membership_type: 'free' | 'premium' | 'vip';
+  club_type: ClubType;
+  membership_type: MembershipType;
   // Making creator_id optional to avoid circular references
   creator_id?: string;
+  updated_at: string;
+  banner_url?: string;
+  premium_price?: number;
 }
 
 // Define specific types for workout and program shares
