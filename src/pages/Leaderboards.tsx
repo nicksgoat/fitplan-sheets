@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NFLCombineTab from '@/components/leaderboard/NFLCombineTab';
@@ -28,7 +27,11 @@ const Leaderboards = () => {
           return;
         }
         
-        const count = data && data.length > 0 ? Number(data[0].count) : 0;
+        // Properly handle the data which is a JSON array
+        const count = data && Array.isArray(data) && data.length > 0 && data[0].count 
+          ? parseInt(data[0].count) 
+          : 0;
+          
         if (count === 0) {
           toast.info("No combine data found. Please initialize data to see NFL combine statistics.", {
             duration: 5000,

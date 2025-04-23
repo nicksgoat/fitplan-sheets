@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NFLCombineResult {
@@ -36,7 +36,8 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFilterOptions = async () => {
+  // Function to fetch filter options
+  const fetchFilterOptions = useCallback(async () => {
     try {
       console.log('Fetching filter options...');
       // Fetch unique positions - using raw RPC call to work with "NFL_Combine_Database" table
@@ -49,8 +50,18 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         console.error('Error fetching positions:', posError);
         setError('Failed to load position filters');
       } else if (posData) {
-        // Extract unique positions
-        const uniquePositions = posData.map(item => item.Pos).filter(Boolean);
+        // Extract unique positions - handle the JSON properly
+        const uniquePositions: string[] = [];
+        
+        // Check if the data is an array and has items
+        if (Array.isArray(posData)) {
+          posData.forEach((item: any) => {
+            if (item && item.Pos) {
+              uniquePositions.push(item.Pos);
+            }
+          });
+        }
+        
         console.log('Positions loaded:', uniquePositions);
         setPositions(uniquePositions);
       }
@@ -65,8 +76,18 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
         console.error('Error fetching years:', yearError);
         setError('Failed to load year filters');
       } else if (yearData) {
-        // Extract unique years
-        const uniqueYears = yearData.map(item => Number(item.Draft_Year)).filter(Boolean);
+        // Extract unique years - handle the JSON properly
+        const uniqueYears: number[] = [];
+        
+        // Check if the data is an array and has items
+        if (Array.isArray(yearData)) {
+          yearData.forEach((item: any) => {
+            if (item && item.Draft_Year && typeof item.Draft_Year === 'number') {
+              uniqueYears.push(item.Draft_Year);
+            }
+          });
+        }
+        
         console.log('Years loaded:', uniqueYears);
         setYears(uniqueYears);
       }
@@ -74,9 +95,9 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
       console.error('Unexpected error fetching filter options:', err);
       setError('Failed to load filter options');
     }
-  };
+  }, []);
 
-  const fetchCombineData = async (
+  const fetchCombineData = useCallback(async (
     selectedPosition: string | null, 
     selectedYear: number | null,
     sortMetric: string
@@ -116,9 +137,10 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
           return;
         }
 
-        if (notNullData && notNullData.length > 0) {
+        if (notNullData && Array.isArray(notNullData) && notNullData.length > 0) {
           console.log(`Success: Retrieved ${notNullData.length} records`);
           console.log('Sample data:', notNullData[0]);
+          // Properly cast the data to our expected type
           setCombineData(notNullData as unknown as NFLCombineResult[]);
         } else {
           console.log('No data found with current filters');
@@ -135,9 +157,10 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
           console.error('Error fetching combine data:', error);
           setError('Failed to load combine data');
           setCombineData([]);
-        } else if (data && data.length > 0) {
+        } else if (data && Array.isArray(data) && data.length > 0) {
           console.log(`Success: Retrieved ${data.length} records`);
           console.log('Sample data:', data[0]);
+          // Properly cast the data to our expected type
           setCombineData(data as unknown as NFLCombineResult[]);
         } else {
           console.log('No data found with current filters');
@@ -151,7 +174,7 @@ export function useNFLCombineData(): UseNFLCombineDataResult {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   return {
     combineData,

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -84,7 +85,7 @@ const CombineDataTable: React.FC<CombineDataTableProps> = ({
   };
 
   // Determine if lower values are better for this metric
-  const isLowerBetter = (metric: string): string => {
+  const isLowerBetter = (metric: string): boolean => {
     return ['40yd', '3Cone', 'Shuttle'].includes(metric);
   };
 

@@ -76,7 +76,7 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
           .from(tableName)
           .delete()
           .eq(contentIdField, contentId)
-          .in('club_id', clubsToRemove as string[]);  // Type casting to fix the infinite recursion error
+          .in('club_id', clubsToRemove as string[]); 
           
         if (error) {
           console.error(`Error removing ${contentType} shares:`, error);
@@ -93,7 +93,9 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
         onSuccess(clubIds);
       }
       
-      queryClient.invalidateQueries({ queryKey: ['creator-clubs', user?.id] });
+      // Fix: Use a string constant instead of user?.id directly to avoid deep type instantiation
+      const userIdForQuery = user?.id || 'anonymous';
+      queryClient.invalidateQueries({ queryKey: ['creator-clubs', userIdForQuery] });
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to share content with clubs.");
