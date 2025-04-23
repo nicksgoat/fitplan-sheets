@@ -9,6 +9,18 @@ type ShareInput = {
   clubIds: string[];
 };
 
+type WorkoutShare = {
+  club_id: string;
+  workout_id: string;
+  shared_by: string;
+};
+
+type ProgramShare = {
+  club_id: string;
+  program_id: string;
+  shared_by: string;
+};
+
 export function useShareWithClubs() {
   const { user } = useAuth();
 
@@ -16,20 +28,17 @@ export function useShareWithClubs() {
     mutationFn: async ({ clubIds, contentId, contentType }: ShareInput) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      
-      // Delete existing shares
+      // Delete existing shares first
       await supabase
-        .from(table)
+        .from(contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs')
         .delete()
         .eq(contentType === 'workout' ? 'workout_id' : 'program_id', contentId);
 
-      // Insert new shares if there are any clubs selected
+      // If there are clubs to share with
       if (clubIds.length > 0) {
         try {
           if (contentType === 'workout') {
-            // Create an array of workout shares
-            const workoutShares = clubIds.map(clubId => ({
+            const shares: WorkoutShare[] = clubIds.map(clubId => ({
               club_id: clubId,
               workout_id: contentId,
               shared_by: user.id
@@ -37,12 +46,11 @@ export function useShareWithClubs() {
             
             const { error } = await supabase
               .from('club_shared_workouts')
-              .insert(workoutShares);
+              .insert(shares);
             
             if (error) throw error;
           } else {
-            // Create an array of program shares
-            const programShares = clubIds.map(clubId => ({
+            const shares: ProgramShare[] = clubIds.map(clubId => ({
               club_id: clubId,
               program_id: contentId,
               shared_by: user.id
@@ -50,7 +58,7 @@ export function useShareWithClubs() {
             
             const { error } = await supabase
               .from('club_shared_programs')
-              .insert(programShares);
+              .insert(shares);
             
             if (error) throw error;
           }

@@ -6,10 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Plus, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import ClubDetailPage from './ClubDetailPage';
 
 const ClubList: React.FC = () => {
-  const { clubs, loadingClubs, userClubs } = useClub();
+  const { clubs, loadingClubs, userClubs, setCurrentClub } = useClub();
   const navigate = useNavigate();
+  const [selectedClubId, setSelectedClubId] = React.useState<string | null>(null);
+
+  if (selectedClubId) {
+    return <ClubDetailPage clubId={selectedClubId} onBack={() => setSelectedClubId(null)} />;
+  }
 
   if (loadingClubs) {
     return (
@@ -36,6 +42,14 @@ const ClubList: React.FC = () => {
       </div>
     );
   }
+
+  const handleClubClick = (clubId: string) => {
+    setSelectedClubId(clubId);
+    const club = clubs.find(c => c.id === clubId);
+    if (club) {
+      setCurrentClub(club);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -75,7 +89,7 @@ const ClubList: React.FC = () => {
                 key={club.id} 
                 club={club} 
                 isMember={true}
-                onClick={() => navigate(`/clubs/${club.id}`)}
+                onClick={() => handleClubClick(club.id)}
               />
             ))}
           </div>
@@ -107,7 +121,7 @@ const ClubList: React.FC = () => {
                 key={club.id} 
                 club={club} 
                 isMember={userClubs?.some(c => c.id === club.id) || false}
-                onClick={() => navigate(`/clubs/${club.id}`)}
+                onClick={() => handleClubClick(club.id)}
               />
             ))}
           </div>

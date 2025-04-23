@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchClubChannels, uploadPostImage } from './ClubDetailPageUtils';
 import ClubChat from './ClubChat';
 
-const ClubDetailPage: React.FC = () => {
+interface ClubDetailPageProps {
+  clubId: string;
+  onBack?: () => void;
+}
+
+const ClubDetailPage: React.FC<ClubDetailPageProps> = ({ clubId, onBack }) => {
   const [activeTab, setActiveTab] = useState('feed');
   const [showCreatePostDialog, setShowCreatePostDialog] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
@@ -36,7 +41,6 @@ const ClubDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   const navigate = useNavigate();
-  const { clubId } = useParams<{clubId: string}>();
   const { user } = useAuth();
   const { 
     currentClub,
@@ -199,6 +203,14 @@ const ClubDetailPage: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/clubs');
+    }
+  };
+
   if (isLoading || !currentClub) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -213,7 +225,7 @@ const ClubDetailPage: React.FC = () => {
       <div className="md:block hidden mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/clubs')}
+          onClick={handleBack}
           className="flex items-center mb-4"
         >
           <ArrowLeft size={18} className="mr-2" />
