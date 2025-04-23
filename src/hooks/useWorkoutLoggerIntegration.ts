@@ -108,6 +108,8 @@ export function useWorkoutLoggerIntegration() {
         .eq('id', logId);
       
       if (logError) throw logError;
+
+      console.log("Logging exercises:", exercises);
       
       // Record each exercise
       for (const exercise of exercises) {

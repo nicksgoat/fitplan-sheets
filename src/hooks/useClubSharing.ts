@@ -102,6 +102,8 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
 }
 
 export function useSharedClubs(contentId: string, contentType: 'workout' | 'program') {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['shared-clubs', contentType, contentId],
     queryFn: async () => {
@@ -117,6 +119,6 @@ export function useSharedClubs(contentId: string, contentType: 'workout' | 'prog
       
       return (data || []).map(share => share.club_id);
     },
-    enabled: !!contentId
+    enabled: !!contentId && !!user?.id
   });
 }

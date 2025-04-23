@@ -1077,7 +1077,7 @@ export type Database = {
         }
         Relationships: []
       }
-      "NFL Combine Database": {
+      NFL_Combine_Database: {
         Row: {
           "3Cone": string | null
           "40yd": string | null
