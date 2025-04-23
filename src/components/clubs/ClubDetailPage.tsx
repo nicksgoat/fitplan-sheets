@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -33,11 +32,14 @@ const ClubDetailPage: React.FC = () => {
   const [postImage, setPostImage] = useState<File | null>(null);
   const [channels, setChannels] = useState<any[]>([]);
   const [activeChannel, setActiveChannel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const navigate = useNavigate();
+  const { clubId } = useParams<{clubId: string}>();
   const { user } = useAuth();
   const { 
     currentClub,
+    setCurrentClub,
     members,
     events,
     posts,
@@ -49,9 +51,71 @@ const ClubDetailPage: React.FC = () => {
     refreshMembers,
     refreshEvents,
     refreshPosts,
+    refreshClubs,
     createNewPost,
-    getUserClubRole
+    getUserClubRole,
+    clubs
   } = useClub();
+
+  useEffect(() => {
+    const loadClubData = async () => {
+      if (clubId) {
+        console.log("ClubDetailPage: Loading club data for ID:", clubId);
+        setIsLoading(true);
+        
+        // First check if we already have the club in context
+        const existingClub = clubs.find(c => c.id === clubId);
+        if (existingClub) {
+          console.log("Found club in context:", existingClub.name);
+          setCurrentClub(existingClub);
+        } else {
+          // If not in context, fetch it directly
+          console.log("Club not found in context, fetching from API");
+          try {
+            const { data: clubData, error } = await supabase
+              .from('clubs')
+              .select('*')
+              .eq('id', clubId)
+              .single();
+            
+            if (error) {
+              throw error;
+            }
+            
+            if (clubData) {
+              console.log("Fetched club data:", clubData.name);
+              setCurrentClub(clubData);
+              // Also refresh clubs to update the context
+              refreshClubs();
+            } else {
+              console.error("No club found with ID:", clubId);
+              toast.error("Club not found");
+              navigate('/clubs');
+              return;
+            }
+          } catch (error) {
+            console.error("Error fetching club:", error);
+            toast.error("Failed to load club details");
+            navigate('/clubs');
+            return;
+          }
+        }
+        
+        // Fetch necessary data
+        Promise.all([
+          refreshMembers(),
+          refreshEvents(),
+          refreshPosts(),
+        ]).catch(error => {
+          console.error("Error refreshing club data:", error);
+        }).finally(() => {
+          setIsLoading(false);
+        });
+      }
+    };
+    
+    loadClubData();
+  }, [clubId, setCurrentClub, refreshClubs, refreshEvents, refreshMembers, refreshPosts, navigate, clubs]);
 
   useEffect(() => {
     if (currentClub?.id) {
@@ -122,10 +186,11 @@ const ClubDetailPage: React.FC = () => {
     }
   };
 
-  if (!currentClub) {
+  if (isLoading || !currentClub) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="mt-4 text-gray-400">Loading club details...</p>
       </div>
     );
   }

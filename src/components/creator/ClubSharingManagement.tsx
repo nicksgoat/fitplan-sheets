@@ -1,215 +1,135 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useClubSelection } from '@/hooks/useClubSelection';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ClubList } from '@/components/club/ClubList';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Plus, Trash2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { ClubShareSelection } from '@/components/ClubShareSelection';
-import { useShareWithClubs } from '@/hooks/useClubSharing';
 
 interface ClubSharingManagementProps {
   contentId: string;
   contentType: 'workout' | 'program';
-  contentName: string;
-  onClose?: () => void;
+  initialSharedClubs?: string[];
+  onSave?: (selectedClubIds: string[]) => void;
 }
 
-type SharedClub = {
-  id: string;
-  club_id: string;
-  created_at: string;
-  clubs?: {
-    id: string;
-    name: string;
-    description?: string;
-    logo_url?: string;
-  } | null;
-};
-
-export const ClubSharingManagement: React.FC<ClubSharingManagementProps> = ({
+export function ClubSharingManagement({
   contentId,
   contentType,
-  contentName,
-  onClose
-}) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
+  initialSharedClubs = [],
+  onSave
+}: ClubSharingManagementProps) {
+  const {
+    clubs,
+    selectedClubIds,
+    setSelectedClubIds,
+    isLoading,
+    toggleClub
+  } = useClubSelection(initialSharedClubs, contentId, contentType);
 
-  // Define the query key as a constant to avoid deep instantiation issues
-  const queryKey = [`${contentType}-clubs-sharing-${contentId}`];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get clubs that this content is shared with
-  const { data: sharedClubs, isLoading } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      const columnName = contentType === 'workout' ? 'workout_id' : 'program_id';
+  // Load existing shares
+  useEffect(() => {
+    const loadShares = async () => {
+      if (!contentId) return;
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select(`
-          id,
-          club_id,
-          created_at,
-          clubs (
-            id,
-            name,
-            description,
-            logo_url
-          )
-        `)
-        .eq(columnName, contentId)
-        .eq('shared_by', user?.id || '');
-      
-      if (error) throw error;
-      
-      return (data || []) as SharedClub[];
-    },
-    enabled: !!user && !!contentId
-  });
-  
-  // Use our hook for sharing
-  const shareWithClubMutation = useShareWithClubs();
-  
-  // Remove share mutation
-  const removeShare = useMutation({
-    mutationFn: async (shareId: string) => {
-      const tableName = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
-      
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id', shareId);
-      
-      if (error) throw error;
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      toast.success(`Removed ${contentType} from club`);
-      queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to remove share: ${error.message}`);
-    }
-  });
-  
-  const handleShareWithClubs = () => {
-    if (selectedClubs.length > 0) {
-      shareWithClubMutation.mutate({
-        contentId,
-        contentType,
-        clubIds: selectedClubs
-      });
-    }
-  };
-  
-  const handleRemoveShare = (shareId: string) => {
-    if (confirm('Are you sure you want to remove this share?')) {
-      removeShare.mutate(shareId);
-    }
-  };
-  
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold mb-2">Share {contentType === 'workout' ? 'Workout' : 'Program'}</h2>
-        <p className="text-gray-400 text-sm mb-4">
-          Share "{contentName}" with your clubs
-        </p>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          <ClubShareSelection 
-            contentType={contentType} 
-            contentId={contentId}
-            selectedClubIds={selectedClubs}
-            onSelectionChange={setSelectedClubs}
-          />
-          <Button 
-            onClick={handleShareWithClubs} 
-            disabled={!selectedClubs.length || shareWithClubMutation.isPending}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Share
-          </Button>
-        </div>
+      try {
+        const { data: sharedWith, error } = await supabase
+          .from(contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs')
+          .select('club_id')
+          .eq(contentType === 'workout' ? 'workout_id' : 'program_id', contentId);
+          
+        if (error) throw error;
         
-        {shareWithClubMutation.isError && (
-          <Alert variant="destructive" className="mt-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              {shareWithClubMutation.error instanceof Error ? shareWithClubMutation.error.message : "An error occurred"}
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
+        if (sharedWith && sharedWith.length > 0) {
+          const clubIds = sharedWith.map(share => share.club_id);
+          setSelectedClubIds(clubIds);
+        }
+      } catch (error) {
+        console.error(`Error loading shared ${contentType}s:`, error);
+      }
+    };
+    
+    loadShares();
+  }, [contentId, contentType, setSelectedClubIds]);
+
+  const handleToggleClub = (clubId: string) => {
+    toggleClub(clubId);
+  };
+
+  const handleSaveSharing = async () => {
+    if (!contentId) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const table = contentType === 'workout' ? 'club_shared_workouts' : 'club_shared_programs';
+      const idField = contentType === 'workout' ? 'workout_id' : 'program_id';
       
-      <div>
-        <h3 className="text-sm font-medium mb-2">Shared with clubs</h3>
-        {isLoading ? (
-          <div className="text-center py-4">Loading...</div>
-        ) : sharedClubs && sharedClubs.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Club Name</TableHead>
-                <TableHead>Shared On</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sharedClubs.map((share: SharedClub) => (
-                <TableRow key={share.id}>
-                  <TableCell>{share.clubs?.name || 'Unknown club'}</TableCell>
-                  <TableCell>{new Date(share.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRemoveShare(share.id)}
-                      disabled={removeShare.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-4 border border-dashed border-gray-700 rounded-md">
-            <p className="text-gray-400">Not shared with any clubs yet</p>
-          </div>
-        )}
-      </div>
+      // Delete existing shares
+      const { error: deleteError } = await supabase
+        .from(table)
+        .delete()
+        .eq(idField, contentId);
+        
+      if (deleteError) throw deleteError;
       
-      {onClose && (
+      // Add new shares
+      if (selectedClubIds.length > 0) {
+        const sharesToInsert = selectedClubIds.map(clubId => ({
+          club_id: clubId,
+          [idField]: contentId,
+          shared_by: (supabase.auth.getUser())?.data?.user?.id
+        }));
+        
+        const { error: insertError } = await supabase
+          .from(table)
+          .insert(sharesToInsert);
+          
+        if (insertError) throw insertError;
+      }
+      
+      toast.success(`${contentType === 'workout' ? 'Workout' : 'Program'} sharing updated successfully`);
+      
+      if (onSave) {
+        onSave(selectedClubIds);
+      }
+    } catch (error) {
+      console.error(`Error updating ${contentType} sharing:`, error);
+      toast.error(`Failed to update sharing. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Share with Your Clubs</CardTitle>
+        <CardDescription>
+          Select clubs where you want to share this {contentType}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ClubList 
+          clubs={clubs || []} 
+          selectedIds={selectedClubIds}
+          onToggle={handleToggleClub}
+          isLoading={isLoading}
+        />
+        
         <div className="flex justify-end mt-4">
           <Button 
-            variant="outline" 
-            onClick={onClose}
+            onClick={handleSaveSharing} 
+            disabled={isSubmitting}
+            className="bg-fitbloom-purple hover:bg-fitbloom-purple/90"
           >
-            Close
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
-};
+}

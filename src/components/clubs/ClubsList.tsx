@@ -7,13 +7,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
 
-const ClubsList = () => {
+interface ClubsListProps {
+  onClubClick?: (clubId: string) => void;
+}
+
+const ClubsList: React.FC<ClubsListProps> = ({ onClubClick }) => {
   const navigate = useNavigate();
   const { clubs, userClubs, loadingClubs } = useClub();
   const { user } = useAuth();
   
   const handleClubClick = (clubId: string) => {
-    navigate(`/clubs/${clubId}`);
+    console.log("Club clicked:", clubId);
+    if (onClubClick) {
+      onClubClick(clubId);
+    } else {
+      navigate(`/clubs/${clubId}`);
+    }
   };
   
   const handleCreateClub = () => {

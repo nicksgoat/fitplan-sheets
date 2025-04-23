@@ -8,16 +8,19 @@ import { useClub } from '@/contexts/ClubContext';
 import ClubsList from '@/components/clubs/ClubsList';
 import EventsList from '@/components/clubs/EventsList';
 import { Plus, Users as PeopleIcon, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 
 const ClubsHome = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { clubs, loadingClubs, refreshClubs } = useClub();
+  const { clubs, userClubs, loadingClubs, refreshClubs } = useClub();
   const [activeTab, setActiveTab] = useState('clubs');
   
   useEffect(() => {
+    // Refresh clubs data when page loads
     refreshClubs();
-  }, []);
+    console.log("ClubsHome: Refreshing clubs data");
+  }, [refreshClubs]);
   
   const handleCreateClub = () => {
     navigate('/clubs/create');
@@ -25,6 +28,11 @@ const ClubsHome = () => {
   
   const handleCreateEvent = () => {
     navigate('/clubs/events/create');
+  };
+
+  const handleClubClick = (clubId: string) => {
+    console.log(`Navigating to club: ${clubId}`);
+    navigate(`/clubs/${clubId}`);
   };
   
   return (
@@ -64,7 +72,7 @@ const ClubsHome = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="clubs" className="mt-4">
-          <ClubsList />
+          <ClubsList onClubClick={handleClubClick} />
         </TabsContent>
         <TabsContent value="events" className="mt-4">
           <EventsList />
