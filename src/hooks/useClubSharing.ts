@@ -9,6 +9,7 @@ type ShareInput = {
   clubIds: string[];
 };
 
+// Define separate interfaces for workout and program shares to avoid type recursion
 type WorkoutShare = {
   club_id: string;
   workout_id: string;
@@ -38,29 +39,31 @@ export function useShareWithClubs() {
       if (clubIds.length > 0) {
         try {
           if (contentType === 'workout') {
-            const shares: WorkoutShare[] = clubIds.map(clubId => ({
-              club_id: clubId,
-              workout_id: contentId,
-              shared_by: user.id
-            }));
-            
-            const { error } = await supabase
-              .from('club_shared_workouts')
-              .insert(shares);
-            
-            if (error) throw error;
+            // Process workout shares
+            for (const clubId of clubIds) {
+              const { error } = await supabase
+                .from('club_shared_workouts')
+                .insert({
+                  club_id: clubId,
+                  workout_id: contentId,
+                  shared_by: user.id
+                });
+                
+              if (error) throw error;
+            }
           } else {
-            const shares: ProgramShare[] = clubIds.map(clubId => ({
-              club_id: clubId,
-              program_id: contentId,
-              shared_by: user.id
-            }));
-            
-            const { error } = await supabase
-              .from('club_shared_programs')
-              .insert(shares);
-            
-            if (error) throw error;
+            // Process program shares
+            for (const clubId of clubIds) {
+              const { error } = await supabase
+                .from('club_shared_programs')
+                .insert({
+                  club_id: clubId,
+                  program_id: contentId,
+                  shared_by: user.id
+                });
+                
+              if (error) throw error;
+            }
           }
         } catch (error) {
           console.error('Error sharing with clubs:', error);
