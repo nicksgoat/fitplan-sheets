@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
 import WorkoutLoggerHeader from '@/components/workout-logger/WorkoutLoggerHeader';
 import ExerciseLogCard from '@/components/workout-logger/ExerciseLogCard';
+import { WorkoutLogExercise } from '@/types/workoutLog';
 
 export default function WorkoutLogger() {
   const navigate = useNavigate();
@@ -18,6 +20,9 @@ export default function WorkoutLogger() {
   const [searchParams] = useSearchParams();
   const source = searchParams.get('source');
   const { program, setActiveWorkoutId } = useWorkout();
+  
+  // Add workoutDetail hook to fix missing workoutDetails
+  const { workout: workoutDetails } = useWorkoutDetail(workoutId || null);
   
   const { 
     activeWorkout,
@@ -51,13 +56,6 @@ export default function WorkoutLogger() {
       if (timer) clearInterval(timer);
     };
   }, [isTimerRunning]);
-  
-  const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
   
   const startNewWorkout = async () => {
     if (!workoutId) {

@@ -10,27 +10,27 @@ interface ShareInput {
   clubIds: string[];
 }
 
+// Define specific table and field types to avoid recursive type issues
 type ShareTableType = 'club_shared_workouts' | 'club_shared_programs';
 type ShareContentType = 'workout_id' | 'program_id';
 
+// Base record type to avoid excessive nesting
 interface ShareRecord {
   club_id: string;
   shared_by: string;
-  [key: string]: string;
 }
 
+// Specific record types that extend the base
 interface WorkoutShareRecord extends ShareRecord {
   workout_id: string;
   id?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
 interface ProgramShareRecord extends ShareRecord {
   program_id: string;
   id?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
 export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
@@ -57,24 +57,32 @@ export function useShareWithClubs(onSuccess?: (clubIds: string[]) => void) {
       
       // Add new shares
       if (sharesToAdd.length > 0) {
-        const sharingRecords = sharesToAdd.map(clubId => {
-          const record: Partial<ShareRecord> = {
+        // Use type assertion to ensure proper typing
+        if (contentType === 'workout') {
+          const sharingRecords = sharesToAdd.map(clubId => ({
             club_id: clubId,
+            workout_id: contentId,
             shared_by: user.id
-          };
+          }));
           
-          if (contentType === 'workout') {
-            return { ...record, workout_id: contentId } as WorkoutShareRecord;
-          } else {
-            return { ...record, program_id: contentId } as ProgramShareRecord;
-          }
-        });
-        
-        const { error } = await supabase
-          .from(tableName)
-          .insert(sharingRecords);
+          const { error } = await supabase
+            .from('club_shared_workouts')
+            .insert(sharingRecords);
             
-        if (error) throw error;
+          if (error) throw error;
+        } else {
+          const sharingRecords = sharesToAdd.map(clubId => ({
+            club_id: clubId,
+            program_id: contentId,
+            shared_by: user.id
+          }));
+          
+          const { error } = await supabase
+            .from('club_shared_programs')
+            .insert(sharingRecords);
+            
+          if (error) throw error;
+        }
       }
       
       // Remove unselected shares

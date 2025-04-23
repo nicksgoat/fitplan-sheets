@@ -8,35 +8,7 @@ import { Exercise, Set } from '@/types/workout';
 import { useWorkoutDetail } from '@/hooks/useWorkoutDetail';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { getOrganizedExercises } from '@/utils/workoutPreviewUtils';
-
-export interface WorkoutLogData {
-  id: string;
-  workoutId?: string;
-  userId: string;
-  startTime: string;
-  endTime?: string;
-  duration?: number;
-  notes?: string;
-  exercises: WorkoutLogExercise[];
-}
-
-export interface WorkoutLogExercise {
-  id: string;
-  name: string;
-  sets: WorkoutLogSet[];
-  notes?: string;
-  isCircuit?: boolean;
-  circuitId?: string;
-  isInCircuit?: boolean;
-}
-
-export interface WorkoutLogSet {
-  id: string;
-  reps: string;
-  weight: string;
-  rest?: string;
-  completed: boolean;
-}
+import { WorkoutLogData, WorkoutLogExercise, WorkoutLogSet } from '@/types/workoutLog';
 
 export function useWorkoutLoggerIntegration() {
   const { user } = useAuth();
