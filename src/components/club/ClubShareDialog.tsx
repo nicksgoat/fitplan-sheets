@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import {
   AlertDialog,
@@ -15,7 +14,6 @@ import { ClubShareDialogProps } from '@/types/clubSharing';
 import { useClubSelection } from '@/hooks/useClubSelection';
 import { useShareWithClubs } from '@/hooks/useClubSharing';
 import { ClubsList } from './ClubsList';
-import type { Club } from '@/types/club';
 
 export function ClubShareDialog({ 
   open, 
@@ -34,7 +32,7 @@ export function ClubShareDialog({
     setSelectedClubIds,
   } = useClubSelection(initialSelectedClubIds);
   
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
 
   // Load user clubs when dialog opens
   useEffect(() => {
@@ -58,7 +56,7 @@ export function ClubShareDialog({
       return;
     }
 
-    shareWithClubs.mutate({
+    shareWithClubsMutation.mutate({
       contentId,
       contentType,
       clubIds: selectedClubIds
@@ -83,7 +81,7 @@ export function ClubShareDialog({
         
         <div className="grid gap-4 py-4">
           <ClubsList
-            clubs={clubs as Club[]}
+            clubs={clubs}
             isLoading={isLoading}
             selectedClubIds={selectedClubIds}
             onClubToggle={toggleClub}
@@ -92,8 +90,8 @@ export function ClubShareDialog({
         
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleShare} disabled={shareWithClubs.isPending}>
-            {shareWithClubs.isPending ? "Sharing..." : "Share"}
+          <AlertDialogAction onClick={handleShare} disabled={shareWithClubsMutation.isPending}>
+            {shareWithClubsMutation.isPending ? "Sharing..." : "Share"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { CreateClubForm } from '@/components/clubs/CreateClubForm';
+import CreateClubForm from '@/components/clubs/CreateClubForm';
 
 const CreateClub: React.FC = () => {
   const navigate = useNavigate();

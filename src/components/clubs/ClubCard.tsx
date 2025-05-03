@@ -27,14 +27,13 @@ const ClubCard: React.FC<ClubCardProps> = ({ club, isMember, onClick }) => {
     }
   };
   
-  // Use the provided isMember prop first, then fall back to checking with isUserClubMember
-  const membershipStatus = isMember || (club.id && isUserClubMember(club.id))
+  const membershipStatus = isMember || isUserClubMember(club.id) 
     ? 'Member' 
     : club.membership_type === 'premium' 
       ? 'Premium' 
       : 'Free';
       
-  const cardStyle = (isMember || (club.id && isUserClubMember(club.id)))
+  const cardStyle = (isMember || isUserClubMember(club.id))
     ? 'bg-dark-200 border-fitbloom-purple/50'
     : 'bg-dark-200 border-dark-300';
   

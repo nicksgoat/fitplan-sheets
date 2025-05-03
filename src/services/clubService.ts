@@ -2,577 +2,1038 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   ClubProductPurchase, 
   ClubProduct, 
-  ClubSubscription, 
-  PurchaseStatus, 
-  SubscriptionStatus, 
-  RefundStatus, 
-  ProductType, 
-  MemberRole, 
-  EventParticipationStatus, 
-  MemberStatus, 
-  MembershipType, 
-  ClubEvent, 
-  EventParticipant, 
-  ClubMember, 
-  Club, 
-  ClubPost, 
-  ClubPostComment, 
-  ClubMessage, 
-  ClubType 
+  ClubSubscription,
+  PurchaseStatus,
+  SubscriptionStatus,
+  RefundStatus,
+  ProductType,
+  MemberRole,
+  EventParticipationStatus,
+  MemberStatus,
+  MembershipType,
+  ClubEvent,
+  EventParticipant,
+  ClubMember,
+  Club,
+  ClubPost,
+  ClubPostComment,
+  ClubMessage,
+  ClubType
 } from '@/types/club';
+import { Profile } from '@/types/profile';
+import { safelyGetProfile } from '@/utils/profileUtils';
+import { Workout } from '@/types/workout';
 
-interface CreateClubParams {
-  name: string;
-  description?: string;
-  clubType: ClubType;
-  membershipType?: MembershipType;
-  logoUrl?: string;
-  bannerUrl?: string;
-  premiumPrice?: number;
-}
+/**
+ * Get user's purchases
+ */
+export async function getUserPurchases(): Promise<ClubProductPurchase[]> {
+  try {
+    const { data, error } = await supabase
+      .from('club_product_purchases')
+      .select(`
+        *,
+        product:club_products(*)
+      `)
+      .order('purchase_date', { ascending: false });
 
-interface CreateChannelParams {
-  clubId: string;
-  name: string;
-  description?: string;
-  type?: string;
-  isDefault?: boolean;
-}
+    if (error) throw error;
+    if (!data) return [];
 
-interface CreateEventParams {
-  clubId: string;
-  name: string;
-  description?: string;
-  location?: string;
-  startTime: string;
-  endTime: string;
-  imageUrl?: string;
-  category?: string;
-}
-
-interface CreateProductParams {
-  clubId: string;
-  name: string;
-  description?: string;
-  price: number;
-  productType: ProductType;
-  dateTime?: string;
-  location?: string;
-  maxParticipants?: number;
-}
-
-interface CreatePostParams {
-  clubId: string;
-  content: string;
-  imageUrl?: string;
-  workoutId?: string;
-}
-
-interface JoinEventParams {
-  eventId: string;
-  status?: EventParticipationStatus;
-}
-
-interface UpdateEventParams {
-  id: string;
-  name?: string;
-  description?: string;
-  location?: string;
-  startTime?: string;
-  endTime?: string;
-  imageUrl?: string;
-  category?: string;
+    // Cast the data to the correct type
+    return data.map(purchase => ({
+      ...purchase,
+      status: purchase.status as PurchaseStatus,
+      refund_status: purchase.refund_status as RefundStatus | undefined,
+      product: purchase.product ? ({
+        ...purchase.product,
+        product_type: purchase.product.product_type as ProductType
+      } as ClubProduct) : undefined
+    })) as ClubProductPurchase[];
+  } catch (error) {
+    console.error('Error getting user purchases:', error);
+    return [];
+  }
 }
 
 /**
- * Create a new club
+ * Get user's subscriptions
  */
-export const createClub = async (userId: string, params: CreateClubParams): Promise<Club> => {
+export async function getUserSubscriptions(): Promise<ClubSubscription[]> {
   try {
-    const {
-      name,
-      description,
-      clubType,
-      membershipType = 'free',
-      logoUrl,
-      bannerUrl,
-      premiumPrice,
-    } = params;
+    console.log("Getting user subscriptions");
+    // Use the edge function
+    const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+      body: {
+        action: 'get_user_subscriptions'
+      }
+    });
+    
+    if (error) {
+      console.error("Error invoking edge function:", error);
+      throw error;
+    }
+    
+    console.log("Edge function response:", data);
+    
+    if (!data || !Array.isArray(data)) return [];
+    
+    // Cast the data to the correct type with proper mapping
+    return data.map(sub => ({
+      id: sub.id,
+      user_id: sub.user_id,
+      club_id: sub.club_id,
+      stripe_subscription_id: sub.stripe_subscription_id,
+      status: sub.status as SubscriptionStatus,
+      created_at: sub.created_at,
+      updated_at: sub.updated_at,
+      current_period_start: sub.current_period_start,
+      current_period_end: sub.current_period_end,
+      cancel_at_period_end: sub.cancel_at_period_end,
+      canceled_at: sub.canceled_at,
+      plan_amount: sub.plan_amount,
+      plan_currency: sub.plan_currency,
+      plan_interval: sub.plan_interval
+    }));
+  } catch (error) {
+    console.error('Error getting user subscriptions:', error);
+    return [];
+  }
+}
 
-    const clubTypeStr = String(clubType);
-    const membershipTypeStr = String(membershipType);
-
-    const { data, error } = await supabase
-      .from('clubs')
-      .insert({
-        name,
-        description,
-        club_type: clubTypeStr,
-        membership_type: membershipTypeStr,
-        logo_url: logoUrl,
-        banner_url: bannerUrl,
-        premium_price: premiumPrice,
-        creator_id: userId,
-      })
-      .select()
-      .single();
+/**
+ * Get user's subscription for a club
+ */
+export async function getUserClubSubscription(
+  userId: string, 
+  clubId: string
+): Promise<ClubSubscription | null> {
+  try {
+    // Use the edge function
+    const { data, error } = await supabase.functions.invoke('get-subscription-rpcs', {
+      body: {
+        action: 'get_user_club_subscription',
+        club_id: clubId
+      }
+    });
 
     if (error) throw error;
-    if (!data) throw new Error('Failed to create club');
+    
+    // Handle empty response
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return null;
+    }
 
-    return data as Club;
+    // Cast the data to the correct type
+    const subscription: ClubSubscription = {
+      id: data[0].id,
+      user_id: data[0].user_id,
+      club_id: data[0].club_id,
+      stripe_subscription_id: data[0].stripe_subscription_id,
+      status: data[0].status as SubscriptionStatus,
+      created_at: data[0].created_at,
+      updated_at: data[0].updated_at,
+      current_period_start: data[0].current_period_start,
+      current_period_end: data[0].current_period_end,
+      cancel_at_period_end: data[0].cancel_at_period_end,
+      canceled_at: data[0].canceled_at,
+      plan_amount: data[0].plan_amount,
+      plan_currency: data[0].plan_currency,
+      plan_interval: data[0].plan_interval
+    };
+
+    return subscription;
+  } catch (error) {
+    console.error('Error getting user subscription:', error);
+    return null;
+  }
+}
+
+/**
+ * Request a refund for a product purchase
+ */
+export async function requestRefund(
+  purchaseId: string,
+  reason: string
+): Promise<{ success: boolean; data?: ClubProductPurchase; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('refund-request', {
+      body: { purchaseId, reason }
+    });
+
+    if (error) throw error;
+    
+    if (!data.success) {
+      return { success: false, error: data.error || 'Unknown error requesting refund' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        ...data.purchase,
+        status: data.purchase.status as PurchaseStatus,
+        refund_status: data.purchase.refund_status as RefundStatus
+      } as ClubProductPurchase 
+    };
+  } catch (error) {
+    console.error('Error requesting refund:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error requesting refund'
+    };
+  }
+}
+
+/**
+ * Cancel a subscription
+ */
+export async function cancelSubscription(
+  subscriptionId: string,
+  atPeriodEnd: boolean = true
+): Promise<{ success: boolean; data?: ClubSubscription; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+      body: { subscriptionId, atPeriodEnd }
+    });
+
+    if (error) throw error;
+    
+    if (!data.success) {
+      return { success: false, error: data.error || 'Unknown error canceling subscription' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        ...data.subscription,
+        status: data.subscription.status as SubscriptionStatus
+      } as ClubSubscription
+    };
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error canceling subscription'
+    };
+  }
+}
+
+// Club-related functions
+export async function fetchClubs(): Promise<Club[]> {
+  try {
+    const { data, error } = await supabase.from('clubs').select('*');
+    if (error) throw error;
+    if (!data) return [];
+    
+    return data.map(club => ({
+      ...club,
+      club_type: club.club_type as ClubType,
+      membership_type: club.membership_type as MembershipType
+    })) as Club[];
+  } catch (error) {
+    console.error('Error fetching clubs:', error);
+    return [];
+  }
+}
+
+export async function fetchClubById(id: string): Promise<Club | null> {
+  try {
+    const { data, error } = await supabase.from('clubs').select('*').eq('id', id).single();
+    if (error) throw error;
+    if (!data) return null;
+    
+    return {
+      ...data,
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
+    } as Club;
+  } catch (error) {
+    console.error(`Error fetching club by id ${id}:`, error);
+    return null;
+  }
+}
+
+export async function createClub(clubData: { 
+  name: string; 
+  description?: string; 
+  club_type?: ClubType; 
+  membership_type?: MembershipType;
+  premium_price?: number;
+  creator_id: string;
+  logo_url?: string;
+  banner_url?: string;
+}): Promise<Club> {
+  try {
+    // Start a Supabase transaction for creating both the club and adding the creator as an admin member
+    const { data, error } = await supabase.from('clubs').insert({
+      name: clubData.name,
+      description: clubData.description,
+      club_type: clubData.club_type,
+      membership_type: clubData.membership_type,
+      premium_price: clubData.premium_price,
+      creator_id: clubData.creator_id,
+      logo_url: clubData.logo_url,
+      banner_url: clubData.banner_url
+    }).select().single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after club creation');
+    
+    // Now add the creator as an admin member to the club
+    const { error: memberError } = await supabase.from('club_members').insert({
+      club_id: data.id,
+      user_id: clubData.creator_id,
+      role: 'admin' as MemberRole,
+      status: 'active' as MemberStatus,
+      membership_type: data.membership_type || 'free' as MembershipType
+    });
+    
+    if (memberError) {
+      console.error('Error adding creator as club member:', memberError);
+      // If we fail to add the user as a member, we don't want to fail the whole operation
+      // since the club was already created successfully
+    }
+    
+    return {
+      ...data,
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
+    } as Club;
   } catch (error) {
     console.error('Error creating club:', error);
     throw error;
   }
-};
+}
 
-/**
- * Get a club by ID
- */
-export const getClubById = async (clubId: string): Promise<Club | null> => {
+export async function updateClub(id: string, updates: { 
+  name?: string; 
+  description?: string; 
+  club_type?: ClubType; 
+  membership_type?: MembershipType;
+  premium_price?: number;
+  logo_url?: string;
+  banner_url?: string;
+}): Promise<Club> {
   try {
-    const { data, error } = await supabase
-      .from('clubs')
-      .select('*')
-      .eq('id', clubId)
-      .single();
-
+    const { data, error } = await supabase.from('clubs').update({
+      name: updates.name,
+      description: updates.description,
+      club_type: updates.club_type,
+      membership_type: updates.membership_type,
+      premium_price: updates.premium_price,
+      logo_url: updates.logo_url,
+      banner_url: updates.banner_url
+    }).eq('id', id).select().single();
+    
     if (error) throw error;
-    if (!data) return null;
-
-    return data as Club;
+    if (!data) throw new Error('No data returned after club update');
+    
+    return {
+      ...data,
+      club_type: data.club_type as ClubType,
+      membership_type: data.membership_type as MembershipType
+    } as Club;
   } catch (error) {
-    console.error('Error getting club by ID:', error);
+    console.error(`Error updating club ${id}:`, error);
     throw error;
   }
-};
+}
 
-/**
- * Get clubs where the user is a member
- */
-export const getUserClubs = async (userId: string): Promise<Club[]> => {
+export async function deleteClub(id: string): Promise<boolean> {
   try {
-    const { data: memberData, error: memberError } = await supabase
+    const { error } = await supabase.from('clubs').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting club ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchClubMembers(clubId: string): Promise<ClubMember[]> {
+  try {
+    const { data, error } = await supabase
       .from('club_members')
-      .select('club_id')
-      .eq('user_id', userId);
+      .select('*, profile:profiles(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    // Properly cast the roles and status and handle profile errors
+    return data.map(member => ({
+      ...member,
+      role: member.role as MemberRole,
+      status: member.status as MemberStatus,
+      membership_type: member.membership_type as MembershipType,
+      // Check if profile is valid or an error, if error return undefined
+      profile: safelyGetProfile(member.profile, member.user_id)
+    } as ClubMember));
+  } catch (error) {
+    console.error(`Error fetching club members for ${clubId}:`, error);
+    return [];
+  }
+}
 
-    if (memberError) throw memberError;
-    if (!memberData || memberData.length === 0) return [];
+export async function joinClub(clubId: string, membershipType: MembershipType = 'free'): Promise<ClubMember> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('No authenticated user');
+    
+    // Use the edge function to bypass RLS policies
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'join_club',
+        params: {
+          club_id: clubId,
+          user_id: userData.user.id,
+          membership_type: membershipType
+        }
+      }
+    });
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after joining club');
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    } as ClubMember;
+  } catch (error) {
+    console.error(`Error joining club ${clubId}:`, error);
+    throw error;
+  }
+}
 
-    const clubIds = memberData.map((member) => member.club_id);
+// Use the improved edge function for checking club membership
+export async function checkClubMembership(clubId: string): Promise<{ isMember: boolean, member?: ClubMember }> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      return { isMember: false };
+    }
+    
+    // Use the edge function to bypass RLS policies
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'check_club_member',
+        params: {
+          club_id: clubId,
+          user_id: userData.user.id
+        }
+      }
+    });
+    
+    if (error) throw error;
+    
+    if (data?.is_member && data.member_data) {
+      return { 
+        isMember: true, 
+        member: {
+          ...data.member_data,
+          role: data.member_data.role as MemberRole,
+          status: data.member_data.status as MemberStatus,
+          membership_type: data.member_data.membership_type as MembershipType
+        } as ClubMember
+      };
+    }
+    
+    return { isMember: false };
+  } catch (error) {
+    console.error(`Error checking club membership for ${clubId}:`, error);
+    return { isMember: false };
+  }
+}
 
-    const { data: clubsData, error: clubsError } = await supabase
+// Update member role function to use the edge function
+export async function updateMemberRole(memberId: string, role: MemberRole): Promise<ClubMember> {
+  try {
+    // Use the edge function to update the role and bypass RLS
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'update_member_role',
+        params: {
+          member_id: memberId,
+          role: role
+        }
+      }
+    });
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after role update');
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    } as ClubMember;
+  } catch (error) {
+    console.error(`Error updating member role ${memberId}:`, error);
+    throw error;
+  }
+}
+
+export async function leaveClub(clubId: string): Promise<boolean> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('No authenticated user');
+    
+    // Use the edge function to leave the club and bypass RLS
+    const { data, error } = await supabase.functions.invoke('run-sql-rpcs', {
+      body: {
+        sqlName: 'leave_club',
+        params: {
+          club_id: clubId,
+          user_id: userData.user.id
+        }
+      }
+    });
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error leaving club ${clubId}:`, error);
+    throw error;
+  }
+}
+
+export async function getUserClubs(): Promise<{ membership: ClubMember; club: Club }[]> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      console.error('No authenticated user found in getUserClubs');
+      throw new Error('No authenticated user');
+    }
+    
+    console.log(`Getting clubs for user ${userData.user.id}`);
+    
+    // First get the club memberships
+    const { data: memberships, error: membershipError } = await supabase
+      .from('club_members')
+      .select('*')
+      .eq('user_id', userData.user.id);
+    
+    if (membershipError) {
+      console.error('Error fetching club memberships:', membershipError);
+      throw membershipError;
+    }
+    
+    if (!memberships || memberships.length === 0) {
+      console.log('No club memberships found');
+      return [];
+    }
+    
+    console.log(`Found ${memberships.length} club memberships`);
+    
+    // Now get the club details for each membership
+    const clubIds = memberships.map(m => m.club_id);
+    const { data: clubs, error: clubsError } = await supabase
       .from('clubs')
       .select('*')
       .in('id', clubIds);
-
-    if (clubsError) throw clubsError;
-    if (!clubsData) return [];
-
-    return clubsData as Club[];
+    
+    if (clubsError) {
+      console.error('Error fetching clubs:', clubsError);
+      throw clubsError;
+    }
+    
+    if (!clubs || clubs.length === 0) {
+      console.log('No clubs found');
+      return [];
+    }
+    
+    console.log(`Found ${clubs.length} clubs`);
+    
+    // Join the data
+    return memberships.map(membership => {
+      const club = clubs.find(c => c.id === membership.club_id);
+      if (!club) {
+        console.error(`Club not found for membership ${membership.id}`);
+        return null;
+      }
+      
+      return {
+        membership: {
+          ...membership,
+          role: membership.role as MemberRole,
+          status: membership.status as MemberStatus,
+          membership_type: membership.membership_type as MembershipType
+        } as ClubMember,
+        club: {
+          ...club,
+          club_type: club.club_type as ClubType,
+          membership_type: club.membership_type as MembershipType
+        } as Club
+      };
+    }).filter(Boolean) as { membership: ClubMember; club: Club }[];
   } catch (error) {
     console.error('Error getting user clubs:', error);
-    throw error;
+    return [];
   }
-};
+}
 
-/**
- * Join a club
- */
-export const joinClub = async (userId: string, clubId: string, membershipType: MembershipType = 'free'): Promise<void> => {
-  try {
-    const membershipTypeStr = String(membershipType);
-    
-    const { error } = await supabase.from('club_members').insert({
-      club_id: clubId,
-      user_id: userId,
-      role: 'member',
-      status: 'active',
-      membership_type: membershipTypeStr,
-      joined_at: new Date().toISOString(),
-    });
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error joining club:', error);
-    throw error;
-  }
-};
-
-/**
- * Leave a club
- */
-export const leaveClub = async (userId: string, clubId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('club_members')
-      .delete()
-      .eq('club_id', clubId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error leaving club:', error);
-    throw error;
-  }
-};
-
-/**
- * Check if user is a member of the club
- */
-export const isClubMember = async (userId: string, clubId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('club_members')
-      .select('id')
-      .eq('club_id', clubId)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return false; // No rows error
-      throw error;
-    }
-
-    return !!data;
-  } catch (error) {
-    console.error('Error checking club membership:', error);
-    throw error;
-  }
-};
-
-/**
- * Get list of club members
- */
-export const getClubMembers = async (clubId: string): Promise<ClubMember[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('club_members')
-      .select(`
-        *,
-        profiles:profiles(*)
-      `)
-      .eq('club_id', clubId);
-
-    if (error) throw error;
-    if (!data) return [];
-
-    // Handle profile data
-    const members = data.map((member) => {
-      let profile = null;
-      
-      if (member.profiles && typeof member.profiles === 'object' && !('error' in member.profiles)) {
-        profile = {
-          display_name: member.profiles.display_name,
-          username: member.profiles.username,
-          avatar_url: member.profiles.avatar_url,
-        };
-      }
-
-      return {
-        ...member,
-        profile,
-      } as unknown as ClubMember;
-    });
-
-    return members;
-  } catch (error) {
-    console.error('Error getting club members:', error);
-    throw error;
-  }
-};
-
-/**
- * Update a club member's role or status
- */
-export const updateClubMember = async (
-  memberId: string,
-  updates: { role?: MemberRole; status?: MemberStatus; membershipType?: MembershipType }
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('club_members')
-      .update({
-        role: updates.role,
-        status: updates.status,
-        membership_type: updates.membershipType,
-      })
-      .eq('id', memberId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error updating club member:', error);
-    throw error;
-  }
-};
-
-/**
- * Create a new club event
- */
-export const createClubEvent = async (userId: string, params: CreateEventParams): Promise<ClubEvent> => {
-  try {
-    const { data, error } = await supabase
-      .from('club_events')
-      .insert({
-        club_id: params.clubId,
-        name: params.name,
-        description: params.description,
-        location: params.location,
-        start_time: params.startTime,
-        end_time: params.endTime,
-        image_url: params.imageUrl,
-        created_by: userId,
-        category: params.category,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error('Failed to create event');
-
-    return data as ClubEvent;
-  } catch (error) {
-    console.error('Error creating club event:', error);
-    throw error;
-  }
-};
-
-/**
- * Update a club event
- */
-export const updateClubEvent = async (params: UpdateEventParams): Promise<ClubEvent> => {
-  try {
-    const updates: any = {};
-    if (params.name) updates.name = params.name;
-    if (params.description !== undefined) updates.description = params.description;
-    if (params.location !== undefined) updates.location = params.location;
-    if (params.startTime) updates.start_time = params.startTime;
-    if (params.endTime) updates.end_time = params.endTime;
-    if (params.imageUrl !== undefined) updates.image_url = params.imageUrl;
-    if (params.category !== undefined) updates.category = params.category;
-
-    const { data, error } = await supabase
-      .from('club_events')
-      .update(updates)
-      .eq('id', params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    if (!data) throw new Error('Failed to update event');
-
-    return data as ClubEvent;
-  } catch (error) {
-    console.error('Error updating club event:', error);
-    throw error;
-  }
-};
-
-/**
- * Get club events
- */
-export const getClubEvents = async (clubId: string): Promise<ClubEvent[]> => {
+export async function fetchClubEvents(clubId: string): Promise<ClubEvent[]> {
   try {
     const { data, error } = await supabase
       .from('club_events')
       .select('*')
-      .eq('club_id', clubId)
-      .order('start_time', { ascending: true });
-
+      .eq('club_id', clubId);
+    
     if (error) throw error;
     if (!data) return [];
-
+    
     return data as ClubEvent[];
   } catch (error) {
-    console.error('Error getting club events:', error);
-    throw error;
+    console.error(`Error fetching club events for ${clubId}:`, error);
+    return [];
   }
-};
+}
 
-/**
- * Join or update status for an event
- */
-export const joinEvent = async (userId: string, { eventId, status = 'going' }: JoinEventParams): Promise<void> => {
-  try {
-    // Check if already a participant
-    const { data: existingParticipant, error: checkError } = await supabase
-      .from('event_participants')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('user_id', userId)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      // Error other than "no rows returned"
-      throw checkError;
-    }
-
-    if (existingParticipant) {
-      // Update existing participation
-      const { error } = await supabase
-        .from('event_participants')
-        .update({ status })
-        .eq('id', existingParticipant.id);
-
-      if (error) throw error;
-    } else {
-      // Create new participation
-      const { error } = await supabase
-        .from('event_participants')
-        .insert({
-          event_id: eventId,
-          user_id: userId,
-          status,
-          joined_at: new Date().toISOString(),
-        });
-
-      if (error) throw error;
-    }
-  } catch (error) {
-    console.error('Error joining event:', error);
-    throw error;
-  }
-};
-
-/**
- * Create a new club product
- */
-export const createClubProduct = async (params: CreateProductParams): Promise<ClubProduct> => {
+export async function createEvent(event: { 
+  club_id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  start_time: string;
+  end_time: string;
+  image_url?: string;
+  created_by: string;
+}): Promise<ClubEvent> {
   try {
     const { data, error } = await supabase
-      .from('club_products')
+      .from('club_events')
       .insert({
-        club_id: params.clubId,
-        name: params.name,
-        description: params.description,
-        price_amount: params.price,
-        price_currency: 'usd',
-        product_type: params.productType,
-        date_time: params.dateTime,
-        location: params.location,
-        max_participants: params.maxParticipants,
-        is_active: true,
+        club_id: event.club_id,
+        name: event.name,
+        description: event.description,
+        location: event.location,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        image_url: event.image_url,
+        created_by: event.created_by
       })
       .select()
       .single();
-
+    
     if (error) throw error;
-    if (!data) throw new Error('Failed to create product');
-
-    return data as ClubProduct;
+    if (!data) throw new Error('No data returned after creating event');
+    
+    return data as ClubEvent;
   } catch (error) {
-    console.error('Error creating club product:', error);
+    console.error('Error creating event:', error);
     throw error;
   }
-};
+}
 
-/**
- * Create a new club post
- */
-export const createClubPost = async (
-  userId: string,
-  { clubId, content, imageUrl, workoutId }: CreatePostParams
-): Promise<ClubPost> => {
+export async function updateEvent(id: string, updates: { 
+  name?: string;
+  description?: string;
+  location?: string;
+  start_time?: string;
+  end_time?: string;
+  image_url?: string;
+}): Promise<ClubEvent> {
+  try {
+    const eventUpdates: Record<string, any> = {};
+    
+    // Only include fields that are actually being updated
+    if (updates.name) eventUpdates.name = updates.name;
+    if (updates.description !== undefined) eventUpdates.description = updates.description;
+    if (updates.location !== undefined) eventUpdates.location = updates.location;
+    if (updates.start_time) eventUpdates.start_time = updates.start_time;
+    if (updates.end_time) eventUpdates.end_time = updates.end_time;
+    if (updates.image_url !== undefined) eventUpdates.image_url = updates.image_url;
+
+    const { data, error } = await supabase
+      .from('club_events')
+      .update(eventUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after updating event');
+    
+    return data as ClubEvent;
+  } catch (error) {
+    console.error(`Error updating event ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function deleteEvent(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('club_events')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting event ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function respondToEvent(eventId: string, status: EventParticipationStatus): Promise<EventParticipant> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('No authenticated user');
+    
+    const { data, error } = await supabase
+      .from('event_participants')
+      .upsert({
+        event_id: eventId,
+        user_id: userData.user.id,
+        status
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after responding to event');
+    
+    return {
+      ...data,
+      status: data.status as EventParticipationStatus
+    } as EventParticipant;
+  } catch (error) {
+    console.error(`Error responding to event ${eventId}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchEventParticipants(eventId: string): Promise<EventParticipant[]> {
+  try {
+    const { data, error } = await supabase
+      .from('event_participants')
+      .select('*, profile:profiles(*)')
+      .eq('event_id', eventId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    return data.map(participant => ({
+      ...participant,
+      status: participant.status as EventParticipationStatus,
+      profile: safelyGetProfile(participant.profile, participant.user_id)
+    } as EventParticipant));
+  } catch (error) {
+    console.error(`Error fetching event participants for ${eventId}:`, error);
+    return [];
+  }
+}
+
+export async function fetchClubPosts(clubId: string): Promise<ClubPost[]> {
   try {
     const { data, error } = await supabase
       .from('club_posts')
-      .insert({
-        club_id: clubId,
-        user_id: userId,
-        content,
-        image_url: imageUrl,
-        workout_id: workoutId,
-      })
+      .select('*, profile:profiles(*), workout:workouts(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    // Handle potentially missing profile/workout relationships
+    return data.map(post => {
+      // Safely handle profile data with the utility function
+      const validProfile = safelyGetProfile(post.profile, post.user_id);
+      
+      // Only add workout if it's valid (not an error object)
+      let workout: Workout | undefined = undefined;
+      
+      // Fixed type checking to handle null, undefined, and error cases
+      if (post.workout && 
+          typeof post.workout === 'object' && 
+          post.workout !== null) {
+        // Check if workout is an error object by safely checking for error property
+        const workoutObj = post.workout as Record<string, unknown>;
+        if (!('error' in workoutObj)) {
+          workout = post.workout as Workout;
+        }
+      }
+      
+      return {
+        ...post,
+        profile: validProfile,
+        workout,
+        comments: [] // Initialize with empty comments array
+      } as ClubPost;
+    });
+  } catch (error) {
+    console.error(`Error fetching club posts for ${clubId}:`, error);
+    return [];
+  }
+}
+
+export async function createPost(post: {
+  club_id: string;
+  content: string;
+  user_id: string;
+  image_url?: string;
+  workout_id?: string;
+}): Promise<ClubPost> {
+  try {
+    const postData = {
+      club_id: post.club_id,
+      content: post.content,
+      user_id: post.user_id,
+      image_url: post.image_url,
+      workout_id: post.workout_id
+    };
+    
+    const { data, error } = await supabase
+      .from('club_posts')
+      .insert(postData)
       .select()
       .single();
-
+    
     if (error) throw error;
-    if (!data) throw new Error('Failed to create post');
-
-    return data as ClubPost;
+    if (!data) throw new Error('No data returned after creating post');
+    
+    return {
+      ...data,
+      comments: []
+    } as ClubPost;
   } catch (error) {
-    console.error('Error creating club post:', error);
+    console.error('Error creating post:', error);
     throw error;
   }
-};
+}
 
-/**
- * Delete a club post
- */
-export const deleteClubPost = async (postId: string): Promise<void> => {
+export async function deletePost(id: string): Promise<boolean> {
   try {
-    const { error } = await supabase.from('club_posts').delete().eq('id', postId);
-
+    const { error } = await supabase
+      .from('club_posts')
+      .delete()
+      .eq('id', id);
+    
     if (error) throw error;
+    return true;
   } catch (error) {
-    console.error('Error deleting club post:', error);
+    console.error(`Error deleting post ${id}:`, error);
     throw error;
   }
-};
+}
 
-/**
- * Utility function to map a database record to a typed club object
- */
-export const mapDbRecordToClub = (record: any): Club => {
-  return {
-    id: record.id,
-    name: record.name,
-    description: record.description || null,
-    logo_url: record.logo_url || null,
-    banner_url: record.banner_url || null,
-    creator_id: record.creator_id || record.created_by,
-    club_type: record.club_type,
-    membership_type: record.membership_type,
-    premium_price: record.premium_price || null,
-    created_at: record.created_at,
-    updated_at: record.updated_at,
-  };
-};
-
-/**
- * Check if a user has admin privileges in a club
- */
-export const isClubAdmin = async (userId: string, clubId: string): Promise<boolean> => {
+export async function fetchPostComments(postId: string): Promise<ClubPostComment[]> {
   try {
     const { data, error } = await supabase
-      .from('club_members')
-      .select('role')
-      .eq('club_id', clubId)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return false; // No rows error
-      throw error;
-    }
-
-    const role = data?.role as MembershipType;
-    return role === 'owner' || role === 'admin' || role === 'moderator';
+      .from('club_post_comments')
+      .select('*, profile:profiles(*)')
+      .eq('post_id', postId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    // Handle potentially missing profile relationship
+    return data.map(comment => ({
+      ...comment,
+      profile: safelyGetProfile(comment.profile, comment.user_id)
+    } as ClubPostComment));
   } catch (error) {
-    console.error('Error checking admin status:', error);
+    console.error(`Error fetching post comments for ${postId}:`, error);
+    return [];
+  }
+}
+
+export async function createComment(comment: {
+  post_id: string;
+  user_id: string;
+  content: string;
+}): Promise<ClubPostComment> {
+  try {
+    const commentData = {
+      post_id: comment.post_id,
+      user_id: comment.user_id,
+      content: comment.content
+    };
+    
+    const { data, error } = await supabase
+      .from('club_post_comments')
+      .insert(commentData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after creating comment');
+    
+    return data as ClubPostComment;
+  } catch (error) {
+    console.error('Error creating comment:', error);
     throw error;
   }
-};
+}
 
-// ClubService export to make imports cleaner
-export default {
-  createClub,
-  getClubById,
-  getUserClubs,
-  joinClub,
-  leaveClub,
-  isClubMember,
-  getClubMembers,
-  updateClubMember,
-  createClubEvent,
-  updateClubEvent,
-  getClubEvents,
-  joinEvent,
-  createClubProduct,
-  createClubPost,
-  deleteClubPost,
-  mapDbRecordToClub,
-  isClubAdmin,
-};
+export async function deleteComment(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('club_post_comments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Error deleting comment ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchClubMessages(clubId: string): Promise<ClubMessage[]> {
+  try {
+    const { data, error } = await supabase
+      .from('club_messages')
+      .select('*, profile:profiles(*)')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    // Handle potentially missing profile relationship
+    return data.map(message => ({
+      ...message,
+      profile: safelyGetProfile(message.profile, message.user_id)
+    } as ClubMessage));
+  } catch (error) {
+    console.error(`Error fetching club messages for ${clubId}:`, error);
+    return [];
+  }
+}
+
+export async function sendMessage(message: {
+  club_id: string;
+  user_id: string;
+  content: string;
+  is_pinned?: boolean;
+}): Promise<ClubMessage> {
+  try {
+    const messageData = {
+      club_id: message.club_id,
+      user_id: message.user_id,
+      content: message.content,
+      is_pinned: message.is_pinned !== undefined ? message.is_pinned : false
+    };
+    
+    const { data, error } = await supabase
+      .from('club_messages')
+      .insert(messageData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after sending message');
+    
+    return data as ClubMessage;
+  } catch (error) {
+    console.error('Error sending message:', error);
+    throw error;
+  }
+}
+
+export async function pinMessage(id: string, isPinned: boolean): Promise<ClubMessage> {
+  try {
+    const { data, error } = await supabase
+      .from('club_messages')
+      .update({ is_pinned: isPinned })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after pinning/unpinning message');
+    
+    return data as ClubMessage;
+  } catch (error) {
+    console.error(`Error pinning/unpinning message ${id}:`, error);
+    throw error;
+  }
+}
+
+export function subscribeToClubMessages(clubId: string, callback: (message: any) => void) {
+  const channel = supabase.channel(`club-${clubId}`)
+    .on('postgres_changes', { 
+      event: 'INSERT', 
+      schema: 'public', 
+      table: 'club_messages',
+      filter: `club_id=eq.${clubId}` 
+    }, (payload) => {
+      callback(payload.new);
+    })
+    .subscribe();
+    
+  return () => {
+    channel.unsubscribe();
+  };
+}
+
+export async function updateMembership(clubId: string, membershipType: MembershipType): Promise<ClubMember> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('No authenticated user');
+    
+    const { data, error } = await supabase
+      .from('club_members')
+      .update({ membership_type: membershipType })
+      .eq('club_id', clubId)
+      .eq('user_id', userData.user.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('No data returned after updating membership');
+    
+    return {
+      ...data,
+      role: data.role as MemberRole,
+      status: data.status as MemberStatus,
+      membership_type: data.membership_type as MembershipType
+    } as ClubMember;
+  } catch (error) {
+    console.error(`Error updating membership for club ${clubId}:`, error);
+    throw error;
+  }
+}
+
+export async function fetchClubProducts(clubId: string): Promise<ClubProduct[]> {
+  try {
+    const { data, error } = await supabase
+      .from('club_products')
+      .select('*')
+      .eq('club_id', clubId);
+    
+    if (error) throw error;
+    if (!data) return [];
+    
+    return data.map(product => ({
+      ...product,
+      product_type: product.product_type as ProductType
+    })) as ClubProduct[];
+  } catch (error) {
+    console.error(`Error fetching club products for ${clubId}:`, error);
+    return [];
+  }
+}
+
+export async function purchaseClubProduct(productId: string): Promise<ClubProductPurchase> {
+  try {
+    const { data, error } = await supabase.functions.invoke('create-checkout', {
+      body: { productId }
+    });
+    
+    if (error) throw error;
+    if (!data || !data.purchase) throw new Error('No purchase data returned');
+    
+    return {
+      ...data.purchase,
+      status: data.purchase.status as PurchaseStatus
+    } as ClubProductPurchase;
+  } catch (error) {
+    console.error(`Error purchasing club product ${productId}:`, error);
+    throw error;
+  }
+}

@@ -4,9 +4,9 @@ import { useClub } from '@/contexts/ClubContext';
 import ClubSidebar from './ClubSidebar';
 import ClubHeader from './ClubHeader';
 import ClubChat from './ClubChat';
-import { ClubFeed } from './ClubFeed';
+import ClubFeed from './ClubFeed';
 import ClubEvents from './ClubEvents';
-import { ClubMembers } from './ClubMembers';
+import ClubMembers from './ClubMembers';
 import { useNavigate } from 'react-router-dom';
 
 interface ClubLayoutProps {
@@ -25,7 +25,6 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
     members,
     loadingMembers,
     refreshChannels,
-    posts
   } = useClub();
   const navigate = useNavigate();
   const [initialLoad, setInitialLoad] = useState(true);
@@ -67,15 +66,15 @@ const ClubLayout: React.FC<ClubLayoutProps> = ({ clubId }) => {
   const renderMainContent = () => {
     switch (activeView) {
       case 'chat':
-        return <ClubChat />;
+        return <ClubChat clubId={clubId} />;
       case 'feed':
-        return <ClubFeed posts={posts} />;
+        return <ClubFeed clubId={clubId} />;
       case 'events':
-        return <ClubEvents />;
+        return <ClubEvents clubId={clubId} />;
       case 'members':
-        return <ClubMembers />;
+        return <ClubMembers clubId={clubId} />;
       default:
-        return <ClubChat />;
+        return <ClubChat clubId={clubId} />;
     }
   };
   

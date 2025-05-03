@@ -1,829 +1,889 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import {
-  Club,
-  ClubEvent,
-  ClubMember,
-  ClubPost,
-  ClubPostComment,
-  ClubType,
+import { 
+  Club, 
+  ClubEvent, 
+  ClubMember, 
+  ClubPost, 
+  ClubMessage, 
+  MemberRole, 
+  EventParticipationStatus, 
+  EventParticipant, 
+  ClubProduct,
   MembershipType,
-  EventParticipant,
-  EventParticipationStatus,
-  ClubMessage,
-  MemberRole,
   MemberStatus,
+  ProductType,
+  ClubChannel
 } from '@/types/club';
 
 interface ClubContextType {
-  currentClub: Club | null;
-  setCurrentClub: (club: Club | null) => void;
   clubs: Club[];
-  loadingClubs: boolean;
-  refreshClubs: () => Promise<void>;
-  createNewClub: (clubData: Partial<Club>) => Promise<Club>;
-  joinClub: (clubId: string, membershipType?: MembershipType) => Promise<void>;
-  leaveClub: (clubId: string) => Promise<void>;
-  isMember: boolean;
-  refreshMembership: () => Promise<void>;
-  members: ClubMember[];
-  loadingMembers: boolean;
-  refreshMembers: () => Promise<void>;
-  updateMemberRole: (memberId: string, role: string) => Promise<void>;
+  userClubs: Club[];
+  clubEvents: ClubEvent[];
   events: ClubEvent[];
+  members: ClubMember[];
+  posts: ClubPost[];
+  messages: ClubMessage[];
+  channels: ClubChannel[];
+  products: ClubProduct[];
+  currentClub: Club | null;
+  currentEvent: ClubEvent | null;
+  currentEventParticipants: EventParticipant[];
+  loadingClubs: boolean;
+  loadingClubEvents: boolean;
   loadingEvents: boolean;
+  loadingMembers: boolean;
+  loadingPosts: boolean;
+  loadingMessages: boolean;
+  loadingChannels: boolean;
+  setCurrentClub: (club: Club | null) => void;
+  refreshClubs: () => Promise<void>;
+  refreshMembers: () => Promise<void>;
+  refreshProducts: () => Promise<void>;
+  refreshPosts: () => Promise<void>;
+  refreshMessages: () => Promise<void>;
   refreshEvents: () => Promise<void>;
+  refreshChannels: () => Promise<void>;
+  loadClubEvents: (clubId: string) => Promise<void>;
+  loadEvent: (eventId: string) => Promise<void>;
+  loadEventParticipants: (eventId: string) => Promise<void>;
+  createClubEvent: (eventData: any) => Promise<ClubEvent | null>;
+  isUserClubMember: (clubId: string) => boolean;
+  isUserClubAdmin: (clubId: string) => boolean;
+  isUserClubCreator: (clubId: string) => boolean;
+  isUserEventParticipant: (eventId: string) => boolean;
+  joinCurrentClub: () => Promise<ClubMember>;
+  leaveCurrentClub: () => Promise<void>;
   joinEvent: (eventId: string, status: EventParticipationStatus) => Promise<void>;
   leaveEvent: (eventId: string) => Promise<void>;
-  isUserEventParticipant: (eventId: string) => boolean;
-  posts: ClubPost[];
-  loadingPosts: boolean;
-  refreshPosts: () => Promise<void>;
-  createPost: (postData: Partial<ClubPost>) => Promise<ClubPost>;
-  deletePost: (postId: string) => Promise<void>;
-  createComment: (postId: string, content: string) => Promise<ClubPostComment | null>;
-  channels: any[];
-  loadingChannels: boolean;
-  refreshChannels: () => Promise<void>;
-  createChannel: (channelData: any) => Promise<any>;
-  messages: ClubMessage[];
-  loadingMessages: boolean;
-  refreshMessages: () => Promise<void>;
-  sendNewMessage: (messageData: any) => Promise<void>;
-  upgradeToMembership: (membershipType: MembershipType) => Promise<void>;
-  createClubEvent: (eventData: Partial<ClubEvent>) => Promise<ClubEvent>;
-  isUserClubMember: (clubId: string) => boolean;
-  joinCurrentClub: () => Promise<void>;
-  leaveCurrentClub: () => Promise<void>;
-  createNewPost: (postData: Partial<ClubPost>) => Promise<ClubPost>;
-  getUserClubRole: (clubId: string) => string;
-  isUserClubAdmin: (clubId: string) => boolean;
-  userClubs: Club[];
+  createNewClub: (clubData: any) => Promise<Club>;
+  createNewEvent: (eventData: any) => Promise<ClubEvent>;
+  updateExistingEvent: (eventId: string, eventData: any) => Promise<ClubEvent>;
+  removeEvent: (eventId: string) => Promise<void>;
+  respondToClubEvent: (eventId: string, status: EventParticipationStatus) => Promise<EventParticipant>;
+  createNewPost: (postData: any) => Promise<ClubPost>;
+  removePost: (postId: string) => Promise<void>;
+  sendNewMessage: (messageData: any) => Promise<ClubMessage>;
+  togglePinMessage: (messageId: string, isPinned: boolean) => Promise<void>;
+  getUserClubRole: (clubId: string, userId?: string) => MemberRole | null;
+  upgradeToMembership: (membershipId: string) => Promise<any>;
+  purchaseProduct: (productId: string) => Promise<any>;
+  updateMemberRole: (memberId: string, role: MemberRole) => Promise<ClubMember>;
 }
 
-const ClubContext = createContext<ClubContextType | undefined>(undefined);
+const ClubContext = createContext<ClubContextType>({
+  clubs: [],
+  userClubs: [],
+  clubEvents: [],
+  events: [],
+  members: [],
+  posts: [],
+  messages: [],
+  channels: [],
+  products: [],
+  currentClub: null,
+  currentEvent: null,
+  currentEventParticipants: [],
+  loadingClubs: true,
+  loadingClubEvents: true,
+  loadingEvents: true,
+  loadingMembers: true,
+  loadingPosts: true,
+  loadingMessages: true,
+  loadingChannels: true,
+  setCurrentClub: () => {},
+  refreshClubs: async () => {},
+  refreshMembers: async () => {},
+  refreshProducts: async () => {},
+  refreshPosts: async () => {},
+  refreshMessages: async () => {},
+  refreshEvents: async () => {},
+  refreshChannels: async () => {},
+  loadClubEvents: async () => {},
+  loadEvent: async () => {},
+  loadEventParticipants: async () => {},
+  createClubEvent: async () => null,
+  isUserClubMember: () => false,
+  isUserClubAdmin: () => false,
+  isUserClubCreator: () => false,
+  isUserEventParticipant: () => false,
+  joinCurrentClub: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null, membership_type: 'free' }),
+  leaveCurrentClub: async () => {},
+  joinEvent: async () => {},
+  leaveEvent: async () => {},
+  createNewClub: async () => ({ id: '', name: '', description: '', created_at: '', created_by: '', updated_at: '', club_type: 'fitness', membership_type: 'free' }),
+  createNewEvent: async () => ({ id: '', club_id: '', name: '', description: '', start_time: '', end_time: '', created_at: '', created_by: '', attendee_count: 0, category: 'Event' }),
+  updateExistingEvent: async () => ({ id: '', club_id: '', name: '', description: '', start_time: '', end_time: '', created_at: '', created_by: '', attendee_count: 0, category: 'Event' }),
+  removeEvent: async () => {},
+  respondToClubEvent: async () => ({ id: '', event_id: '', user_id: '', status: 'going', created_at: '', updated_at: '', profile: null }),
+  createNewPost: async () => ({ id: '', club_id: '', user_id: '', content: '', created_at: '', updated_at: '', profile: null }),
+  removePost: async () => {},
+  sendNewMessage: async () => ({ id: '', club_id: '', user_id: '', content: '', created_at: '', is_pinned: false, profile: null }),
+  togglePinMessage: async () => {},
+  getUserClubRole: () => null,
+  upgradeToMembership: async () => ({}),
+  purchaseProduct: async () => ({}),
+  updateMemberRole: async () => ({ id: '', club_id: '', user_id: '', role: 'member', status: 'active', joined_at: '', profile: null, membership_type: 'free' }),
+});
 
-export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { user } = useAuth();
-  const [currentClub, setCurrentClub] = useState<Club | null>(null);
+export const useClub = () => useContext(ClubContext);
+
+export const ClubProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [userClubs, setUserClubs] = useState<Club[]>([]);
-  const [loadingClubs, setLoadingClubs] = useState(false);
-  const [isMember, setIsMember] = useState(false);
-  const [members, setMembers] = useState<ClubMember[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [clubEvents, setClubEvents] = useState<ClubEvent[]>([]);
   const [events, setEvents] = useState<ClubEvent[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [members, setMembers] = useState<ClubMember[]>([]);
   const [posts, setPosts] = useState<ClubPost[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(false);
-  const [channels, setChannels] = useState<any[]>([]);
-  const [loadingChannels, setLoadingChannels] = useState(false);
   const [messages, setMessages] = useState<ClubMessage[]>([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [channels, setChannels] = useState<ClubChannel[]>([]);
+  const [products, setProducts] = useState<ClubProduct[]>([]);
+  const [currentClub, setCurrentClub] = useState<Club | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<ClubEvent | null>(null);
+  const [currentEventParticipants, setCurrentEventParticipants] = useState<EventParticipant[]>([]);
+  const [loadingClubs, setLoadingClubs] = useState(true);
+  const [loadingClubEvents, setLoadingClubEvents] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingChannels, setLoadingChannels] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      refreshClubs();
-    }
-  }, [user]);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (user && currentClub) {
-      refreshMembership();
-      refreshMembers();
-      refreshEvents();
-      refreshPosts();
-      refreshChannels();
-      refreshMessages();
-    } else {
-      setIsMember(false);
-      setMembers([]);
-      setEvents([]);
-      setPosts([]);
-      setChannels([]);
-      setMessages([]);
-    }
-  }, [user, currentClub]);
-
-  const fetchUserClubs = async () => {
+  const refreshClubs = useCallback(async () => {
     if (!user) return;
     
     try {
-      const { data: membershipsData, error: membershipsError } = await supabase
-        .from('club_members')
-        .select('club_id')
-        .eq('user_id', user.id);
-
-      if (membershipsError) throw membershipsError;
-
-      if (membershipsData && membershipsData.length > 0) {
-        const clubIds = membershipsData.map(item => item.club_id);
-        
-        const { data: userClubsData, error: clubsError } = await supabase
-          .from('clubs')
-          .select('*')
-          .in('id', clubIds);
-
-        if (clubsError) throw clubsError;
-        
-        if (userClubsData) {
-          const typedUserClubs = userClubsData.map(club => ({
-            ...club,
-            creator_id: club.creator_id,
-            club_type: club.club_type as ClubType,
-            membership_type: club.membership_type as MembershipType
-          }));
-          
-          setUserClubs(typedUserClubs);
-        }
-      } else {
-        setUserClubs([]);
-      }
-    } catch (error) {
-      console.error('Error fetching user clubs:', error);
-      setUserClubs([]);
-    }
-  };
-
-  const refreshClubs = async () => {
-    if (!user) return;
-
-    setLoadingClubs(true);
-    try {
-      const { data: clubsData, error } = await supabase
+      setLoadingClubs(true);
+      
+      const { data: allClubs, error: clubsError } = await supabase
         .from('clubs')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (clubsData) {
-        const typedClubs = clubsData.map(club => ({
+        
+      if (clubsError) throw clubsError;
+      
+      const typedClubs: Club[] = (allClubs || []).map(club => ({
+        ...club,
+        club_type: club.club_type as any,
+        membership_type: club.membership_type as any,
+        created_by: club.creator_id || '',
+      }));
+      
+      setClubs(typedClubs);
+      
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+        
+      if (membershipError) throw membershipError;
+      
+      if (membershipData && membershipData.length > 0) {
+        const clubIds = membershipData.map(membership => membership.club_id);
+        
+        const { data: userClubsData, error: userClubsError } = await supabase
+          .from('clubs')
+          .select('*')
+          .in('id', clubIds);
+          
+        if (userClubsError) throw userClubsError;
+        
+        const typedUserClubs: Club[] = (userClubsData || []).map(club => ({
           ...club,
-          creator_id: club.creator_id,
-          club_type: club.club_type as ClubType,
-          membership_type: club.membership_type as MembershipType
+          club_type: club.club_type as any,
+          membership_type: club.membership_type as any,
+          created_by: club.creator_id || '',
         }));
-        setClubs(typedClubs);
+        
+        setUserClubs(typedUserClubs);
+      } else {
+        setUserClubs([]);
       }
       
-      await fetchUserClubs();
     } catch (error) {
       console.error('Error fetching clubs:', error);
-      toast.error('Failed to load clubs');
     } finally {
       setLoadingClubs(false);
     }
-  };
+  }, [user]);
 
-  const createNewClub = async (clubData: Partial<Club>): Promise<Club> => {
-    if (!user) throw new Error('User not authenticated');
-
+  const loadClubEvents = useCallback(async (clubId: string) => {
+    if (!clubId) return;
+    
     try {
-      const insertData = {
-        name: clubData.name || '',
-        description: clubData.description || '',
-        logo_url: clubData.logo_url,
-        banner_url: clubData.banner_url,
-        club_type: clubData.club_type || 'fitness',
-        membership_type: clubData.membership_type || 'free',
-        creator_id: user.id,
-        premium_price: clubData.premium_price
-      };
+      setLoadingClubEvents(true);
       
-      const { data, error } = await supabase
-        .from('clubs')
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Failed to create club');
-
-      await refreshClubs();
-      return data as Club;
-    } catch (error) {
-      console.error('Error creating club:', error);
-      throw error;
-    }
-  };
-
-  const joinClub = async (clubId: string, membershipType: MembershipType = 'free'): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      const { error } = await supabase.from('club_members').insert({
-        club_id: clubId,
-        user_id: user.id,
-        role: 'member',
-        status: 'active',
-        membership_type: membershipType,
-        joined_at: new Date().toISOString(),
-      });
-
-      if (error) throw error;
-      await refreshClubs();
-      setCurrentClub(clubs.find((club) => club.id === clubId) || null);
-    } catch (error) {
-      console.error('Error joining club:', error);
-      throw error;
-    }
-  };
-
-  const joinCurrentClub = async (): Promise<void> => {
-    if (!currentClub || !user) {
-      throw new Error('No current club selected or user not authenticated');
-    }
-    
-    return joinClub(currentClub.id);
-  };
-
-  const leaveClub = async (clubId: string): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      const { error } = await supabase
-        .from('club_members')
-        .delete()
+      const { data: events, error } = await supabase
+        .from('club_events')
+        .select('*')
         .eq('club_id', clubId)
-        .eq('user_id', user.id);
-
+        .order('start_time', { ascending: true });
+        
       if (error) throw error;
-      await refreshClubs();
-      setCurrentClub(null);
+      
+      setClubEvents(events || []);
     } catch (error) {
-      console.error('Error leaving club:', error);
-      throw error;
-    }
-  };
-
-  const leaveCurrentClub = async (): Promise<void> => {
-    if (!currentClub || !user) {
-      throw new Error('No current club selected or user not authenticated');
-    }
-    
-    return leaveClub(currentClub.id);
-  };
-
-  const isUserClubMember = (clubId: string): boolean => {
-    if (!user) return false;
-    return userClubs.some(club => club.id === clubId);
-  };
-
-  const isUserClubAdmin = (clubId: string): boolean => {
-    if (!user) return false;
-    const member = members.find(m => m.user_id === user.id && m.club_id === clubId);
-    return member ? ['admin', 'moderator', 'owner'].includes(member.role) : false;
-  };
-
-  const getUserClubRole = (clubId: string): string => {
-    if (!user) return 'member';
-    const member = members.find(m => m.user_id === user.id && m.club_id === clubId);
-    return member ? member.role : 'member';
-  };
-
-  const refreshMembership = async () => {
-    if (!user || !currentClub) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('club_members')
-        .select('id')
-        .eq('club_id', currentClub.id)
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          setIsMember(false);
-          return;
-        }
-        throw error;
-      }
-
-      setIsMember(!!data);
-    } catch (error) {
-      console.error('Error checking membership:', error);
-      toast.error('Failed to check membership status');
-      setIsMember(false);
-    }
-  };
-
-  const refreshMembers = async () => {
-    if (!currentClub) return;
-
-    setLoadingMembers(true);
-    try {
-      const { data: membersData, error } = await supabase
-        .from('club_members')
-        .select(
-          `
-          *,
-          profiles:profiles(*)
-        `
-        )
-        .eq('club_id', currentClub.id);
-
-      if (error) throw error;
-
-      if (membersData) {
-        const formattedMembers = membersData.map(member => {
-          let formattedProfile = null;
-          
-          if (member.profile && typeof member.profile === 'object' && !('error' in member.profile)) {
-            formattedProfile = {
-              display_name: member.profile?.display_name || null,
-              username: member.profile?.username || null,
-              avatar_url: member.profile?.avatar_url || null
-            };
-          }
-          
-          return {
-            ...member,
-            profile: formattedProfile
-          } as ClubMember;
-        });
-        setMembers(formattedMembers);
-      }
-    } catch (error) {
-      console.error('Error fetching members:', error);
-      toast.error('Failed to load members');
+      console.error('Error loading club events:', error);
+      setClubEvents([]);
     } finally {
-      setLoadingMembers(false);
+      setLoadingClubEvents(false);
     }
-  };
+  }, []);
 
-  const updateMemberRole = async (memberId: string, role: string) => {
-    try {
-      const { error } = await supabase
-        .from('club_members')
-        .update({ role })
-        .eq('id', memberId);
-
-      if (error) throw error;
-      await refreshMembers();
-    } catch (error) {
-      console.error('Error updating member role:', error);
-      toast.error('Failed to update member role');
-    }
-  };
-
-  const refreshEvents = async () => {
-    if (!currentClub) return;
-
-    setLoadingEvents(true);
+  const loadEvent = useCallback(async (eventId: string): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('club_events')
         .select('*')
-        .eq('club_id', currentClub.id)
-        .order('start_time', { ascending: true });
-
-      if (error) throw error;
-      if (data) {
-        setEvents(data as ClubEvent[]);
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      toast.error('Failed to load events');
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  const createEvent = async (eventData: Partial<ClubEvent>): Promise<ClubEvent> => {
-    try {
-      if (!user || !currentClub) throw new Error('User not authenticated or no club selected');
-      
-      const newEvent = {
-        ...eventData,
-        club_id: currentClub.id,
-        created_by: user.id,
-        name: eventData.name || 'New Event',
-        start_time: eventData.start_time || new Date().toISOString(),
-        end_time: eventData.end_time || new Date(Date.now() + 3600000).toISOString(),
-      };
-      
-      const { data, error } = await supabase
-        .from('club_events')
-        .insert(newEvent)
-        .select()
+        .eq('id', eventId)
         .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Failed to create event');
+      setCurrentEvent(data as ClubEvent);
       
-      await refreshEvents();
-      
-      return data as ClubEvent;
+      if (data) {
+        const { data: clubData, error: clubError } = await supabase
+          .from('clubs')
+          .select('*')
+          .eq('id', data.club_id)
+          .single();
+          
+        if (!clubError && clubData) {
+          setCurrentClub({
+            ...clubData,
+            club_type: clubData.club_type as any,
+            membership_type: clubData.membership_type as any,
+            created_by: clubData.creator_id || ''
+          });
+        }
+      }
     } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
+      console.error('Error loading event:', error);
+      setCurrentEvent(null);
     }
-  };
+  }, []);
 
-  const joinEvent = async (eventId: string, status: EventParticipationStatus): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-  
+  const loadEventParticipants = useCallback(async (eventId: string): Promise<void> => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('event_participants')
-        .upsert(
-          {
+        .select('*, profile:user_id(*)')
+        .eq('event_id', eventId);
+      
+      if (error) throw error;
+      
+      const typedParticipants = (data || []).map(participant => ({
+        ...participant,
+        created_at: participant.joined_at || new Date().toISOString(),
+        updated_at: participant.joined_at ? new Date().toISOString() : undefined,
+        status: participant.status as EventParticipationStatus,
+        profile: participant.profile || null
+      } as EventParticipant));
+      
+      setCurrentEventParticipants(typedParticipants);
+    } catch (error) {
+      console.error('Error loading event participants:', error);
+      setCurrentEventParticipants([]);
+    }
+  }, []);
+
+  const isUserEventParticipant = useCallback((eventId: string): boolean => {
+    if (!user) return false;
+    return currentEventParticipants.some(
+      participant => participant.user_id === user.id && participant.event_id === eventId
+    );
+  }, [user, currentEventParticipants]);
+
+  const respondToClubEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<EventParticipant> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data: existingResponse } = await supabase
+        .from('event_participants')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (existingResponse) {
+        const { data, error } = await supabase
+          .from('event_participants')
+          .update({ status })
+          .eq('id', existingResponse.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        const participant: EventParticipant = {
+          ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
+          status: data.status as EventParticipationStatus,
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: null
+        };
+        
+        return participant;
+      } else {
+        const { data, error } = await supabase
+          .from('event_participants')
+          .insert({
             event_id: eventId,
             user_id: user.id,
-            status: status,
-            joined_at: new Date().toISOString(),
-          },
-          { onConflict: 'event_id,user_id' }
-        );
-  
-      if (error) throw error;
-      await refreshEvents();
+            status
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        const participant: EventParticipant = {
+          ...data,
+          id: data.id,
+          event_id: data.event_id,
+          user_id: data.user_id,
+          status: data.status as EventParticipationStatus,
+          created_at: data.joined_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: null
+        };
+        
+        return participant;
+      }
+    } catch (error) {
+      console.error('Error responding to event:', error);
+      throw error;
+    }
+  }, [user]);
+
+  const joinEvent = useCallback(async (eventId: string, status: EventParticipationStatus): Promise<void> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      await respondToClubEvent(eventId, status);
+      
+      await loadEventParticipants(eventId);
     } catch (error) {
       console.error('Error joining event:', error);
       throw error;
     }
-  };
+  }, [user, respondToClubEvent, loadEventParticipants]);
 
-  const leaveEvent = async (eventId: string): Promise<void> => {
+  const leaveEvent = useCallback(async (eventId: string): Promise<void> => {
     if (!user) throw new Error('User not authenticated');
-
+    
     try {
       const { error } = await supabase
         .from('event_participants')
         .delete()
         .eq('event_id', eventId)
         .eq('user_id', user.id);
-
+        
       if (error) throw error;
-      await refreshEvents();
+      
+      await loadEventParticipants(eventId);
     } catch (error) {
       console.error('Error leaving event:', error);
       throw error;
     }
-  };
+  }, [user, loadEventParticipants]);
 
-  const isUserEventParticipant = (eventId: string): boolean => {
-    return events.some(event => event.id === eventId && 
-      event.participants?.some(participant => participant.user_id === user?.id));
-  };
-
-  const refreshPosts = async () => {
+  const refreshChannels = useCallback(async () => {
     if (!currentClub) return;
-
-    setLoadingPosts(true);
+    
     try {
-      const { data: postsData, error } = await supabase
-        .from('club_posts')
-        .select(
-          `
-          *,
-          profiles:profiles(*),
-          workout:workouts(*)
-        `
-        )
+      setLoadingChannels(true);
+      
+      const { data, error } = await supabase
+        .from('club_channels')
+        .select('*')
         .eq('club_id', currentClub.id)
-        .order('created_at', { ascending: false });
-
+        .order('created_at', { ascending: true });
+      
       if (error) throw error;
-
-      const formattedPosts = postsData.map(post => {
-        let formattedProfile = null;
-        
-        if (post.profile && typeof post.profile === 'object' && !('error' in post.profile)) {
-          formattedProfile = {
-            display_name: post.profile?.display_name || null,
-            username: post.profile?.username || null,
-            avatar_url: post.profile?.avatar_url || null
-          };
-        }
-        
-        return {
-          ...post,
-          profile: formattedProfile
-        } as ClubPost;
-      });
-      setPosts(formattedPosts);
+      setChannels(data || []);
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      toast.error('Failed to load posts');
+      console.error('Error fetching channels:', error);
     } finally {
-      setLoadingPosts(false);
+      setLoadingChannels(false);
     }
-  };
+  }, [currentClub]);
 
-  const createPost = async (postData: Partial<ClubPost>): Promise<ClubPost> => {
-    if (!user || !currentClub) throw new Error('User not authenticated or no club selected');
+  const isUserClubMember = useCallback((clubId: string) => {
+    if (!user) return false;
+    return userClubs.some(club => club.id === clubId);
+  }, [user, userClubs]);
 
+  const isUserClubAdmin = useCallback((clubId: string) => {
+    if (!user) return false;
+    return userClubs.some(club => club.id === clubId && club.created_by === user.id);
+  }, [user, userClubs]);
+
+  const isUserClubCreator = useCallback((clubId: string) => {
+    if (!user || !currentClub) return false;
+    return currentClub.created_by === user.id;
+  }, [user, currentClub]);
+
+  const joinCurrentClub = useCallback(async () => {
+    if (!user || !currentClub) {
+      throw new Error('User or club not available');
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_members')
+        .insert({
+          club_id: currentClub.id,
+          user_id: user.id,
+          role: 'member',
+          status: 'active',
+          membership_type: 'free' as MembershipType
+        })
+        .select('*')
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        role: data.role as MemberRole,
+        status: data.status as MemberStatus,
+        membership_type: data.membership_type as MembershipType
+      } as ClubMember;
+    } catch (error) {
+      console.error('Error joining club:', error);
+      throw error;
+    }
+  }, [user, currentClub]);
+
+  const leaveCurrentClub = useCallback(async () => {
+    if (!user || !currentClub) {
+      throw new Error('User or club not available');
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('club_members')
+        .delete()
+        .eq('club_id', currentClub.id)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error leaving club:', error);
+      throw error;
+    }
+  }, [user, currentClub]);
+
+  const createClubEvent = useCallback(async (eventData: any): Promise<ClubEvent | null> => {
+    if (!user) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_events')
+        .insert({
+          ...eventData,
+          created_by: user.id
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating club event:', error);
+      return null;
+    }
+  }, [user]);
+
+  const createNewEvent = useCallback(async (eventData: any): Promise<ClubEvent> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_events')
+        .insert({
+          ...eventData,
+          created_by: user.id
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw error;
+    }
+  }, [user]);
+
+  const updateExistingEvent = useCallback(async (eventId: string, eventData: any): Promise<ClubEvent> => {
+    try {
+      const { data, error } = await supabase
+        .from('club_events')
+        .update(eventData)
+        .eq('id', eventId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating event:', error);
+      throw error;
+    }
+  }, []);
+
+  const removeEvent = useCallback(async (eventId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('club_events')
+        .delete()
+        .eq('id', eventId);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      throw error;
+    }
+  }, []);
+
+  const createNewPost = useCallback(async (postData: any): Promise<ClubPost> => {
+    if (!user) throw new Error('User not authenticated');
+    
     try {
       const { data, error } = await supabase
         .from('club_posts')
         .insert({
           ...postData,
-          club_id: currentClub.id,
-          user_id: user.id,
+          user_id: postData.user_id || user.id
         })
-        .select('*')
+        .select()
         .single();
-
+        
       if (error) throw error;
-      if (!data) throw new Error('Failed to create post');
-
-      await refreshPosts();
-      return data as ClubPost;
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post');
-      throw error;
-    }
-  };
-
-  const createNewPost = createPost;
-
-  const deletePost = async (postId: string): Promise<void> => {
-    try {
-      const { error } = await supabase.from('club_posts').delete().eq('id', postId);
-
-      if (error) throw error;
-      await refreshPosts();
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
-    }
-  };
-
-  const createComment = async (postId: string, content: string): Promise<ClubPostComment | null> => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      const { data, error } = await supabase
-        .from('club_post_comments')
-        .insert({
-          post_id: postId,
-          user_id: user.id,
-          content: content,
-        })
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Failed to create comment');
-
-      await refreshPosts();
-      return data as ClubPostComment;
-    } catch (error) {
-      console.error('Error creating comment:', error);
-      toast.error('Failed to create comment');
-      return null;
-    }
-  };
-
-  const refreshChannels = async () => {
-    if (!currentClub) return;
-
-    setLoadingChannels(true);
-    try {
-      const { data, error } = await supabase
-        .from('club_channels')
-        .select('*')
-        .eq('club_id', currentClub.id);
-
-      if (error) throw error;
-      if (data) {
-        setChannels(data);
-      }
-    } catch (error) {
-      console.error('Error fetching channels:', error);
-      toast.error('Failed to load channels');
-    } finally {
-      setLoadingChannels(false);
-    }
-  };
-
-  const createChannel = async (channelData: any) => {
-    if (!currentClub) throw new Error('No club selected');
-
-    try {
-      const { data, error } = await supabase
-        .from('club_channels')
-        .insert({
-          ...channelData,
-          club_id: currentClub.id,
-          created_by: user?.id,
-        })
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Failed to create channel');
-
-      await refreshChannels();
       return data;
     } catch (error) {
-      console.error('Error creating channel:', error);
-      toast.error('Failed to create channel');
+      console.error('Error creating post:', error);
       throw error;
     }
-  };
+  }, [user]);
+
+  const removePost = useCallback(async (postId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('club_posts')
+        .delete()
+        .eq('id', postId);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      throw error;
+    }
+  }, []);
+
+  const sendNewMessage = useCallback(async (messageData: any): Promise<ClubMessage> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_messages')
+        .insert({
+          ...messageData,
+          user_id: messageData.user_id || user.id,
+          is_pinned: false
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }, [user]);
+
+  const togglePinMessage = useCallback(async (messageId: string, isPinned: boolean): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('club_messages')
+        .update({ is_pinned: isPinned })
+        .eq('id', messageId);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error toggling message pin:', error);
+      throw error;
+    }
+  }, []);
+
+  const getUserClubRole = useCallback((clubId: string, userId?: string): MemberRole | null => {
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return null;
+    
+    const member = members.find(m => m.club_id === clubId && m.user_id === targetUserId);
+    return member ? member.role : null;
+  }, [user, members]);
+
+  const upgradeToMembership = useCallback(async (membershipId: string): Promise<any> => {
+    return {};
+  }, []);
+
+  const purchaseProduct = useCallback(async (productId: string): Promise<any> => {
+    return {};
+  }, []);
+
+  const updateMemberRole = useCallback(async (memberId: string, role: MemberRole): Promise<ClubMember> => {
+    try {
+      const { data, error } = await supabase
+        .from('club_members')
+        .update({ role })
+        .eq('id', memberId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return {
+        ...data,
+        role: data.role as MemberRole,
+        status: data.status as MemberStatus,
+        membership_type: data.membership_type as MembershipType
+      } as ClubMember;
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      throw error;
+    }
+  }, []);
+
+  const refreshMembers = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      setLoadingMembers(true);
+      
+      const { data, error } = await supabase
+        .from('club_members')
+        .select('*, profile:user_id(*)')
+        .eq('club_id', currentClub.id);
+      
+      if (error) throw error;
+      
+      const typedMembers = (data || []).map(member => ({
+        ...member,
+        role: member.role as MemberRole,
+        status: member.status as MemberStatus,
+        membership_type: member.membership_type as MembershipType
+      }));
+      
+      setMembers(typedMembers);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [currentClub]);
+
+  const refreshPosts = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      setLoadingPosts(true);
+      
+      const { data, error } = await supabase
+        .from('club_posts')
+        .select('*, profile:user_id(*)')
+        .eq('club_id', currentClub.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [currentClub]);
 
   const refreshMessages = useCallback(async () => {
     if (!currentClub) return;
-
-    setLoadingMessages(true);
+    
     try {
-      const { data: messagesData, error } = await supabase
+      setLoadingMessages(true);
+      
+      const { data, error } = await supabase
         .from('club_messages')
-        .select(
-          `
-          *,
-          profiles:profiles(*)
-        `
-        )
+        .select('*, profile:user_id(*)')
         .eq('club_id', currentClub.id)
         .order('created_at', { ascending: true });
-
+      
       if (error) throw error;
-
-      const formattedMessages = messagesData.map(message => {
-        let formattedProfile = null;
-        
-        if (message.profile && typeof message.profile === 'object' && !('error' in message.profile)) {
-          formattedProfile = {
-            display_name: message.profile?.display_name || null,
-            username: message.profile?.username || null,
-            avatar_url: message.profile?.avatar_url || null
-          };
-        }
-        
-        return {
-          ...message,
-          profile: formattedProfile
-        } as ClubMessage;
-      });
-      setMessages(formattedMessages);
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      toast.error('Failed to load messages');
     } finally {
       setLoadingMessages(false);
     }
   }, [currentClub]);
 
-  const sendNewMessage = async (messageData: any) => {
-    if (!user || !currentClub) throw new Error('User not authenticated or no club selected');
-
+  const refreshEvents = useCallback(async () => {
+    if (!currentClub) return;
+    
     try {
-      const { error } = await supabase
-        .from('club_messages')
-        .insert({
-          ...messageData,
-          user_id: user.id,
-        });
-
-      if (error) throw error;
-      await refreshMessages();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
-    }
-  };
-
-  const upgradeToMembership = async (membershipType: MembershipType) => {
-    try {
-      if (!user || !currentClub) {
-        toast.error('User not authenticated or no club selected');
-        return;
-      }
-      
-      const { data: memberData, error: memberError } = await supabase
-        .from('club_members')
-        .select('*')
-        .eq('club_id', currentClub.id)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (memberError) throw memberError;
-      
-      if (!memberData) {
-        toast.error('You are not a member of this club');
-        return;
-      }
-      
-      const membershipTypeValue = String(membershipType);
-      
-      const { error: updateError } = await supabase
-        .from('club_members')
-        .update({ membership_type: membershipTypeValue })
-        .eq('id', memberData.id);
-      
-      if (updateError) throw updateError;
-      
-      await refreshMembers();
-      toast.success(`Membership upgraded to ${membershipType}`);
-    } catch (error: any) {
-      console.error('Error upgrading membership:', error);
-      toast.error(error.message || 'Failed to upgrade membership');
-    }
-  };
-
-  const createClubEvent = async (eventData: Partial<ClubEvent>): Promise<ClubEvent> => {
-    try {
-      if (!user || !currentClub) throw new Error('User not authenticated or no club selected');
-      
-      if (!eventData.name || !eventData.start_time || !eventData.end_time) {
-        throw new Error('Name, start time and end time are required');
-      }
-      
-      const newEvent = {
-        ...eventData,
-        club_id: currentClub.id,
-        created_by: user.id
-      };
+      setLoadingEvents(true);
       
       const { data, error } = await supabase
         .from('club_events')
-        .insert(newEvent)
+        .select('*')
+        .eq('club_id', currentClub.id)
+        .order('start_time', { ascending: true });
+      
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [currentClub]);
+  
+  const refreshProducts = useCallback(async () => {
+    if (!currentClub) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('club_products')
+        .select('*')
+        .eq('club_id', currentClub.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const typedProducts = (data || []).map(product => ({
+        ...product,
+        product_type: product.product_type as ProductType
+      }));
+      
+      setProducts(typedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, [currentClub]);
+  
+  const createNewClub = useCallback(async (clubData: any): Promise<Club> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { data, error } = await supabase
+        .from('clubs')
+        .insert({
+          name: clubData.name,
+          description: clubData.description,
+          club_type: clubData.club_type || 'fitness',
+          membership_type: clubData.membership_type || 'free',
+          premium_price: clubData.premium_price,
+          creator_id: user.id,
+          logo_url: clubData.logo_url,
+          banner_url: clubData.banner_url
+        })
         .select()
         .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Failed to create event');
       
-      await refreshEvents();
+      const typedClub: Club = {
+        ...data,
+        created_by: data.creator_id,
+        club_type: data.club_type as any,
+        membership_type: data.membership_type as any
+      };
       
-      return data as ClubEvent;
+      return typedClub;
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error creating club:', error);
       throw error;
     }
-  };
+  }, [user]);
 
-  const contextValue: ClubContextType = {
-    currentClub,
-    setCurrentClub,
-    clubs,
-    loadingClubs,
-    refreshClubs,
-    createNewClub,
-    joinClub,
-    leaveClub,
-    isMember,
-    refreshMembership,
-    members,
-    loadingMembers,
-    refreshMembers,
-    updateMemberRole,
-    events,
-    loadingEvents,
-    refreshEvents,
-    joinEvent,
-    leaveEvent,
-    isUserEventParticipant,
-    posts,
-    loadingPosts,
-    refreshPosts,
-    createPost,
-    deletePost,
-    createComment,
-    channels,
-    loadingChannels,
-    refreshChannels,
-    createChannel,
-    messages,
-    loadingMessages,
-    refreshMessages,
-    sendNewMessage,
-    upgradeToMembership,
-    createClubEvent,
-    isUserClubMember,
-    joinCurrentClub,
-    leaveCurrentClub,
-    createNewPost,
-    getUserClubRole,
-    isUserClubAdmin,
-    userClubs
-  };
+  useEffect(() => {
+    if (user) {
+      refreshClubs();
+    } else {
+      setClubs([]);
+      setUserClubs([]);
+      setCurrentClub(null);
+    }
+  }, [user, refreshClubs]);
 
   return (
-    <ClubContext.Provider value={contextValue}>{children}</ClubContext.Provider>
+    <ClubContext.Provider
+      value={{
+        clubs,
+        userClubs,
+        clubEvents,
+        events,
+        members,
+        posts,
+        messages,
+        channels,
+        products,
+        currentClub,
+        currentEvent,
+        currentEventParticipants,
+        loadingClubs,
+        loadingClubEvents,
+        loadingEvents,
+        loadingMembers,
+        loadingPosts,
+        loadingMessages,
+        loadingChannels,
+        setCurrentClub,
+        refreshClubs,
+        refreshMembers,
+        refreshProducts,
+        refreshPosts,
+        refreshMessages,
+        refreshEvents,
+        refreshChannels,
+        loadClubEvents,
+        loadEvent,
+        loadEventParticipants,
+        createClubEvent,
+        isUserClubMember,
+        isUserClubAdmin,
+        isUserClubCreator,
+        isUserEventParticipant,
+        joinCurrentClub,
+        leaveCurrentClub,
+        joinEvent,
+        leaveEvent,
+        createNewClub,
+        createNewEvent,
+        updateExistingEvent,
+        removeEvent,
+        respondToClubEvent,
+        createNewPost,
+        removePost,
+        sendNewMessage,
+        togglePinMessage,
+        getUserClubRole,
+        upgradeToMembership,
+        purchaseProduct,
+        updateMemberRole
+      }}
+    >
+      {children}
+    </ClubContext.Provider>
   );
 };
 
-export const useClub = () => {
-  const context = useContext(ClubContext);
-  if (!context) {
-    throw new Error('useClub must be used within a ClubProvider');
-  }
-  return context;
-};
+export default ClubProvider;

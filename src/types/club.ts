@@ -1,33 +1,65 @@
+export interface Club {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  created_by?: string;
+  updated_at?: string;
+  banner_url?: string;
+  logo_url?: string;
+  club_type: ClubType;
+  membership_type: MembershipType;
+  premium_price?: number;
+  creator_id?: string;
+}
 
-// Club types
-export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'outdoor' | 'other';
+export interface ClubEvent {
+  id: string;
+  club_id: string;
+  name: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  created_at: string;
+  created_by: string;
+  image_url?: string;
+  attendee_count: number;
+  category?: string;
+  participants?: EventParticipant[];
+}
 
-// Membership type enum
-export type MembershipType = 'free' | 'premium' | 'invite_only' | 'vip';
-
-// Club member types
 export interface ClubMember {
   id: string;
   club_id: string;
   user_id: string;
   role: MemberRole;
   status: MemberStatus;
-  membership_type: MembershipType;
   joined_at: string;
-  expires_at?: string | null;
-  premium_expires_at?: string | null;
-  stripe_subscription_id?: string | null;
-  profile?: {
-    display_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-  } | null;
+  profile?: any;
+  membership_type: MembershipType;
+  premium_expires_at?: string;
+  stripe_subscription_id?: string;
+  expires_at?: string;
 }
 
-export type MemberRole = 'owner' | 'admin' | 'moderator' | 'member';
-export type MemberStatus = 'active' | 'pending' | 'inactive' | 'banned';
+export interface EventParticipant {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: EventParticipationStatus;
+  created_at: string;
+  updated_at?: string;
+  profile?: any | null;
+  joined_at?: string;
+}
 
-// Post related types
+export type EventParticipationStatus = 'going' | 'maybe' | 'not_going';
+export type MemberRole = 'admin' | 'moderator' | 'member' | 'owner';
+export type MemberStatus = 'pending' | 'active' | 'banned';
+export type MembershipType = 'free' | 'premium' | 'vip';
+export type ClubType = 'fitness' | 'sports' | 'wellness' | 'nutrition' | 'other';
+
 export interface ClubPost {
   id: string;
   club_id: string;
@@ -35,18 +67,10 @@ export interface ClubPost {
   content: string;
   created_at: string;
   updated_at?: string;
-  profile?: {
-    display_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-  } | null;
-  image_url?: string | null;
-  workout_id?: string | null;
-  workout?: {
-    id: string;
-    name: string;
-    description?: string | null;
-  } | null;
+  profile?: any;
+  image_url?: string;
+  workout_id?: string;
+  workout?: any;
   comments?: ClubPostComment[];
 }
 
@@ -56,26 +80,8 @@ export interface ClubPostComment {
   user_id: string;
   content: string;
   created_at: string;
-  updated_at: string;
-  profile?: {
-    display_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-  } | null;
-}
-
-// Channel related types
-export interface ClubChannel {
-  id: string;
-  club_id: string;
-  name: string;
-  description?: string | null;
-  type: string;
-  is_default?: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  event_id?: string | null;
+  updated_at?: string;
+  profile?: any;
 }
 
 export interface ClubMessage {
@@ -85,131 +91,78 @@ export interface ClubMessage {
   content: string;
   created_at: string;
   is_pinned: boolean;
-  profile?: {
-    display_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-  } | null;
+  profile?: any;
 }
 
-// Event related types
-export interface ClubEvent {
+export interface ClubChannel {
   id: string;
   club_id: string;
   name: string;
-  description?: string | null;
-  location?: string | null;
-  start_time: string;
-  end_time: string;
+  description?: string;
+  type: string;
   created_at: string;
-  updated_at: string;
-  image_url?: string | null;
   created_by: string;
-  attendee_count?: number;
-  category?: string;
-  participants?: EventParticipant[];
+  is_default?: boolean;
+  event_id?: string;
 }
 
-export interface EventParticipant {
-  id: string;
-  event_id: string;
-  user_id: string;
-  status: EventParticipationStatus;
-  joined_at: string;
-  created_at?: string;
-  updated_at?: string;
-  profile?: {
-    display_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-  } | null;
-}
-
-export type EventParticipationStatus = 'going' | 'interested' | 'not_going';
-
-// Product related types
 export interface ClubProduct {
   id: string;
   club_id: string;
   name: string;
-  description?: string | null;
+  description?: string;
   price_amount: number;
   price_currency: string;
   product_type: ProductType;
-  date_time?: string | null;
-  location?: string | null;
-  max_participants?: number | null;
-  is_active: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  max_participants?: number;
+  date_time?: string;
+  location?: string;
+  image_url?: string;
+  stripe_product_id?: string;
+  stripe_price_id?: string;
+  is_active?: boolean;
 }
 
-export type ProductType = 'event' | 'membership' | 'class' | 'merchandise' | 'other';
+export type ProductType = 'event' | 'coaching' | 'program' | 'other';
 
-// Purchase related types
 export interface ClubProductPurchase {
   id: string;
   product_id: string;
   user_id: string;
   amount_paid: number;
   currency: string;
-  purchase_date: string;
   status: PurchaseStatus;
-  refund_status?: RefundStatus;
-  refund_reason?: string | null;
-  refund_requested_at?: string | null;
-  refund_processed_at?: string | null;
-  stripe_session_id?: string | null;
+  purchase_date: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  stripe_session_id?: string;
+  refund_status?: RefundStatus;
+  refund_requested_at?: string;
+  refund_processed_at?: string;
+  refund_reason?: string;
   product?: ClubProduct;
 }
 
-export type PurchaseStatus = 'pending' | 'completed' | 'failed' | 'refunded';
-export type RefundStatus = 'requested' | 'processing' | 'completed' | 'denied';
+export type PurchaseStatus = 'completed' | 'pending' | 'failed' | 'refunded';
+export type RefundStatus = 'requested' | 'processing' | 'processed' | 'rejected';
 
-// Subscription related types
 export interface ClubSubscription {
   id: string;
   user_id: string;
   club_id: string;
-  stripe_subscription_id?: string | null;
+  stripe_subscription_id: string;
   status: SubscriptionStatus;
   created_at: string;
   updated_at: string;
-  current_period_start?: string | null;
-  current_period_end?: string | null;
+  current_period_start?: string;
+  current_period_end?: string;
   cancel_at_period_end?: boolean;
-  canceled_at?: string | null;
-  plan_amount?: number | null;
-  plan_currency?: string | null;
-  plan_interval?: string | null;
+  canceled_at?: string;
+  plan_amount?: number;
+  plan_currency?: string;
+  plan_interval?: string;
 }
 
-export type SubscriptionStatus = 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
-
-// Shared content types
-export interface SharedWorkout {
-  workout_id: string;
-  workouts?: {
-    id: string;
-    name: string;
-    description?: string | null;
-  } | null;
-}
-
-// Add Club interface definition here to match the database exactly
-export interface Club {
-  id: string;
-  name: string;
-  description?: string | null;
-  logo_url?: string | null;
-  banner_url?: string | null;
-  creator_id: string;
-  club_type: ClubType;
-  membership_type: MembershipType;
-  premium_price?: number | null;
-  created_at: string;
-  updated_at: string;
-  created_by?: string; // Adding this for compatibility with API responses
-}
+export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'unpaid' | 'trialing' | 'incomplete' | 'incomplete_expired';

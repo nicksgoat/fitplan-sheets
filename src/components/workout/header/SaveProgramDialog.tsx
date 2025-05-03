@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const { program } = useWorkout();
   const { saveProgram, saveWorkout } = useLibrary();
-  const shareWithClubs = useShareWithClubs();
+  const shareWithClubsMutation = useShareWithClubs();
 
   const isSingleWorkout = program?.weeks.length === 1 && program?.weeks[0].workouts.length === 1;
   
@@ -76,7 +75,7 @@ export const SaveProgramDialog = ({ open, onOpenChange }: SaveProgramDialogProps
         }
         
         if (savedId && selectedClubs.length > 0) {
-          await shareWithClubs.mutate({
+          await shareWithClubsMutation.mutateAsync({
             contentId: savedId,
             contentType: isSingleWorkout ? 'workout' : 'program',
             clubIds: selectedClubs
